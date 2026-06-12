@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hope Dental · All Memos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #eef2f7; font-family: 'Inter', sans-serif; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: #0a2f44; color: white; padding: 12px 20px; border-radius: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.5rem; }
+        table { width: 100%; background: white; border-radius: 20px; border-collapse: collapse; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f6fa; color: #1f5e7e; }
+        .btn { background: #0f5c7a; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #0a2f44; }
+        .print-btn { background: #146b3a; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📄 Clinical Memos</h1>
+        <a href="index.html" class="btn">+ New Memo</a>
+    </div>
+    <div style="overflow-x: auto;">
+        <table id="memosTable">
+            <thead><tr><th>Date</th><th>Memo ID</th><th>Patient</th><th>Doctor</th><th>Total</th><th>Paid</th><th>Balance</th><th>Actions</th></tr></thead>
+            <tbody><tr><td colspan="8">Loading...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+<script>
+    if (!window.db) alert("Firebase not loaded. Check firebase-config.js");
+    async function loadMemos() {
+        const tbody = document.querySelector('#memosTable tbody');
+        try {
+            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
+            if (snapshot.empty) { tbody.innerHTML = '<tr><td colspan="8">No memos found</td></tr>'; return; }
+            let html = '';
+            snapshot.forEach(doc => {
+                const m = doc.data();
+                html += `<tr>
+                    <td>${new Date(m.timestamp).toLocaleString()}</td>
+                    <td>${m.memoId || doc.id}</td>
+                    <td>${escapeHtml(m.patient?.name || '')}</td>
+                    <td>${escapeHtml(m.doctor?.name || '')}</td>
+                    <td>MVR ${m.billing?.patientPayable?.toFixed(2) || 0}</td>
+                    <td>MVR ${m.billing?.paid?.toFixed(2) || 0}</td>
+                    <td>MVR ${m.billing?.balance?.toFixed(2) || 0}</td>
+                    <td><button class="btn print-btn" onclick="viewMemo('${m.memoId || doc.id}')">🖨️ View/Print</button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="8">Error loading memos</td></tr>'; console.error(e); }
+    }
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+    window.viewMemo = (memoId) => {
+        window.open(`view-memo.html?id=${memoId}`, '_blank');
+    };
+    if(window.db) loadMemos(); else setTimeout(()=>loadMemos(), 500);
+</script>
+</body>
+</html>

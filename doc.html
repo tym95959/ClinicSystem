@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental  | Doctor's Dashboard</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+        }
+
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .logo h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .doctor-info {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 20px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background: #c63d2f;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Left Panel - Appointments */
+        .appointments-panel {
+            flex: 1.2;
+            min-width: 350px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+        }
+
+        .panel-header {
+            background: #f4f9fe;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2eaf0;
+        }
+
+        .panel-header h3 {
+            font-size: 16px;
+            color: #0a2f44;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .appointments-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .appointment-card {
+            background: #f8fbfe;
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            border-left: 3px solid #cbdde9;
+        }
+
+        .appointment-card:hover {
+            background: #e8f0fe;
+            transform: translateX(3px);
+        }
+
+        .appointment-card.selected {
+            background: #e0f2fe;
+            border-left-color: #0f5c7a;
+        }
+
+        .appointment-time {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f5c7a;
+            margin-bottom: 6px;
+        }
+
+        .appointment-patient {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0a2f44;
+        }
+
+        .appointment-details {
+            font-size: 11px;
+            color: #5f7f9a;
+            margin-top: 5px;
+        }
+
+        .status-completed {
+            background: #e0f7ef;
+            color: #146b3a;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            display: inline-block;
+        }
+
+        /* Right Panel - Patient Details */
+        .detail-panel {
+            flex: 2;
+            min-width: 550px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e2eaf0;
+            background: #f8fbfe;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5f7f9a;
+            transition: 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #0f5c7a;
+            border-bottom: 2px solid #0f5c7a;
+            background: white;
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active-pane {
+            display: block;
+        }
+
+        /* Patient Info Card */
+        .patient-info-card {
+            background: #f0f6fc;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .patient-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0a2f44;
+        }
+
+        .patient-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #5f7f9a;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1f5e7e;
+            margin-bottom: 5px;
+        }
+
+        .form-group textarea, .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        .btn-primary {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .history-item, .prescription-item {
+            background: #f8fbfe;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid #0f5c7a;
+        }
+
+        .history-date {
+            font-size: 10px;
+            color: #8ba0b0;
+            margin-bottom: 6px;
+        }
+
+        .history-note {
+            font-size: 13px;
+            color: #1f5e7e;
+        }
+
+        /* Chat Section */
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            background: #f9fbfd;
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.doctor {
+            align-items: flex-end;
+        }
+
+        .message.reception {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 8px 14px;
+            border-radius: 18px;
+            font-size: 12px;
+        }
+
+        .message.doctor .message-bubble {
+            background: #0f5c7a;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.reception .message-bubble {
+            background: #e2eaf0;
+            color: #1f5e7e;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 9px;
+            color: #8ba0b0;
+            margin-top: 3px;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-group input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 30px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            .appointments-panel, .detail-panel {
+                height: auto;
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo">
+        <h2>👨‍⚕️ Hope Dental  · Doctor's Dashboard</h2>
+    </div>
+    <div class="doctor-info">
+        <span id="doctorName">Loading...</span>
+        <span id="doctorSpeciality"></span>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <!-- Left Panel - Appointments -->
+    <div class="appointments-panel">
+        <div class="panel-header">
+            <h3>📅 My Appointments</h3>
+        </div>
+        <div class="appointments-list" id="appointmentsList">
+            <div style="text-align:center; padding:20px;">Loading appointments...</div>
+        </div>
+    </div>
+
+    <!-- Right Panel - Patient Details -->
+    <div class="detail-panel">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="patient">👤 Patient Info</button>
+            <button class="tab-btn" data-tab="medical">📋 Medical History</button>
+            <button class="tab-btn" data-tab="diagnosis">💊 Diagnosis & Treatment</button>
+            <button class="tab-btn" data-tab="chat">💬 Chat with Reception</button>
+        </div>
+        <div class="tab-content">
+            <!-- Patient Info Tab -->
+            <div class="tab-pane active-pane" id="patientTab">
+                <div id="patientInfoContainer">
+                    <div style="text-align:center; padding:40px; color:#8ba0b0;">Select an appointment to view patient details</div>
+                </div>
+            </div>
+
+            <!-- Medical History Tab -->
+            <div class="tab-pane" id="medicalTab">
+                <div id="medicalHistoryContainer">
+                    <div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to view medical history</div>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Add Medical History Note</label>
+                    <textarea id="medicalNote" rows="3" placeholder="Enter past medical history, allergies, chronic conditions..."></textarea>
+                    <button class="btn-primary" id="saveMedicalBtn" style="margin-top: 10px;">💾 Save Medical History</button>
+                </div>
+            </div>
+
+            <!-- Diagnosis Tab -->
+            <div class="tab-pane" id="diagnosisTab">
+                <div id="diagnosisContainer">
+                    <div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to add diagnosis</div>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Current Diagnosis</label>
+                    <textarea id="diagnosisNote" rows="3" placeholder="Enter diagnosis, symptoms, observations..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Treatment Plan</label>
+                    <textarea id="treatmentPlan" rows="3" placeholder="Enter treatment plan, medications, follow-up instructions..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Prescribed Medicines</label>
+                    <textarea id="prescribedMeds" rows="2" placeholder="List medicines with dosage..."></textarea>
+                </div>
+                <button class="btn-primary" id="saveDiagnosisBtn">💾 Save Diagnosis & Treatment</button>
+            </div>
+
+            <!-- Chat Tab -->
+            <div class="tab-pane" id="chatTab">
+                <div id="chatContainer">
+                    <div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to start chatting</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Check if doctor is logged in
+    const doctorSession = sessionStorage.getItem('doctorSession');
+    if (!doctorSession) {
+        window.location.href = 'doctor-login.html';
+    }
+    
+    const currentDoctor = JSON.parse(doctorSession);
+    document.getElementById('doctorName').textContent = currentDoctor.name;
+    document.getElementById('doctorSpeciality').textContent = currentDoctor.speciality;
+    
+    let patientsList = [];
+    let appointments = [];
+    let selectedAppointment = null;
+    let selectedPatient = null;
+    let chatUnsubscribe = null;
+    let medicalHistoryList = [];
+    let diagnosisList = [];
+    
+    // Load patients from Firebase
+    async function loadPatients() {
+        if (!window.db) return;
+        try {
+            const snapshot = await window.db.collection("patients").get();
+            patientsList = [];
+            snapshot.forEach(doc => {
+                patientsList.push({ id: doc.id, ...doc.data() });
+            });
+        } catch (error) {
+            console.error("Error loading patients:", error);
+        }
+    }
+    
+    // Calculate age from DOB
+    function calculateAge(dob) {
+        if (!dob) return 'N/A';
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    }
+    
+    // Load appointments for this doctor
+    async function loadAppointments() {
+        if (!window.db) return;
+        try {
+            const snapshot = await window.db.collection("appointments")
+                .where("doctorId", "==", currentDoctor.id)
+                .orderBy("date", "desc")
+                .get();
+            
+            appointments = [];
+            snapshot.forEach(doc => {
+                appointments.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Also load memos (completed appointments)
+            const memosSnapshot = await window.db.collection("memos")
+                .where("doctor.id", "==", currentDoctor.id)
+                .orderBy("createdAt", "desc")
+                .limit(30)
+                .get();
+            
+            memosSnapshot.forEach(doc => {
+                const memo = doc.data();
+                // Add as completed appointment if not already in appointments
+                if (!appointments.find(a => a.patientId === memo.patient?.id)) {
+                    appointments.push({
+                        id: memo.memoId,
+                        doctorId: currentDoctor.id,
+                        doctorName: currentDoctor.name,
+                        date: memo.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+                        time: memo.date?.split(',')[1] || 'N/A',
+                        patientId: memo.patient?.id,
+                        patientName: memo.patient?.name,
+                        contact: memo.patient?.phone,
+                        status: 'Completed',
+                        memoData: memo
+                    });
+                }
+            });
+            
+            renderAppointmentsList();
+        } catch (error) {
+            console.error("Error loading appointments:", error);
+        }
+    }
+    
+    function renderAppointmentsList() {
+        const container = document.getElementById('appointmentsList');
+        if (appointments.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#8ba0b0;">No appointments found</div>';
+            return;
+        }
+        
+        container.innerHTML = appointments.map(apt => `
+            <div class="appointment-card" data-id="${apt.id}">
+                <div class="appointment-time">📅 ${apt.date} | ⏰ ${apt.time}</div>
+                <div class="appointment-patient">${escapeHtml(apt.patientName || apt.patient?.name || 'Unknown')}</div>
+                <div class="appointment-details">
+                    📞 ${apt.contact || apt.patient?.phone || 'N/A'}
+                    ${apt.status === 'Completed' ? '<span class="status-completed">✓ Memo Created</span>' : ''}
+                </div>
+            </div>
+        `).join('');
+        
+        document.querySelectorAll('.appointment-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.appointment-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                const apt = appointments.find(a => a.id === card.dataset.id);
+                selectPatient(apt);
+            });
+        });
+    }
+    
+    async function selectPatient(apt) {
+        selectedAppointment = apt;
+        
+        // Find patient from patients list or appointment data
+        if (apt.patientId) {
+            const patient = patientsList.find(p => p.id === apt.patientId);
+            if (patient) {
+                selectedPatient = patient;
+            } else {
+                selectedPatient = {
+                    id: apt.patientId,
+                    name: apt.patientName,
+                    phone: apt.contact,
+                    nationality: apt.patientNationality || 'N/A',
+                    isCitizen: apt.patientIsCitizen || false,
+                    dob: apt.patientDob || ''
+                };
+            }
+        } else if (apt.memoData?.patient) {
+            selectedPatient = apt.memoData.patient;
+        } else {
+            selectedPatient = {
+                id: apt.patientId || Date.now(),
+                name: apt.patientName || 'Unknown',
+                phone: apt.contact || 'N/A'
+            };
+        }
+        
+        await Promise.all([
+            loadMedicalHistory(),
+            loadDiagnosisHistory(),
+            setupChat()
+        ]);
+        
+        renderPatientInfo();
+        renderMedicalHistory();
+        renderDiagnosisHistory();
+        renderChat();
+    }
+    
+    async function loadMedicalHistory() {
+        if (!selectedPatient || !window.db) return;
+        try {
+            const snapshot = await window.db.collection("medicalHistory")
+                .where("patientId", "==", selectedPatient.id)
+                .orderBy("createdAt", "desc")
+                .get();
+            
+            medicalHistoryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error loading medical history:", error);
+            medicalHistoryList = [];
+        }
+    }
+    
+    async function loadDiagnosisHistory() {
+        if (!selectedPatient || !window.db) return;
+        try {
+            const snapshot = await window.db.collection("diagnosis")
+                .where("patientId", "==", selectedPatient.id)
+                .orderBy("createdAt", "desc")
+                .get();
+            
+            diagnosisList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error loading diagnosis:", error);
+            diagnosisList = [];
+        }
+    }
+    
+    function renderPatientInfo() {
+        const container = document.getElementById('patientInfoContainer');
+        if (!selectedPatient) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to view details</div>';
+            return;
+        }
+        
+        const age = calculateAge(selectedPatient.dob);
+        
+        container.innerHTML = `
+            <div class="patient-info-card">
+                <div class="patient-name">${escapeHtml(selectedPatient.name)}</div>
+                <div class="patient-meta">
+                    <span>🆔 ${selectedPatient.id || 'N/A'}</span>
+                    <span>📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}</span>
+                    <span>🌍 ${selectedPatient.nationality || 'N/A'}</span>
+                    <span>🎂 Age: ${age} years</span>
+                    <span>🛡️ ${selectedPatient.isCitizen ? 'Maldivian Citizen' : 'Foreigner'}</span>
+                </div>
+            </div>
+            <div class="patient-info-card">
+                <h4 style="font-size:13px; margin-bottom:10px;">📋 Current Visit Details</h4>
+                <p><strong>Appointment Date:</strong> ${selectedAppointment?.date || 'N/A'}</p>
+                <p><strong>Time:</strong> ${selectedAppointment?.time || 'N/A'}</p>
+                <p><strong>Status:</strong> ${selectedAppointment?.status || 'Scheduled'}</p>
+            </div>
+        `;
+    }
+    
+    function renderMedicalHistory() {
+        const container = document.getElementById('medicalHistoryContainer');
+        if (!selectedPatient) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to view medical history</div>';
+            return;
+        }
+        
+        if (medicalHistoryList.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#8ba0b0;">No medical history recorded</div>';
+            return;
+        }
+        
+        container.innerHTML = medicalHistoryList.map(h => `
+            <div class="history-item">
+                <div class="history-date">📅 ${new Date(h.createdAt).toLocaleString()}</div>
+                <div class="history-note">📝 ${escapeHtml(h.note)}</div>
+                <div style="font-size:10px; color:#8ba0b0; margin-top:5px;">👨‍⚕️ Dr. ${escapeHtml(h.doctorName)}</div>
+            </div>
+        `).join('');
+    }
+    
+    function renderDiagnosisHistory() {
+        const container = document.getElementById('diagnosisContainer');
+        if (!selectedPatient) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to view diagnosis</div>';
+            return;
+        }
+        
+        if (diagnosisList.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#8ba0b0;">No diagnosis recorded for this patient</div>';
+            return;
+        }
+        
+        container.innerHTML = diagnosisList.map(d => `
+            <div class="history-item">
+                <div class="history-date">📅 ${new Date(d.createdAt).toLocaleString()}</div>
+                <div class="history-note"><strong>Diagnosis:</strong> ${escapeHtml(d.diagnosis)}</div>
+                ${d.treatment ? `<div class="history-note" style="margin-top:5px;"><strong>Treatment:</strong> ${escapeHtml(d.treatment)}</div>` : ''}
+                ${d.medicines ? `<div class="history-note" style="margin-top:5px;"><strong>Medicines:</strong> ${escapeHtml(d.medicines)}</div>` : ''}
+                <div style="font-size:10px; color:#8ba0b0; margin-top:5px;">👨‍⚕️ Dr. ${escapeHtml(d.doctorName)}</div>
+            </div>
+        `).join('');
+    }
+    
+    async function saveMedicalHistory() {
+        if (!selectedPatient) {
+            alert("Please select a patient first");
+            return;
+        }
+        
+        const note = document.getElementById('medicalNote').value.trim();
+        if (!note) {
+            alert("Please enter medical history note");
+            return;
+        }
+        
+        try {
+            await window.db.collection("medicalHistory").add({
+                patientId: selectedPatient.id,
+                patientName: selectedPatient.name,
+                doctorId: currentDoctor.id,
+                doctorName: currentDoctor.name,
+                note: note,
+                type: "medical_history",
+                createdAt: new Date().toISOString()
+            });
+            
+            document.getElementById('medicalNote').value = '';
+            await loadMedicalHistory();
+            renderMedicalHistory();
+            alert("Medical history saved successfully!");
+        } catch (error) {
+            console.error("Error saving medical history:", error);
+            alert("Error saving medical history");
+        }
+    }
+    
+    async function saveDiagnosis() {
+        if (!selectedPatient) {
+            alert("Please select a patient first");
+            return;
+        }
+        
+        const diagnosis = document.getElementById('diagnosisNote').value.trim();
+        const treatment = document.getElementById('treatmentPlan').value.trim();
+        const medicines = document.getElementById('prescribedMeds').value.trim();
+        
+        if (!diagnosis) {
+            alert("Please enter diagnosis");
+            return;
+        }
+        
+        try {
+            await window.db.collection("diagnosis").add({
+                patientId: selectedPatient.id,
+                patientName: selectedPatient.name,
+                doctorId: currentDoctor.id,
+                doctorName: currentDoctor.name,
+                diagnosis: diagnosis,
+                treatment: treatment,
+                medicines: medicines,
+                appointmentId: selectedAppointment?.id,
+                createdAt: new Date().toISOString()
+            });
+            
+            // Clear form
+            document.getElementById('diagnosisNote').value = '';
+            document.getElementById('treatmentPlan').value = '';
+            document.getElementById('prescribedMeds').value = '';
+            
+            await loadDiagnosisHistory();
+            renderDiagnosisHistory();
+            alert("Diagnosis saved successfully!");
+        } catch (error) {
+            console.error("Error saving diagnosis:", error);
+            alert("Error saving diagnosis");
+        }
+    }
+    
+    function setupChat() {
+        if (chatUnsubscribe) {
+            chatUnsubscribe();
+            chatUnsubscribe = null;
+        }
+        
+        if (!selectedPatient || !window.db) return;
+        
+        const chatId = `doctor_chat_${currentDoctor.id}_${selectedPatient.id}`;
+        const chatRef = window.db.collection("chats").doc(chatId);
+        
+        chatRef.get().then(doc => {
+            if (!doc.exists) {
+                chatRef.set({
+                    participants: [currentDoctor.id, selectedPatient.id],
+                    doctorId: currentDoctor.id,
+                    doctorName: currentDoctor.name,
+                    patientId: selectedPatient.id,
+                    patientName: selectedPatient.name,
+                    messages: [],
+                    createdAt: new Date().toISOString()
+                });
+            }
+        });
+        
+        chatUnsubscribe = chatRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                renderChatMessages(doc.data().messages || []);
+            }
+        });
+    }
+    
+    function renderChatMessages(messages) {
+        const container = document.getElementById('chatContainer');
+        if (!selectedPatient) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to start chatting</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="chat-messages" id="chatMessages">
+                ${messages.map(msg => `
+                    <div class="message ${msg.sender === currentDoctor.id ? 'doctor' : 'reception'}">
+                        <div class="message-bubble">${escapeHtml(msg.text)}</div>
+                        <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+                    </div>
+                `).join('')}
+                ${messages.length === 0 ? '<div style="text-align:center; color:#8ba0b0; padding:20px;">No messages yet</div>' : ''}
+            </div>
+            <div class="chat-input-group">
+                <input type="text" id="chatInput" placeholder="Type your message to reception..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button class="btn-primary" onclick="sendChatMessage()">Send</button>
+            </div>
+        `;
+        
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    window.sendChatMessage = async function() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (!message || !selectedPatient || !window.db) return;
+        
+        const chatId = `doctor_chat_${currentDoctor.id}_${selectedPatient.id}`;
+        const chatRef = window.db.collection("chats").doc(chatId);
+        const chatDoc = await chatRef.get();
+        
+        if (chatDoc.exists) {
+            const currentMessages = chatDoc.data().messages || [];
+            await chatRef.update({
+                messages: [...currentMessages, {
+                    sender: currentDoctor.id,
+                    senderName: currentDoctor.name,
+                    text: message,
+                    timestamp: new Date().toISOString()
+                }],
+                lastUpdated: new Date().toISOString()
+            });
+        }
+        input.value = '';
+    };
+    
+    function renderChat() {
+        if (selectedPatient) {
+            setupChat();
+        } else {
+            document.getElementById('chatContainer').innerHTML = '<div style="text-align:center; padding:40px; color:#8ba0b0;">Select a patient to start chatting</div>';
+        }
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+    
+    function logout() {
+        sessionStorage.removeItem('doctorSession');
+        localStorage.removeItem('currentDoctor');
+        window.location.href = 'doctor-login.html';
+    }
+    
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active-pane'));
+            btn.classList.add('active');
+            const tabId = btn.dataset.tab;
+            document.getElementById(`${tabId}Tab`).classList.add('active-pane');
+        });
+    });
+    
+    // Event listeners
+    document.getElementById('saveMedicalBtn').addEventListener('click', saveMedicalHistory);
+    document.getElementById('saveDiagnosisBtn').addEventListener('click', saveDiagnosis);
+    
+    // Initialize
+    async function init() {
+        await loadPatients();
+        await loadAppointments();
+    }
+    
+    function waitForFirebase() {
+        if (window.db) {
+            init();
+        } else {
+            setTimeout(waitForFirebase, 500);
+        }
+    }
+    waitForFirebase();
+</script>
+</body>
+</html>

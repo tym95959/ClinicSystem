@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Clinical Memo - Payment Methods & Insurance</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase Config (ensure this file exists with your config) -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+        }
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .logo h2 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-btn {
+            background: #1e4a6e;
+            border: none;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 11px;
+        }
+        .memo-container {
+            max-width: 1200px;
+            margin: 12px auto;
+            padding: 0 12px;
+        }
+        .top-card, .services-card, .billing-card {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border: 1px solid #e2eaf0;
+        }
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0a2f44;
+            margin-bottom: 12px;
+            border-left: 3px solid #0f5c7a;
+            padding-left: 10px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .input-group label {
+            font-weight: 600;
+            font-size: 10px;
+            color: #1f5e7e;
+            letter-spacing: 0.3px;
+        }
+        .input-group input, .input-group select {
+            padding: 6px 10px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 12px;
+            background: white;
+        }
+        .selected-card {
+            background: #e0f2fe;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 11px;
+            border-left: 3px solid #0f5c7a;
+        }
+        .selected-badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 9px;
+        }
+        .insurance-toggle {
+            display: flex;
+            gap: 6px;
+            margin: 6px 0;
+        }
+        .insurance-toggle button {
+            flex: 1;
+            padding: 4px;
+            border: 1px solid #cbdde9;
+            background: white;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .insurance-toggle button.active {
+            background: #0f5c7a;
+            color: white;
+        }
+        .fixed-amount-field {
+            display: none;
+        }
+        .add-service-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .add-service-row .input-group {
+            flex: 1;
+        }
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        .services-table th, .services-table td {
+            padding: 6px 4px;
+            text-align: left;
+            border-bottom: 1px solid #e9edf2;
+        }
+        .services-table th {
+            background: #f4f9fe;
+            font-weight: 600;
+            color: #1f4d6e;
+        }
+        .qty-input {
+            width: 55px;
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid #cbdde9;
+            text-align: center;
+        }
+        .insurance-input {
+            width: 80px;
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid #cbdde9;
+            text-align: center;
+            font-size: 10px;
+        }
+        .auto-btn {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 9px;
+            margin-left: 5px;
+        }
+        .remove-row {
+            background: #ffe3e3;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        .billing-highlight {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e8f4fd 100%);
+            border: 2px solid #0f5c7a;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .total-item {
+            background: white;
+            padding: 10px 8px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .total-item label {
+            font-size: 9px;
+            color: #5f7f9a;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .total-item .value {
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .payable-item {
+            background: #e0f2fe;
+            border: 2px solid #0f5c7a;
+        }
+        .payable-item .value {
+            color: #0f5c7a;
+            font-size: 20px;
+        }
+        .balance-item {
+            background: #fff8e7;
+        }
+        .paid-input {
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid #0f5c7a;
+            border-radius: 12px;
+            padding: 6px;
+            width: 100%;
+        }
+        .warning-message {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #e65100;
+        }
+        /* Payment Method Styles */
+        .payment-method-group {
+            background: #f9fcff;
+            border-radius: 16px;
+            padding: 10px 12px;
+            margin: 12px 0 8px 0;
+            border: 1px solid #dce5ec;
+        }
+        .payment-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 10px 0 8px 0;
+        }
+        .payment-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            padding: 6px 14px;
+            border-radius: 40px;
+            border: 1px solid #cbdde9;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .payment-option i {
+            font-size: 14px;
+        }
+        .payment-option.selected {
+            background: #0f5c7a;
+            color: white;
+            border-color: #0f5c7a;
+        }
+        .cash-fields {
+            margin-top: 12px;
+            padding: 10px;
+            background: #fff6e8;
+            border-radius: 14px;
+            transition: all 0.2s;
+        }
+        .inline-field {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .inline-field label {
+            font-weight: 600;
+            font-size: 11px;
+            min-width: 80px;
+        }
+        .inline-field input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 24px;
+            border: 1px solid #cbdde9;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .card-note {
+            background: #eef2f7;
+            border-radius: 12px;
+            padding: 6px 12px;
+            margin-top: 8px;
+            font-size: 10px;
+            color: #1f5e7e;
+        }
+        .discount-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+            background: #fff8e7;
+            padding: 10px;
+            border-radius: 12px;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        .save-btn {
+            background: #146b3a;
+            color: white;
+            padding: 8px 24px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .save-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 10px;
+            padding: 6px;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 11px;
+        }
+        .success { background: #e0f7ef; color: #146b3a; }
+        .error { background: #ffe9e9; color: #b91c1c; }
+        .info { background: #e0f2fe; color: #075985; }
+        .insurance-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            margin-left: 5px;
+        }
+        .primary-insurance { background: #0f5c7a; color: white; }
+        .appointment-badge {
+            background: #ffc107;
+            color: #0a2f44;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; gap: 8px; }
+            .totals-grid { grid-template-columns: 1fr 1fr; }
+            .add-service-row { flex-direction: column; }
+            .services-table { font-size: 9px; }
+            .insurance-input { width: 60px; }
+            .payment-options { gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo">
+        <h2>🏥 Hope Dental · Clinical Memo</h2>
+    </div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+        <button class="back-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="memo-container">
+    <!-- Appointment Selection Card -->
+    <div class="top-card">
+        <div class="section-title">
+            📅 Select Appointment (Optional)
+            <span id="appointmentBadge" class="appointment-badge" style="display: none;">Linked to Appointment</span>
+        </div>
+        <div class="form-grid">
+            <div class="input-group">
+                <label>📋 Upcoming Scheduled Appointments</label>
+                <select id="appointmentSelect">
+                    <option value="">-- Load appointments --</option>
+                </select>
+                <small style="font-size: 9px;">Select to auto‑fill patient, doctor, services. Appointment will be deleted after saving.</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-card">
+        <div class="section-title">📋 Patient & Service Details</div>
+        <div class="form-grid">
+            <div class="input-group">
+                <label>🔍 Select Patient</label>
+                <select id="patientDropdown"><option value="">-- Loading patients... --</option></select>
+                <div id="selectedPatientCard" class="selected-card" style="display: none;"></div>
+            </div>
+            <div class="input-group">
+                <label>👨‍⚕️ Select Doctor</label>
+                <select id="doctorSelect"><option value="">-- Loading doctors... --</option></select>
+                <div id="selectedDoctorCard" class="selected-card" style="display: none;"></div>
+            </div>
+            <div class="input-group">
+                <label>🏥 Primary Insurance (Optional)</label>
+                <select id="otherInsuranceSelect"><option value="">-- No Primary Insurance --</option></select>
+                <div class="insurance-toggle">
+                    <button id="insurancePercentBtn" class="active">% Percentage</button>
+                    <button id="insuranceFixedBtn">💰 Fixed Amount</button>
+                </div>
+                <input type="number" id="otherInsurancePercent" placeholder="Coverage %" step="1" min="0" max="100" value="0">
+                <input type="number" id="otherInsuranceFixed" placeholder="Fixed Amount MVR" step="10" min="0" value="0" class="fixed-amount-field" style="display:none;">
+                <div id="selectedInsuranceCard" class="selected-card" style="display: none;"></div>
+                <small>Aasandha auto-applied for citizens (secondary).</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="services-card">
+        <div class="section-title">
+            📋 Services & Insurance Coverage 
+            <button id="applyAutoCalcBtn" class="auto-btn" style="padding: 4px 12px;">🔄 Apply Auto Calculate</button>
+        </div>
+        <div class="add-service-row">
+            <div class="input-group">
+                <label>Select Service (auto-add)</label>
+                <select id="serviceSelectDropdown">
+                    <option value="">-- Loading services... --</option>
+                </select>
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="services-table">
+                <thead>
+                    <tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Primary Ins.<br><span style="font-weight:normal;">(MVR)</span></th><th>Aasandha<br><span style="font-weight:normal;">(MVR)</span></th><th>Patient Pay</th><th></th></tr>
+                </thead>
+                <tbody id="servicesTbody">
+                    <tr><td colspan="8" style="text-align:center; padding:20px;">Select a service from dropdown to add</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="billing-card">
+        <div class="section-title">💰 Billing Summary & Payment</div>
+        <div class="discount-row">
+            <div class="input-group">
+                <label>🎟️ Discount Type</label>
+                <select id="discountTypeSelect"><option value="0">None</option></select>
+            </div>
+            <div class="input-group">
+                <label>Discount %</label>
+                <input type="number" id="totalDiscountPercent" value="0" step="1" readonly style="background:#f0f4f9;">
+            </div>
+            <div class="input-group">
+                <label>Discount Amount (MVR)</label>
+                <input type="text" id="discountAmount" readonly style="background:#f0f4f9;">
+            </div>
+        </div>
+        
+        <!-- PAYMENT METHOD SECTION -->
+        <div class="payment-method-group">
+            <label style="font-weight:600; font-size:11px; color:#1f5e7e;">💳 Payment Method</label>
+            <div class="payment-options" id="paymentOptionsContainer">
+                <div class="payment-option" data-method="cash">
+                    <i class="fas fa-money-bill-wave"></i> Cash
+                </div>
+                <div class="payment-option" data-method="visa">
+                    <i class="fab fa-cc-visa"></i> Visa
+                </div>
+                <div class="payment-option" data-method="mastercard">
+                    <i class="fab fa-cc-mastercard"></i> Mastercard
+                </div>
+                <div class="payment-option" data-method="amex">
+                    <i class="fab fa-cc-amex"></i> Amex
+                </div>
+            </div>
+            <!-- Cash Fields (visible only for cash) -->
+            <div id="cashFieldsContainer" style="display: none;">
+                <div class="cash-fields">
+                    <div class="inline-field">
+                        <label>💵 Cash Tendered (MVR):</label>
+                        <input type="number" id="cashTendered" step="0.01" min="0" value="0" placeholder="Enter cash amount">
+                    </div>
+                    <div class="small-note" style="font-size:9px; margin-top:5px;">* Paid amount = Cash Tendered. Change due shown in balance.</div>
+                </div>
+            </div>
+            <div id="cardInfoNote" class="card-note" style="display: none;">
+                <i class="fas fa-credit-card"></i> Card payment: Paid amount equals total patient payable (full settlement).
+            </div>
+        </div>
+
+        <div class="billing-highlight">
+            <div class="totals-grid">
+                <div class="total-item"><label>Subtotal</label><div class="value" id="subtotalAmount">0.00</div></div>
+                <div class="total-item"><label>After Discount</label><div class="value" id="totalAfterDiscount">0.00</div></div>
+                <div class="total-item"><label>Primary Insurance</label><div class="value" id="insurancePayment">0.00</div></div>
+                <div class="total-item"><label>Aasandha (Secondary)</label><div class="value" id="aasandhaPayment">0.00</div></div>
+                <div class="total-item payable-item"><label>💰 PATIENT PAYABLE</label><div class="value" id="patientPayAmount">0.00</div></div>
+                <div class="total-item"><label>Amount Paid</label><input type="number" id="paidAmount" value="0" step="0.01" class="paid-input"></div>
+                <div class="total-item balance-item"><label id="balanceLabel">⚖️ BALANCE</label><div class="value" id="balanceDue">0.00</div></div>
+            </div>
+            <div id="balanceWarning" class="warning-message" style="display: none;"></div>
+        </div>
+        <div class="action-buttons">
+            <button class="save-btn" id="saveMemoBtn">💾 Save & Print Memo</button>
+        </div>
+        <div id="messageBox" class="message"></div>
+    </div>
+</div>
+
+<script>
+    // ==================== AUTH CHECK ====================
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) window.location.href = 'login.html';
+    try {
+        const user = JSON.parse(loggedInUser);
+        const header = document.querySelector('.clinic-header');
+        const userSpan = document.createElement('div');
+        userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
+        userSpan.innerHTML = `👤 ${user.name || user.username} (${user.level})`;
+        header.insertBefore(userSpan, header.children[1]);
+    } catch(e) {}
+
+    // ==================== GLOBAL STATE ====================
+    let patientsList = [], doctorsList = [], servicesList = [], insuranceList = [], discountsList = [], appointmentsList = [];
+    let selectedAppointmentId = null, selectedPatient = null, selectedDoctor = null, selectedPrimaryInsurance = null;
+    let selectedDiscountPercent = 0, selectedInsurancePercent = 0, selectedInsuranceFixed = 0, insuranceType = "percent";
+    let selectedServices = [], currentPrimaryInsurancePayment = 0, currentAasandhaPayment = 0;
+    let currentPaymentMethod = "cash";  // cash, visa, mastercard, amex
+
+    // ==================== HELPERS ====================
+    function showMessage(msg, type) {
+        const box = document.getElementById('messageBox');
+        box.innerText = msg;
+        box.className = `message ${type}`;
+        setTimeout(() => { box.innerText = ''; box.className = 'message'; }, 3000);
+    }
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+    
+    // Memo counter transaction
+    async function getNextMemoNumber() {
+        if (!window.db) throw new Error("Firestore not ready");
+        const counterRef = window.db.collection("counters").doc("memoCounter");
+        return await window.db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(counterRef);
+            let current = doc.exists && doc.data().current ? doc.data().current : 1000;
+            const next = current + 1;
+            transaction.set(counterRef, { current: next });
+            return next;
+        }).catch(async (err) => {
+            const doc = await counterRef.get();
+            let current = doc.exists && doc.data().current ? doc.data().current : 1000;
+            const next = current + 1;
+            await counterRef.set({ current: next }, { merge: true });
+            return next;
+        });
+    }
+
+    // Insurance calculation per service (applies global primary + aasandha)
+    function calculateServiceInsurance(serviceTotal, serviceName) {
+        let primaryAmount = 0;
+        if (selectedPrimaryInsurance) {
+            if (insuranceType === "percent" && selectedInsurancePercent > 0) primaryAmount = (serviceTotal * selectedInsurancePercent) / 100;
+            else if (insuranceType === "fixed" && selectedInsuranceFixed > 0) primaryAmount = Math.min(serviceTotal, selectedInsuranceFixed);
+        }
+        let aasandhaAmount = 0;
+        if (selectedPatient && selectedPatient.isCitizen) {
+            const serviceInfo = servicesList.find(s => s.name === serviceName);
+            const aasandhaLimit = serviceInfo?.aasandhaCoverAmount || 0;
+            if (aasandhaLimit > 0) {
+                const remainingAfterPrimary = Math.max(0, serviceTotal - primaryAmount);
+                aasandhaAmount = Math.min(remainingAfterPrimary, aasandhaLimit);
+            }
+        }
+        return { primaryAmount, aasandhaAmount };
+    }
+
+    function applyAutoCalculation() {
+        if (!selectedServices.length) return;
+        selectedServices.forEach(service => {
+            const serviceTotal = service.qty * service.price;
+            const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service.name);
+            service.primaryInsuranceAmount = primaryAmount;
+            service.aasandhaAmount = aasandhaAmount;
+        });
+        renderServices(); 
+        calculateBilling(); 
+        showMessage("Insurance amounts auto-calculated", "success");
+    }
+
+    function renderServices() {
+        const tbody = document.getElementById('servicesTbody');
+        if (!selectedServices.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:16px;">No services added. Select from dropdown.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = selectedServices.map((s, idx) => {
+            const serviceTotal = s.qty * s.price;
+            const patientPay = Math.max(0, serviceTotal - (s.primaryInsuranceAmount||0) - (s.aasandhaAmount||0));
+            return `<tr>
+                <td><strong>${escapeHtml(s.name)}</strong></td>
+                <td><input type="number" value="${s.qty}" min="1" step="1" onchange="updateServiceQty(${idx}, this.value)" class="qty-input"></td>
+                <td>MVR ${s.price}</td>
+                <td>MVR ${serviceTotal.toFixed(2)}</td>
+                <td><input type="number" value="${s.primaryInsuranceAmount||0}" min="0" step="1" onchange="updateServiceInsurance(${idx}, 'primary', this.value)" class="insurance-input"></td>
+                <td><input type="number" value="${s.aasandhaAmount||0}" min="0" step="1" onchange="updateServiceInsurance(${idx}, 'aasandha', this.value)" class="insurance-input"></td>
+                <td>MVR ${patientPay.toFixed(2)}</td>
+                <td><button class="remove-row" onclick="removeService(${idx})">Remove</button></td>
+            </tr>`;
+        }).join('');
+    }
+    window.updateServiceQty = (idx, val) => { selectedServices[idx].qty = Math.max(1, parseInt(val)||1); applyAutoCalculation(); };
+    window.updateServiceInsurance = (idx, type, val) => { const amt = Math.max(0, parseFloat(val)||0); if(type==='primary') selectedServices[idx].primaryInsuranceAmount = amt; else selectedServices[idx].aasandhaAmount = amt; calculateBilling(); renderServices(); };
+    window.removeService = (idx) => { selectedServices.splice(idx,1); renderServices(); calculateBilling(); };
+    
+    function addServiceFromDropdown() {
+        const select = document.getElementById('serviceSelectDropdown');
+        const opt = select.selectedOptions[0];
+        if (!opt || !opt.value) return;
+        const price = parseFloat(opt.dataset.price);
+        const serviceTotal = price;
+        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, opt.dataset.name);
+        selectedServices.push({
+            id: Date.now(),
+            name: opt.dataset.name,
+            qty: 1,
+            price: price,
+            primaryInsuranceAmount: primaryAmount,
+            aasandhaAmount: aasandhaAmount
+        });
+        select.value = "";
+        renderServices(); 
+        calculateBilling();
+        showMessage(`Added ${opt.dataset.name}`, "success");
+    }
+
+    function calculateBilling() {
+        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        const discPercent = selectedDiscountPercent;
+        const discAmount = (subtotal * discPercent) / 100;
+        let afterDiscount = subtotal - discAmount;
+        document.getElementById('discountAmount').value = discAmount.toFixed(2);
+        document.getElementById('totalDiscountPercent').value = discPercent;
+        document.getElementById('subtotalAmount').innerHTML = subtotal.toFixed(2);
+        document.getElementById('totalAfterDiscount').innerHTML = afterDiscount.toFixed(2);
+        
+        let primaryTotal = 0, aasandhaTotal = 0, patientTotal = 0;
+        for (let s of selectedServices) {
+            const serviceTotal = s.qty * s.price;
+            let primaryPortion = s.primaryInsuranceAmount || 0;
+            let aasandhaPortion = s.aasandhaAmount || 0;
+            let remaining = serviceTotal;
+            if (discPercent > 0 && subtotal > 0) {
+                const discWeight = discAmount * (serviceTotal / subtotal);
+                primaryPortion = Math.max(0, primaryPortion - (primaryPortion / serviceTotal) * discWeight);
+                aasandhaPortion = Math.max(0, aasandhaPortion - (aasandhaPortion / serviceTotal) * discWeight);
+                remaining = serviceTotal - discWeight;
+            }
+            primaryPortion = Math.min(primaryPortion, remaining);
+            remaining -= primaryPortion;
+            aasandhaPortion = Math.min(aasandhaPortion, remaining);
+            remaining -= aasandhaPortion;
+            primaryTotal += primaryPortion;
+            aasandhaTotal += aasandhaPortion;
+            patientTotal += Math.max(0, remaining);
+        }
+        currentPrimaryInsurancePayment = primaryTotal;
+        currentAasandhaPayment = aasandhaTotal;
+        document.getElementById('insurancePayment').innerHTML = primaryTotal.toFixed(2);
+        document.getElementById('aasandhaPayment').innerHTML = aasandhaTotal.toFixed(2);
+        document.getElementById('patientPayAmount').innerHTML = patientTotal.toFixed(2);
+        
+        // Apply payment method logic to set paid amount
+        syncPaidAmountByMethod(patientTotal);
+        updateBalanceDisplay(patientTotal);
+    }
+
+    function syncPaidAmountByMethod(patientPayable) {
+        const paidInput = document.getElementById('paidAmount');
+        if (currentPaymentMethod !== 'cash') {
+            // Card payments: paid = full payable
+            paidInput.value = patientPayable.toFixed(2);
+            paidInput.readOnly = true;
+        } else {
+            paidInput.readOnly = false;
+            const cashTendered = parseFloat(document.getElementById('cashTendered')?.value) || 0;
+            paidInput.value = cashTendered.toFixed(2);
+        }
+    }
+
+    function updateBalanceDisplay(patientPayable) {
+        const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+        const balance = patientPayable - paid;
+        const balanceDiv = document.getElementById('balanceDue');
+        const warningDiv = document.getElementById('balanceWarning');
+        if (balance > 0) {
+            balanceDiv.innerHTML = balance.toFixed(2);
+            balanceDiv.style.color = '#b91c1c';
+            document.getElementById('balanceLabel').innerHTML = '⚠️ BALANCE DUE';
+            warningDiv.style.display = 'block';
+            warningDiv.innerHTML = `⚠️ MVR ${balance.toFixed(2)} remaining. Please collect before discharge.`;
+        } else if (balance < 0) {
+            balanceDiv.innerHTML = Math.abs(balance).toFixed(2);
+            balanceDiv.style.color = '#146b3a';
+            document.getElementById('balanceLabel').innerHTML = '💰 CHANGE DUE';
+            warningDiv.style.display = 'block';
+            warningDiv.innerHTML = `✓ Paid MVR ${paid.toFixed(2)} | Payable MVR ${patientPayable.toFixed(2)} | Return MVR ${Math.abs(balance).toFixed(2)} to patient.`;
+        } else {
+            balanceDiv.innerHTML = '0.00';
+            balanceDiv.style.color = '#146b3a';
+            document.getElementById('balanceLabel').innerHTML = '✅ PAID FULLY';
+            warningDiv.style.display = 'none';
+        }
+    }
+
+    // Payment method UI handler
+    function setPaymentMethod(method) {
+        currentPaymentMethod = method;
+        document.querySelectorAll('.payment-option').forEach(opt => {
+            if(opt.dataset.method === method) opt.classList.add('selected');
+            else opt.classList.remove('selected');
+        });
+        const cashContainer = document.getElementById('cashFieldsContainer');
+        const cardNote = document.getElementById('cardInfoNote');
+        if (method === 'cash') {
+            cashContainer.style.display = 'block';
+            cardNote.style.display = 'none';
+            document.getElementById('paidAmount').readOnly = false;
+            const tendered = document.getElementById('cashTendered');
+            if(tendered && tendered.value === "0") tendered.value = "0";
+            syncPaidAmountByMethod(parseFloat(document.getElementById('patientPayAmount').innerHTML) || 0);
+        } else {
+            cashContainer.style.display = 'none';
+            cardNote.style.display = 'block';
+            const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML) || 0;
+            document.getElementById('paidAmount').value = patientPayable.toFixed(2);
+            document.getElementById('paidAmount').readOnly = true;
+        }
+        calculateBilling();
+    }
+
+    function onCashTenderedChange() {
+        if (currentPaymentMethod !== 'cash') return;
+        const tendered = parseFloat(document.getElementById('cashTendered').value) || 0;
+        document.getElementById('paidAmount').value = tendered.toFixed(2);
+        calculateBilling();
+    }
+
+    // Delete linked appointment
+    async function deleteLinkedAppointment() {
+        if (selectedAppointmentId) {
+            try { await window.db.collection("appointments").doc(selectedAppointmentId).delete(); return true; } 
+            catch(e) { return false; }
+        }
+        return true;
+    }
+
+    // Save memo to Firebase
+    async function saveToFirebase() {
+        if (!selectedPatient) { showMessage("Please select a patient", "error"); return; }
+        if (!selectedDoctor) { showMessage("Please select a doctor", "error"); return; }
+        if (!selectedServices.length) { showMessage("Please add at least one service", "error"); return; }
+        const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML);
+        const paidAmount = parseFloat(document.getElementById('paidAmount').value) || 0;
+        const paymentMethod = currentPaymentMethod;
+        const cashTendered = (paymentMethod === 'cash') ? (parseFloat(document.getElementById('cashTendered')?.value) || 0) : null;
+        
+        const insuranceArray = [];
+        if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
+            insuranceArray.push({ name: selectedPrimaryInsurance.name, type: insuranceType, value: insuranceType==="percent"?selectedInsurancePercent:selectedInsuranceFixed, amount: currentPrimaryInsurancePayment, priority: "primary" });
+        }
+        if (selectedPatient.isCitizen && currentAasandhaPayment > 0) {
+            insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
+        }
+        
+        let memoNumber;
+        try { memoNumber = await getNextMemoNumber(); } catch(err) { showMessage("Memo number error", "error"); return; }
+        const memoId = memoNumber.toString();
+        const memoData = {
+            memoId, date: new Date().toLocaleString(), timestamp: new Date().toISOString(),
+            patient: { id: selectedPatient.id, name: selectedPatient.name, phone: selectedPatient.contactNo || selectedPatient.phone || "", nationality: selectedPatient.nationality || "", isCitizen: selectedPatient.isCitizen || false, idNumber: selectedPatient.idNumber || "", dob: selectedPatient.dob || "" },
+            doctor: { id: selectedDoctor.id, name: selectedDoctor.name, speciality: selectedDoctor.speciality || "" },
+            insurances: insuranceArray,
+            services: selectedServices.map(s => ({ name: s.name, qty: s.qty, price: s.price, total: s.qty*s.price, primaryInsuranceAmount: s.primaryInsuranceAmount||0, aasandhaAmount: s.aasandhaAmount||0, patientPay: Math.max(0, (s.qty*s.price)-(s.primaryInsuranceAmount||0)-(s.aasandhaAmount||0)) })),
+            discount: { percent: selectedDiscountPercent, reason: document.getElementById('discountTypeSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None", amount: parseFloat(document.getElementById('discountAmount').value) || 0 },
+            billing: { subtotal: parseFloat(document.getElementById('subtotalAmount').innerHTML)||0, afterDiscount: parseFloat(document.getElementById('totalAfterDiscount').innerHTML)||0, primaryInsurancePayment: currentPrimaryInsurancePayment, aasandhaPayment: currentAasandhaPayment, totalInsurancePayment: currentPrimaryInsurancePayment+currentAasandhaPayment, patientPayable: patientPayable, paid: paidAmount, balance: patientPayable-paidAmount, paymentMethod: paymentMethod, cashTendered: cashTendered },
+            status: "completed", createdBy: JSON.parse(loggedInUser).username || "unknown", createdAt: new Date().toISOString()
+        };
+        try {
+            const saveBtn = document.getElementById('saveMemoBtn');
+            saveBtn.textContent = "⏳ Saving..."; saveBtn.disabled = true;
+            const docRef = await window.db.collection("memos").add(memoData);
+            memoData.firebaseId = docRef.id;
+            localStorage.setItem('printMemoData', JSON.stringify(memoData));
+            await deleteLinkedAppointment();
+            showMessage(`✅ Memo #${memoId} saved (${paymentMethod.toUpperCase()})`, "success");
+            setTimeout(() => { alert(`Memo #${memoId} saved successfully!`); window.location.href = 'clinicdash.html'; }, 1500);
+        } catch (error) { showMessage("❌ Failed to save: " + error.message, "error"); saveBtn.textContent = "💾 Save & Print Memo"; saveBtn.disabled = false; }
+    }
+
+    // ==================== LOAD DATA FROM FIRESTORE ====================
+    async function loadPatients() { const snap = await window.db.collection("patients").get(); patientsList = snap.docs.map(d=> ({id:d.id,...d.data()})); const sel=document.getElementById('patientDropdown'); sel.innerHTML='<option value="">-- Select Patient --</option>'; patientsList.forEach(p=>{ sel.innerHTML+=`<option value="${p.id}">${p.id} - ${p.name} (${p.nationality||'N/A'})</option>`;}); }
+    async function loadDoctors() { const snap = await window.db.collection("doctors").get(); doctorsList = snap.docs.map(d=> ({id:d.id,...d.data()})); const sel=document.getElementById('doctorSelect'); sel.innerHTML='<option value="">-- Select Doctor --</option>'; doctorsList.forEach(d=>{ sel.innerHTML+=`<option value="${d.id}" data-name="${d.name}" data-speciality="${d.speciality}">${d.name} (${d.speciality})</option>`;}); }
+    async function loadServices() { const snap = await window.db.collection("services").get(); servicesList = snap.docs.map(d=> ({id:d.id, ...d.data()})); const sel=document.getElementById('serviceSelectDropdown'); sel.innerHTML='<option value="">-- Select Service --</option>'; servicesList.forEach(s=>{ sel.innerHTML+=`<option value="${s.id}" data-name="${s.name}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount||0}">${s.name} - MVR ${s.price}</option>`;}); }
+    async function loadInsurance() { const snap = await window.db.collection("insurance").get(); insuranceList = snap.docs.map(d=> ({id:d.id,...d.data()})); const sel=document.getElementById('otherInsuranceSelect'); sel.innerHTML='<option value="">-- No Primary Insurance --</option>'; insuranceList.forEach(i=>{ sel.innerHTML+=`<option value="${i.id}" data-name="${i.name}" data-default-coverage="${i.defaultCoverage||0}">${i.name}</option>`;}); }
+    async function loadDiscounts() { const snap = await window.db.collection("discounts").get(); discountsList = snap.docs.map(d=> ({id:d.id,...d.data()})); const sel=document.getElementById('discountTypeSelect'); sel.innerHTML='<option value="0">None</option>'; discountsList.forEach(d=>{ sel.innerHTML+=`<option value="${d.percent}">${d.name} (${d.percent}%)</option>`;}); }
+    async function loadAppointments() { const snap = await window.db.collection("appointments").where("status","==","Scheduled").get(); appointmentsList = snap.docs.map(d=> ({id:d.id,...d.data()})); const sel=document.getElementById('appointmentSelect'); sel.innerHTML='<option value="">-- Select Appointment --</option>'; appointmentsList.forEach(a=>{ sel.innerHTML+=`<option value="${a.id}" data-patient-id="${a.patientId}">${a.date} ${a.time} - ${a.patientName}</option>`;}); }
+    async function fillFromAppointment(id) { const apt = appointmentsList.find(a=>a.id===id); if(apt){ document.getElementById('patientDropdown').value = apt.patientId; document.getElementById('patientDropdown').dispatchEvent(new Event('change')); if(apt.doctorId) { document.getElementById('doctorSelect').value = apt.doctorId; document.getElementById('doctorSelect').dispatchEvent(new Event('change')); } if(apt.serviceId) setTimeout(()=> addServiceFromDropdown(), 400); selectedAppointmentId = id; document.getElementById('appointmentBadge').style.display = 'inline-block'; } }
+    
+    function bindEvents() {
+        document.getElementById('patientDropdown').onchange = (e) => { const p = patientsList.find(p=>p.id===e.target.value); selectedPatient = p||null; if(p){ document.getElementById('selectedPatientCard').innerHTML = `<div><strong>${escapeHtml(p.name)}</strong> (${p.id})<br>📞 ${p.contactNo||p.phone||''}</div><div><span class="selected-badge">${p.isCitizen ? 'Aasandha' : 'No Aasandha'}</span></div>`; document.getElementById('selectedPatientCard').style.display='flex'; applyAutoCalculation(); } else document.getElementById('selectedPatientCard').style.display='none'; calculateBilling(); };
+        document.getElementById('doctorSelect').onchange = (e) => { const d = doctorsList.find(d=>d.id===e.target.value); selectedDoctor = d||null; if(d){ document.getElementById('selectedDoctorCard').innerHTML = `<div><strong>${escapeHtml(d.name)}</strong></div><div><span class="selected-badge">${escapeHtml(d.speciality)}</span></div>`; document.getElementById('selectedDoctorCard').style.display='flex'; } else document.getElementById('selectedDoctorCard').style.display='none'; };
+        document.getElementById('serviceSelectDropdown').onchange = () => addServiceFromDropdown();
+        document.getElementById('otherInsuranceSelect').onchange = (e) => { const ins = insuranceList.find(i=>i.id===e.target.value); selectedPrimaryInsurance = ins||null; if(ins){ document.getElementById('selectedInsuranceCard').innerHTML = `<div><strong>${escapeHtml(ins.name)} <span class="insurance-badge primary-insurance">Primary</span></strong></div>`; document.getElementById('selectedInsuranceCard').style.display='flex'; } else document.getElementById('selectedInsuranceCard').style.display='none'; applyAutoCalculation(); };
+        document.getElementById('otherInsurancePercent').oninput = (e) => { selectedInsurancePercent = parseFloat(e.target.value)||0; applyAutoCalculation(); };
+        document.getElementById('otherInsuranceFixed').oninput = (e) => { selectedInsuranceFixed = parseFloat(e.target.value)||0; applyAutoCalculation(); };
+        document.getElementById('discountTypeSelect').onchange = (e) => { selectedDiscountPercent = parseFloat(e.target.value)||0; calculateBilling(); };
+        document.getElementById('paidAmount').oninput = () => calculateBilling();
+        document.getElementById('saveMemoBtn').onclick = saveToFirebase;
+        document.getElementById('applyAutoCalcBtn').onclick = () => applyAutoCalculation();
+        document.getElementById('insurancePercentBtn').onclick = () => { insuranceType="percent"; document.getElementById('insurancePercentBtn').classList.add('active'); document.getElementById('insuranceFixedBtn').classList.remove('active'); document.getElementById('otherInsurancePercent').style.display='flex'; document.getElementById('otherInsuranceFixed').style.display='none'; applyAutoCalculation(); };
+        document.getElementById('insuranceFixedBtn').onclick = () => { insuranceType="fixed"; document.getElementById('insuranceFixedBtn').classList.add('active'); document.getElementById('insurancePercentBtn').classList.remove('active'); document.getElementById('otherInsurancePercent').style.display='none'; document.getElementById('otherInsuranceFixed').style.display='flex'; applyAutoCalculation(); };
+        document.getElementById('appointmentSelect').onchange = (e) => { if(e.target.value) fillFromAppointment(e.target.value); else { selectedAppointmentId=null; document.getElementById('appointmentBadge').style.display='none'; } };
+        document.querySelectorAll('.payment-option').forEach(opt => opt.addEventListener('click', () => setPaymentMethod(opt.dataset.method)));
+        document.getElementById('cashTendered').addEventListener('input', onCashTenderedChange);
+        setPaymentMethod("cash");
+    }
+
+    async function init() { if(!window.db) { setTimeout(init, 400); return; } await Promise.all([loadPatients(), loadDoctors(), loadServices(), loadInsurance(), loadDiscounts(), loadAppointments()]); bindEvents(); showMessage("Ready", "success"); }
+    function logout() { localStorage.removeItem('loggedInUser'); window.location.href = 'login.html'; }
+    init();
+</script>
+</body>
+</html>

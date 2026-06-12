@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hope Dental  Clinic | Secure Login</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0b2b44 0%, #071a2b 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="30" cy="20" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="50" cy="15" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="70" cy="25" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="85" cy="10" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="15" cy="40" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="45" cy="50" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="75" cy="45" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="60" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="25" cy="70" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="55" cy="80" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="85" r="1.5" fill="rgba(255,255,255,0.05)"/></svg>');
+            background-repeat: repeat;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .login-card {
+            max-width: 450px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .brand {
+            background: linear-gradient(135deg, #0a2f44 0%, #0f5c7a 100%);
+            padding: 32px 24px;
+            text-align: center;
+            color: white;
+        }
+
+        .brand h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .brand p {
+            font-size: 14px;
+            opacity: 0.85;
+            margin-top: 8px;
+        }
+
+        .badge-system {
+            background: rgba(255, 255, 255, 0.2);
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 60px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+
+        .login-form-container {
+            padding: 36px 32px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e2f3e;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2edf2;
+            border-radius: 16px;
+            font-size: 15px;
+            background: #ffffff;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 92, 122, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .message-box {
+            margin-top: 20px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-msg {
+            background: #ffe9e9;
+            color: #b91c1c;
+            border-left: 4px solid #b91c1c;
+        }
+
+        .success-msg {
+            background: #e0f7ef;
+            color: #146b3a;
+            border-left: 4px solid #146b3a;
+        }
+
+        .info-msg {
+            background: #e2f0fa;
+            color: #075f8c;
+            border-left: 4px solid #075f8c;
+        }
+
+        .secure-badge {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #eef3fa;
+        }
+
+        .secure-badge span {
+            font-size: 11px;
+            color: #8ba0ae;
+        }
+
+        .footer-note {
+            background: #fafdff;
+            padding: 16px;
+            text-align: center;
+            font-size: 11px;
+            color: #8ba0ae;
+            border-top: 1px solid #eef3fa;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-text {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .online-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #2ecc71;
+            box-shadow: 0 0 4px #2ecc71;
+            margin-right: 6px;
+            vertical-align: middle;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="brand">
+        <h1>
+            <span>🏥</span>
+            Hope Dental  Clinic
+        </h1>
+        <p>Secure Healthcare Management System</p>
+        <div class="badge-system">🔐 HIPAA Compliant · Live Online Tracking</div>
+    </div>
+
+    <div class="login-form-container">
+        <form id="loginForm">
+            <div class="input-group">
+                <label>👤 Username</label>
+                <input type="text" id="username" placeholder="Enter your username" autocomplete="off" required>
+            </div>
+            <div class="input-group">
+                <label>🔒 Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">
+                <span class="btn-text">➡️ Login to Dashboard</span>
+            </button>
+            <div id="message" class="message-box"></div>
+        </form>
+
+        <div class="secure-badge">
+            <span>🔐 SHA-256 Encrypted</span>
+            <span>☁️ Firebase Firestore</span>
+            <span><span class="online-dot"></span> Live Online Status</span>
+        </div>
+    </div>
+    <div class="footer-note">
+        © 2025 Hope Dental  Clinic · All rights reserved
+    </div>
+</div>
+
+<script src="firebase-config.js"></script>
+
+<script>
+    // DOM Elements
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const messageDiv = document.getElementById('message');
+
+    let firestoreDB = null;
+    let realtimeDB = null;
+
+    // SHA-256 hash function
+    async function sha256Hash(text) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function showMessage(msg, type) {
+        messageDiv.innerHTML = msg;
+        messageDiv.className = `message-box ${type}-msg`;
+        setTimeout(() => {
+            if (messageDiv.innerHTML === msg) {
+                messageDiv.innerHTML = '';
+                messageDiv.className = 'message-box';
+            }
+        }, 4000);
+    }
+
+    function setLoading(isLoading) {
+        if (isLoading) {
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="btn-text"><span class="loading-spinner"></span>Verifying...</span>';
+        } else {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<span class="btn-text">➡️ Login to Dashboard</span>';
+        }
+    }
+
+    // Save online user to Realtime Database
+    async function saveOnlineUserRTDB(username, name, level) {
+        if (!realtimeDB) return false;
+        try {
+            await realtimeDB.ref(`online_users/${username}`).set({
+                username: username, 
+                name: name, 
+                Level: level, 
+                status: "online"
+            });
+            console.log(`✅ User ${username} marked online`);
+            return true;
+        } catch (err) {
+            console.error("Error saving online user:", err);
+            return false;
+        }
+    }
+
+    // Remove online user
+    async function removeOnlineUserRTDB(username) {
+        if (!realtimeDB || !username) return;
+        try {
+            await realtimeDB.ref(`online_users/${username}`).remove();
+            console.log(`✅ User ${username} removed`);
+        } catch (err) {
+            console.warn("Error removing online user:", err);
+        }
+    }
+
+    // Get redirect URL based on user level
+    function getRedirectUrl(userLevel) {
+        if (userLevel === "Doctor") {
+            return "doctor-portal.html";
+        } else {
+            return "clinicdash.html";
+        }
+    }
+
+    // Handle login
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        
+        if (!username || !password) {
+            showMessage("❌ Please enter both username and password.", "error");
+            return;
+        }
+        
+        setLoading(true);
+        
+        try {
+            if (!firestoreDB) {
+                showMessage("❌ System error. Please refresh.", "error");
+                setLoading(false);
+                return;
+            }
+            
+            // Check user in Firestore
+            const userDoc = await firestoreDB.collection("users").doc(username).get();
+            
+            if (!userDoc.exists) {
+                showMessage("❌ Invalid username or password.", "error");
+                setLoading(false);
+                passwordInput.value = '';
+                return;
+            }
+            
+            const userData = userDoc.data();
+            const hashedInput = await sha256Hash(password);
+            
+            if (hashedInput === userData.passwordHash) {
+                // Remove any existing entry
+                await removeOnlineUserRTDB(username);
+                
+                // Save to Realtime DB
+                await saveOnlineUserRTDB(username, userData.name, userData.Level);
+                
+                // Create session
+                const userSession = { 
+                    username: userData.username, 
+                    name: userData.name, 
+                    level: userData.Level,
+                    job: userData.Job,
+                    speciality: userData.speciality || null,
+                    loginTime: Date.now()
+                };
+                
+                localStorage.setItem('loggedInUser', JSON.stringify(userSession));
+                sessionStorage.setItem('clinic_user_session', JSON.stringify(userSession));
+                
+                // For doctors, also store doctor session
+                if (userData.Level === "Doctor") {
+                    const doctorSession = {
+                        id: userData.username,
+                        name: userData.name,
+                        speciality: userData.speciality || "General Physician",
+                        email: userData.email || ""
+                    };
+                    sessionStorage.setItem('doctorSession', JSON.stringify(doctorSession));
+                    localStorage.setItem('currentDoctor', JSON.stringify(doctorSession));
+                }
+                
+                const redirectUrl = getRedirectUrl(userData.Level);
+                showMessage(`✅ Welcome ${userData.name}! Redirecting...`, "success");
+                
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1000);
+            } else {
+                showMessage("❌ Invalid username or password.", "error");
+                passwordInput.value = '';
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            showMessage("❌ Authentication error. Please try again.", "error");
+            setLoading(false);
+        }
+    });
+
+    // Clear existing session on page load
+    async function clearExistingSession() {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (loggedInUser) {
+            try {
+                const session = JSON.parse(loggedInUser);
+                if (session.username && realtimeDB) {
+                    await removeOnlineUserRTDB(session.username);
+                }
+            } catch(e) {}
+        }
+        localStorage.removeItem('loggedInUser');
+        sessionStorage.removeItem('clinic_user_session');
+        sessionStorage.removeItem('doctorSession');
+        localStorage.removeItem('currentDoctor');
+    }
+
+    // Wait for Firebase
+    function waitForFirebase() {
+        if (window.db && window.rtdb) {
+            firestoreDB = window.db;
+            realtimeDB = window.rtdb;
+            console.log("✅ Firebase ready");
+            clearExistingSession();
+            showMessage("🔐 System ready. Please log in with your credentials.", "info");
+            setTimeout(() => {
+                if (messageDiv.innerHTML === "🔐 System ready. Please log in with your credentials.") {
+                    messageDiv.innerHTML = '';
+                    messageDiv.className = 'message-box';
+                }
+            }, 3000);
+        } else {
+            setTimeout(waitForFirebase, 500);
+        }
+    }
+    
+    waitForFirebase();
+</script>
+</body>
+</html>

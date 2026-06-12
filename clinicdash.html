@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Reception Dashboard - Read Receipts</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e8f0f5 0%, #dce6ef 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInRight 0.3s ease;
+            cursor: pointer;
+            max-width: 350px;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification-toast .close-toast {
+            margin-left: 10px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .unread-badge {
+            background: #ff4757;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 6px;
+            font-size: 9px;
+            margin-left: 6px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            display: inline-block;
+            margin-right: 5px;
+            animation: pulseOnline 1.5s infinite;
+        }
+
+        @keyframes pulseOnline {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .content-area {
+            flex: 2;
+            min-width: 280px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0a2f44 0%, #0f5c7a 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .user-info-card {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 16px;
+            border-radius: 16px;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 10px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        .logout-btn {
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .welcome-section {
+            background: white;
+            padding: 18px 24px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-section h2 {
+            font-size: 18px;
+        }
+
+        .quick-access {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .quick-card {
+            background: white;
+            padding: 12px 8px;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(15,92,122,0.1);
+        }
+
+        .quick-card:hover {
+            background: #0f5c7a;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .quick-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .quick-label {
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .doctors-section {
+            background: white;
+            padding: 16px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+        }
+
+        .doctors-section h3 {
+            color: #0a2f44;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .doctor-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eef3fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .doctor-status {
+            font-size: 9px;
+            margin-top: 2px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 12px;
+            color: #6c757d;
+            font-size: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+
+        .chat-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 360px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 1px solid rgba(15,92,122,0.2);
+            overflow: hidden;
+        }
+
+        .chat-panel.minimized {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .chat-panel.minimized .chat-header {
+            border-radius: 18px;
+        }
+
+        .chat-panel.minimized .staff-list,
+        .chat-panel.minimized .chat-messages,
+        .chat-panel.minimized .chat-input-area,
+        .chat-panel.minimized .staff-list-title,
+        .chat-panel.minimized .typing-indicator,
+        .chat-panel.minimized .delete-all-btn {
+            display: none;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chat-header i {
+            font-size: 1rem;
+        }
+
+        .chat-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .chat-badge {
+            background: #ff4757;
+            color: white;
+            border-radius: 30px;
+            padding: 2px 8px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .minimize-icon {
+            background: rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 2px 6px;
+            font-size: 10px;
+        }
+
+        .staff-list-title {
+            font-size: 9px;
+            color: #0f5c7a;
+            padding: 8px 12px 4px;
+            font-weight: 600;
+            background: #f8fbfe;
+            border-bottom: 1px solid #e2eaf0;
+        }
+
+        .staff-list {
+            background: #f8fbfe;
+            padding: 6px 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e2eaf0;
+        }
+
+        .staff-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            margin: 4px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #e2eaf0;
+            transition: all 0.2s;
+        }
+
+        .staff-tab:hover {
+            background: #e8f0fe;
+            transform: translateX(2px);
+        }
+
+        .staff-tab.active-staff {
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+        }
+
+        .staff-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f5c7a;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .staff-info {
+            flex: 1;
+        }
+
+        .staff-name {
+            font-weight: 700;
+            font-size: 12px;
+            color: #0a2f44;
+        }
+
+        .staff-role {
+            font-size: 9px;
+            color: #5f7f9a;
+            margin-top: 1px;
+        }
+
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 8px;
+            color: #4caf50;
+            background: #e8f5e9;
+            padding: 2px 6px;
+            border-radius: 16px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background: #fefefe;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 320px;
+            min-height: 280px;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 88%;
+            animation: slideIn 0.2s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.reception {
+            align-self: flex-end;
+        }
+
+        .message.staff {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message.reception .message-bubble {
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            border-bottom-right-radius: 3px;
+        }
+
+        .message.staff .message-bubble {
+            background: #eef2f7;
+            color: #1a2c3e;
+            border-bottom-left-radius: 3px;
+        }
+
+        /* Read message style - dimmer */
+        .message.staff.read .message-bubble {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        .message.reception.read .message-bubble {
+            background: #94a3b8;
+            color: #f1f5f9;
+        }
+
+        .message-meta {
+            font-size: 8px;
+            margin-top: 3px;
+            padding: 0 5px;
+            color: #8ba0b0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete-msg {
+            font-size: 8px;
+            color: #ff4757;
+            cursor: pointer;
+            margin-left: 6px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .message:hover .delete-msg {
+            opacity: 1;
+        }
+
+        .read-receipt {
+            font-size: 8px;
+            margin-left: 5px;
+        }
+
+        .read-receipt.read {
+            color: #4caf50;
+        }
+
+        .read-receipt.delivered {
+            color: #ffc107;
+        }
+
+        .typing-indicator {
+            font-size: 9px;
+            color: #0f5c7a;
+            padding: 6px 12px;
+            font-style: italic;
+            background: #f8fbfe;
+            border-top: 1px solid #e2eaf0;
+        }
+
+        .chat-input-area {
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #e2eaf0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 25px;
+            padding: 8px 14px;
+            font-size: 11px;
+            outline: none;
+        }
+
+        .chat-input-area input:focus {
+            border-color: #0f5c7a;
+        }
+
+        .chat-input-area button {
+            background: #0f5c7a;
+            border: none;
+            color: white;
+            padding: 0 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .delete-all-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 9px;
+            cursor: pointer;
+            margin: 6px 10px;
+        }
+
+        .empty-chat {
+            text-align: center;
+            color: #8ba0b0;
+            padding: 30px;
+            font-size: 11px;
+        }
+
+        .empty-online {
+            text-align: center;
+            padding: 20px;
+            color: #8ba0b0;
+            font-size: 11px;
+        }
+
+        @media (max-width: 700px) {
+            .chat-panel {
+                width: 300px;
+                right: 10px;
+                bottom: 10px;
+            }
+            .notification-toast {
+                max-width: 280px;
+                right: 10px;
+                top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="header">
+        <h1><span>🏥</span> Hope Dental Reception Hub</h1>
+        <div class="user-info-card">
+            <div class="user-name" id="userName">Loading...</div>
+            <div class="user-role" id="userRole"></div>
+            <button class="logout-btn" id="logoutBtn">🚪 Sign Out</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="content-area">
+            <div class="welcome-section">
+                <h2 id="welcomeMessage">Welcome to Hope Dental Reception</h2>
+                <p style="font-size: 11px; margin-top: 6px;">Manage patient check-ins, appointments, and communicate with doctors on duty.</p>
+                <div style="margin-top: 8px; font-size: 11px; color: #0f5c7a;">
+                    <i class="fas fa-comment-dots"></i> 
+                    <span id="onlineStaffCount">0</span> doctors on duty
+                    <span id="totalUnreadSpan" style="margin-left: 10px; background: #ff4757; padding: 2px 6px; border-radius: 20px; display: none; font-size: 9px;">0 unread</span>
+                </div>
+            </div>
+
+            <div class="quick-access">
+                <div class="quick-card" onclick="window.location.href='memo-create.html'"><div class="quick-icon">📋</div><div class="quick-label">Create Memo</div></div>
+                <div class="quick-card" onclick="window.location.href='appointment.html'"><div class="quick-icon">📅</div><div class="quick-label">Appointment</div></div>
+                <div class="quick-card" onclick="window.location.href='patient.html'"><div class="quick-icon">👤</div><div class="quick-label">New Patient</div></div>
+                <div class="quick-card" onclick="window.location.href='reports.html'"><div class="quick-icon">📊</div><div class="quick-label">Reports</div></div>
+                 <div class="quick-card" onclick="window.location.href='adminclinic.html'"><div class="quick-icon">📊</div><div class="quick-label">admin</div></div>
+            </div>
+
+            <div class="doctors-section">
+                <h3><i class="fas fa-user-md"></i> Doctors on Duty <span id="onlineCountSpan" style="font-size: 11px; color: #4caf50;"></span></h3>
+                <div id="doctorsList">
+                    <div style="color:#8ba0b0; text-align:center; padding:15px;"><i class="fas fa-spinner fa-pulse"></i> Loading doctors...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 Hope Dental Clinic | <span class="online-dot"></span> Doctors on duty are online and available for chat</p>
+    </div>
+</div>
+
+<div class="chat-panel minimized" id="chatPanel">
+    <div class="chat-header" id="chatHeader">
+        <i class="fas fa-comment-dots"></i>
+        <h3>Chat with Doctors <span id="minimizedOnlineCount"></span></h3>
+        <div class="chat-badge" id="onlineCountBadge">0</div>
+        <div class="minimize-icon" id="minimizeBtn"><i class="fas fa-plus"></i></div>
+    </div>
+    <div class="staff-list-title"><i class="fas fa-users"></i> Doctors on Duty</div>
+    <div class="staff-list" id="staffList"><div class="empty-online">Loading...</div></div>
+    <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select a doctor to chat</div></div>
+    <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Doctor is typing...</div>
+    <button class="delete-all-btn" id="deleteAllBtn" style="display:none;">🗑️ Delete All Messages</button>
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Select a doctor..." disabled>
+        <button id="sendChatBtn" disabled><i class="fas fa-paper-plane"></i> Send</button>
+    </div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script>
+    (function() {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (!loggedInUser) {
+            window.location.href = 'login.html';
+            return;
+        }
+        const user = JSON.parse(loggedInUser);
+        
+        const currentUser = {
+            id: user.username,
+            name: user.name,
+            role: user.level || "Receptionist",
+            type: "reception"
+        };
+
+        document.getElementById('userName').textContent = currentUser.name;
+        document.getElementById('userRole').textContent = `${currentUser.role} | Reception`;
+        
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening");
+        document.getElementById('welcomeMessage').textContent = `${greeting}, ${currentUser.name}!`;
+
+        let firestoreDB = null;
+        let realtimeDB = null;
+        let onlineListenerRef = null;
+        let chatListener = null;
+        let selectedStaff = null;
+        let onlineDoctorsList = [];
+        let onlineUsersData = {};
+        let unreadCounts = {};
+        let chatMessagesCache = {};
+        let heartbeatInterval = null;
+        let allChatListeners = {};
+        let shownNotifications = new Set(); // Track shown notifications to prevent duplicates on page load
+
+        // ========== HEARTBEAT ==========
+        function startHeartbeat() {
+            if (!realtimeDB) return;
+            heartbeatInterval = setInterval(async () => {
+                if (realtimeDB && currentUser.id) {
+                    const userRef = realtimeDB.ref(`online_users/${currentUser.id}`);
+                    const snapshot = await userRef.once('value');
+                    if (snapshot.exists()) {
+                        await userRef.update({ lastSeen: firebase.database.ServerValue.TIMESTAMP });
+                    }
+                }
+            }, 20000);
+        }
+        
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        function updateTotalUnreadDisplay() {
+            const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+            const totalUnreadSpan = document.getElementById('totalUnreadSpan');
+            if (totalUnread > 0) {
+                totalUnreadSpan.style.display = 'inline-block';
+                totalUnreadSpan.innerHTML = `${totalUnread} unread`;
+            } else {
+                totalUnreadSpan.style.display = 'none';
+            }
+            
+            const chatBadge = document.getElementById('onlineCountBadge');
+            if (chatBadge && totalUnread > 0 && chatPanel.classList.contains('minimized')) {
+                chatBadge.innerHTML = `${onlineDoctorsList.length} (${totalUnread})`;
+            } else if (chatBadge) {
+                chatBadge.innerHTML = `${onlineDoctorsList.length} online`;
+            }
+        }
+
+        function playNotificationSound() {
+            try {
+                const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                audio.volume = 0.2;
+                audio.play().catch(() => {});
+            } catch(e) {}
+        }
+
+        // Show notification only for NEW unread messages (not when loading page)
+        function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
+            // Check if this notification was already shown
+            const notificationKey = `${senderId}_${messageId}`;
+            if (shownNotifications.has(notificationKey)) {
+                return; // Already shown this notification
+            }
+            
+            // Only show notification if message is unread AND not from current user
+            if (!selectedStaff || selectedStaff.userId !== senderId) {
+                unreadCounts[senderId] = (unreadCounts[senderId] || 0) + 1;
+                updateTotalUnreadDisplay();
+                renderDoctorsList();
+                renderStaffList();
+                
+                // Mark as shown
+                shownNotifications.add(notificationKey);
+                
+                const toast = document.createElement('div');
+                toast.className = 'notification-toast';
+                const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                
+                toast.innerHTML = `
+                    <div><i class="fas fa-comment-dots"></i></div>
+                    <div style="flex:1;">
+                        <strong>${escapeHtml(senderName)}</strong><br>
+                        <small>${escapeHtml(message.substring(0, 60))}${message.length > 60 ? '...' : ''}</small>
+                        <div style="font-size: 8px; opacity: 0.7;">${timeStr}</div>
+                    </div>
+                    <span class="close-toast">×</span>
+                `;
+                
+                toast.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('close-toast')) {
+                        const staff = onlineDoctorsList.find(d => d.userId === senderId);
+                        if (staff) {
+                            selectStaffForChat(staff);
+                            if (chatPanel.classList.contains('minimized')) toggleChatPanel();
+                        }
+                        toast.remove();
+                    }
+                });
+                toast.querySelector('.close-toast').addEventListener('click', () => toast.remove());
+                document.body.appendChild(toast);
+                playNotificationSound();
+                
+                const originalTitle = document.title;
+                document.title = `📩 New message from ${senderName}`;
+                setTimeout(() => { document.title = originalTitle; }, 3000);
+                setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+            }
+        }
+
+        // Mark message as read when viewed
+        async function markMessageAsRead(chatId, messageId) {
+            if (!realtimeDB) return;
+            try {
+                await realtimeDB.ref(`chats/${chatId}/messages/${messageId}`).update({ 
+                    read: true, 
+                    readAt: firebase.database.ServerValue.TIMESTAMP 
+                });
+            } catch(e) {
+                console.error("Error marking message as read:", e);
+            }
+        }
+
+        function listenToChat(staffId, onMessagesUpdate) {
+            if (!realtimeDB) return null;
+            
+            const chatUsers = [currentUser.id, staffId].sort();
+            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
+            const messagesRef = realtimeDB.ref(`chats/${chatId}/messages`);
+            
+            const listener = messagesRef.on('value', (snapshot) => {
+                const messages = [];
+                snapshot.forEach(child => {
+                    messages.push({ id: child.key, ...child.val() });
+                });
+                messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                
+                chatMessagesCache[staffId] = messages;
+                
+                if (onMessagesUpdate) {
+                    onMessagesUpdate(messages);
+                }
+                
+                // Mark messages as read when chat is open
+                if (selectedStaff && selectedStaff.userId === staffId) {
+                    const unreadMessages = messages.filter(m => m.sender === staffId && !m.read);
+                    unreadMessages.forEach(msg => {
+                        markMessageAsRead(chatId, msg.id);
+                        // Also update local unread count
+                        if (unreadCounts[staffId]) {
+                            unreadCounts[staffId] = Math.max(0, unreadCounts[staffId] - 1);
+                        }
+                    });
+                    if (unreadMessages.length > 0) {
+                        updateTotalUnreadDisplay();
+                        renderDoctorsList();
+                        renderStaffList();
+                    }
+                } else {
+                    // Update unread count for this staff
+                    const unreadCount = messages.filter(m => m.sender === staffId && !m.read).length;
+                    if (unreadCount !== (unreadCounts[staffId] || 0)) {
+                        unreadCounts[staffId] = unreadCount;
+                        updateTotalUnreadDisplay();
+                        renderDoctorsList();
+                        renderStaffList();
+                    }
+                }
+            });
+            
+            return () => messagesRef.off('value', listener);
+        }
+        
+        function setupAllChatListeners() {
+            if (!realtimeDB) return;
+            
+            onlineDoctorsList.forEach(doctor => {
+                if (!allChatListeners[doctor.userId]) {
+                    allChatListeners[doctor.userId] = listenToChat(doctor.userId, (messages) => {
+                        // Check for new unread messages (not shown before)
+                        const lastMessage = messages[messages.length - 1];
+                        if (lastMessage && lastMessage.sender !== currentUser.id && !lastMessage.read) {
+                            // Only show notification if this specific message hasn't been shown
+                            const notificationKey = `${doctor.userId}_${lastMessage.id}`;
+                            if (!shownNotifications.has(notificationKey)) {
+                                showMessageNotification(doctor.name, lastMessage.text, doctor.userId, lastMessage.timestamp, lastMessage.id);
+                            }
+                            
+                            if (selectedStaff && selectedStaff.userId === doctor.userId) {
+                                renderChatMessages(messages);
+                            }
+                        } else if (selectedStaff && selectedStaff.userId === doctor.userId) {
+                            renderChatMessages(messages);
+                        }
+                    });
+                }
+            });
+        }
+
+        const chatPanel = document.getElementById('chatPanel');
+        const minimizeBtn = document.getElementById('minimizeBtn');
+        const chatHeader = document.getElementById('chatHeader');
+        
+        function toggleChatPanel() {
+            chatPanel.classList.toggle('minimized');
+            minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
+            if (!chatPanel.classList.contains('minimized') && selectedStaff) {
+                setTimeout(() => {
+                    const container = document.getElementById('chatMessages');
+                    if (container) container.scrollTop = container.scrollHeight;
+                }, 100);
+            }
+        }
+        
+        if (minimizeBtn) minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleChatPanel(); });
+        if (chatHeader) chatHeader.addEventListener('click', (e) => {
+            if (e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) toggleChatPanel();
+        });
+
+        // ========== REALTIME DB FUNCTIONS ==========
+        async function setUserOnline() {
+            if (!realtimeDB) return;
+            await realtimeDB.ref(`online_users/${currentUser.id}`).set({
+                username: currentUser.id, name: currentUser.name, Level: currentUser.role, status: "online", type: "reception",
+                loginTime: firebase.database.ServerValue.TIMESTAMP, lastSeen: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
+        
+        async function deleteUserFromOnline() {
+            if (!realtimeDB) return;
+            try {
+                await realtimeDB.ref(`online_users/${currentUser.id}`).remove();
+            } catch(e) { console.error("Error deleting reception:", e); }
+        }
+
+        async function loadOnlineDoctors() {
+            if (!firestoreDB || !realtimeDB) return;
+            
+            let allDoctorsFromFirestore = [];
+            try {
+                const snapshot = await firestoreDB.collection("doctors").get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    allDoctorsFromFirestore.push({
+                        userId: data.username || data.id || doc.id,
+                        name: data.name, role: "Doctor", department: data.speciality || "Medical"
+                    });
+                });
+            } catch(e) { console.error("Error loading doctors:", e); }
+            
+            if (onlineListenerRef) {
+                onlineListenerRef.off();
+                onlineListenerRef = null;
+            }
+            
+            onlineListenerRef = realtimeDB.ref('online_users');
+            onlineListenerRef.on('value', (snapshot) => {
+                onlineUsersData = {};
+                const users = snapshot.val();
+                
+                if (users) {
+                    Object.keys(users).forEach(username => {
+                        const data = users[username];
+                        const isDoctor = data.Level && data.Level.toLowerCase() === 'doctor';
+                        const isOnline = data.status === 'online';
+                        if (isDoctor && isOnline && username !== currentUser.id) {
+                            onlineUsersData[username] = { userId: username, name: data.name || username };
+                        }
+                    });
+                }
+                
+                onlineDoctorsList = Object.keys(onlineUsersData).map(userId => {
+                    const onlineData = onlineUsersData[userId];
+                    const firestoreDoctor = allDoctorsFromFirestore.find(d => d.userId === userId);
+                    return {
+                        userId: userId,
+                        name: firestoreDoctor ? firestoreDoctor.name : (onlineData.name || userId),
+                        role: "Doctor", department: firestoreDoctor ? firestoreDoctor.department : "Medical"
+                    };
+                });
+                
+                const onlineCount = onlineDoctorsList.length;
+                document.getElementById('onlineStaffCount').textContent = onlineCount;
+                document.getElementById('minimizedOnlineCount').innerHTML = onlineCount > 0 ? `(${onlineCount})` : '';
+                document.getElementById('onlineCountSpan').innerHTML = `(${onlineCount} online)`;
+                
+                renderDoctorsList();
+                renderStaffList();
+                setupAllChatListeners();
+            });
+        }
+        
+        function renderDoctorsList() {
+            const container = document.getElementById('doctorsList');
+            if (!onlineDoctorsList.length) {
+                container.innerHTML = '<div style="color:#8ba0b0; text-align:center; padding:15px;"><i class="fas fa-user-clock"></i><br>No doctors on duty</div>';
+                return;
+            }
+            
+            container.innerHTML = onlineDoctorsList.map(doc => {
+                const unread = unreadCounts[doc.userId] || 0;
+                const unreadBadge = unread > 0 ? `<span class="unread-badge">${unread}</span>` : '';
+                return `
+                    <div class="doctor-item" data-id="${doc.userId}">
+                        <i class="fas fa-user-md" style="color: #0f5c7a; font-size: 14px;"></i>
+                        <div style="flex:1;">
+                            <strong>${escapeHtml(doc.name)}</strong>${unreadBadge}
+                            <div class="doctor-status" style="color: #4caf50;"><span class="online-dot"></span> On Duty • ${escapeHtml(doc.department)}</div>
+                        </div>
+                        <button onclick="selectDoctor('${doc.userId}', '${escapeHtml(doc.name)}')" style="background:#0f5c7a; color:white; border:none; padding:4px 12px; border-radius:15px; cursor:pointer; font-size:9px;">Chat</button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        window.selectDoctor = function(userId, name) {
+            const staff = onlineDoctorsList.find(d => d.userId === userId);
+            if (staff) {
+                selectStaffForChat(staff);
+                if (chatPanel.classList.contains('minimized')) toggleChatPanel();
+            }
+        };
+        
+        function renderStaffList() {
+            const container = document.getElementById('staffList');
+            if (!onlineDoctorsList.length) {
+                container.innerHTML = '<div class="empty-online"><i class="fas fa-user-clock"></i><br>No doctors on duty</div>';
+                return;
+            }
+            
+            container.innerHTML = onlineDoctorsList.map(staff => {
+                const unread = unreadCounts[staff.userId] || 0;
+                const unreadBadge = unread > 0 ? `<span class="staff-unread-badge" style="background:#ff4757; color:white; border-radius:20px; padding:2px 6px; font-size:8px; margin-left:5px;">${unread}</span>` : '';
+                return `
+                    <div class="staff-tab" data-id="${staff.userId}" data-name="${escapeHtml(staff.name)}">
+                        <div class="staff-avatar">${staff.name.charAt(0).toUpperCase()}</div>
+                        <div class="staff-info">
+                            <div class="staff-name">${escapeHtml(staff.name)}${unreadBadge}</div>
+                            <div class="staff-role">${escapeHtml(staff.department)}</div>
+                        </div>
+                        <div class="online-indicator"><i class="fas fa-circle" style="font-size: 5px;"></i> On Duty</div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.querySelectorAll('.staff-tab').forEach(el => {
+                el.addEventListener('click', () => {
+                    document.querySelectorAll('.staff-tab').forEach(t => t.classList.remove('active-staff'));
+                    el.classList.add('active-staff');
+                    const staffId = el.dataset.id;
+                    const staff = onlineDoctorsList.find(d => d.userId === staffId);
+                    if (staff) selectStaffForChat(staff);
+                });
+            });
+        }
+        
+        function selectStaffForChat(staff) {
+            selectedStaff = staff;
+            document.getElementById('chatInput').disabled = false;
+            document.getElementById('sendChatBtn').disabled = false;
+            document.getElementById('chatInput').placeholder = `Message Dr. ${staff.name}...`;
+            document.getElementById('deleteAllBtn').style.display = 'block';
+            
+            if (unreadCounts[staff.userId]) {
+                delete unreadCounts[staff.userId];
+                updateTotalUnreadDisplay();
+                renderDoctorsList();
+                renderStaffList();
+            }
+            
+            if (chatListener) {
+                if (typeof chatListener === 'function') chatListener();
+                else if (chatListener.off) chatListener.off();
+                chatListener = null;
+            }
+            if (!realtimeDB) return;
+            
+            const chatUsers = [currentUser.id, staff.userId].sort();
+            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
+            const messagesRef = realtimeDB.ref(`chats/${chatId}/messages`);
+            
+            chatListener = messagesRef.on('value', (snapshot) => {
+                const messages = [];
+                snapshot.forEach(child => { messages.push({ id: child.key, ...child.val() }); });
+                messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                chatMessagesCache[staff.userId] = messages;
+                renderChatMessages(messages);
+                
+                // Mark unread messages as read when chat is open
+                const unreadMessages = messages.filter(m => m.sender === staff.userId && !m.read);
+                unreadMessages.forEach(msg => {
+                    markMessageAsRead(chatId, msg.id);
+                });
+                if (unreadMessages.length > 0 && unreadCounts[staff.userId]) {
+                    delete unreadCounts[staff.userId];
+                    updateTotalUnreadDisplay();
+                    renderDoctorsList();
+                    renderStaffList();
+                }
+            });
+            
+            realtimeDB.ref(`chats/${chatId}/typing`).off();
+            realtimeDB.ref(`chats/${chatId}/typing`).on('value', (snap) => {
+                const typing = snap.val();
+                const indicator = document.getElementById('typingIndicator');
+                if (typing === staff.userId) {
+                    indicator.style.display = 'block';
+                    indicator.innerHTML = '<i class="fas fa-ellipsis-h"></i> Doctor is typing...';
+                } else {
+                    indicator.style.display = 'none';
+                }
+            });
+        }
+        
+        function renderChatMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            if (!messages.length) {
+                container.innerHTML = '<div class="empty-chat">No messages yet</div>';
+                return;
+            }
+            
+            let html = '';
+            messages.forEach(msg => {
+                const isCurrentUser = (msg.sender === currentUser.id);
+                const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                const isRead = msg.read === true;
+                const statusIcon = isCurrentUser ? (msg.delivered ? (msg.read ? '✓✓' : '✓') : '○') : '';
+                // Add 'read' class to message bubble for visual change
+                const readClass = !isCurrentUser && isRead ? 'read' : '';
+                
+                html += `
+                    <div class="message ${isCurrentUser ? 'reception' : 'staff'} ${readClass}" data-msg-id="${msg.id}">
+                        <div class="message-bubble">${escapeHtml(msg.text)}</div>
+                        <div class="message-meta">
+                            <span>${isCurrentUser ? 'You (Reception)' : `Dr. ${selectedStaff?.name}`} • ${time} ${statusIcon}</span>
+                            <span class="delete-msg" onclick="deleteMessage('${msg.id}')">🗑️</span>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        window.deleteMessage = async function(msgId) {
+            if (!selectedStaff || !realtimeDB) return;
+            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
+            await realtimeDB.ref(`chats/${chatId}/messages/${msgId}`).remove();
+        };
+        
+        async function deleteAllMessages() {
+            if (!selectedStaff || !confirm('Delete all messages with this doctor?')) return;
+            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
+            await realtimeDB.ref(`chats/${chatId}/messages`).remove();
+            renderChatMessages([]);
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !selectedStaff || !realtimeDB) return;
+            
+            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
+            const newMsgRef = realtimeDB.ref(`chats/${chatId}/messages`).push();
+            await newMsgRef.set({
+                id: newMsgRef.key, sender: currentUser.id, senderName: `${currentUser.name} (Reception)`,
+                text: text, timestamp: Date.now(), delivered: true, read: false
+            });
+            input.value = "";
+            await realtimeDB.ref(`chats/${chatId}/typing`).remove();
+        }
+        
+        let typingTimeoutId;
+        document.getElementById('chatInput').addEventListener('input', async () => {
+            if (!selectedStaff || !realtimeDB) return;
+            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
+            await realtimeDB.ref(`chats/${chatId}/typing`).set(currentUser.id);
+            clearTimeout(typingTimeoutId);
+            typingTimeoutId = setTimeout(async () => {
+                await realtimeDB.ref(`chats/${chatId}/typing`).remove();
+            }, 1500);
+        });
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+        }
+
+        // ========== LOGOUT ==========
+        async function logout() {
+            stopHeartbeat();
+            if (onlineListenerRef) { onlineListenerRef.off(); onlineListenerRef = null; }
+            if (chatListener) {
+                if (typeof chatListener === 'function') chatListener();
+                else if (chatListener.off) chatListener.off();
+                chatListener = null;
+            }
+            Object.keys(allChatListeners).forEach(key => {
+                if (allChatListeners[key] && typeof allChatListeners[key] === 'function') allChatListeners[key]();
+                else if (allChatListeners[key] && allChatListeners[key].off) allChatListeners[key].off();
+                delete allChatListeners[key];
+            });
+            await deleteUserFromOnline();
+            localStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('clinic_user_session');
+            window.location.href = 'login.html';
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
+        document.getElementById('deleteAllBtn').addEventListener('click', deleteAllMessages);
+        document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+        
+        // ========== INITIALIZATION ==========
+        async function init() {
+            if (window.db) firestoreDB = window.db;
+            if (window.rtdb) realtimeDB = window.rtdb;
+            if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
+            
+            await setUserOnline();
+            startHeartbeat();
+            await loadOnlineDoctors();
+            
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

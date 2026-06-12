@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memo Viewer · Hope Dental</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #fff; padding: 20px; color: #1e293b; }
+        .memo-container { max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 20px; padding: 30px; background: white; }
+        .header { text-align: center; border-bottom: 2px solid #0f5c7a; padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { color: #0f5c7a; }
+        .section { margin-bottom: 20px; }
+        .section h3 { color: #0f5c7a; border-left: 4px solid #0f5c7a; padding-left: 10px; margin-bottom: 10px; }
+        .row { display: flex; margin-bottom: 6px; }
+        .label { font-weight: 600; width: 150px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; font-size: 13px; }
+        th { background: #f1f5f9; }
+        .totals { background: #f8fafc; padding: 15px; border-radius: 12px; margin-top: 15px; }
+        .totals div { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .print-button { text-align: center; margin-top: 25px; }
+        button { background: #0f5c7a; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-size: 14px; }
+        @media print { .print-button { display: none; } body { padding: 0; } .memo-container { border: none; padding: 0; } }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+<div class="memo-container" id="memoContent">Loading...</div>
+<div class="print-button"><button onclick="window.print()">🖨️ Print this memo</button></div>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const memoId = urlParams.get('id');
+    if (!memoId) { document.getElementById('memoContent').innerHTML = '<p>No memo ID provided.</p>'; }
+    else {
+        async function loadMemo() {
+            try {
+                let memo;
+                // Try by memoId field first, then by document ID
+                const byMemoId = await window.db.collection("memos").where("memoId", "==", memoId).get();
+                if (!byMemoId.empty) memo = byMemoId.docs[0].data();
+                else {
+                    const byDocId = await window.db.collection("memos").doc(memoId).get();
+                    if (byDocId.exists) memo = byDocId.data();
+                }
+                if (!memo) throw new Error("Memo not found");
+                renderMemo(memo);
+            } catch(e) { document.getElementById('memoContent').innerHTML = `<p>Error: ${e.message}</p>`; }
+        }
+        function renderMemo(m) {
+            const patient = m.patient || {};
+            const doctor = m.doctor || {};
+            const billing = m.billing || {};
+            const services = m.services || [];
+            const insurances = m.insurances || [];
+            document.getElementById('memoContent').innerHTML = `
+                <div class="header"><h1>🏥 Hope Dental · Clinical Memo</h1><p>${new Date(m.timestamp).toLocaleString()}</p></div>
+                <div class="section"><h3>Patient Information</h3><div class="row"><div class="label">Name:</div><div>${escapeHtml(patient.name)}</div></div>
+                <div class="row"><div class="label">ID / Nationality:</div><div>${escapeHtml(patient.idNumber)} (${escapeHtml(patient.nationality)})</div></div>
+                <div class="row"><div class="label">Contact:</div><div>${escapeHtml(patient.phone)}</div></div></div>
+                <div class="section"><h3>Doctor</h3><div class="row"><div class="label">Name:</div><div>${escapeHtml(doctor.name)}</div></div>
+                <div class="row"><div class="label">Speciality:</div><div>${escapeHtml(doctor.speciality)}</div></div></div>
+                <div class="section"><h3>Services & Charges</h3>
+                <table><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>
+                ${services.map(s => `<tr><td>${escapeHtml(s.name)}</td><td>${s.qty}</td><td>MVR ${s.price}</td><td>MVR ${s.total}</td></tr>`).join('')}
+                </tbody></table></div>
+                <div class="totals"><h3>Billing Summary</h3>
+                <div><span>Subtotal:</span><span>MVR ${billing.subtotal?.toFixed(2)}</span></div>
+                <div><span>Discount (${m.discount?.percent || 0}%):</span><span>- MVR ${billing.afterDiscount ? (billing.subtotal - billing.afterDiscount).toFixed(2) : '0.00'}</span></div>
+                <div><span>After Discount:</span><span>MVR ${billing.afterDiscount?.toFixed(2)}</span></div>
+                ${insurances.map(i => `<div><span>${i.name} (${i.priority}):</span><span>MVR ${i.amount?.toFixed(2)}</span></div>`).join('')}
+                <div style="font-weight:700; margin-top:10px;"><span>Patient Payable:</span><span>MVR ${billing.patientPayable?.toFixed(2)}</span></div>
+                <div><span>Amount Paid:</span><span>MVR ${billing.paid?.toFixed(2)}</span></div>
+                <div style="font-size:18px; font-weight:800; margin-top:10px;"><span>Balance / Change:</span><span>MVR ${billing.balance?.toFixed(2)}</span></div>
+                </div>
+                <div style="margin-top:20px; font-size:11px; text-align:center;">Memo ID: ${m.memoId || 'N/A'} | Generated by ${escapeHtml(m.createdBy)}</div>
+            `;
+        }
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+        if(window.db) loadMemo(); else setTimeout(()=>loadMemo(), 500);
+    }
+</script>
+</body>
+</html>

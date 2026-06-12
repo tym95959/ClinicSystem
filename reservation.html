@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor Admin - Passenger Management (Back Date & Shift)</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    
+    <!-- Your config files -->
+    <script src="fireshift1.js"></script>
+    <script src="Co.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f0e1, #fff5e6);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header-bar {
+            background: linear-gradient(135deg, #8b6913, #e6b800);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo-area h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .logo-area p {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .user-area {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 30px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-level {
+            background: #dc3545;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 1px solid #e6b800;
+        }
+
+        .card-title {
+            color: #8b6913;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e6b800;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            color: #8b6913;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 2px solid rgba(230, 184, 0, 0.3);
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #e6b800;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #6b8e23;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a7d1f;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid #e6b800;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        th {
+            background: #e6b800;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(230, 184, 0, 0.2);
+            font-size: 12px;
+        }
+
+        tr:hover td {
+            background: rgba(230, 184, 0, 0.05);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .edit-btn {
+            background: #ffc107;
+            color: #333;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .edit-input-field {
+            width: 100%;
+            padding: 4px 6px;
+            border: 2px solid #e6b800;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 50px auto;
+            padding: 25px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e6b800;
+        }
+
+        .close-modal {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #8b6913;
+        }
+
+        .close-modal:hover {
+            color: #dc3545;
+        }
+
+        .message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #fff9e6, #fff2d7);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid #e6b800;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8b6913;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #8b6913;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(230,184,0,0.3);
+            border-radius: 50%;
+            border-top-color: #e6b800;
+            animation: spin 1s infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+
+        .flight-loading {
+            font-size: 11px;
+            color: #e6b800;
+            margin-top: 4px;
+        }
+        
+        .db-badge {
+            display: inline-block;
+            background: #4682b4;
+            color: white;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-bar">
+        <div class="logo-area">
+            <h1>👑 SUPERVISOR ADMIN PANEL</h1>
+            <p>Multi-Database Back Date & Shift Passenger Management</p>
+        </div>
+        <div class="user-area">
+            <span class="user-name" id="adminUserName">Loading...</span>
+            <span class="user-level" id="adminUserLevel">---</span>
+            <a href="report.html" class="back-btn">← Back to Report</a>
+        </div>
+    </div>
+
+    
+
+    <div class="card">
+        <div class="card-title">🔍 SEARCH & FILTER PASSENGERS</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>📅 DATE *</label>
+                <input type="date" id="searchDate" class="form-control" onchange="loadFlightsByDate()">
+            </div>
+            <div class="form-group">
+                <label>🗄️ DATABASE *</label>
+                <select id="searchDatabase" class="form-control" onchange="loadFlightsByDate()">
+                    <option value="">-- Select database first --</option>
+                    <option value="BA">BA Database</option>
+                    <option value="EK">EK Database</option>
+                    <option value="QR">QR Database</option>
+                    <option value="SQ">SQ Database</option>
+                    <option value="DEOSWKNO">DE/OS/WK/NO Database</option>
+                    <option value="MUVSSUKC">MU/VS/SU/KC Database</option>
+                    <option value="EYFZTKMH">EY/FZ/TK/MH Database</option>
+                    <option value="DEFAULT">Default Database</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>✈ FLIGHT NUMBER</label>
+                <select id="searchFlightNo" class="form-control" onchange="searchPassengers()">
+                    <option value="">-- Select date first --</option>
+                </select>
+                <div id="flightLoadingMsg" class="flight-loading" style="display: none;">Loading flights...</div>
+            </div>
+            <div class="form-group">
+                <label>🔄 SHIFT</label>
+                <select id="searchShift" class="form-control">
+                    <option value="">-- All Shifts --</option>
+                    <option value="MORNING">MORNING</option>
+                    <option value="EVENING">EVENING</option>
+                </select>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="searchPassengers()">🔍 SEARCH</button>
+            <button class="btn btn-secondary" onclick="resetSearch()">🔄 RESET</button>
+            <button class="btn btn-success" onclick="openAddModal()">➕ ADD NEW PASSENGER</button>
+        </div>
+    </div>
+
+    <div id="passengerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">➕ ADD PASSENGER</h2>
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalMessage" class="message"></div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>📅 DATE *</label>
+                    <input type="date" id="modalDate" class="form-control" onchange="updateModalFlightList()">
+                </div>
+                <div class="form-group">
+                    <label>✈ FLIGHT NO *</label>
+                    <select id="modalFlightNo" class="form-control">
+                        <option value="">-- Select date first --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>🔄 SHIFT *</label>
+                    <select id="modalShift" class="form-control">
+                        <option value="MORNING">MORNING</option>
+                        <option value="EVENING">EVENING</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>👤 PASSENGER NAME *</label>
+                    <input type="text" id="modalPName" class="form-control" placeholder="Full name">
+                </div>
+                <div class="form-group">
+                    <label>💺 SEAT NUMBER</label>
+                    <input type="text" id="modalSeatNo" class="form-control" 
+                        placeholder="e.g., 12A or 12A,14B,15C"
+                        onchange="autoCalculatePaxFromSeats('modalSeatNo', 'modalPax')"
+                        onblur="this.value = this.value.toUpperCase()">
+                    <small style="font-size: 10px; color: #666;">Enter multiple seats separated by commas</small>
+                </div>
+                <div class="form-group">
+                    <label>👥 PAX COUNT</label>
+                    <input type="number" id="modalPax" class="form-control" value="1" min="1"
+                        onchange="validatePaxVsSeats(parseInt(this.value), document.getElementById('modalSeatNo').value, true)">
+                </div>
+                <div class="form-group">
+                    <label>🔢 SERIAL NO</label>
+                    <input type="text" id="modalSerialNo" class="form-control" placeholder="Optional">
+                </div>
+                <div class="form-group">
+                    <label>⏱️ ENTRY TIME</label>
+                    <input type="time" id="modalEntryTime" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>🎫 FQTV</label>
+                    <input type="text" id="modalFQTV" class="form-control" placeholder="Frequent flyer">
+                </div>
+                <div class="form-group">
+                    <label>📝 PNR (for FZ flights)</label>
+                    <input type="text" id="modalPNR" class="form-control" placeholder="6 chars" maxlength="6">
+                </div>
+                <div class="form-group">
+                    <label>💬 REMARKS</label>
+                    <input type="text" id="modalRemarks" class="form-control" placeholder="Optional">
+                </div>
+            </div>
+            <input type="hidden" id="modalDocId" value="">
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeModal()">CANCEL</button>
+                <button class="btn btn-success" onclick="savePassenger()">💾 SAVE</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📋 PASSENGER LIST</div>
+        <div class="table-container">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Flight</th>
+                        <th>Shift</th>
+                        <th>Database</th>
+                        <th>Name</th>
+                        <th>Seat</th>
+                        <th>Pax</th>
+                        <th>Serial</th>
+                        <th>Entry Time</th>
+                        <th>FQTV</th>
+                        <th>PNR</th>
+                        <th>Remarks</th>
+                        <th style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                    <tr><td colspan="13" class="no-data">🔍 Select date and flight to search passengers</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== GLOBAL VARIABLES ==========
+    let currentUser = { name: 'OPERATOR', username: 'operator', rcno: 'N/A', level: 'OPERATOR' };
+    let currentResults = [];
+    let editingDocId = null;
+    let flightsByDateCache = {};
+
+    // ========== DATE FUNCTIONS - Firebase uses YYYY-MM-DD format ==========
+    // No conversion needed - both HTML input and Firebase use YYYY-MM-DD
+    function formatDateForDB(dateStr) {
+        return dateStr; // Return as-is
+    }
+
+    function formatDateForInput(dateStr) {
+        return dateStr; // Return as-is
+    }
+
+    // ========== USER DATA LOAD ==========
+    function loadUserData() {
+        try {
+            const saved = localStorage.getItem('currentUser');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+            } else {
+                const username = localStorage.getItem('username');
+                const name = localStorage.getItem('name');
+                const level = localStorage.getItem('level');
+                
+                if (username) {
+                    currentUser = { 
+                        username: username, 
+                        name: name || username, 
+                        rcno: localStorage.getItem('rcno') || 'N/A', 
+                        level: level || 'OPERATOR' 
+                    };
+                }
+            }
+            
+            document.getElementById('adminUserName').innerText = currentUser.name || currentUser.username || 'OPERATOR';
+            document.getElementById('adminUserLevel').innerText = currentUser.level || 'OPERATOR';
+            
+            const userLevel = currentUser.level || '';
+            if (userLevel !== 'Supervisor' && userLevel !== 'Admin' && userLevel !== 'MANAGER') {
+                document.body.innerHTML = '<div style="text-align: center; padding: 50px;"><h1 style="color: #dc3545;">⛔ ACCESS DENIED</h1><p>You do not have permission to access this page.</p><a href="report.html" style="color: #e6b800;">← Back to Report</a></div>';
+                return false;
+            }
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('searchDate').value = today;
+            document.getElementById('modalDate').value = today;
+            
+            const now = new Date();
+            const currentTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+            document.getElementById('modalEntryTime').value = currentTime;
+            
+            //loadFlightsByDate();
+            //updateModalFlightList();
+            
+            return true;
+        } catch(e) { 
+            console.warn('Error loading user data:', e);
+            return true;
+        }
+    }
+
+        // ========== SEAT COUNT VALIDATION FUNCTIONS ==========
+
+    /**
+     * Count the number of seats from seat number string
+     * Supports formats: "12A", "12A,14B,15C", "12A-14B", "12A 14B"
+     * Returns the count of individual seat entries
+     */
+    function countSeats(seatNo) {
+        if (!seatNo || seatNo.trim() === '') return 0;
+        
+        // Count the number of alphabetical letters in the seat string
+        const letters = seatNo.match(/[A-Z]/gi);
+        
+        return letters ? letters.length : 0;
+    }
+
+    /**
+     * Auto-calculate PAX from seat numbers
+     * Call this when seat number field changes
+     */
+    function autoCalculatePaxFromSeats(inputElementId, targetPaxElementId) {
+        const seatInput = document.getElementById(inputElementId);
+        const paxInput = document.getElementById(targetPaxElementId);
+        
+        if (seatInput.value) {
+            seatInput.value = seatInput.value.toUpperCase();
+        }
+        
+        const seatCount = countSeats(seatInput.value);
+        
+        if (seatCount > 0) {
+            paxInput.value = seatCount;
+            // Add visual indicator
+            paxInput.style.backgroundColor = '#e8f5e9';
+            setTimeout(() => {
+                paxInput.style.backgroundColor = '';
+            }, 500);
+        }
+        
+        return seatCount;
+    }
+
+    /**
+     * Validate that PAX matches seat count
+     * Returns true if valid, false if mismatch
+     */
+    function validatePaxVsSeats(pax, seatNo, showAlert = true) {
+        const seatCount = countSeats(seatNo);
+        
+        // If no seats entered, it's valid (optional field)
+        if (seatCount === 0) return true;
+        
+        if (pax !== seatCount) {
+            if (showAlert) {
+                alert(`⚠️ PAX Count Mismatch!\n\nYou have ${pax} passenger(s) but ${seatCount} seat(s) entered.\n\nPlease adjust either:\n- PAX count to match seats (${seatCount}), or\n- Seat numbers to match PAX count (${pax})`);
+            }
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Get validation error message
+     */
+    function getPaxSeatValidationMessage(pax, seatNo) {
+        const seatCount = countSeats(seatNo);
+        if (seatCount === 0) return null;
+        if (pax !== seatCount) {
+            return `PAX (${pax}) does not match number of seats (${seatCount})`;
+        }
+        return null;
+    }
+
+    // ========== DATE FUNCTIONS - Firebase uses YYYY-MM-DD format ==========
+    // ========== GET ALL DATABASES ==========
+    // ========== GET SPECIFIC DATABASE BY SELECTION ==========
+    function getSelectedDatabase() {
+        const dbSelection = document.getElementById('searchDatabase').value;
+        
+        switch(dbSelection) {
+            case 'BA':
+                return { name: 'BA Database', ref: window.baDb };
+            case 'EK':
+                return { name: 'EK Database', ref: window.ekDb };
+            case 'QR':
+                return { name: 'QR Database', ref: window.qrDb };
+            case 'SQ':
+                return { name: 'SQ Database', ref: window.sqDb };
+            case 'DEOSWKNO':
+                return { name: 'DE/OS/WK/NO Database', ref: window.deoswknoDb };
+            case 'MUVSSUKC':
+                return { name: 'MU/VS/SU/KC Database', ref: window.muvssukcDb };
+            case 'EYFZTKMH':
+                return { name: 'EY/FZ/TK/MH Database', ref: window.eyfztkmhDb };
+            case 'DEFAULT':
+                return { name: 'Default Database', ref: window.defaultCardDb };
+            default:
+                return null;
+        }
+    }
+
+    function getAllDatabasesList() {
+        // This function is kept for compatibility but not used for searching
+        const databases = [];
+        if (window.baDb) databases.push({ name: 'BA Database', ref: window.baDb });
+        if (window.ekDb) databases.push({ name: 'EK Database', ref: window.ekDb });
+        if (window.qrDb) databases.push({ name: 'QR Database', ref: window.qrDb });
+        if (window.sqDb) databases.push({ name: 'SQ Database', ref: window.sqDb });
+        if (window.deoswknoDb) databases.push({ name: 'DE/OS/WK/NO Database', ref: window.deoswknoDb });
+        if (window.muvssukcDb) databases.push({ name: 'MU/VS/SU/KC Database', ref: window.muvssukcDb });
+        if (window.eyfztkmhDb) databases.push({ name: 'EY/FZ/TK/MH Database', ref: window.eyfztkmhDb });
+        if (window.defaultCardDb) databases.push({ name: 'Default Database', ref: window.defaultCardDb });
+        return databases;
+    }
+
+    // ========== LOAD FLIGHTS BY DATE ==========
+    // ========== LOAD FLIGHTS BY DATE FROM SELECTED DATABASE ==========
+        async function loadFlightsByDate() {
+            const date = document.getElementById('searchDate').value;
+            const dbSelection = document.getElementById('searchDatabase').value;
+            
+            if (!date) {
+                console.log('No date selected');
+                return;
+            }
+            
+            if (!dbSelection) {
+                const flightSelect = document.getElementById('searchFlightNo');
+                flightSelect.innerHTML = '<option value="">-- Select database first --</option>';
+                flightSelect.disabled = true;
+                showMessage('Please select a database first', 'error');
+                return;
+            }
+            
+            const flightSelect = document.getElementById('searchFlightNo');
+            const loadingMsg = document.getElementById('flightLoadingMsg');
+            
+            flightSelect.innerHTML = '<option value="">Loading flights...</option>';
+            flightSelect.disabled = true;
+            loadingMsg.style.display = 'block';
+            
+            console.log('Loading flights for date:', date, 'database:', dbSelection);
+            
+            try {
+                const flights = await getFlightsForDateFromDatabase(date, dbSelection);
+                
+                flightSelect.innerHTML = '<option value="">-- Select a flight --</option>';
+                
+                if (flights.length === 0) {
+                    flightSelect.innerHTML += '<option value="" disabled>No flights found for this date in selected database</option>';
+                    console.log('No flights found for date:', date, 'in database:', dbSelection);
+                } else {
+                    flights.forEach(flight => {
+                        const option = document.createElement('option');
+                        option.value = flight.flightNo;
+                        option.textContent = `${flight.flightNo} - ${flight.paxCount} pax (${flight.shift})`;
+                        flightSelect.appendChild(option);
+                    });
+                }
+                
+                flightSelect.disabled = false;
+                
+            } catch (error) {
+                console.error('Error loading flights:', error);
+                flightSelect.innerHTML = '<option value="">Error loading flights</option>';
+            } finally {
+                loadingMsg.style.display = 'none';
+            }
+        }
+
+        async function getFlightsForDateFromDatabase(date, dbSelection) {
+            const dbInfo = getSelectedDatabase();
+            
+            if (!dbInfo || !dbInfo.ref) {
+                console.log('Database not available:', dbSelection);
+                return [];
+            }
+            
+            const flightsMap = new Map();
+            
+            try {
+                console.log(`Querying ${dbInfo.name} for date:`, date);
+                const snapshot = await dbInfo.ref.collection('KoveliPass')
+                    .where('date', '==', date)
+                    .get();
+                
+                console.log(`Found ${snapshot.size} documents in ${dbInfo.name}`);
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const flightNo = data.flightNo;
+                    const shift = data.shift || 'UNKNOWN';
+                    const key = `${flightNo}_${shift}`;
+                    
+                    if (flightNo) {
+                        if (!flightsMap.has(key)) {
+                            flightsMap.set(key, {
+                                flightNo: flightNo,
+                                shift: shift,
+                                database: dbInfo.name,
+                                paxCount: 0
+                            });
+                        }
+                        
+                        const flight = flightsMap.get(key);
+                        if (!data.delayCharge && parseInt(data.pax) > 0) {
+                            flight.paxCount += parseInt(data.pax) || 0;
+                        }
+                    }
+                });
+                
+            } catch(e) {
+                console.warn(`Error scanning ${dbInfo.name}:`, e);
+                return [];
+            }
+            
+            const flights = Array.from(flightsMap.values()).sort((a,b) => a.flightNo.localeCompare(b.flightNo));
+            console.log(`Total flights found in ${dbInfo.name}: ${flights.length}`);
+            return flights;
+        }
+
+    async function updateModalFlightList() {
+        const date = document.getElementById('modalDate').value;
+        if (!date) return;
+        
+        const flightSelect = document.getElementById('modalFlightNo');
+        flightSelect.innerHTML = '<option value="">Loading flights...</option>';
+        
+        try {
+            const flights = await getFlightsForDate(date);
+            
+            flightSelect.innerHTML = '<option value="">-- Select a flight --</option>';
+            
+            if (flights.length === 0) {
+                flightSelect.innerHTML += '<option value="" disabled>No flights found for this date</option>';
+            } else {
+                flights.forEach(flight => {
+                    const option = document.createElement('option');
+                    option.value = flight.flightNo;
+                    option.textContent = `${flight.flightNo} [${flight.database}] - ${flight.paxCount} pax (${flight.shift})`;
+                    flightSelect.appendChild(option);
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error loading modal flights:', error);
+            flightSelect.innerHTML = '<option value="">Error loading flights</option>';
+        }
+    }
+
+    async function getFlightsForDate(date) {
+        // Check cache
+        if (flightsByDateCache[date]) {
+            console.log('Returning cached flights for:', date);
+            return flightsByDateCache[date];
+        }
+        
+        console.log('Fetching flights for date:', date);
+        
+        const flightsMap = new Map();
+        const databases = getAllDatabasesList();
+        
+        for (const dbInfo of databases) {
+            try {
+                console.log(`Querying ${dbInfo.name} for date:`, date);
+                const snapshot = await dbInfo.ref.collection('KoveliPass')
+                    .where('date', '==', date)
+                    .get();
+                
+                console.log(`Found ${snapshot.size} documents in ${dbInfo.name}`);
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const flightNo = data.flightNo;
+                    const shift = data.shift || 'UNKNOWN';
+                    const key = `${flightNo}_${shift}`;
+                    
+                    if (flightNo) {
+                        if (!flightsMap.has(key)) {
+                            flightsMap.set(key, {
+                                flightNo: flightNo,
+                                shift: shift,
+                                database: dbInfo.name,
+                                paxCount: 0
+                            });
+                        }
+                        
+                        const flight = flightsMap.get(key);
+                        if (!data.delayCharge && parseInt(data.pax) > 0) {
+                            flight.paxCount += parseInt(data.pax) || 0;
+                        }
+                    }
+                });
+            } catch(e) {
+                console.warn(`Error scanning ${dbInfo.name}:`, e);
+            }
+        }
+        
+        const flights = Array.from(flightsMap.values()).sort((a,b) => a.flightNo.localeCompare(b.flightNo));
+        flightsByDateCache[date] = flights;
+        
+        console.log(`Total flights found: ${flights.length}`);
+        return flights;
+    }
+
+    // ========== SEARCH PASSENGERS ==========
+    // ========== SEARCH PASSENGERS FROM SELECTED DATABASE ==========
+    async function searchPassengers() {
+        const date = document.getElementById('searchDate').value;
+        const flightNo = document.getElementById('searchFlightNo').value;
+        const shift = document.getElementById('searchShift').value;
+        const dbSelection = document.getElementById('searchDatabase').value;
+        
+        if (!date) {
+            showMessage('Please select a date', 'error');
+            return;
+        }
+        
+        if (!dbSelection) {
+            showMessage('Please select a database', 'error');
+            return;
+        }
+        
+        if (!flightNo) {
+            showMessage('Please select a flight number', 'error');
+            return;
+        }
+        
+        const tbody = document.getElementById('resultsBody');
+        tbody.innerHTML = '<tr><td colspan="13" class="loading"><span class="spinner"></span> Searching...</td></tr>';
+        
+        currentResults = [];
+        
+        try {
+            const dbInfo = getSelectedDatabase();
+            
+            if (!dbInfo || !dbInfo.ref) {
+                tbody.innerHTML = '<tr><td colspan="13" class="no-data">Database not available</td></tr>';
+                return;
+            }
+            
+            const db = dbInfo.ref;
+            const dbName = dbInfo.name;
+            
+            console.log(`Searching - Date: ${date}, Flight: ${flightNo}, DB: ${dbName}`);
+            
+            let query = db.collection('KoveliPass')
+                .where('date', '==', date)
+                .where('flightNo', '==', flightNo);
+            
+            if (shift) query = query.where('shift', '==', shift);
+            
+            const snapshot = await query.get();
+            console.log(`Found ${snapshot.size} passengers in ${dbName}`);
+            
+            snapshot.forEach(doc => {
+                currentResults.push({ 
+                    docId: doc.id, 
+                    database: db, 
+                    databaseName: dbName,
+                    ...doc.data() 
+                });
+            });
+            
+            displayResults();
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            tbody.innerHTML = '<tr><td colspan="13" class="no-data">Error searching: ' + error.message + '</td></tr>';
+        }
+    }
+
+    function displayResults() {
+        const tbody = document.getElementById('resultsBody');
+        
+        if (currentResults.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="13" class="no-data">No passengers found</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        currentResults.forEach(p => {
+            const isEditing = (editingDocId === p.docId);
+            const pnrValue = p.pnr || '';
+            const dbName = p.databaseName || window.getFirestoreNameForFlight(p.flightNo);
+            
+            if (isEditing) {
+                html += `<tr>
+                    <td><input type="date" id="editDate" value="${formatDateForInput(p.date || '')}" class="edit-input-field"></td>
+                    <td><input type="text" id="editFlightNo" value="${escapeHtml(p.flightNo || '')}" class="edit-input-field"></td>
+                    <td>
+                        <select id="editShift" class="edit-input-field">
+                            <option value="MORNING" ${p.shift === 'MORNING' ? 'selected' : ''}>MORNING</option>
+                            <option value="EVENING" ${p.shift === 'EVENING' ? 'selected' : ''}>EVENING</option>
+                        </select>
+                    </td>
+                    <td><span class="db-badge">${escapeHtml(dbName)}</span></td>
+                    <td><input type="text" id="editPName" value="${escapeHtml(p.pName || '')}" class="edit-input-field"></td>
+                    <td>
+                        <input type="text" id="editSeatNo" value="${escapeHtml(p.seatNo || '')}" class="edit-input-field" 
+                            onchange="autoCalculatePaxFromSeats('editSeatNo', 'editPax')"
+                            placeholder="e.g., 12A,14B,15C">
+                    </td>
+                    <td>
+                        <input type="number" id="editPax" value="${p.pax || 1}" class="edit-input-field" style="width:70px;"
+                            onchange="validatePaxVsSeats(parseInt(this.value), document.getElementById('editSeatNo').value, true)">
+                    </td>
+                    <td><input type="text" id="editSerialNo" value="${escapeHtml(p.serialNo || '')}" class="edit-input-field"></td>
+                    <td><input type="time" id="editEntryTime" value="${p.entryTime ? p.entryTime.substring(0,5) : ''}" class="edit-input-field"></td>
+                    <td><input type="text" id="editFQTV" value="${escapeHtml(p.FQTV || '')}" class="edit-input-field"></td>
+                    <td><input type="text" id="editPNR" value="${escapeHtml(pnrValue)}" class="edit-input-field" maxlength="6"></td>
+                    <td><input type="text" id="editRemarks" value="${escapeHtml(p.remarks || '')}" class="edit-input-field"></td>
+                    <td class="action-buttons">
+                        <button class="save-btn" onclick="saveEdit('${p.docId}')">Save</button>
+                        <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
+                    </td>
+                </tr>`;
+            } else {
+                html += `<tr>
+                    <td>${escapeHtml(p.date || '-')}</td>
+                    <td>${escapeHtml(p.flightNo || '-')}</td>
+                    <td>${escapeHtml(p.shift || '-')}</td>
+                    <td><span class="db-badge">${escapeHtml(dbName)}</span></td>
+                    <td>${escapeHtml(p.pName || '-')}</td>
+                    <td>${escapeHtml(p.seatNo || '-')}</td>
+                    <td>${p.pax || 0}</td>
+                    <td>${escapeHtml(p.serialNo || '-')}</td>
+                    <td>${p.entryTime || '-'}</td>
+                    <td>${escapeHtml(p.FQTV || '-')}</td>
+                    <td>${pnrValue ? `<span style="background:#4a6fa5; color:white; padding:2px 6px; border-radius:10px; font-size:10px;">${pnrValue}</span>` : '-'}</td>
+                    <td>${escapeHtml(p.remarks || '-')}</td>
+                    <td class="action-buttons">
+                        <button class="edit-btn" onclick="startEdit('${p.docId}')">✏️ Edit</button>
+                        <button class="delete-btn" onclick="deletePassenger('${p.docId}', '${escapeHtml(p.pName)}')">🗑️ Del</button>
+                    </td>
+                </tr>`;
+            }
+        });
+        
+        tbody.innerHTML = html;
+    }
+
+    // ========== EDIT FUNCTIONS ==========
+    function startEdit(docId) {
+        editingDocId = docId;
+        displayResults();
+    }
+
+    function cancelEdit() {
+        editingDocId = null;
+        displayResults();
+    }
+
+    async function saveEdit(docId) {
+        const passenger = currentResults.find(p => p.docId === docId);
+        if (!passenger) return;
+        
+        const seatNo = document.getElementById('editSeatNo').value.trim();
+        let pax = parseInt(document.getElementById('editPax').value) || 1;
+        
+        // VALIDATION: Check if PAX matches seat count
+        const seatCount = countSeats(seatNo);
+        if (seatCount > 0 && pax !== seatCount) {
+            const userChoice = confirm(`⚠️ PAX Count Mismatch!\n\nYou have ${pax} passenger(s) but ${seatCount} seat(s) entered.\n\nDo you want to:\n• Click OK to update PAX to ${seatCount}\n• Click Cancel to go back and fix seat numbers`);
+            
+            if (userChoice) {
+                // Auto-correct PAX to match seats
+                pax = seatCount;
+                document.getElementById('editPax').value = seatCount;
+                showMessage(`✅ PAX automatically updated to ${seatCount} to match seats`, 'success');
+            } else {
+                // User wants to fix seats - focus on seat field
+                document.getElementById('editSeatNo').focus();
+                showMessage('Please update seat numbers to match PAX count', 'error');
+                return;
+            }
+        }
+        
+        const updateData = {
+            date: document.getElementById('editDate').value,
+            flightNo: document.getElementById('editFlightNo').value.trim().toUpperCase(),
+            shift: document.getElementById('editShift').value,
+            pName: document.getElementById('editPName').value.trim(),
+            seatNo: seatNo,
+            pax: pax,
+            serialNo: document.getElementById('editSerialNo').value.trim(),
+            entryTime: document.getElementById('editEntryTime').value,
+            FQTV: document.getElementById('editFQTV').value.trim(),
+            remarks: document.getElementById('editRemarks').value.trim(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            editedBy: currentUser.name || currentUser.username,
+            editedVia: 'SUPERVISOR_ADMIN'
+        };
+        
+        const pnr = document.getElementById('editPNR').value.trim().toUpperCase();
+        if (pnr) updateData.pnr = pnr;
+        
+        try {
+            await passenger.database.collection('KoveliPass').doc(docId).update(updateData);
+            showMessage('✅ Passenger updated successfully!', 'success');
+            editingDocId = null;
+            await searchPassengers();
+        } catch (error) {
+            showMessage('Error updating: ' + error.message, 'error');
+        }
+    }
+
+    // ========== DELETE PASSENGER ==========
+    async function deletePassenger(docId, name) {
+        if (!confirm(`⚠️ Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
+        
+        const passenger = currentResults.find(p => p.docId === docId);
+        if (!passenger) return;
+        
+        try {
+            await passenger.database.collection('KoveliPass').doc(docId).delete();
+            showMessage(`✅ "${name}" deleted successfully!`, 'success');
+            await searchPassengers();
+        } catch (error) {
+            showMessage('Error deleting: ' + error.message, 'error');
+        }
+    }
+
+    // ========== ADD PASSENGER MODAL ==========
+    function openAddModal() {
+        editingDocId = null;
+        document.getElementById('modalTitle').innerText = '➕ ADD PASSENGER';
+        document.getElementById('modalDocId').value = '';
+        document.getElementById('modalDate').value = document.getElementById('searchDate').value || new Date().toISOString().split('T')[0];
+        document.getElementById('modalFlightNo').value = '';
+        document.getElementById('modalShift').value = document.getElementById('searchShift').value || 'MORNING';
+        document.getElementById('modalPName').value = '';
+        document.getElementById('modalSeatNo').value = '';
+        document.getElementById('modalPax').value = '1';
+        document.getElementById('modalSerialNo').value = '';
+        document.getElementById('modalEntryTime').value = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+        document.getElementById('modalFQTV').value = '';
+        document.getElementById('modalPNR').value = '';
+        document.getElementById('modalRemarks').value = '';
+        document.getElementById('modalMessage').style.display = 'none';
+        document.getElementById('passengerModal').style.display = 'block';
+        
+        // Add seat count listener
+        const seatInput = document.getElementById('modalSeatNo');
+        seatInput.onchange = function() { autoCalculatePaxFromSeats('modalSeatNo', 'modalPax'); };
+        
+        updateModalFlightList();
+    }
+
+    function closeModal() {
+        document.getElementById('passengerModal').style.display = 'none';
+    }
+
+    async function savePassenger() {
+        const date = document.getElementById('modalDate').value;
+        const flightNo = document.getElementById('modalFlightNo').value.trim().toUpperCase();
+        const shift = document.getElementById('modalShift').value;
+        const pName = document.getElementById('modalPName').value.trim();
+        const seatNo = document.getElementById('modalSeatNo').value.trim().toUpperCase();
+        let pax = parseInt(document.getElementById('modalPax').value) || 1;
+        const serialNo = document.getElementById('modalSerialNo').value.trim();
+        let entryTime = document.getElementById('modalEntryTime').value;
+        const fqtv = document.getElementById('modalFQTV').value.trim();
+        const pnr = document.getElementById('modalPNR').value.trim().toUpperCase();
+        const remarks = document.getElementById('modalRemarks').value.trim();
+        
+        // VALIDATION: Check if PAX matches seat count
+        const seatCount = countSeats(seatNo);
+        if (seatCount > 0 && pax !== seatCount) {
+            const userChoice = confirm(`⚠️ PAX Count Mismatch!\n\nYou have ${pax} passenger(s) but ${seatCount} seat(s) entered.\n\nDo you want to:\n• Click OK to update PAX to ${seatCount}\n• Click Cancel to go back and fix seat numbers`);
+            
+            if (userChoice) {
+                // Auto-correct PAX to match seats
+                pax = seatCount;
+                document.getElementById('modalPax').value = seatCount;
+                showModalMessage(`✅ PAX automatically updated to ${seatCount} to match seats`, 'success');
+            } else {
+                // User wants to fix seats - focus on seat field
+                document.getElementById('modalSeatNo').focus();
+                showModalMessage('Please update seat numbers to match PAX count', 'error');
+                return;
+            }
+        }
+        
+        if (!date) {
+            showModalMessage('Please select a date', 'error');
+            return;
+        }
+        if (!flightNo) {
+            showModalMessage('Please select a flight number', 'error');
+            return;
+        }
+        if (!pName) {
+            showModalMessage('Please enter passenger name', 'error');
+            return;
+        }
+        if (!entryTime) {
+            entryTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+        
+        const db = window.getFirestoreForFlight(flightNo);
+        
+        if (!db) {
+            showModalMessage('Database not available', 'error');
+            return;
+        }
+        
+        try {
+            const passengerData = {
+                pName: pName,
+                seatNo: seatNo || '',
+                pax: pax,
+                FQTV: fqtv,
+                entryTime: entryTime,
+                remarks: remarks,
+                serialNo: serialNo,
+                date: date,
+                flightNo: flightNo,
+                shift: shift,
+                airline: flightNo.replace(/[0-9]/g, '').trim() || '',
+                hiddenCode: `ADMIN_${Date.now()}`,
+                isGuest: false,
+                delayCharge: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                addedBy: currentUser.name || currentUser.username,
+                addedVia: 'SUPERVISOR_ADMIN'
+            };
+            
+            if (pnr && pnr.length >= 4) {
+                passengerData.pnr = pnr;
+            }
+            
+            await db.collection('KoveliPass').add(passengerData);
+            showModalMessage('✅ Passenger added successfully!', 'success');
+            
+            setTimeout(() => {
+                closeModal();
+                loadFlightsByDate();
+                if (document.getElementById('searchFlightNo').value === flightNo) {
+                    searchPassengers();
+                }
+            }, 1500);
+            
+        } catch (error) {
+            showModalMessage('Error adding passenger: ' + error.message, 'error');
+        }
+    }
+
+    // ========== HELPER FUNCTIONS ==========
+    function resetSearch() {
+        document.getElementById('searchFlightNo').value = '';
+        document.getElementById('searchShift').value = '';
+        document.getElementById('searchDatabase').value = '';
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('searchDate').value = today;
+        document.getElementById('resultsBody').innerHTML = '<tr><td colspan="13" class="no-data">🔍 Select date, database, and flight to search passengers</td></tr>';
+        currentResults = [];
+        // Don't auto-load flights - wait for user to select database and date
+    }
+
+    function showMessage(msg, type) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message message-${type}`;
+        msgDiv.textContent = msg;
+        if (type === 'success') {
+            msgDiv.style.background = '#d4edda';
+            msgDiv.style.color = '#155724';
+        }
+        if (type === 'error') {
+            msgDiv.style.background = '#f8d7da';
+            msgDiv.style.color = '#721c24';
+        }
+        
+        const container = document.querySelector('.container');
+        container.insertBefore(msgDiv, container.firstChild);
+        
+        setTimeout(() => msgDiv.remove(), 3000);
+    }
+
+    function showModalMessage(msg, type) {
+        const msgDiv = document.getElementById('modalMessage');
+        msgDiv.textContent = msg;
+        msgDiv.className = `message message-${type}`;
+        msgDiv.style.display = 'block';
+        setTimeout(() => {
+            msgDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ========== INITIALIZATION ==========
+    document.addEventListener('DOMContentLoaded', async function() {
+        const access = loadUserData();
+        if (access === false) return;
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('passengerModal');
+            if (event.target == modal) modal.style.display = 'none';
+        };
+    });
+
+    // Export functions to window
+    window.searchPassengers = searchPassengers;
+    window.resetSearch = resetSearch;
+    window.openAddModal = openAddModal;
+    window.closeModal = closeModal;
+    window.savePassenger = savePassenger;
+    window.startEdit = startEdit;
+    window.cancelEdit = cancelEdit;
+    window.saveEdit = saveEdit;
+    window.deletePassenger = deletePassenger;
+    window.loadFlightsByDate = loadFlightsByDate;
+</script>
+</body>
+</html>

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Admin Portal | User Registration with Hash Copy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9eff5 0%, #dce3ec 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+        }
+
+        .register-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .form-header {
+            background: #0f2b3d;
+            padding: 1.5rem 2rem;
+            color: white;
+        }
+
+        .form-header h1 {
+            font-size: 1.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .admin-badge {
+            background: #f9b43a;
+            color: #1e2a36;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 60px;
+            text-transform: uppercase;
+        }
+
+        .subhead {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            opacity: 0.85;
+            border-left: 3px solid #f9b43a;
+            padding-left: 12px;
+        }
+
+        .form-body {
+            padding: 2rem 2rem 1.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #1f3b4c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #d4dee8;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            background: #ffffff;
+            transition: 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
+        }
+
+        .hint {
+            font-size: 0.7rem;
+            color: #5f7f92;
+            margin-left: 8px;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .strength-bar {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            width: 0%;
+            height: 100%;
+            transition: width 0.2s ease;
+            border-radius: 6px;
+        }
+
+        .strength-text {
+            font-size: 0.7rem;
+            font-weight: 500;
+            min-width: 70px;
+        }
+
+        .role-selector {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 0.8rem 1rem;
+            border: 1px solid #e2edf2;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 2rem;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .radio-group label {
+            font-weight: 500;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        input[type="radio"] {
+            width: auto;
+            accent-color: #2c7da0;
+        }
+
+        .action-buttons {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            border: none;
+            font-weight: 600;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #eef2f5;
+            color: #1e4a62;
+        }
+
+        .btn-primary {
+            background: #1f6e8c;
+            color: white;
+            box-shadow: 0 6px 14px rgba(31, 110, 140, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: #0e5a74;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary:hover {
+            background: #e2e9ef;
+        }
+
+        .registered-users {
+            margin-top: 2rem;
+            border-top: 2px dashed #cbdde6;
+            padding-top: 1.5rem;
+        }
+
+        .users-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .users-header h3 {
+            font-size: 1.1rem;
+            color: #1f3b4c;
+        }
+
+        .user-badge-count {
+            background: #1f6e8c20;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .user-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 14px 16px;
+            border: 1px solid #e5edf3;
+            transition: 0.1s;
+        }
+
+        .user-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            align-items: baseline;
+            font-size: 0.85rem;
+            flex: 2;
+        }
+
+        .user-info strong {
+            color: #124052;
+            min-width: 100px;
+        }
+
+        .user-badge {
+            background: #eef2ff;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: monospace;
+        }
+
+        .hash-section {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: #f4f9fe;
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+        }
+
+        .hash-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.7rem;
+            word-break: break-all;
+            color: #145c74;
+            background: #eef2f5;
+            padding: 5px 12px;
+            border-radius: 50px;
+            flex: 1;
+        }
+
+        .copy-hash-btn {
+            background: #2c7da0;
+            border: none;
+            padding: 5px 16px;
+            border-radius: 30px;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: none;
+        }
+
+        .copy-hash-btn:hover {
+            background: #1f6e8c;
+            transform: scale(0.97);
+        }
+
+        .delete-user {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: #a0b8c8;
+            padding: 4px 12px;
+        }
+
+        .delete-user:hover {
+            color: #c7452c;
+            background: #fee2e1;
+            border-radius: 30px;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #7799ac;
+            padding: 1.5rem;
+            font-style: italic;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2f3a;
+            color: #f0f6fa;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 1200;
+            transition: 0.2s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 600px) {
+            .form-body {
+                padding: 1.5rem;
+            }
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .toast-msg {
+                white-space: normal;
+                text-align: center;
+                max-width: 90%;
+            }
+            .hash-value {
+                font-size: 0.65rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="register-container">
+    <div class="form-header">
+        <h1>
+            📝 User Registration
+            <span class="admin-badge">🔐 Admin Console</span>
+        </h1>
+        <div class="subhead">Create new system users · Secure SHA-256 hashing · Click any hash to copy</div>
+    </div>
+
+    <div class="form-body">
+        <div class="input-row">
+            <div class="input-group">
+                <label>👤 Username <i>(unique)</i></label>
+                <input type="text" id="regUsername" placeholder="e.g., Irufan, aisha_k" autocomplete="off">
+                <div class="hint">Login identifier</div>
+            </div>
+            <div class="input-group">
+                <label>📛 Full Name</label>
+                <input type="text" id="regFullName" placeholder="Abdulla Irufan" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>🔒 Password</label>
+            <input type="password" id="regPassword" placeholder="Create a strong password">
+            <div class="password-strength">
+                <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                <span class="strength-text" id="strengthLabel">Weak</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>✅ Confirm Password</label>
+            <input type="password" id="regConfirmPwd" placeholder="Re-enter password">
+        </div>
+
+        <div class="role-selector">
+            <label>⚙️ Access Level & Right</label>
+            <div class="radio-group">
+                <label><input type="radio" name="accessLevel" value="Admin" checked> Admin</label>
+                <label><input type="radio" name="accessLevel" value="Moderator"> Moderator</label>
+                <label><input type="radio" name="accessLevel" value="Viewer"> Viewer</label>
+            </div>
+            <div class="hint" style="margin-top: 8px;">Level & Right are synced with role</div>
+        </div>
+
+        <div class="input-group">
+            <label>🆔 RC Number <i>(unique)</i></label>
+            <input type="text" id="regRCNo" placeholder="e.g., 979, RC-101" value="">
+            <div class="hint">Unique reference code</div>
+        </div>
+
+        <div class="action-buttons">
+            <button type="button" id="clearBtn" class="btn-secondary">🗑️ Clear form</button>
+            <button type="button" id="registerBtn" class="btn-primary">✨ Register User</button>
+        </div>
+
+        <div class="registered-users">
+            <div class="users-header">
+                <h3>📋 Registered Users — Hashes ready to copy</h3>
+                <span class="user-badge-count" id="userCountDisplay">0 users</span>
+            </div>
+            <div id="usersListContainer" class="users-list">
+                <div class="empty-message">No registered users yet. Add the first one.</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="toastMsg" class="toast-msg" style="opacity:0; visibility:hidden;"></div>
+
+<script>
+    // ---------- SHA-256 Hashing (Web Crypto) ----------
+    async function sha256Hash(message) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+    }
+
+    // ---------- LocalStorage Management ----------
+    let registeredUsers = [];
+
+    function loadUsersFromStorage() {
+        const stored = localStorage.getItem('secure_registered_users');
+        if (stored) {
+            try {
+                registeredUsers = JSON.parse(stored);
+            } catch(e) { registeredUsers = []; }
+        } else {
+            registeredUsers = [];
+        }
+        renderUserList();
+    }
+
+    function persistUsers() {
+        localStorage.setItem('secure_registered_users', JSON.stringify(registeredUsers));
+        renderUserList();
+    }
+
+    // Toast helper
+    let toastTimeout = null;
+    function showToast(message, isError = false, duration = 2600) {
+        const toast = document.getElementById('toastMsg');
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? '#b33b2c' : '#1f6e8c';
+        toast.style.opacity = '1';
+        toast.style.visibility = 'visible';
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.visibility = 'hidden';
+        }, duration);
+    }
+
+    // Password strength meter
+    function evaluatePasswordStrength(pwd) {
+        if (!pwd) return { strength: 0, label: 'Weak', percent: 0 };
+        let score = 0;
+        if (pwd.length >= 6) score++;
+        if (pwd.length >= 10) score++;
+        if (/[A-Z]/.test(pwd)) score++;
+        if (/[0-9]/.test(pwd)) score++;
+        if (/[^A-Za-z0-9]/.test(pwd)) score++;
+        let strength = Math.min(4, Math.floor(score / 1.5));
+        if (pwd.length < 4) strength = 0;
+        const labelMap = ['Weak', 'Fair', 'Good', 'Strong'];
+        const label = labelMap[strength] || 'Strong';
+        const percent = (strength / 3) * 100;
+        return { strength, label, percent: Math.min(100, percent) };
+    }
+
+    function updateStrengthMeter(pwd) {
+        const { label, percent } = evaluatePasswordStrength(pwd);
+        const fillDiv = document.getElementById('strengthFill');
+        const labelSpan = document.getElementById('strengthLabel');
+        if (fillDiv) {
+            fillDiv.style.width = `${percent}%`;
+            if (percent < 35) fillDiv.style.backgroundColor = '#d9534f';
+            else if (percent < 70) fillDiv.style.backgroundColor = '#f0ad4e';
+            else fillDiv.style.backgroundColor = '#5cb85c';
+        }
+        if (labelSpan) labelSpan.innerText = label;
+    }
+
+    // Uniqueness checks
+    function isUsernameUnique(username, excludeIndex = -1) {
+        return !registeredUsers.some((u, idx) => idx !== excludeIndex && u.username.toLowerCase() === username.toLowerCase());
+    }
+    function isRCNoUnique(rc, excludeIndex = -1) {
+        return !registeredUsers.some((u, idx) => idx !== excludeIndex && u.RCNo === rc);
+    }
+
+    // Main registration function (creates user with SHA-256 hash)
+    async function registerUser() {
+        const username = document.getElementById('regUsername').value.trim();
+        const fullName = document.getElementById('regFullName').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPwd = document.getElementById('regConfirmPwd').value;
+        const selectedRole = document.querySelector('input[name="accessLevel"]:checked').value;
+        const rcNo = document.getElementById('regRCNo').value.trim();
+
+        if (!username) { showToast('❌ Username is required', true); return; }
+        if (!fullName) { showToast('❌ Full name is required', true); return; }
+        if (!password) { showToast('❌ Please enter a password', true); return; }
+        if (password !== confirmPwd) { showToast('❌ Passwords do not match', true); return; }
+        if (password.length < 4) { showToast('⚠️ Password must be at least 4 characters', true); return; }
+        if (!rcNo) { showToast('❌ RC Number is required', true); return; }
+        if (!isUsernameUnique(username)) { showToast(`⚠️ Username "${username}" already exists.`, true); return; }
+        if (!isRCNoUnique(rcNo)) { showToast(`⚠️ RC Number "${rcNo}" already registered.`, true); return; }
+
+        let passwordHash;
+        try {
+            passwordHash = await sha256Hash(password);
+        } catch (err) {
+            showToast('Hashing error. Please try again.', true);
+            return;
+        }
+
+        const newUser = {
+            username: username,
+            name: fullName,
+            passwordHash: passwordHash,
+            Level: selectedRole,
+            Right: selectedRole,
+            RCNo: rcNo
+        };
+
+        registeredUsers.push(newUser);
+        persistUsers();
+        showToast(`✅ User "${username}" registered! Hash ready to copy.`, false);
+        clearFormFields();
+
+        // Optional: auto-scroll to show the new user hash area
+        const usersContainer = document.getElementById('usersListContainer');
+        if (usersContainer) usersContainer.scrollTop = usersContainer.scrollHeight;
+    }
+
+    function clearFormFields() {
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regFullName').value = '';
+        document.getElementById('regPassword').value = '';
+        document.getElementById('regConfirmPwd').value = '';
+        document.getElementById('regRCNo').value = '';
+        document.querySelector('input[name="accessLevel"][value="Admin"]').checked = true;
+        updateStrengthMeter('');
+        const confirmField = document.getElementById('regConfirmPwd');
+        if (confirmField) confirmField.style.borderColor = '#d4dee8';
+        document.getElementById('regUsername').focus();
+    }
+
+    function deleteUser(index) {
+        const deletedUser = registeredUsers[index];
+        if (deletedUser && confirm(`Delete user "${deletedUser.username}"?`)) {
+            registeredUsers.splice(index, 1);
+            persistUsers();
+            showToast(`🗑️ User "${deletedUser.username}" removed.`, false);
+        }
+    }
+
+    // Copy hash to clipboard
+    async function copyHashToClipboard(hashValue, username) {
+        if (!hashValue) {
+            showToast('No hash available', true);
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(hashValue);
+            showToast(`📋 Copied hash for ${username} to clipboard!`, false, 1800);
+        } catch (err) {
+            // fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = hashValue;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast(`📋 Copied hash for ${username} (fallback)`, false, 1800);
+        }
+    }
+
+    // Render user list with expandable hash section and COPY button
+    function renderUserList() {
+        const container = document.getElementById('usersListContainer');
+        const countSpan = document.getElementById('userCountDisplay');
+        if (!container) return;
+
+        if (registeredUsers.length === 0) {
+            container.innerHTML = `<div class="empty-message">✨ No registered users yet. Use the form to add.</div>`;
+            if (countSpan) countSpan.innerText = `0 users`;
+            return;
+        }
+
+        let html = '';
+        registeredUsers.forEach((user, idx) => {
+            const fullHash = user.passwordHash || 'no-hash';
+            // Display truncated version inside card but full hash is available for copy
+            const truncatedHash = fullHash.length > 24 ? fullHash.slice(0, 20) + '…' + fullHash.slice(-6) : fullHash;
+            html += `
+                <div class="user-card" data-user-index="${idx}">
+                    <div class="user-row">
+                        <div class="user-info">
+                            <strong>${escapeHtml(user.username)}</strong>
+                            <span>${escapeHtml(user.name)}</span>
+                            <span class="user-badge">${user.Level} / ${user.Right}</span>
+                            <span>🆔 RC: ${escapeHtml(user.RCNo)}</span>
+                        </div>
+                        <button class="delete-user" data-index="${idx}" title="Delete user">✖️</button>
+                    </div>
+                    <div class="hash-section">
+                        <span style="font-weight:500;">🔑 SHA-256 Hash:</span>
+                        <span class="hash-value" id="hash-text-${idx}" title="Click copy button to copy full hash">${escapeHtml(truncatedHash)}</span>
+                        <button class="copy-hash-btn" data-hash="${escapeHtmlAttr(fullHash)}" data-username="${escapeHtmlAttr(user.username)}" data-idx="${idx}">📋 Copy Hash</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        if (countSpan) countSpan.innerText = `${registeredUsers.length} user${registeredUsers.length !== 1 ? 's' : ''}`;
+
+        // Attach delete event listeners
+        document.querySelectorAll('.delete-user').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = btn.getAttribute('data-index');
+                if (idx !== null) deleteUser(parseInt(idx));
+            });
+        });
+
+        // Attach copy events for each hash button
+        document.querySelectorAll('.copy-hash-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const hashVal = btn.getAttribute('data-hash');
+                const usernameAttr = btn.getAttribute('data-username');
+                if (hashVal) {
+                    copyHashToClipboard(hashVal, usernameAttr || 'user');
+                } else {
+                    showToast('Hash not found', true);
+                }
+            });
+        });
+    }
+
+    // helper for escaping within attributes
+    function escapeHtmlAttr(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // Password match indicator
+    function attachMatchCheck() {
+        const pwdField = document.getElementById('regPassword');
+        const confirmField = document.getElementById('regConfirmPwd');
+        if (pwdField && confirmField) {
+            const checkMatch = () => {
+                if (confirmField.value && pwdField.value !== confirmField.value) {
+                    confirmField.style.borderColor = '#e07c5c';
+                } else {
+                    confirmField.style.borderColor = '#d4dee8';
+                }
+            };
+            pwdField.addEventListener('input', checkMatch);
+            confirmField.addEventListener('input', checkMatch);
+        }
+    }
+
+    function init() {
+        loadUsersFromStorage();
+        const pwdInput = document.getElementById('regPassword');
+        if (pwdInput) pwdInput.addEventListener('input', (e) => updateStrengthMeter(e.target.value));
+        attachMatchCheck();
+
+        document.getElementById('registerBtn')?.addEventListener('click', registerUser);
+        document.getElementById('clearBtn')?.addEventListener('click', clearFormFields);
+        updateStrengthMeter('');
+    }
+
+    init();
+</script>
+</body>
+</html>

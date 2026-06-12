@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental  | Clinical Memo</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+        }
+
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logo h2 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-btn, .print-btn {
+            background: #1e4a6e;
+            border: none;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 11px;
+        }
+
+        .print-btn {
+            background: #146b3a;
+        }
+
+        .print-btn:hover {
+            background: #0f5c2e;
+        }
+
+        .memo-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* Memo Card - Printable Area */
+        .memo-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .memo-header {
+            background: linear-gradient(135deg, #0a2f44 0%, #0f5c7a 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .memo-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .memo-header p {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .memo-id {
+            background: rgba(255,255,255,0.2);
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .memo-body {
+            padding: 24px;
+        }
+
+        .info-section {
+            margin-bottom: 24px;
+            border-bottom: 1px solid #e2eaf0;
+            padding-bottom: 16px;
+        }
+
+        .info-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0a2f44;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid #0f5c7a;
+            padding-left: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            font-size: 12px;
+        }
+
+        .info-item label {
+            font-weight: 600;
+            color: #1f5e7e;
+            display: block;
+            margin-bottom: 3px;
+            font-size: 10px;
+        }
+
+        .info-item span {
+            color: #1e2f3e;
+        }
+
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .services-table th {
+            background: #f4f9fe;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: #1f5e7e;
+            border-bottom: 2px solid #e2eaf0;
+        }
+
+        .services-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eef3fa;
+            color: #1e2f3e;
+        }
+
+        .services-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .insurance-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .primary-insurance {
+            background: #0f5c7a;
+            color: white;
+        }
+
+        .secondary-insurance {
+            background: #146b3a;
+            color: white;
+        }
+
+        .billing-summary {
+            background: #f8fbfe;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .billing-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 12px;
+            border-bottom: 1px solid #e2eaf0;
+        }
+
+        .billing-row:last-child {
+            border-bottom: none;
+        }
+
+        .billing-row.total {
+            font-weight: 700;
+            font-size: 16px;
+            color: #0a2f44;
+            border-top: 2px solid #e2eaf0;
+            margin-top: 5px;
+            padding-top: 10px;
+        }
+
+        .billing-row.payable {
+            background: #e0f2fe;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #0f5c7a;
+        }
+
+        .signature-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #cbdde9;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .signature-line {
+            text-align: center;
+        }
+
+        .signature-line p {
+            font-size: 10px;
+            color: #8ba0b0;
+            margin-bottom: 30px;
+        }
+
+        .signature-line .line {
+            width: 150px;
+            border-top: 1px solid #1e2f3e;
+            margin-top: 5px;
+        }
+
+        .footer-note {
+            background: #fafdff;
+            padding: 12px;
+            text-align: center;
+            font-size: 9px;
+            color: #8ba0b0;
+            border-top: 1px solid #eef3fa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #8ba0b0;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #b91c1c;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .clinic-header, .action-buttons, .back-btn, .print-btn {
+                display: none;
+            }
+            .memo-container {
+                margin: 0;
+                padding: 0;
+            }
+            .memo-card {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .memo-header {
+                background: #0a2f44;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .services-table th {
+                background: #f4f9fe;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .billing-summary {
+                background: #f8fbfe;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo">
+        <h2>🏥 Hope Dental  · Clinical Memo</h2>
+    </div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+        <button class="print-btn" onclick="printMemo()">🖨️ Print Memo</button>
+        <button class="back-btn" onclick="window.location.href='memo-create.html'">📝 New Memo</button>
+    </div>
+</div>
+
+<div class="memo-container">
+    <div class="action-buttons" style="justify-content: flex-start;">
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Back to Dashboard</button>
+    </div>
+    
+    <div id="memoContent" class="loading">
+        Loading memo...
+    </div>
+</div>
+
+<script>
+    // Check if user is logged in
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) {
+        window.location.href = 'login.html';
+    }
+    
+    let memoData = null;
+    
+    // Get memo ID from URL or localStorage
+    function getMemoId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        if (id) return id;
+        
+        // Try to get from localStorage (for newly created memos)
+        const stored = localStorage.getItem('printMemoData');
+        if (stored) {
+            try {
+                const data = JSON.parse(stored);
+                if (data && data.firebaseId) return data.firebaseId;
+            } catch(e) {}
+        }
+        return null;
+    }
+    
+    // Load memo from Firebase
+    async function loadMemo() {
+        const memoId = getMemoId();
+        
+        if (!memoId) {
+            // Try to load from localStorage as fallback
+            const stored = localStorage.getItem('printMemoData');
+            if (stored) {
+                try {
+                    memoData = JSON.parse(stored);
+                    renderMemo();
+                    return;
+                } catch(e) {}
+            }
+            document.getElementById('memoContent').innerHTML = '<div class="error">❌ No memo found. Please create a memo first.</div>';
+            return;
+        }
+        
+        if (!window.db) {
+            setTimeout(loadMemo, 500);
+            return;
+        }
+        
+        try {
+            const docRef = await window.db.collection("memos").doc(memoId).get();
+            if (docRef.exists) {
+                memoData = { id: docRef.id, ...docRef.data() };
+                renderMemo();
+            } else {
+                document.getElementById('memoContent').innerHTML = '<div class="error">❌ Memo not found in database.</div>';
+            }
+        } catch (error) {
+            console.error("Error loading memo:", error);
+            document.getElementById('memoContent').innerHTML = '<div class="error">❌ Error loading memo: ' + error.message + '</div>';
+        }
+    }
+    
+    function renderMemo() {
+        if (!memoData) {
+            document.getElementById('memoContent').innerHTML = '<div class="error">No memo data available</div>';
+            return;
+        }
+        
+        const patient = memoData.patient || {};
+        const doctor = memoData.doctor || {};
+        const services = memoData.services || [];
+        const insurances = memoData.insurances || [];
+        const billing = memoData.billing || {};
+        const discount = memoData.discount || {};
+        
+        // Find primary and secondary insurance
+        const primaryInsurance = insurances.find(i => i.priority === 'primary') || insurances.find(i => i.type !== 'government');
+        const aasandhaInsurance = insurances.find(i => i.name === 'Aasandha' || i.type === 'government');
+        
+        const subtotal = billing.subtotal || services.reduce((sum, s) => sum + (s.qty * s.price), 0);
+        const afterDiscount = billing.afterDiscount || subtotal - (discount.amount || 0);
+        const primaryAmount = billing.primaryInsurancePayment || billing.insurancePayment || 0;
+        const aasandhaAmount = billing.aasandhaPayment || 0;
+        const patientPayable = billing.patientPayable || (afterDiscount - primaryAmount - aasandhaAmount);
+        const paidAmount = billing.paid || 0;
+        const balance = billing.balance || (patientPayable - paidAmount);
+        
+        const memoDate = memoData.createdAt ? new Date(memoData.createdAt).toLocaleString() : new Date().toLocaleString();
+        
+        const html = `
+            <div class="memo-card">
+                <div class="memo-header">
+                    <h1>🏥 Hope Dental CLINIC</h1>
+                    <p>Clinical Treatment Memo / Invoice</p>
+                    <div class="memo-id">Memo #: ${memoData.memoId || memoData.id || 'N/A'}</div>
+                    <div class="memo-id">Date: ${memoDate}</div>
+                </div>
+                
+                <div class="memo-body">
+                    <!-- Patient Information -->
+                    <div class="info-section">
+                        <div class="info-title">👤 PATIENT INFORMATION</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Full Name</label>
+                                <span>${escapeHtml(patient.name || 'N/A')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Patient ID</label>
+                                <span>${escapeHtml(patient.id || 'N/A')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Contact Number</label>
+                                <span>${escapeHtml(patient.phone || 'N/A')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Nationality</label>
+                                <span>${escapeHtml(patient.nationality || 'N/A')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>ID Number</label>
+                                <span>${escapeHtml(patient.idNumber || 'N/A')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Date of Birth</label>
+                                <span>${escapeHtml(patient.dob || 'N/A')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Doctor Information -->
+                    <div class="info-section">
+                        <div class="info-title">👨‍⚕️ DOCTOR INFORMATION</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Doctor Name</label>
+                                <span>${escapeHtml(doctor.name || 'N/A')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Speciality</label>
+                                <span>${escapeHtml(doctor.speciality || 'N/A')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Insurance Information -->
+                    <div class="info-section">
+                        <div class="info-title">🏥 INSURANCE DETAILS</div>
+                        <div class="info-grid">
+                            ${primaryInsurance ? `
+                            <div class="info-item">
+                                <label>Primary Insurance</label>
+                                <span>${escapeHtml(primaryInsurance.name)} <span class="insurance-badge primary-insurance">Primary</span></span>
+                                <span style="display:block; font-size:10px;">Coverage: ${primaryInsurance.coverage || (primaryInsurance.value + (primaryInsurance.type === 'percent' ? '%' : ' MVR'))}</span>
+                            </div>
+                            ` : '<div class="info-item"><label>Primary Insurance</label><span>None</span></div>'}
+                            ${aasandhaInsurance ? `
+                            <div class="info-item">
+                                <label>Secondary Insurance</label>
+                                <span>Aasandha <span class="insurance-badge secondary-insurance">Secondary</span></span>
+                            </div>
+                            ` : ''}
+                            ${patient.isCitizen ? '<div class="info-item"><label>Aasandha Status</label><span>✅ Eligible (Maldivian Citizen)</span></div>' : '<div class="info-item"><label>Aasandha Status</label><span>❌ Not Eligible (Foreigner)</span></div>'}
+                        </div>
+                    </div>
+                    
+                    <!-- Services Table -->
+                    <div class="info-section">
+                        <div class="info-title">💊 SERVICES PROVIDED</div>
+                        <table class="services-table">
+                            <thead>
+                                <tr><th>Service</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+                            </thead>
+                            <tbody>
+                                ${services.map(s => `
+                                    <tr>
+                                        <td>${escapeHtml(s.name)}</td>
+                                        <td>${s.qty}</td>
+                                        <td>MVR ${parseFloat(s.price).toFixed(2)}</td>
+                                        <td>MVR ${(s.qty * s.price).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Billing Summary -->
+                    <div class="billing-summary">
+                        <div class="billing-row">
+                            <span>Subtotal</span>
+                            <span>MVR ${subtotal.toFixed(2)}</span>
+                        </div>
+                        ${discount.percent > 0 ? `
+                        <div class="billing-row">
+                            <span>Discount (${discount.percent}% - ${discount.reason || 'N/A'})</span>
+                            <span>- MVR ${(discount.amount || 0).toFixed(2)}</span>
+                        </div>
+                        ` : ''}
+                        <div class="billing-row">
+                            <span>After Discount</span>
+                            <span>MVR ${afterDiscount.toFixed(2)}</span>
+                        </div>
+                        ${primaryAmount > 0 ? `
+                        <div class="billing-row">
+                            <span>Primary Insurance Coverage</span>
+                            <span>- MVR ${primaryAmount.toFixed(2)}</span>
+                        </div>
+                        ` : ''}
+                        ${aasandhaAmount > 0 ? `
+                        <div class="billing-row">
+                            <span>Aasandha Coverage (Secondary)</span>
+                            <span>- MVR ${aasandhaAmount.toFixed(2)}</span>
+                        </div>
+                        ` : ''}
+                        <div class="billing-row total payable">
+                            <span>💰 PATIENT PAYABLE</span>
+                            <span>MVR ${patientPayable.toFixed(2)}</span>
+                        </div>
+                        <div class="billing-row">
+                            <span>Amount Paid</span>
+                            <span>MVR ${paidAmount.toFixed(2)}</span>
+                        </div>
+                        <div class="billing-row total">
+                            <span>${balance >= 0 ? '⚖️ BALANCE DUE' : '💰 CHANGE DUE'}</span>
+                            <span style="color: ${balance >= 0 ? '#b91c1c' : '#146b3a'}">MVR ${Math.abs(balance).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Signature Section -->
+                    <div class="signature-section">
+                        <div class="signature-line">
+                            <p>Patient/Guardian Signature</p>
+                            <div class="line"></div>
+                        </div>
+                        <div class="signature-line">
+                            <p>Doctor Signature</p>
+                            <div class="line"></div>
+                        </div>
+                        <div class="signature-line">
+                            <p>Clinic Stamp</p>
+                            <div class="line"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer-note">
+                    <p>This is a computer-generated document. Valid with authorized signature.</p>
+                    <p>For any queries, please contact reception at +960 XXX-XXXX</p>
+                    <p>Thank you for choosing Hope Dental Clinic</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('memoContent').innerHTML = html;
+        
+        // Clear localStorage after displaying
+        if (localStorage.getItem('printMemoData')) {
+            // Keep it for refresh, but don't clear immediately
+        }
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+    }
+    
+    function printMemo() {
+        window.print();
+    }
+    
+    // Load memo on page load
+    function waitForFirebase() {
+        if (window.db) {
+            loadMemo();
+        } else {
+            setTimeout(waitForFirebase, 500);
+        }
+    }
+    waitForFirebase();
+</script>
+</body>
+</html>

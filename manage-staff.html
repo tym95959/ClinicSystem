@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Staff | Hope Dental  Clinic</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: #f0f4f8;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #0a2f44 0%, #0f5c7a 100%);
+            color: white;
+            padding: 24px 32px;
+            border-radius: 20px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .user-info-card {
+            background: rgba(255,255,255,0.15);
+            padding: 12px 24px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .logout-btn {
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #dc3545;
+            transform: translateY(-2px);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            border-bottom: 2px solid #e2edf2;
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #6c757d;
+            transition: all 0.2s;
+            border-radius: 12px;
+        }
+
+        .tab-btn:hover {
+            background: #e9ecef;
+        }
+
+        .tab-btn.active {
+            background: #0f5c7a;
+            color: white;
+        }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Styles */
+        .form-card {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 32px;
+        }
+
+        .form-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0a2f44;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e2f3e;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2edf2;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 92, 122, 0.3);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #bb2d3b;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        /* Users Table */
+        .users-table-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th {
+            background: #f8f9fa;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #1e2f3e;
+            border-bottom: 2px solid #e2edf2;
+        }
+
+        .users-table td {
+            padding: 16px;
+            border-bottom: 1px solid #eef3fa;
+            color: #495057;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #bb2d3b;
+        }
+
+        .edit-btn {
+            background: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 8px;
+            transition: all 0.2s;
+        }
+
+        .edit-btn:hover {
+            background: #e0a800;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-supervisor {
+            background: #dc3545;
+            color: white;
+        }
+
+        .role-doctor {
+            background: #28a745;
+            color: white;
+        }
+
+        .role-receptionist {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .role-nurse {
+            background: #6c757d;
+            color: white;
+        }
+
+        .message-box {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success-msg {
+            background: #e0f7ef;
+            color: #146b3a;
+            border-left: 4px solid #146b3a;
+        }
+
+        .error-msg {
+            background: #ffe9e9;
+            color: #b91c1c;
+            border-left: 4px solid #b91c1c;
+        }
+
+        .info-msg {
+            background: #e2f0fa;
+            color: #075f8c;
+            border-left: 4px solid #075f8c;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()">← Back to Dashboard</button>
+                <h1>
+                    <span>👥</span>
+                    Staff Management
+                </h1>
+            </div>
+            <div class="user-info-card">
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-role" id="userRole"></div>
+                <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('change-password')">🔒 Change Password</button>
+            <button class="tab-btn" id="createUserTab" onclick="switchTab('create-user')" style="display: none;">➕ Create New User</button>
+            <button class="tab-btn" id="manageUsersTab" onclick="switchTab('manage-users')" style="display: none;">📋 Manage All Users</button>
+        </div>
+
+        <!-- Tab 1: Change Password -->
+        <div id="change-password-tab" class="tab-panel active">
+            <div class="form-card">
+                <h2 class="form-title">Change Your Password</h2>
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" id="currentPassword" required placeholder="Enter your current password">
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" required placeholder="Enter new password (min 4 characters)">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" id="confirmPassword" required placeholder="Confirm new password">
+                    </div>
+                    <button type="submit" class="btn-primary">Update Password</button>
+                    <div id="passwordMessage" class="message-box"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 2: Create User (Supervisor only) -->
+        <div id="create-user-tab" class="tab-panel">
+            <div class="form-card">
+                <h2 class="form-title">Create New Staff Account</h2>
+                <form id="createUserForm">
+                    <div class="form-group">
+                        <label>Username (unique)</label>
+                        <input type="text" id="newUsername" required placeholder="Enter username">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="newFullName" required placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="newUserPassword" required placeholder="Enter password (min 4 chars)">
+                    </div>
+                    <div class="form-group">
+                        <label>Access Level</label>
+                        <select id="newUserLevel">
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Doctor">Doctor</option>
+                            <option value="Receptionist">Receptionist</option>
+                            <option value="Nurse">Nurse</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" id="newUserJob" required placeholder="Enter job title">
+                    </div>
+                    <button type="submit" class="btn-primary">Create User</button>
+                    <div id="createUserMessage" class="message-box"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 3: Manage Users (Supervisor only) -->
+        <div id="manage-users-tab" class="tab-panel">
+            <div class="users-table-container">
+                <div style="padding: 20px; border-bottom: 1px solid #eef3fa;">
+                    <h3 style="color: #0a2f44;">All Staff Members</h3>
+                    <p style="color: #6c757d; font-size: 13px; margin-top: 5px;">Manage staff accounts - edit or remove users</p>
+                </div>
+                <div id="usersListContainer">
+                    <div class="empty-state">Loading users...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        // Get logged in user
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        
+        if (!loggedInUser) {
+            window.location.href = 'login.html';
+        }
+        
+        const currentUser = JSON.parse(loggedInUser);
+        const isSupervisor = currentUser.level === 'Supervisor';
+        
+        // Display user info
+        document.getElementById('userName').textContent = currentUser.name || currentUser.username;
+        document.getElementById('userRole').textContent = `${currentUser.level} | ${currentUser.job}`;
+        
+        // Show Supervisor-only tabs
+        if (isSupervisor) {
+            document.getElementById('createUserTab').style.display = 'block';
+            document.getElementById('manageUsersTab').style.display = 'block';
+        }
+        
+        // SHA-256 hashing
+        async function sha256Hash(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // Show message function
+        function showMessage(elementId, msg, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = msg;
+            element.className = `message-box ${type}-msg`;
+            setTimeout(() => {
+                if (element.innerHTML === msg) {
+                    element.innerHTML = '';
+                    element.className = 'message-box';
+                }
+            }, 4000);
+        }
+        
+        // Switch tabs
+        window.switchTab = function(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Highlight active button
+            const buttons = document.querySelectorAll('.tab-btn');
+            if (tabName === 'change-password') buttons[0].classList.add('active');
+            else if (tabName === 'create-user') buttons[1].classList.add('active');
+            else if (tabName === 'manage-users') buttons[2].classList.add('active');
+            
+            // Load users if manage tab is opened
+            if (tabName === 'manage-users' && isSupervisor) {
+                loadAllUsers();
+            }
+        }
+        
+        // Load all users (Supervisor only)
+        async function loadAllUsers() {
+            if (typeof db === 'undefined') {
+                document.getElementById('usersListContainer').innerHTML = '<div class="empty-state">Error loading users</div>';
+                return;
+            }
+            
+            try {
+                const snapshot = await db.collection("users").orderBy("username").get();
+                
+                if (snapshot.empty) {
+                    document.getElementById('usersListContainer').innerHTML = '<div class="empty-state">No users found</div>';
+                    return;
+                }
+                
+                let html = '<table class="users-table"><thead><tr>';
+                html += '<th>Username</th><th>Full Name</th><th>Level</th><th>Job Title</th><th>Actions</th>';
+                html += '</tr></thead><tbody>';
+                
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const roleClass = `role-${user.Level.toLowerCase()}`;
+                    
+                    html += '<tr>';
+                    html += `<td><strong>${escapeHtml(user.username)}</strong></td>`;
+                    html += `<td>${escapeHtml(user.name)}</td>`;
+                    html += `<td><span class="role-badge ${roleClass}">${user.Level}</span></td>`;
+                    html += `<td>${escapeHtml(user.Job)}</td>`;
+                    html += '<td>';
+                    
+                    // Don't allow deleting self
+                    if (user.username !== currentUser.username) {
+                        html += `<button class="delete-btn" onclick="deleteUser('${user.username}')">🗑️ Delete</button>`;
+                    } else {
+                        html += '<span style="color:#6c757d; font-size:12px;">Current User</span>';
+                    }
+                    
+                    html += '</td></tr>';
+                });
+                
+                html += '</tbody></table>';
+                document.getElementById('usersListContainer').innerHTML = html;
+                
+            } catch (err) {
+                console.error(err);
+                document.getElementById('usersListContainer').innerHTML = '<div class="empty-state">Error loading users</div>';
+            }
+        }
+        
+        // Delete user (Supervisor only)
+        window.deleteUser = async function(username) {
+            if (!isSupervisor) {
+                alert('Only supervisors can delete users');
+                return;
+            }
+            
+            if (username === currentUser.username) {
+                alert('You cannot delete your own account');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+            
+            try {
+                await db.collection("users").doc(username).delete();
+                showMessage('createUserMessage', `User "${username}" deleted successfully!`, 'success');
+                loadAllUsers(); // Refresh the list
+            } catch (err) {
+                console.error(err);
+                showMessage('createUserMessage', `Error deleting user: ${err.message}`, 'error');
+            }
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Change Password
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showMessage('passwordMessage', 'Please fill all fields', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 4) {
+                showMessage('passwordMessage', 'New password must be at least 4 characters', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showMessage('passwordMessage', 'New passwords do not match', 'error');
+                return;
+            }
+            
+            try {
+                // Verify current password
+                const userDoc = await db.collection("users").doc(currentUser.username).get();
+                const userData = userDoc.data();
+                const currentHash = await sha256Hash(currentPassword);
+                
+                if (currentHash !== userData.passwordHash) {
+                    showMessage('passwordMessage', 'Current password is incorrect', 'error');
+                    return;
+                }
+                
+                // Update to new password
+                const newHash = await sha256Hash(newPassword);
+                await db.collection("users").doc(currentUser.username).update({
+                    passwordHash: newHash
+                });
+                
+                showMessage('passwordMessage', 'Password changed successfully!', 'success');
+                document.getElementById('changePasswordForm').reset();
+                
+            } catch (err) {
+                console.error(err);
+                showMessage('passwordMessage', `Error: ${err.message}`, 'error');
+            }
+        });
+        
+        // Create User (Supervisor only)
+        if (isSupervisor) {
+            document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const username = document.getElementById('newUsername').value.trim();
+                const fullName = document.getElementById('newFullName').value.trim();
+                const password = document.getElementById('newUserPassword').value;
+                const level = document.getElementById('newUserLevel').value;
+                const job = document.getElementById('newUserJob').value.trim();
+                
+                if (!username || !fullName || !password || !job) {
+                    showMessage('createUserMessage', 'Please fill all fields', 'error');
+                    return;
+                }
+                
+                if (password.length < 4) {
+                    showMessage('createUserMessage', 'Password must be at least 4 characters', 'error');
+                    return;
+                }
+                
+                try {
+                    // Check if user exists
+                    const existing = await db.collection("users").doc(username).get();
+                    if (existing.exists) {
+                        showMessage('createUserMessage', `Username "${username}" already exists`, 'error');
+                        return;
+                    }
+                    
+                    const passwordHash = await sha256Hash(password);
+                    await db.collection("users").doc(username).set({
+                        username: username,
+                        name: fullName,
+                        passwordHash: passwordHash,
+                        Level: level,
+                        Job: job,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    showMessage('createUserMessage', `User "${username}" created successfully!`, 'success');
+                    document.getElementById('createUserForm').reset();
+                    
+                    // Refresh user list if manage tab is active
+                    if (document.getElementById('manage-users-tab').classList.contains('active')) {
+                        loadAllUsers();
+                    }
+                    
+                } catch (err) {
+                    console.error(err);
+                    showMessage('createUserMessage', `Error: ${err.message}`, 'error');
+                }
+            });
+        }
+        
+        // Go back to dashboard
+        function goBack() {
+            window.location.href = 'clinicdash.html';
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('clinic_user_session');
+            window.location.href = 'login.html';
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            if (isSupervisor && document.getElementById('manage-users-tab').classList.contains('active')) {
+                loadAllUsers();
+            }
+        });
+    </script>
+</body>
+</html>

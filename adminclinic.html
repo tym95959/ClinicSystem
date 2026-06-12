@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Admin Panel - Firebase Users</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Firebase Config (must exist) -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #eef2f7; min-height: 100vh; }
+        .clinic-header { background: #0a2f44; color: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .logo h2 { font-size: 1.3rem; display: flex; align-items: center; gap: 8px; }
+        .back-btn, .sync-btn { background: #1e4a6e; border: none; color: white; padding: 8px 20px; border-radius: 40px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .back-btn:hover, .sync-btn:hover { background: #c63d2f; }
+        .sync-btn { background: #146b3a; }
+        .sync-btn:hover { background: #0e552e; }
+        .admin-container { max-width: 1400px; margin: 28px auto; padding: 0 24px; }
+        .card { background: white; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); padding: 28px 32px; margin-bottom: 28px; border: 1px solid #e2eaf0; }
+        .card-title { font-size: 1.3rem; font-weight: 600; color: #0a2f44; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; border-left: 5px solid #0f5c7a; padding-left: 18px; flex-wrap: wrap; justify-content: space-between; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .input-group label { font-weight: 600; font-size: 12px; color: #1f5e7e; }
+        .input-group input, .input-group select, .input-group textarea { padding: 10px 14px; border: 1.5px solid #e2eaf0; border-radius: 16px; font-size: 13px; transition: 0.2s; background: white; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e9edf2; vertical-align: middle; }
+        .data-table th { background: #f4f9fe; font-weight: 600; color: #1f4d6e; font-size: 12px; }
+        .btn-primary { background: #0f5c7a; color: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; }
+        .btn-primary:hover { background: #08455c; transform: translateY(-1px); }
+        .btn-sm { background: #e2eaf0; border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 11px; margin: 0 4px; transition: 0.2s; }
+        .btn-sm:hover { background: #cbdde9; }
+        .btn-danger { background: #ffe9e9; color: #b91c1c; border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 11px; }
+        .btn-danger:hover { background: #ffd4d4; }
+        .tab-buttons { display: flex; gap: 12px; margin-bottom: 24px; background: white; padding: 8px; border-radius: 20px; flex-wrap: wrap; }
+        .tab-btn { background: none; border: none; padding: 10px 28px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 40px; transition: 0.2s; color: #5f7f9a; }
+        .tab-btn.active { background: #0f5c7a; color: white; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 32px; padding: 28px 32px; max-width: 500px; width: 90%; box-shadow: 0 20px 35px rgba(0,0,0,0.2); }
+        .modal-content h3 { font-size: 1.3rem; color: #0a2f44; margin-bottom: 20px; }
+        .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+        .message { margin-top: 16px; padding: 12px; border-radius: 28px; text-align: center; font-size: 12px; }
+        .success { background: #e0f7ef; color: #146b3a; }
+        .error { background: #ffe9e9; color: #b91c1c; }
+        .info { background: #e0f2fe; color: #075985; }
+        .sync-status { background: #e8f0fe; border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font-size: 13px; }
+        .badge-active { background: #e0f7ef; color: #146b3a; padding: 4px 12px; border-radius: 40px; display: inline-block; font-size: 11px; }
+        .password-strength { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
+        .strength-bar { flex: 1; height: 6px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+        .strength-fill { width: 0%; height: 100%; transition: width 0.2s ease; border-radius: 6px; }
+        .role-selector { background: #f8fafc; border-radius: 20px; padding: 0.8rem 1rem; border: 1px solid #e2edf2; margin-bottom: 16px; }
+        .radio-group { display: flex; gap: 2rem; margin-top: 10px; flex-wrap: wrap; }
+        .radio-group label { font-weight: 500; gap: 8px; cursor: pointer; font-size: 12px; }
+        .users-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 28px; align-items: start; }
+        @media (max-width: 900px) { .users-grid { grid-template-columns: 1fr; } }
+        .user-card { background: #ffffff; border-radius: 20px; padding: 14px 16px; border: 1px solid #e5edf3; transition: 0.1s; margin-bottom: 12px; }
+        .user-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+        .user-info { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: baseline; font-size: 0.85rem; flex: 2; }
+        .user-info strong { color: #124052; min-width: 100px; }
+        .user-badge { background: #eef2ff; border-radius: 30px; padding: 4px 12px; font-size: 0.7rem; font-weight: 700; }
+        .hash-section { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: #f4f9fe; padding: 8px 12px; border-radius: 30px; font-size: 0.75rem; }
+        .hash-value { font-family: monospace; font-size: 0.7rem; word-break: break-all; color: #145c74; background: #eef2f5; padding: 5px 12px; border-radius: 50px; flex: 1; }
+        .copy-hash-btn { background: #2c7da0; border: none; padding: 5px 16px; border-radius: 30px; color: white; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+        .copy-hash-btn:hover { background: #1f6e8c; }
+        .delete-user { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #a0b8c8; padding: 4px 12px; }
+        .delete-user:hover { color: #c7452c; background: #fee2e1; border-radius: 30px; }
+        .users-list { max-height: 550px; overflow-y: auto; padding-right: 6px; }
+        .empty-message { text-align: center; color: #7799ac; padding: 1.5rem; font-style: italic; }
+        .toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e2f3a; color: white; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 1200; transition: 0.2s; pointer-events: none; white-space: nowrap; }
+        @media (max-width:600px){ .toast-msg { white-space: normal; max-width: 90%; } }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo"><h2>⚙️ Hope Dental · Admin Panel</h2></div>
+    <div>
+        <button class="sync-btn" id="saveToFirebaseBtn">💾 Save All to Firebase</button>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+    </div>
+</div>
+
+<div class="admin-container">
+    <div class="sync-status">
+        <span>🔌 Firebase Status: <strong id="firebaseStatus">Connecting...</strong></span>
+        <span>👤 Logged in as: <strong id="adminUser">Loading...</strong></span>
+    </div>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="services">📋 Services</button>
+        <button class="tab-btn" data-tab="doctors">👨‍⚕️ Doctors</button>
+        <button class="tab-btn" data-tab="insurance">🏥 Insurance</button>
+        <button class="tab-btn" data-tab="discounts">🎟️ Discounts</button>
+        <button class="tab-btn" data-tab="users">👥 System Users</button>
+    </div>
+
+    <!-- Services Tab -->
+    <div id="servicesTab" class="card">
+        <div class="card-title">📋 Services & Aasandha Coverage <button class="btn-primary" id="addServiceBtn" style="padding:6px 18px;">+ Add Service</button></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Service Name</th><th>Price (MVR)</th><th>Aasandha</th><th>Cover Amount</th><th>Actions</th></tr></thead><tbody id="servicesList"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div>
+        <div id="servicesMessage" class="message" style="display:none;"></div>
+    </div>
+
+    <!-- Doctors Tab -->
+    <div id="doctorsTab" class="card" style="display:none;">
+        <div class="card-title">👨‍⚕️ Doctors Management <button class="btn-primary" id="addDoctorBtn" style="padding:6px 18px;">+ Add Doctor</button></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Doctor Name</th><th>Speciality</th><th>Base Commission</th><th>Actions</th></tr></thead><tbody id="doctorsList"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table></div>
+        <div id="doctorsMessage" class="message" style="display:none;"></div>
+    </div>
+
+    <!-- Insurance Tab -->
+    <div id="insuranceTab" class="card" style="display:none;">
+        <div class="card-title">🏥 Insurance Companies <button class="btn-primary" id="addInsuranceBtn" style="padding:6px 18px;">+ Add Insurance</button></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Company Name</th><th>Status</th><th>Actions</th></tr></thead><tbody id="insuranceList"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody></table></div>
+        <div id="insuranceMessage" class="message" style="display:none;"></div>
+    </div>
+
+    <!-- Discounts Tab -->
+    <div id="discountsTab" class="card" style="display:none;">
+        <div class="card-title">🎟️ Discount Types <button class="btn-primary" id="addDiscountBtn" style="padding:6px 18px;">+ Add Discount</button></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Discount Name</th><th>Percentage</th><th>Description</th><th>Actions</th></tr></thead><tbody id="discountsList"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table></div>
+        <div id="discountsMessage" class="message" style="display:none;"></div>
+    </div>
+
+    <!-- System Users Tab (Firebase) -->
+    <div id="usersTab" class="card" style="display:none;">
+        <div class="card-title">👥 System Users (Firebase) <span style="font-size:12px; font-weight:normal;">🔐 SHA-256 hashed passwords stored in Firestore</span></div>
+        <div class="users-grid">
+            <div style="background:#fafdff; border-radius:24px; padding:8px 4px;">
+                <div style="font-weight:600; margin-bottom:16px;">➕ Register New User</div>
+                <div class="input-group"><label>👤 Username *</label><input type="text" id="regUsername" placeholder="e.g., Ali"></div>
+                <div class="input-group"><label>📛 Full Name *</label><input type="text" id="regFullName" placeholder="Full name"></div>
+                <div class="input-group"><label>🔒 Password *</label><input type="password" id="regPassword"><div class="password-strength"><div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div><span class="strength-text" id="strengthLabel">Weak</span></div></div>
+                <div class="input-group"><label>✅ Confirm Password</label><input type="password" id="regConfirmPwd"></div>
+                <div class="role-selector"><label>⚙️ Access Level</label><div class="radio-group"><label><input type="radio" name="accessLevel" value="Supervisor" checked> Supervisor</label><label><input type="radio" name="accessLevel" value="Doctor"> Doctor</label><label><input type="radio" name="accessLevel" value="Receptionist"> Receptionist</label></div></div>
+                <div class="input-group"><label>🆔 RC Number (Unique) *</label><input type="text" id="regRCNo" placeholder="e.g., RC-1001"></div>
+                <div style="display:flex; gap:12px; margin-top:20px;"><button type="button" id="clearUserFormBtn" class="btn-sm">🗑️ Clear</button><button type="button" id="registerUserBtn" class="btn-primary" style="flex:1;">✨ Register User</button></div>
+                <div id="userMgmtMessage" class="message" style="display:none;"></div>
+            </div>
+            <div><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><span style="font-weight:600;">📋 Registered Users (from Firebase)</span><span id="userCountDisplay" style="background:#eef2ff; padding:4px 12px; border-radius:40px;">0 users</span></div><div id="usersListContainer" class="users-list"><div class="empty-message">Loading users from Firebase...</div></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals (CRUD for services, doctors, insurance, discounts) -->
+<div id="serviceModal" class="modal"><div class="modal-content"><h3 id="serviceModalTitle">Add Service</h3><div class="input-group"><label>Service Name *</label><input type="text" id="serviceName" placeholder="e.g., Consultation"></div><div class="input-group"><label>Price (MVR) *</label><input type="number" id="servicePrice" step="10" placeholder="550"></div><div class="input-group"><label><input type="checkbox" id="serviceAasandhaCovered"> Aasandha Covered</label></div><div class="input-group"><label>Aasandha Cover Amount (MVR)</label><input type="number" id="serviceAasandhaAmount" step="10" placeholder="200"></div><div class="modal-buttons"><button class="btn-primary" id="saveServiceBtn">Save</button><button class="btn-danger" id="cancelServiceBtn">Cancel</button></div></div></div>
+<div id="doctorModal" class="modal"><div class="modal-content"><h3 id="doctorModalTitle">Add Doctor</h3><div class="input-group"><label>Doctor Name *</label><input type="text" id="doctorName" placeholder="Dr. Abdulla Irufan"></div><div class="input-group"><label>Speciality *</label><input type="text" id="doctorSpeciality" placeholder="Cardiology"></div><div class="input-group"><label>Base Commission (%)</label><input type="number" id="doctorCommission" step="1" min="0" max="100" placeholder="15"></div><div class="modal-buttons"><button class="btn-primary" id="saveDoctorBtn">Save</button><button class="btn-danger" id="cancelDoctorBtn">Cancel</button></div></div></div>
+<div id="insuranceModal" class="modal"><div class="modal-content"><h3 id="insuranceModalTitle">Add Insurance</h3><div class="input-group"><label>Company Name *</label><input type="text" id="insuranceName" placeholder="Allied Insurance"></div><div class="modal-buttons"><button class="btn-primary" id="saveInsuranceBtn">Save</button><button class="btn-danger" id="cancelInsuranceBtn">Cancel</button></div></div></div>
+<div id="discountModal" class="modal"><div class="modal-content"><h3 id="discountModalTitle">Add Discount</h3><div class="input-group"><label>Discount Name *</label><input type="text" id="discountName" placeholder="Special Offer"></div><div class="input-group"><label>Percentage (%) *</label><input type="number" id="discountPercent" step="1" min="0" max="100" placeholder="10"></div><div class="input-group"><label>Description</label><input type="text" id="discountDesc" placeholder="Optional"></div><div class="modal-buttons"><button class="btn-primary" id="saveDiscountBtn">Save</button><button class="btn-danger" id="cancelDiscountBtn">Cancel</button></div></div></div>
+
+<div id="toastMsg" class="toast-msg" style="opacity:0; visibility:hidden;"></div>
+
+<script>
+    (function() {
+        // ----- Auth & Supervisor Check -----
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (!loggedInUser) { window.location.href = 'login.html'; return; }
+        let currentUser = null;
+        try {
+            currentUser = JSON.parse(loggedInUser);
+            if (currentUser.level !== 'Supervisor') {
+                alert('Access Denied. Only Supervisors can access Admin Panel.');
+                window.location.href = 'clinicdash.html';
+                return;
+            }
+            document.getElementById('adminUser').textContent = `${currentUser.name || currentUser.username} (${currentUser.level})`;
+        } catch(e) { window.location.href = 'login.html'; return; }
+
+        // ----- Data stores for services, doctors, insurance, discounts -----
+        let services = [], doctors = [], insuranceList = [], discountsList = [];
+        let currentEditId = null;
+
+        // Helper functions
+        function showMessage(elId, msg, type) {
+            const el = document.getElementById(elId);
+            if (el) { el.innerText = msg; el.className = `message ${type}`; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 3000); }
+        }
+        function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; currentEditId = null; }
+
+        // ----- Firebase Load for services, doctors, etc. -----
+        async function loadAllData() {
+            if (!window.db) { setTimeout(loadAllData, 500); return; }
+            try {
+                document.getElementById('firebaseStatus').innerHTML = 'Connected ✓';
+                const servicesSnap = await window.db.collection("services").get();
+                services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const doctorsSnap = await window.db.collection("doctors").get();
+                doctors = doctorsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const insuranceSnap = await window.db.collection("insurance").get();
+                insuranceList = insuranceSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const discountsSnap = await window.db.collection("discounts").get();
+                discountsList = discountsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAll();
+            } catch (error) { console.error(error); document.getElementById('firebaseStatus').innerHTML = 'Error'; }
+        }
+        async function saveAllToFirebase() {
+            try {
+                for (let s of services) await window.db.collection("services").doc(s.id).set(s);
+                for (let d of doctors) await window.db.collection("doctors").doc(d.id).set(d);
+                for (let i of insuranceList) await window.db.collection("insurance").doc(i.id).set(i);
+                for (let d of discountsList) await window.db.collection("discounts").doc(d.id).set(d);
+                showMessage('servicesMessage', '✅ All clinic data saved to Firebase!', 'success');
+            } catch (error) { showMessage('servicesMessage', '❌ Error: ' + error.message, 'error'); }
+        }
+
+        function renderServices() {
+            const tbody = document.getElementById('servicesList');
+            if (!tbody) return;
+            if (services.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No services</td></tr>'; return; }
+            tbody.innerHTML = services.map(s => `<tr><td><strong>${escapeHtml(s.name)}</strong></td><td>MVR ${s.price}</td><td>${s.aasandhaCovered ? '✅ Yes' : '❌ No'}</td><td>${s.aasandhaCovered ? `MVR ${s.aasandhaCoverAmount}` : '—'}</td><td><button class="btn-sm" onclick="window.editService('${s.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteService('${s.id}')">🗑️ Delete</button></td></tr>`).join('');
+        }
+        function renderDoctors() {
+            const tbody = document.getElementById('doctorsList');
+            if (!tbody) return;
+            if (doctors.length === 0) { tbody.innerHTML = '<tr><td colspan="4">No doctors</td></tr>'; return; }
+            tbody.innerHTML = doctors.map(d => `<tr><td><strong>${escapeHtml(d.name)}</strong></td><td>${escapeHtml(d.speciality)}</td><td>${d.baseCommission || 0}%</td><td><button class="btn-sm" onclick="window.editDoctor('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDoctor('${d.id}')">🗑️ Delete</button></td></tr>`).join('');
+        }
+        function renderInsurance() {
+            const tbody = document.getElementById('insuranceList');
+            if (!tbody) return;
+            if (insuranceList.length === 0) { tbody.innerHTML = '<tr><td colspan="3">No insurance</td></tr>'; return; }
+            tbody.innerHTML = insuranceList.map(i => `<tr><td><strong>${escapeHtml(i.name)}</strong></td><td><span class="badge-active">Active</span></td><td><button class="btn-sm" onclick="window.editInsurance('${i.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteInsurance('${i.id}')">🗑️ Delete</button></td></tr>`).join('');
+        }
+        function renderDiscounts() {
+            const tbody = document.getElementById('discountsList');
+            if (!tbody) return;
+            if (discountsList.length === 0) { tbody.innerHTML = '<tr><td colspan="4">No discounts</td></tr>'; return; }
+            tbody.innerHTML = discountsList.map(d => `<tr><td><strong>${escapeHtml(d.name)}</strong></td><td>${d.percent}%</td><td>${escapeHtml(d.description || '')}</td><td><button class="btn-sm" onclick="window.editDiscount('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDiscount('${d.id}')">🗑️ Delete</button></td></tr>`).join('');
+        }
+        function renderAll() { renderServices(); renderDoctors(); renderInsurance(); renderDiscounts(); }
+
+        // CRUD for services, doctors, insurance, discounts (similar to original, but using global arrays)
+        window.editService = (id) => { const s = services.find(x => x.id === id); if(s){ currentEditId=id; document.getElementById('serviceModalTitle').innerText='Edit Service'; document.getElementById('serviceName').value=s.name; document.getElementById('servicePrice').value=s.price; document.getElementById('serviceAasandhaCovered').checked=s.aasandhaCovered||false; document.getElementById('serviceAasandhaAmount').value=s.aasandhaCoverAmount||0; document.getElementById('serviceModal').style.display='flex'; } };
+        window.deleteService = async (id) => { if(confirm('Delete?')){ services = services.filter(s=>s.id!==id); await window.db.collection("services").doc(id).delete(); renderServices(); showMessage('servicesMessage','Service deleted','info'); } };
+        window.editDoctor = (id) => { const d = doctors.find(x=>x.id===id); if(d){ currentEditId=id; document.getElementById('doctorModalTitle').innerText='Edit Doctor'; document.getElementById('doctorName').value=d.name; document.getElementById('doctorSpeciality').value=d.speciality; document.getElementById('doctorCommission').value=d.baseCommission||0; document.getElementById('doctorModal').style.display='flex'; } };
+        window.deleteDoctor = async (id) => { if(confirm('Delete doctor?')){ doctors = doctors.filter(d=>d.id!==id); await window.db.collection("doctors").doc(id).delete(); renderDoctors(); showMessage('doctorsMessage','Doctor deleted','info'); } };
+        window.editInsurance = (id) => { const ins = insuranceList.find(i=>i.id===id); if(ins){ currentEditId=id; document.getElementById('insuranceModalTitle').innerText='Edit Insurance'; document.getElementById('insuranceName').value=ins.name; document.getElementById('insuranceModal').style.display='flex'; } };
+        window.deleteInsurance = async (id) => { if(confirm('Delete insurance?')){ insuranceList = insuranceList.filter(i=>i.id!==id); await window.db.collection("insurance").doc(id).delete(); renderInsurance(); showMessage('insuranceMessage','Insurance deleted','info'); } };
+        window.editDiscount = (id) => { const disc = discountsList.find(d=>d.id===id); if(disc){ currentEditId=id; document.getElementById('discountModalTitle').innerText='Edit Discount'; document.getElementById('discountName').value=disc.name; document.getElementById('discountPercent').value=disc.percent; document.getElementById('discountDesc').value=disc.description||''; document.getElementById('discountModal').style.display='flex'; } };
+        window.deleteDiscount = async (id) => { if(confirm('Delete discount?')){ discountsList = discountsList.filter(d=>d.id!==id); await window.db.collection("discounts").doc(id).delete(); renderDiscounts(); showMessage('discountsMessage','Discount deleted','info'); } };
+
+        async function saveService() {
+            const name = document.getElementById('serviceName').value.trim();
+            const price = parseFloat(document.getElementById('servicePrice').value);
+            const aasandhaCovered = document.getElementById('serviceAasandhaCovered').checked;
+            const aasandhaCoverAmount = parseFloat(document.getElementById('serviceAasandhaAmount').value) || 0;
+            if (!name || isNaN(price) || price <= 0) { showMessage('servicesMessage', 'Valid name and price required', 'error'); return; }
+            if (currentEditId) {
+                const idx = services.findIndex(s => s.id === currentEditId);
+                if (idx !== -1) services[idx] = { ...services[idx], name, price, aasandhaCovered, aasandhaCoverAmount };
+                await window.db.collection("services").doc(currentEditId).set(services[idx]);
+            } else {
+                const newId = `S${Date.now()}`;
+                const newService = { id: newId, name, price, aasandhaCovered, aasandhaCoverAmount, createdAt: new Date().toISOString() };
+                services.push(newService);
+                await window.db.collection("services").doc(newId).set(newService);
+            }
+            renderServices(); closeModal('serviceModal'); showMessage('servicesMessage', currentEditId ? 'Service updated' : 'Service added', 'success');
+        }
+        async function saveDoctor() {
+            const name = document.getElementById('doctorName').value.trim();
+            const speciality = document.getElementById('doctorSpeciality').value.trim();
+            const baseCommission = parseFloat(document.getElementById('doctorCommission').value) || 0;
+            if (!name || !speciality) { showMessage('doctorsMessage', 'Doctor name and speciality required', 'error'); return; }
+            if (currentEditId) {
+                const idx = doctors.findIndex(d => d.id === currentEditId);
+                if (idx !== -1) doctors[idx] = { ...doctors[idx], name, speciality, baseCommission };
+                await window.db.collection("doctors").doc(currentEditId).set(doctors[idx]);
+            } else {
+                const newId = `D${Date.now()}`;
+                const newDoctor = { id: newId, name, speciality, baseCommission, status: 'active', createdAt: new Date().toISOString() };
+                doctors.push(newDoctor);
+                await window.db.collection("doctors").doc(newId).set(newDoctor);
+            }
+            renderDoctors(); closeModal('doctorModal'); showMessage('doctorsMessage', currentEditId ? 'Doctor updated' : 'Doctor added', 'success');
+        }
+        async function saveInsurance() {
+            const name = document.getElementById('insuranceName').value.trim();
+            if (!name) { showMessage('insuranceMessage', 'Insurance name required', 'error'); return; }
+            if (currentEditId) {
+                const idx = insuranceList.findIndex(i => i.id === currentEditId);
+                if (idx !== -1) insuranceList[idx] = { ...insuranceList[idx], name };
+                await window.db.collection("insurance").doc(currentEditId).set(insuranceList[idx]);
+            } else {
+                const newId = `INS${Date.now()}`;
+                const newIns = { id: newId, name, status: 'active', createdAt: new Date().toISOString() };
+                insuranceList.push(newIns);
+                await window.db.collection("insurance").doc(newId).set(newIns);
+            }
+            renderInsurance(); closeModal('insuranceModal'); showMessage('insuranceMessage', currentEditId ? 'Insurance updated' : 'Insurance added', 'success');
+        }
+        async function saveDiscount() {
+            const name = document.getElementById('discountName').value.trim();
+            const percent = parseFloat(document.getElementById('discountPercent').value);
+            const description = document.getElementById('discountDesc').value.trim();
+            if (!name || isNaN(percent) || percent < 0 || percent > 100) { showMessage('discountsMessage', 'Valid name and percentage 0-100 required', 'error'); return; }
+            if (currentEditId) {
+                const idx = discountsList.findIndex(d => d.id === currentEditId);
+                if (idx !== -1) discountsList[idx] = { ...discountsList[idx], name, percent, description };
+                await window.db.collection("discounts").doc(currentEditId).set(discountsList[idx]);
+            } else {
+                const newId = `DISC${Date.now()}`;
+                const newDisc = { id: newId, name, percent, description, createdAt: new Date().toISOString() };
+                discountsList.push(newDisc);
+                await window.db.collection("discounts").doc(newId).set(newDisc);
+            }
+            renderDiscounts(); closeModal('discountModal'); showMessage('discountsMessage', currentEditId ? 'Discount updated' : 'Discount added', 'success');
+        }
+
+        // ----- Tab switching -----
+        function switchTab(tabName) {
+            document.getElementById('servicesTab').style.display = tabName === 'services' ? 'block' : 'none';
+            document.getElementById('doctorsTab').style.display = tabName === 'doctors' ? 'block' : 'none';
+            document.getElementById('insuranceTab').style.display = tabName === 'insurance' ? 'block' : 'none';
+            document.getElementById('discountsTab').style.display = tabName === 'discounts' ? 'block' : 'none';
+            document.getElementById('usersTab').style.display = tabName === 'users' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+            if (tabName === 'users') loadUsersFromFirebase();
+        }
+
+        // ----- USER MANAGEMENT USING FIREBASE (COLLECTION "users") -----
+        async function loadUsersFromFirebase() {
+            if (!window.db) { setTimeout(loadUsersFromFirebase, 500); return; }
+            const container = document.getElementById('usersListContainer');
+            if (container) container.innerHTML = '<div class="empty-message">Loading users from Firebase...</div>';
+            try {
+                const usersSnap = await window.db.collection("users").get();
+                const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUserList(users);
+            } catch (error) {
+                console.error("Error loading users:", error);
+                if (container) container.innerHTML = '<div class="empty-message">Error loading users. Check console.</div>';
+            }
+        }
+
+        async function sha256Hash(message) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function showUserToast(msg, isError=false) {
+            const toast = document.getElementById('toastMsg');
+            toast.textContent = msg;
+            toast.style.backgroundColor = isError ? '#b33b2c' : '#1f6e8c';
+            toast.style.opacity = '1'; toast.style.visibility = 'visible';
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.visibility = 'hidden'; }, 2500);
+        }
+        function showUserMsg(msg, type) {
+            const el = document.getElementById('userMgmtMessage');
+            if(el){ el.innerText=msg; el.className=`message ${type}`; el.style.display='block'; setTimeout(()=>el.style.display='none',2800); }
+        }
+
+        function updateStrength(pwd) {
+            if (!pwd) { document.getElementById('strengthFill').style.width = '0%'; document.getElementById('strengthLabel').innerText = 'Weak'; return; }
+            let score = 0; if (pwd.length>=6) score++; if (pwd.length>=10) score++; if (/[A-Z]/.test(pwd)) score++; if (/[0-9]/.test(pwd)) score++; if (/[^A-Za-z0-9]/.test(pwd)) score++;
+            let strength = Math.min(3, Math.floor(score/1.8)); const labels = ['Weak','Fair','Good','Strong']; const percent = (strength/3)*100;
+            document.getElementById('strengthFill').style.width = `${Math.min(100,percent)}%`;
+            document.getElementById('strengthFill').style.backgroundColor = percent<35?'#d9534f':percent<70?'#f0ad4e':'#5cb85c';
+            document.getElementById('strengthLabel').innerText = labels[strength] || 'Weak';
+        }
+
+        async function registerSystemUser() {
+            const username = document.getElementById('regUsername').value.trim();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regConfirmPwd').value;
+            const role = document.querySelector('input[name="accessLevel"]:checked').value;
+            const rcNo = document.getElementById('regRCNo').value.trim();
+            if (!username || !fullName || !password || !rcNo) { showUserMsg('All * fields required', 'error'); return; }
+            if (password !== confirm) { showUserMsg('Passwords do not match', 'error'); return; }
+            if (password.length < 4) { showUserMsg('Password min 4 characters', 'error'); return; }
+            // Check uniqueness in Firebase
+            const existingUser = await window.db.collection("users").where("username", "==", username).get();
+            if (!existingUser.empty) { showUserMsg(`Username "${username}" already exists`, 'error'); return; }
+            const existingRC = await window.db.collection("users").where("RCNo", "==", rcNo).get();
+            if (!existingRC.empty) { showUserMsg(`RC Number "${rcNo}" already used`, 'error'); return; }
+            const hash = await sha256Hash(password);
+            const newUser = {
+                username, name: fullName, passwordHash: hash, Level: role, Right: role, RCNo: rcNo, createdAt: new Date().toISOString()
+            };
+            try {
+                const docRef = await window.db.collection("users").add(newUser);
+                showUserMsg(`✅ User ${username} registered!`, 'success');
+                document.getElementById('regUsername').value = ''; document.getElementById('regFullName').value = ''; document.getElementById('regPassword').value = '';
+                document.getElementById('regConfirmPwd').value = ''; document.getElementById('regRCNo').value = ''; updateStrength('');
+                loadUsersFromFirebase(); // refresh list
+                showUserToast(`Registered ${username}`, false);
+            } catch (err) { showUserMsg('Firestore error: '+err.message, 'error'); }
+        }
+
+        async function deleteUserFromFirebase(userId, username) {
+            if (!confirm(`Delete user "${username}"?`)) return;
+            try {
+                await window.db.collection("users").doc(userId).delete();
+                showUserMsg(`User ${username} deleted`, 'info');
+                loadUsersFromFirebase();
+            } catch (err) { showUserMsg('Delete error: '+err.message, 'error'); }
+        }
+
+        async function copyHash(hash, username) {
+            try { await navigator.clipboard.writeText(hash); showUserToast(`📋 Copied hash for ${username}`, false); }
+            catch(e) { const ta=document.createElement('textarea'); ta.value=hash; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showUserToast('Copied (fallback)', false); }
+        }
+
+        function renderUserList(users) {
+            const container = document.getElementById('usersListContainer');
+            const countSpan = document.getElementById('userCountDisplay');
+            if (!container) return;
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty-message">✨ No registered users. Add using the form.</div>';
+                if(countSpan) countSpan.innerText='0 users';
+                return;
+            }
+            let html = '';
+            users.forEach((u) => {
+                const fullHash = u.passwordHash || 'no-hash';
+                const shortHash = fullHash.length > 24 ? fullHash.slice(0,20)+'…'+fullHash.slice(-6) : fullHash;
+                html += `<div class="user-card">
+                            <div class="user-row">
+                                <div class="user-info">
+                                    <strong>${escapeHtml(u.username)}</strong>
+                                    <span>${escapeHtml(u.name)}</span>
+                                    <span class="user-badge">${u.Level}</span>
+                                    <span>🆔 ${escapeHtml(u.RCNo)}</span>
+                                </div>
+                                <button class="delete-user" data-id="${u.id}" data-name="${escapeHtml(u.username)}">✖️</button>
+                            </div>
+                            <div class="hash-section">
+                                <span>🔑 SHA-256:</span>
+                                <span class="hash-value">${escapeHtml(shortHash)}</span>
+                                <button class="copy-hash-btn" data-hash="${fullHash.replace(/"/g, '&quot;')}" data-user="${escapeHtml(u.username)}">📋 Copy Hash</button>
+                            </div>
+                         </div>`;
+            });
+            container.innerHTML = html;
+            if(countSpan) countSpan.innerText = `${users.length} user${users.length!==1?'s':''}`;
+            // Attach delete events
+            document.querySelectorAll('.delete-user').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = btn.getAttribute('data-id');
+                    const userName = btn.getAttribute('data-name');
+                    if (userId) deleteUserFromFirebase(userId, userName);
+                });
+            });
+            // Attach copy events
+            document.querySelectorAll('.copy-hash-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const hash = btn.getAttribute('data-hash');
+                    const user = btn.getAttribute('data-user') || 'user';
+                    if (hash) copyHash(hash, user);
+                    else showUserToast('No hash', true);
+                });
+            });
+        }
+
+        // ----- Event Listeners -----
+        document.getElementById('saveToFirebaseBtn').onclick = saveAllToFirebase;
+        document.getElementById('addServiceBtn').onclick = () => { currentEditId = null; document.getElementById('serviceModalTitle').innerText = 'Add Service'; document.getElementById('serviceName').value = ''; document.getElementById('servicePrice').value = ''; document.getElementById('serviceAasandhaCovered').checked = false; document.getElementById('serviceAasandhaAmount').value = ''; document.getElementById('serviceModal').style.display = 'flex'; };
+        document.getElementById('addDoctorBtn').onclick = () => { currentEditId = null; document.getElementById('doctorModalTitle').innerText = 'Add Doctor'; document.getElementById('doctorName').value = ''; document.getElementById('doctorSpeciality').value = ''; document.getElementById('doctorCommission').value = ''; document.getElementById('doctorModal').style.display = 'flex'; };
+        document.getElementById('addInsuranceBtn').onclick = () => { currentEditId = null; document.getElementById('insuranceModalTitle').innerText = 'Add Insurance'; document.getElementById('insuranceName').value = ''; document.getElementById('insuranceModal').style.display = 'flex'; };
+        document.getElementById('addDiscountBtn').onclick = () => { currentEditId = null; document.getElementById('discountModalTitle').innerText = 'Add Discount'; document.getElementById('discountName').value = ''; document.getElementById('discountPercent').value = ''; document.getElementById('discountDesc').value = ''; document.getElementById('discountModal').style.display = 'flex'; };
+        document.getElementById('saveServiceBtn').onclick = saveService; document.getElementById('cancelServiceBtn').onclick = () => closeModal('serviceModal');
+        document.getElementById('saveDoctorBtn').onclick = saveDoctor; document.getElementById('cancelDoctorBtn').onclick = () => closeModal('doctorModal');
+        document.getElementById('saveInsuranceBtn').onclick = saveInsurance; document.getElementById('cancelInsuranceBtn').onclick = () => closeModal('insuranceModal');
+        document.getElementById('saveDiscountBtn').onclick = saveDiscount; document.getElementById('cancelDiscountBtn').onclick = () => closeModal('discountModal');
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => switchTab(btn.dataset.tab));
+        document.getElementById('registerUserBtn').onclick = registerSystemUser;
+        document.getElementById('clearUserFormBtn').onclick = () => { document.getElementById('regUsername').value = ''; document.getElementById('regFullName').value = ''; document.getElementById('regPassword').value = ''; document.getElementById('regConfirmPwd').value = ''; document.getElementById('regRCNo').value = ''; updateStrength(''); showUserMsg('Form cleared','info'); };
+        document.getElementById('regPassword').addEventListener('input', (e) => updateStrength(e.target.value));
+        
+        // Initialize
+        function waitForFirebase() { if (window.db) { loadAllData(); loadUsersFromFirebase(); } else setTimeout(waitForFirebase, 500); }
+        waitForFirebase();
+    })();
+</script>
+</body>
+</html>

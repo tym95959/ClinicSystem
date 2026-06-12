@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Memos List & Print (A5 Receipt)</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+        }
+
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logo h2 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-btn {
+            background: #1e4a6e;
+            border: none;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 11px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            padding: 20px 24px;
+            border: 1px solid #e2eaf0;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0a2f44;
+            margin-bottom: 20px;
+            border-left: 4px solid #0f5c7a;
+            padding-left: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 8px 14px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 30px;
+            font-size: 13px;
+        }
+
+        .search-bar button {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        .memos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .memos-table th, .memos-table td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e9edf2;
+            font-size: 13px;
+        }
+
+        .memos-table th {
+            background: #f4f9fe;
+            font-weight: 600;
+            color: #1f4d6e;
+        }
+
+        .print-btn {
+            background: #e0f2fe;
+            color: #0f5c7a;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .print-btn:hover {
+            background: #cbdde9;
+        }
+
+        .empty-row {
+            text-align: center;
+            padding: 40px;
+            color: #8ba0b0;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .success { background: #e0f7ef; color: #146b3a; }
+        .error { background: #ffe9e9; color: #b91c1c; }
+        .info { background: #e0f2fe; color: #075985; }
+
+        @media (max-width: 768px) {
+            .memos-table {
+                font-size: 11px;
+            }
+            .memos-table th, .memos-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo">
+        <h2>📄 Hope Dental · Memos List & Print (A5 Receipt)</h2>
+    </div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+        <button class="back-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-title">
+            📋 All Clinical Memos
+            <button class="back-btn" id="refreshBtn" style="background:#1e4a6e;">⟳ Refresh</button>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Search by Memo ID, Patient Name, or Patient ID...">
+            <button id="searchBtn">Search</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="memos-table">
+                <thead>
+                    <tr>
+                        <th>Memo ID</th>
+                        <th>Date</th>
+                        <th>Patient Name</th>
+                        <th>Patient ID</th>
+                        <th>Doctor</th>
+                        <th>Total (MVR)</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="memosTbody">
+                    <tr class="empty-row"><td colspan="9">Loading memos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="messageBox" class="message" style="display: none;"></div>
+    </div>
+</div>
+
+<script>
+    // ========== AUTH ==========
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) {
+        window.location.href = 'login.html';
+    }
+    try {
+        const user = JSON.parse(loggedInUser);
+        const header = document.querySelector('.clinic-header');
+        const userSpan = document.createElement('div');
+        userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
+        userSpan.innerHTML = `👤 ${user.name || user.username} (${user.level})`;
+        header.insertBefore(userSpan, header.children[1]);
+    } catch(e) {}
+
+    // ========== GLOBALS ==========
+    let allMemos = [];
+    let filteredMemos = [];
+
+    // ========== HELPER FUNCTIONS ==========
+    function showMessage(msg, type) {
+        const box = document.getElementById('messageBox');
+        box.innerText = msg;
+        box.className = `message ${type}`;
+        box.style.display = 'block';
+        setTimeout(() => {
+            box.style.display = 'none';
+            box.innerText = '';
+        }, 3000);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // ========== LOAD MEMOS FROM FIRESTORE ==========
+    async function loadMemos() {
+        if (!window.db) {
+            setTimeout(loadMemos, 500);
+            return;
+        }
+        const tbody = document.getElementById('memosTbody');
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Loading memos...</td></tr>';
+        try {
+            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
+            allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            filteredMemos = [...allMemos];
+            renderMemosTable();
+            showMessage(`Loaded ${allMemos.length} memos`, "success");
+        } catch (error) {
+            console.error("Error loading memos:", error);
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Error loading memos. Check console.</td></tr>';
+            showMessage("Error loading memos: " + error.message, "error");
+        }
+    }
+
+    // ========== RENDER TABLE ==========
+    function renderMemosTable() {
+        const tbody = document.getElementById('memosTbody');
+        if (!filteredMemos.length) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No memos found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = filteredMemos.map(memo => {
+            const memoId = memo.memoId || memo.id;
+            const dateStr = memo.date || (memo.timestamp ? new Date(memo.timestamp).toLocaleString() : 'N/A');
+            const patientName = memo.patient?.name || 'Unknown';
+            const patientId = memo.patient?.id || '-';
+            const doctorName = memo.doctor?.name || '-';
+            const subtotal = memo.billing?.subtotal || 0;
+            const paid = memo.billing?.paid || 0;
+            const balance = memo.billing?.balance || 0;
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(memoId)}</strong></td>
+                    <td>${escapeHtml(dateStr)}</td>
+                    <td>${escapeHtml(patientName)}</td>
+                    <td>${escapeHtml(patientId)}</td>
+                    <td>${escapeHtml(doctorName)}</td>
+                    <td>MVR ${subtotal.toFixed(2)}</td>
+                    <td>MVR ${paid.toFixed(2)}</td>
+                    <td>MVR ${balance.toFixed(2)}</td>
+                    <td><button class="print-btn" data-memo-idx="${filteredMemos.indexOf(memo)}">🖨️ Print</button></td>
+                </tr>
+            `;
+        }).join('');
+
+        // Attach print event listeners
+        document.querySelectorAll('.print-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.getAttribute('data-memo-idx'));
+                if (!isNaN(idx) && filteredMemos[idx]) {
+                    printMemo(filteredMemos[idx]);
+                }
+            });
+        });
+    }
+
+    // ========== PRINT MEMO (A5 optimized, beautiful receipt layout) ==========
+    function printMemo(memo) {
+        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+        if (!printWindow) {
+            alert("Please allow pop-ups to print the memo.");
+            return;
+        }
+
+        const memoId = memo.memoId || memo.id;
+        const dateStr = memo.date || (memo.timestamp ? new Date(memo.timestamp).toLocaleString() : 'N/A');
+        const patient = memo.patient || {};
+        const doctor = memo.doctor || {};
+        const services = memo.services || [];
+        const discount = memo.discount || {};
+        const billing = memo.billing || {};
+        const insurances = memo.insurances || [];
+
+        // Format insurance details as a compact list
+        let insuranceHtml = '';
+        if (insurances.length > 0) {
+            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
+            insurances.forEach(ins => {
+                insuranceHtml += `<span class="insurance-item">${ins.name}: MVR ${(ins.amount || 0).toFixed(2)} (${ins.priority})</span>`;
+            });
+            insuranceHtml += `</div></div>`;
+        }
+
+        // Build services table
+        let servicesHtml = '';
+        if (services.length > 0) {
+            servicesHtml = `
+                <table class="services-table">
+                    <thead>
+                        <tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Primary Ins</th><th>Aasandha</th><th>Patient Pay</th></tr>
+                    </thead>
+                    <tbody>
+            `;
+            services.forEach(s => {
+                servicesHtml += `<tr>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td class="center">${s.qty}</td>
+                    <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.total || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+            servicesHtml += `</tbody></table>`;
+        } else {
+            servicesHtml = '<div class="no-services">No services recorded.</div>';
+        }
+
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Hope Dental - Memo ${memoId}</title>
+                <style>
+                    /* A5 Size: 148mm x 210mm */
+                    @page {
+                        size: A5;
+                        margin: 8mm;
+                    }
+                    body {
+                        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                        color: #1e2a36;
+                        font-size: 11px;
+                        line-height: 1.4;
+                    }
+                    .receipt {
+                        max-width: 100%;
+                        margin: 0 auto;
+                        background: white;
+                    }
+                    .header {
+                        text-align: center;
+                        border-bottom: 2px solid #0a2f44;
+                        padding-bottom: 6px;
+                        margin-bottom: 12px;
+                    }
+                    .header h1 {
+                        color: #0a2f44;
+                        margin: 0;
+                        font-size: 20px;
+                        letter-spacing: 1px;
+                    }
+                    .header p {
+                        margin: 3px 0;
+                        font-size: 9px;
+                        color: #5f7f9a;
+                    }
+                    .memo-title {
+                        text-align: center;
+                        background: #e0f2fe;
+                        padding: 4px;
+                        border-radius: 20px;
+                        margin: 8px 0;
+                        font-weight: bold;
+                        font-size: 12px;
+                    }
+                    .info-grid {
+                        display: flex;
+                        justify-content: space-between;
+                        background: #f4f9fe;
+                        padding: 8px 10px;
+                        border-radius: 12px;
+                        margin: 10px 0;
+                        gap: 15px;
+                        flex-wrap: wrap;
+                    }
+                    .info-box {
+                        flex: 1;
+                    }
+                    .info-box strong {
+                        font-size: 10px;
+                        color: #0a2f44;
+                        display: block;
+                        margin-bottom: 4px;
+                        border-left: 2px solid #0f5c7a;
+                        padding-left: 6px;
+                    }
+                    .info-box div {
+                        font-size: 10px;
+                        margin: 3px 0;
+                    }
+                    .services-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 10px 0;
+                        font-size: 9px;
+                    }
+                    .services-table th {
+                        background: #f4f9fe;
+                        padding: 5px 4px;
+                        text-align: left;
+                        font-weight: 600;
+                        border-bottom: 1px solid #d0dfe8;
+                    }
+                    .services-table td {
+                        padding: 4px;
+                        border-bottom: 1px solid #e9edf2;
+                    }
+                    .services-table .center {
+                        text-align: center;
+                    }
+                    .services-table .right {
+                        text-align: right;
+                    }
+                    .insurance-box {
+                        background: #fff8e7;
+                        padding: 6px 10px;
+                        border-radius: 10px;
+                        margin: 10px 0;
+                        font-size: 9px;
+                    }
+                    .insurance-list {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 12px;
+                        margin-top: 4px;
+                    }
+                    .insurance-item {
+                        background: white;
+                        padding: 2px 8px;
+                        border-radius: 20px;
+                        border: 1px solid #f0c674;
+                    }
+                    .totals-box {
+                        background: linear-gradient(135deg, #f0f9ff 0%, #e8f4fd 100%);
+                        border: 1px solid #0f5c7a;
+                        border-radius: 12px;
+                        padding: 10px;
+                        margin: 12px 0;
+                    }
+                    .totals-row {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 4px 0;
+                        font-size: 10px;
+                    }
+                    .totals-row.total {
+                        font-weight: 800;
+                        font-size: 13px;
+                        border-top: 1px dashed #8ba0b0;
+                        margin-top: 6px;
+                        padding-top: 6px;
+                    }
+                    .footer {
+                        text-align: center;
+                        font-size: 8px;
+                        color: #8ba0b0;
+                        border-top: 1px solid #ddd;
+                        padding-top: 8px;
+                        margin-top: 12px;
+                    }
+                    .no-services {
+                        background: #f9f9f9;
+                        padding: 20px;
+                        text-align: center;
+                        border-radius: 8px;
+                        font-style: italic;
+                    }
+                    @media print {
+                        body {
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .no-print {
+                            display: none;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="receipt">
+                    <div class="header">
+                        <h1>🏥 Hope Dental Clinic</h1>
+                        <p>B. Machangolhi, Malé, Maldives | Tel: +960 123-4567</p>
+                        <p><strong>CLINICAL MEMO / RECEIPT</strong></p>
+                    </div>
+                    
+                    <div class="memo-title">
+                        MEMO NO: ${memoId} | DATE: ${dateStr}
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-box">
+                            <strong>PATIENT DETAILS</strong>
+                            <div>Name: ${escapeHtml(patient.name || '')}</div>
+                            <div>ID: ${escapeHtml(patient.id || '')}</div>
+                            <div>Contact: ${escapeHtml(patient.phone || '')}</div>
+                            <div>Nationality: ${escapeHtml(patient.nationality || '')}</div>
+                            <div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div>
+                        </div>
+                        <div class="info-box">
+                            <strong>DOCTOR DETAILS</strong>
+                            <div>Name: ${escapeHtml(doctor.name || '')}</div>
+                            <div>Speciality: ${escapeHtml(doctor.speciality || '')}</div>
+                        </div>
+                    </div>
+
+                    <div class="services-table-container">
+                        ${servicesHtml}
+                    </div>
+
+                    ${insuranceHtml}
+
+                    <div class="totals-box">
+                        <div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span>Primary Insurance Paid:</span><span>MVR ${(billing.primaryInsurancePayment || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span>Aasandha (Govt.) Paid:</span><span>MVR ${(billing.aasandhaPayment || 0).toFixed(2)}</span></div>
+                        <div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div>
+                    </div>
+
+                    <div class="footer">
+                        Thank you for choosing Hope Dental. <br>
+                        This is a computer-generated receipt. Valid without signature.
+                    </div>
+                    <div class="no-print" style="text-align:center; margin-top:15px;">
+                        <button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px;">🖨️ Print this Memo</button>
+                        <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px;">Close</button>
+                    </div>
+                </div>
+            <\/body>
+            <\/html>
+        `;
+
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+    }
+
+    // ========== SEARCH FUNCTION ==========
+    function searchMemos() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        if (!query) {
+            filteredMemos = [...allMemos];
+        } else {
+            filteredMemos = allMemos.filter(memo => {
+                const memoId = (memo.memoId || '').toLowerCase();
+                const patientName = (memo.patient?.name || '').toLowerCase();
+                const patientId = (memo.patient?.id || '').toLowerCase();
+                return memoId.includes(query) || patientName.includes(query) || patientId.includes(query);
+            });
+        }
+        renderMemosTable();
+    }
+
+    // ========== LOGOUT ==========
+    function logout() {
+        localStorage.removeItem('loggedInUser');
+        sessionStorage.removeItem('clinic_user_session');
+        window.location.href = 'login.html';
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('refreshBtn').addEventListener('click', loadMemos);
+    document.getElementById('searchBtn').addEventListener('click', searchMemos);
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') searchMemos();
+    });
+
+    // ========== INIT ==========
+    function waitForFirebase() {
+        if (window.db) {
+            loadMemos();
+        } else {
+            setTimeout(waitForFirebase, 500);
+        }
+    }
+    waitForFirebase();
+</script>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Patient Manager (Add + List + Delete)</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+        }
+
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logo h2 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-btn {
+            background: #1e4a6e;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 11px;
+        }
+
+        .back-btn:hover {
+            background: #c63d2f;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            padding: 28px 32px;
+            margin-bottom: 30px;
+            border: 1px solid #e2eaf0;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0a2f44;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 5px solid #0f5c7a;
+            padding-left: 18px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            color: #1f5e7e;
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: 0.2s;
+            background: white;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #0f6b8c;
+            box-shadow: 0 0 0 3px rgba(15, 107, 140, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-primary {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            background: #08455c;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-sm {
+            background: #e2eaf0;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: 0.2s;
+        }
+
+        .btn-sm:hover {
+            background: #cbdde9;
+        }
+
+        .btn-danger {
+            background: #ffe9e9;
+            color: #b91c1c;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .btn-danger:hover {
+            background: #ffd4d4;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 28px;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background: #e0f7ef;
+            color: #146b3a;
+            display: block;
+        }
+
+        .error {
+            background: #ffe9e9;
+            color: #b91c1c;
+            display: block;
+        }
+
+        .info {
+            background: #e0f2fe;
+            color: #075985;
+            display: block;
+        }
+
+        .status-badge {
+            background: #e0f2fe;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 30px;
+            font-size: 13px;
+        }
+
+        .patients-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .patients-table th, .patients-table td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e9edf2;
+            vertical-align: middle;
+            font-size: 13px;
+        }
+
+        .patients-table th {
+            background: #f4f9fe;
+            font-weight: 600;
+            color: #1f4d6e;
+            font-size: 12px;
+        }
+
+        .empty-row {
+            text-align: center;
+            padding: 40px;
+            color: #8ba0b0;
+        }
+
+        .delete-btn {
+            background: #ffe9e9;
+            border: none;
+            color: #b91c1c;
+            padding: 5px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #ffd4d4;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+            .card {
+                padding: 20px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .patients-table {
+                font-size: 11px;
+            }
+            .patients-table th, .patients-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo">
+        <h2>🏥 Hope Dental · Patient Manager</h2>
+    </div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+        <button class="back-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Add New Patient Card -->
+    <div class="card">
+        <div class="card-title">👤 Register New Patient</div>
+        <div id="connectionStatus" class="status-badge" style="background: #fef7e0; color: #a5670e;">
+            🔄 Checking Firebase connection...
+        </div>
+
+        <form id="patientForm">
+            <div class="form-group">
+                <label>Full Name <span class="required">*</span></label>
+                <input type="text" id="patientName" placeholder="Enter patient's full name" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nationality <span class="required">*</span></label>
+                    <select id="nationality">
+                        <option value="Maldivian">Maldivian</option>
+                        <option value="Foreign">Foreign</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" id="dob">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>ID Card No / Passport No <span class="required">*</span></label>
+                    <input type="text" id="idNumber" placeholder="e.g., A123456 or N1234567" required>
+                </div>
+                <div class="form-group">
+                    <label>Contact Number <span class="required">*</span></label>
+                    <input type="tel" id="contactNo" placeholder="e.g., +960 7XXXXXXX" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Email (Optional)</label>
+                <input type="email" id="email" placeholder="patient@example.com">
+            </div>
+
+            <div class="form-group">
+                <label>Address (Optional)</label>
+                <input type="text" id="address" placeholder="Full address">
+            </div>
+
+            <button type="submit" class="btn-primary" id="savePatientBtn" disabled>💾 Save Patient to Firebase</button>
+        </form>
+
+        <div id="messageBox" class="message"></div>
+    </div>
+
+    <!-- List & Manage Patients Card -->
+    <div class="card">
+        <div class="card-title">
+            📋 Existing Patients
+            <button class="btn-sm" id="refreshPatientsBtn">⟳ Refresh List</button>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchPatientInput" placeholder="🔍 Search by name, ID, or contact...">
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Full Name</th>
+                        <th>ID/Passport</th>
+                        <th>Contact</th>
+                        <th>Nationality</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="patientsList">
+                    <tr class="empty-row"><td colspan="6">Loading patients...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="listMessage" class="message" style="display: none;"></div>
+    </div>
+</div>
+
+<script>
+    // ========== AUTH ==========
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) {
+        window.location.href = 'login.html';
+    }
+    
+    try {
+        const user = JSON.parse(loggedInUser);
+        const header = document.querySelector('.clinic-header');
+        const userSpan = document.createElement('div');
+        userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
+        userSpan.innerHTML = `👤 ${user.name || user.username} (${user.level})`;
+        header.insertBefore(userSpan, header.children[1]);
+    } catch(e) {}
+    
+    // ========== GLOBALS ==========
+    let allPatients = [];
+    let firebaseReady = false;
+    
+    // ========== HELPER FUNCTIONS ==========
+    function showMessage(msg, type, containerId = 'messageBox') {
+        const msgBox = document.getElementById(containerId);
+        if (!msgBox) return;
+        msgBox.textContent = msg;
+        msgBox.className = `message ${type}`;
+        setTimeout(() => {
+            msgBox.className = 'message';
+            msgBox.textContent = '';
+        }, 5000);
+    }
+    
+    function updateConnectionStatus(connected) {
+        const statusDiv = document.getElementById('connectionStatus');
+        const saveBtn = document.getElementById('savePatientBtn');
+        
+        if (connected) {
+            statusDiv.style.background = '#e0f7ef';
+            statusDiv.style.color = '#146b3a';
+            statusDiv.innerHTML = '✅ Connected to Firebase! Ready to register patients.';
+            saveBtn.disabled = false;
+        } else {
+            statusDiv.style.background = '#ffe9e9';
+            statusDiv.style.color = '#b91c1c';
+            statusDiv.innerHTML = '❌ Firebase connection failed. Please refresh the page.';
+            saveBtn.disabled = true;
+        }
+    }
+    
+    // ========== PATIENT ID GENERATION ==========
+    async function generatePatientId() {
+        try {
+            const patientsRef = window.db.collection("patients");
+            const snapshot = await patientsRef.orderBy("createdAt", "desc").limit(1).get();
+            let lastNumber = 0;
+            if (!snapshot.empty) {
+                const lastPatient = snapshot.docs[0].data();
+                const lastId = lastPatient.id;
+                const match = lastId.match(/P(\d+)/);
+                if (match) lastNumber = parseInt(match[1]);
+            }
+            const newNumber = String(lastNumber + 1).padStart(3, '0');
+            return `P${newNumber}`;
+        } catch (error) {
+            console.error("Error generating ID:", error);
+            return `P${Date.now().toString().slice(-6)}`;
+        }
+    }
+    
+    // ========== DUPLICATE CHECKS ==========
+    async function checkDuplicateIdNumber(idNumber) {
+        if (!idNumber) return false;
+        const snapshot = await window.db.collection("patients").where("idNumber", "==", idNumber).limit(1).get();
+        return !snapshot.empty;
+    }
+    
+    async function checkDuplicateContact(contactNo) {
+        if (!contactNo) return false;
+        const snapshot = await window.db.collection("patients").where("contactNo", "==", contactNo).limit(1).get();
+        return !snapshot.empty;
+    }
+    
+    // ========== FORM VALIDATION ==========
+    function validateForm(name, idNumber, contactNo) {
+        if (!name || name.trim() === '') {
+            showMessage('❌ Please enter patient name', 'error');
+            return false;
+        }
+        if (!idNumber || idNumber.trim() === '') {
+            showMessage('❌ Please enter ID Card or Passport number', 'error');
+            return false;
+        }
+        if (!contactNo || contactNo.trim() === '') {
+            showMessage('❌ Please enter contact number', 'error');
+            return false;
+        }
+        return true;
+    }
+    
+    function resetForm() {
+        document.getElementById('patientName').value = '';
+        document.getElementById('nationality').value = 'Maldivian';
+        document.getElementById('dob').value = '';
+        document.getElementById('idNumber').value = '';
+        document.getElementById('contactNo').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('address').value = '';
+    }
+    
+    // ========== SAVE PATIENT ==========
+    document.getElementById('patientForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!firebaseReady || !window.db) {
+            showMessage('❌ Firebase not ready. Please wait and try again.', 'error');
+            return;
+        }
+        
+        const name = document.getElementById('patientName').value.trim();
+        const nationality = document.getElementById('nationality').value;
+        const dob = document.getElementById('dob').value;
+        const idNumber = document.getElementById('idNumber').value.trim();
+        const contactNo = document.getElementById('contactNo').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const address = document.getElementById('address').value.trim();
+        
+        if (!validateForm(name, idNumber, contactNo)) return;
+        
+        const saveBtn = document.getElementById('savePatientBtn');
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = '⏳ Checking duplicates...';
+        saveBtn.disabled = true;
+        
+        const idExists = await checkDuplicateIdNumber(idNumber);
+        if (idExists) {
+            showMessage(`❌ A patient with ID Number "${idNumber}" already exists.`, 'error');
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+            return;
+        }
+        
+        saveBtn.textContent = '⏳ Checking contact...';
+        const contactExists = await checkDuplicateContact(contactNo);
+        if (contactExists) {
+            showMessage(`❌ A patient with Contact Number "${contactNo}" already exists.`, 'error');
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+            return;
+        }
+        
+        saveBtn.textContent = '⏳ Generating ID...';
+        const patientId = await generatePatientId();
+        const isCitizen = nationality === 'Maldivian';
+        
+        const patientData = {
+            id: patientId,
+            name: name,
+            nationality: nationality,
+            isCitizen: isCitizen,
+            dob: dob || '',
+            idNumber: idNumber,
+            contactNo: contactNo,
+            email: email || '',
+            address: address || '',
+            createdBy: JSON.parse(loggedInUser).username || 'unknown',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        saveBtn.textContent = '⏳ Saving...';
+        try {
+            await window.db.collection("patients").add(patientData);
+            showMessage(`✅ Patient "${name}" registered! ID: ${patientId}`, 'success');
+            resetForm();
+            loadAllPatients();  // refresh the list
+        } catch (error) {
+            console.error(error);
+            showMessage(`❌ Failed: ${error.message}`, 'error');
+        } finally {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+    });
+    
+    // ========== LOAD & RENDER PATIENTS ==========
+    async function loadAllPatients() {
+        if (!window.db) return;
+        const tbody = document.getElementById('patientsList');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Loading patients...</td></tr>';
+        
+        try {
+            const snapshot = await window.db.collection("patients").orderBy("createdAt", "desc").get();
+            allPatients = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+            renderPatientsList(allPatients);
+        } catch (error) {
+            console.error("Error loading patients:", error);
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Error loading patients</td></tr>';
+        }
+    }
+    
+    function renderPatientsList(patients) {
+        const tbody = document.getElementById('patientsList');
+        if (!tbody) return;
+        
+        if (patients.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No patients found. Add your first patient above.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = patients.map(p => `
+            <tr>
+                <td><strong>${escapeHtml(p.id || p.patientId)}</strong></td>
+                <td>${escapeHtml(p.name)}</td>
+                <td>${escapeHtml(p.idNumber || '—')}</td>
+                <td>${escapeHtml(p.contactNo || '—')}</td>
+                <td>${escapeHtml(p.nationality || '—')}</td>
+                <td>
+                    <button class="delete-btn" data-firestore-id="${p.firestoreId}" data-name="${escapeHtml(p.name)}">🗑️ Delete</button>
+                 </td>
+            </tr>
+        `).join('');
+        
+        // Attach delete event listeners
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const firestoreId = btn.getAttribute('data-firestore-id');
+                const patientName = btn.getAttribute('data-name');
+                if (confirm(`Delete patient "${patientName}"? This action cannot be undone.`)) {
+                    await deletePatient(firestoreId, patientName);
+                }
+            });
+        });
+    }
+    
+    async function deletePatient(firestoreId, patientName) {
+        if (!window.db) return;
+        try {
+            await window.db.collection("patients").doc(firestoreId).delete();
+            showMessage(`🗑️ Patient "${patientName}" deleted successfully.`, 'success', 'listMessage');
+            loadAllPatients(); // refresh after deletion
+        } catch (error) {
+            console.error("Delete error:", error);
+            showMessage(`❌ Failed to delete: ${error.message}`, 'error', 'listMessage');
+        }
+    }
+    
+    function searchPatients() {
+        const query = document.getElementById('searchPatientInput').value.toLowerCase().trim();
+        if (!query) {
+            renderPatientsList(allPatients);
+            return;
+        }
+        const filtered = allPatients.filter(p => 
+            (p.name && p.name.toLowerCase().includes(query)) ||
+            (p.id && p.id.toLowerCase().includes(query)) ||
+            (p.idNumber && p.idNumber.toLowerCase().includes(query)) ||
+            (p.contactNo && p.contactNo.toLowerCase().includes(query))
+        );
+        renderPatientsList(filtered);
+    }
+    
+    // ========== ESCAPE HTML ==========
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // ========== LOGOUT ==========
+    function logout() {
+        localStorage.removeItem('loggedInUser');
+        sessionStorage.removeItem('clinic_user_session');
+        window.location.href = 'login.html';
+    }
+    
+    // ========== FIREBASE READY CHECK ==========
+    function waitForFirebase() {
+        return new Promise((resolve) => {
+            if (window.db) {
+                firebaseReady = true;
+                resolve(true);
+            } else {
+                const interval = setInterval(() => {
+                    if (window.db) {
+                        firebaseReady = true;
+                        clearInterval(interval);
+                        resolve(true);
+                    }
+                }, 100);
+                setTimeout(() => {
+                    clearInterval(interval);
+                    resolve(false);
+                }, 10000);
+            }
+        });
+    }
+    
+    // ========== INIT ==========
+    async function init() {
+        const ready = await waitForFirebase();
+        if (ready && window.db) {
+            updateConnectionStatus(true);
+            await loadAllPatients();
+            console.log("Firebase ready, patients loaded.");
+        } else {
+            updateConnectionStatus(false);
+            document.getElementById('patientsList').innerHTML = '<tr class="empty-row"><td colspan="6">⚠️ Firebase not connected. Check config.</td></tr>';
+        }
+        
+        // Set max date for DOB
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dob').max = today;
+        
+        // Nationality placeholder change
+        document.getElementById('nationality').addEventListener('change', function(e) {
+            const idInput = document.getElementById('idNumber');
+            idInput.placeholder = e.target.value === 'Maldivian' 
+                ? 'e.g., A123456 (ID Card Number)' 
+                : 'e.g., N1234567 (Passport Number)';
+        });
+        document.getElementById('nationality').dispatchEvent(new Event('change'));
+        
+        // Search listener
+        document.getElementById('searchPatientInput').addEventListener('input', searchPatients);
+        document.getElementById('refreshPatientsBtn').addEventListener('click', loadAllPatients);
+    }
+    
+    init();
+</script>
+</body>
+</html>

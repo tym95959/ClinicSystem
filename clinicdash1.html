@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Clinic Dashboard | Smart Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* main container */
+        .dashboard {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* header section - minimal & clean */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e4a6b, #2c6e5c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 i {
+            background: none;
+            color: #2c7a6e;
+            font-size: 1.9rem;
+        }
+        .header .sub {
+            color: #5b7c9c;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* elegant button grid - compact & modern */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* sleek nav cards (buttons) - perfectly sized, NOT too big */
+        .nav-btn {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.2rem 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9edf2;
+            backdrop-filter: blur(2px);
+        }
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px -12px rgba(31, 110, 140, 0.25);
+            border-color: #cbdde9;
+            background: #ffffff;
+        }
+        .nav-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* icon style - compact */
+        .btn-icon {
+            font-size: 2rem;
+            margin-bottom: 0.7rem;
+            display: inline-block;
+            background: #f0f4f9;
+            width: 52px;
+            height: 52px;
+            line-height: 52px;
+            border-radius: 28px;
+            color: #2c7a6e;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover .btn-icon {
+            background: #2c7a6e;
+            color: white;
+            transform: scale(0.98);
+        }
+
+        .nav-btn h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #1e3a4d;
+            letter-spacing: -0.2px;
+        }
+        .nav-btn p {
+            font-size: 0.7rem;
+            color: #6f8eaa;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .redirect-hint {
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: #f0f4f9;
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            color: #2c7a6e;
+            letter-spacing: 0.2px;
+        }
+        .nav-btn:hover .redirect-hint {
+            background: #2c7a6e;
+            color: white;
+        }
+
+        /* secondary info row - minimal status */
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 3rem;
+            border: 1px solid #e2edf5;
+        }
+        .info-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2c5a72;
+            background: white;
+            padding: 0.35rem 1rem;
+            border-radius: 3rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .info-badge i {
+            font-size: 0.85rem;
+            color: #2c7a6e;
+        }
+        .footer-note {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.7rem;
+            color: #6992af;
+            font-weight: 500;
+        }
+
+        /* responsive: tablet and mobile */
+        @media (max-width: 780px) {
+            .button-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            body { padding: 1.5rem; }
+            .header h1 { font-size: 1.7rem; }
+        }
+        @media (max-width: 480px) {
+            .button-grid {
+                grid-template-columns: 1fr;
+                gap: 0.9rem;
+            }
+            .nav-btn {
+                padding: 1rem 0.5rem;
+            }
+            .btn-icon {
+                width: 45px;
+                height: 45px;
+                line-height: 45px;
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header">
+        <h1>
+            <i class="fas fa-stethoscope"></i> 
+            ClinicCentral
+        </h1>
+        <div class="sub">practice dashboard · quick access modules</div>
+    </div>
+
+    <!-- compact button grid: each redirects to your existing pages -->
+    <div class="button-grid">
+        <!-- MEMO BUTTON -->
+        <div class="nav-btn" data-url="memo-create.html">
+            <div class="btn-icon"><i class="fas fa-pen-alt"></i></div>
+            <h3>Memo</h3>
+            <p>Clinical notes & reminders</p>
+            <span class="redirect-hint"><i class="fas fa-external-link-alt"></i> open page</span>
+        </div>
+
+        <!-- APPOINTMENT BUTTON -->
+        <div class="nav-btn" data-url="appointment.html">
+            <div class="btn-icon"><i class="fas fa-calendar-alt"></i></div>
+            <h3>Appointment</h3>
+            <p>Schedule & manage visits</p>
+            <span class="redirect-hint"><i class="fas fa-external-link-alt"></i> open page</span>
+        </div>
+
+        <!-- PATIENT REGISTRATION BUTTON -->
+        <div class="nav-btn" data-url="patient.html">
+            <div class="btn-icon"><i class="fas fa-user-plus"></i></div>
+            <h3>Registration</h3>
+            <p>Patient intake & records</p>
+            <span class="redirect-hint"><i class="fas fa-external-link-alt"></i> open page</span>
+        </div>
+
+        <!-- ADMIN BUTTON -->
+        <div class="nav-btn" data-url="admin.html">
+            <div class="btn-icon"><i class="fas fa-user-shield"></i></div>
+            <h3>Admin</h3>
+            <p>System & data controls</p>
+            <span class="redirect-hint"><i class="fas fa-external-link-alt"></i> open page</span>
+        </div>
+    </div>
+
+    <!-- subtle status row (just design, no functionality clutter) -->
+    <div class="info-row">
+        <div class="info-badge"><i class="fas-regular fa-note-sticky"></i> Memo Manager</div>
+        <div class="info-badge"><i class="fas fa-calendar-week"></i> Appointment Hub</div>
+        <div class="info-badge"><i class="fas fa-id-card"></i> Patient Registry</div>
+        <div class="info-badge"><i class="fas fa-sliders-h"></i> Admin Console</div>
+    </div>
+    <div class="footer-note">
+        <i class="fas fa-mouse-pointer"></i> Click any card → redirects to your existing pages (memo.html, appointment.html, registration.html, admin.html)
+    </div>
+</div>
+
+<script>
+    // ==============================================
+    // Elegant redirect handler
+    // Buttons redirect to your pre-built pages.
+    // Update the data-url values if your filenames differ.
+    // ==============================================
+    
+    // Select all navigation buttons
+    const navButtons = document.querySelectorAll('.nav-btn');
+    
+    // Add smooth click redirection
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Prevent accidental bubbling (if any)
+            e.stopPropagation();
+            const targetUrl = btn.getAttribute('data-url');
+            
+            if (targetUrl && targetUrl.trim() !== '') {
+                // Simple page redirect to existing file
+                window.location.href = targetUrl;
+            } else {
+                // Fallback in case of missing URL attribute
+                console.warn('Redirect URL missing for this button');
+                alert('Page URL not configured. Please verify the data-url attribute matches your file names.');
+            }
+        });
+        
+        // Optional: add a subtle cursor pointer already from CSS, but ensure accessibility
+        btn.style.cursor = 'pointer';
+    });
+
+    // Small console info (optional)
+    console.log('✅ Clinic dashboard active — buttons redirect to memo.html, appointment.html, registration.html, admin.html');
+</script>
+</body>
+</html>

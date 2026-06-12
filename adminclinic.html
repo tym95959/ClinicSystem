@@ -374,23 +374,43 @@
             if (!username || !fullName || !password || !rcNo) { showUserMsg('All * fields required', 'error'); return; }
             if (password !== confirm) { showUserMsg('Passwords do not match', 'error'); return; }
             if (password.length < 4) { showUserMsg('Password min 4 characters', 'error'); return; }
-            // Check uniqueness in Firebase
-            const existingUser = await window.db.collection("users").where("username", "==", username).get();
-            if (!existingUser.empty) { showUserMsg(`Username "${username}" already exists`, 'error'); return; }
+            
+            // ----- FIX: Use username as document ID -----
+            const userRef = window.db.collection("users").doc(username);
+            const docSnap = await userRef.get();
+            if (docSnap.exists) {
+                showUserMsg(`Username "${username}" already exists`, 'error');
+                return;
+            }
+            
+            // Check RCNo uniqueness across users
             const existingRC = await window.db.collection("users").where("RCNo", "==", rcNo).get();
             if (!existingRC.empty) { showUserMsg(`RC Number "${rcNo}" already used`, 'error'); return; }
+            
             const hash = await sha256Hash(password);
             const newUser = {
-                username, name: fullName, passwordHash: hash, Level: role, Right: role, RCNo: rcNo, createdAt: new Date().toISOString()
+                username: username,
+                name: fullName,
+                passwordHash: hash,
+                Level: role,
+                Right: role,
+                RCNo: rcNo,
+                createdAt: new Date().toISOString()
             };
             try {
-                const docRef = await window.db.collection("users").add(newUser);
+                await userRef.set(newUser);
                 showUserMsg(`✅ User ${username} registered!`, 'success');
-                document.getElementById('regUsername').value = ''; document.getElementById('regFullName').value = ''; document.getElementById('regPassword').value = '';
-                document.getElementById('regConfirmPwd').value = ''; document.getElementById('regRCNo').value = ''; updateStrength('');
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regFullName').value = '';
+                document.getElementById('regPassword').value = '';
+                document.getElementById('regConfirmPwd').value = '';
+                document.getElementById('regRCNo').value = '';
+                updateStrength('');
                 loadUsersFromFirebase(); // refresh list
                 showUserToast(`Registered ${username}`, false);
-            } catch (err) { showUserMsg('Firestore error: '+err.message, 'error'); }
+            } catch (err) {
+                showUserMsg('Firestore error: '+err.message, 'error');
+            }
         }
 
         async function deleteUserFromFirebase(userId, username) {

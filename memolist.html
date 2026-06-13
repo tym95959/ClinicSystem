@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Memos List (Filter on Demand)</title>
+    <title>Hope Dental | Memo Management - Supervisor Only</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Flatpickr for elegant date range picker -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <!-- Firebase Config -->
-    <script src="firebase-config.js"></script>
     <style>
         * {
             margin: 0;
@@ -28,6 +23,7 @@
             min-height: 100vh;
         }
 
+        /* Header */
         .clinic-header {
             background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
             color: #004d4d;
@@ -39,212 +35,616 @@
             gap: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
+
         .logo h2 {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .back-btn {
+        .user-info {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 20px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn, .logout-btn {
             background: #1e4a6e;
             border: none;
             color: white;
-            padding: 5px 14px;
+            padding: 6px 16px;
             border-radius: 30px;
             cursor: pointer;
-            font-weight: 500;
-            font-size: 11px;
+            font-size: 12px;
             transition: 0.2s;
         }
-        .back-btn:hover {
-            background: #0f3b55;
+
+        .logout-btn {
+            background: #c63d2f;
         }
 
+        .back-btn:hover, .logout-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Container */
         .container {
             max-width: 1400px;
             margin: 20px auto;
             padding: 0 20px;
         }
 
-        .card {
+        /* Filters Card */
+        .filters-card {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            padding: 20px 24px;
-            border: 1px solid #e2eaf0;
-        }
-
-        .card-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #0a2f44;
+            padding: 20px;
             margin-bottom: 20px;
-            border-left: 4px solid #0f5c7a;
-            padding-left: 12px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 15px;
+            align-items: flex-end;
+            border: 1px solid #e2eaf0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        /* Filter bar */
-        .filter-bar {
-            background: #f8fafd;
-            border-radius: 20px;
-            padding: 15px 18px;
-            margin-bottom: 25px;
-            border: 1px solid #e0e9f0;
-        }
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
         .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
             flex: 1;
-            min-width: 140px;
+            min-width: 180px;
         }
+
         .filter-group label {
+            display: block;
             font-size: 11px;
             font-weight: 600;
-            color: #1f4d6e;
-            letter-spacing: 0.3px;
+            color: #1f5e7e;
+            margin-bottom: 5px;
         }
-        .filter-group input, .filter-group .flatpickr-input {
+
+        .filter-group input, .filter-group select {
+            width: 100%;
             padding: 8px 12px;
-            border: 1.5px solid #dce5ec;
-            border-radius: 30px;
-            font-size: 13px;
-            background: white;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 12px;
+            font-size: 12px;
             transition: 0.2s;
         }
-        .filter-group input:focus {
-            border-color: #0f5c7a;
+
+        .filter-group input:focus, .filter-group select:focus {
             outline: none;
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 2px rgba(15,92,122,0.1);
         }
-        .search-group {
-            flex: 2;
-            min-width: 200px;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .primary-filter-btn {
+
+        .search-btn {
             background: #0f5c7a;
             color: white;
             border: none;
             padding: 8px 24px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .secondary-btn {
-            background: #eef2f7;
-            border: 1px solid #cbdde9;
-            color: #1f4d6e;
-            padding: 8px 18px;
-            border-radius: 30px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 12px;
-        }
-        .quick-presets {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-top: 5px;
-        }
-        .quick-btn {
-            background: white;
-            border: 1px solid #cbdde9;
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 11px;
-            cursor: pointer;
+            font-weight: 600;
             transition: 0.2s;
         }
-        .quick-btn:hover {
-            background: #e0f2fe;
+
+        .search-btn:hover {
+            background: #1a6f8f;
+            transform: translateY(-1px);
         }
+
+        .reset-btn {
+            background: #6c757d;
+        }
+
+        .reset-btn:hover {
+            background: #5a6268;
+        }
+
+        /* Memos Card */
+        .memos-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .card-header {
+            padding: 15px 20px;
+            background: #f8fbfe;
+            border-bottom: 1px solid #e2eaf0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-header h3 {
+            font-size: 16px;
+            color: #0a2f44;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
         .memos-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            font-size: 12px;
         }
+
         .memos-table th, .memos-table td {
-            padding: 12px 8px;
+            padding: 12px 10px;
             text-align: left;
             border-bottom: 1px solid #e9edf2;
-            font-size: 13px;
         }
+
         .memos-table th {
             background: #f4f9fe;
             font-weight: 600;
             color: #1f4d6e;
+            white-space: nowrap;
         }
-        .print-btn {
-            background: #e0f2fe;
-            color: #0f5c7a;
-            border: none;
-            padding: 5px 12px;
+
+        .memos-table tr:hover {
+            background: #f8fbfe;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
             border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .status-paid {
+            background: #e0f7ef;
+            color: #146b3a;
+        }
+
+        .status-pending {
+            background: #ffe9e9;
+            color: #b91c1c;
+        }
+
+        .status-overpaid {
+            background: #fff8e7;
+            color: #e65100;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .edit-btn, .delete-btn, .view-btn, .print-btn {
+            background: none;
+            border: none;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 8px;
             transition: 0.2s;
         }
-        .print-btn:hover {
-            background: #cbdde9;
+
+        .view-btn { color: #0f5c7a; }
+        .edit-btn { color: #ffc107; }
+        .delete-btn { color: #dc3545; }
+        .print-btn { color: #17a2b8; }
+
+        .view-btn:hover { background: #e0f2fe; }
+        .edit-btn:hover { background: #fff8e7; }
+        .delete-btn:hover { background: #ffe9e9; }
+        .print-btn:hover { background: #e3f2fd; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
         }
-        .empty-row {
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 1200px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2eaf0;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            color: #0a2f44;
+            font-size: 18px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+            transition: 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #dc3545;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #e2eaf0;
+        }
+
+        .confirm-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .confirm-delete:hover {
+            background: #c82333;
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .cancel-btn:hover {
+            background: #5a6268;
+        }
+
+        .save-edit-btn {
+            background: #146b3a;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .save-edit-btn:hover {
+            background: #0e5a30;
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 11px;
+            color: #1f5e7e;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 12px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 12px;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 2px rgba(15,92,122,0.1);
+        }
+
+        /* Insurance Sections */
+        .insurance-section {
+            background: #f8fbfe;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #e2eaf0;
+        }
+
+        .insurance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .insurance-header h4 {
+            color: #0a2f44;
+            font-size: 14px;
+        }
+
+        .insurance-badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 9px;
+        }
+
+        .insurance-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .insurance-toggle button {
+            padding: 4px 12px;
+            border: 1px solid #cbdde9;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: 0.2s;
+        }
+
+        .insurance-toggle button.active {
+            background: #0f5c7a;
+            color: white;
+            border-color: #0f5c7a;
+        }
+
+        .insurance-inputs {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .insurance-inputs .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        /* Services Table */
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .services-table th, .services-table td {
+            padding: 8px 4px;
+            text-align: left;
+            border-bottom: 1px solid #e9edf2;
+        }
+
+        .services-table th {
+            background: #f4f9fe;
+            font-weight: 600;
+            color: #1f4d6e;
+            white-space: nowrap;
+        }
+
+        .service-input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #cbdde9;
+            border-radius: 8px;
+            font-size: 10px;
+            transition: 0.2s;
+        }
+
+        .service-input:focus {
+            outline: none;
+            border-color: #0f5c7a;
+        }
+
+        .add-service-row {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            align-items: flex-end;
+        }
+
+        .add-service-row select {
+            flex: 2;
+            padding: 8px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .add-service-row button {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .add-service-row button:hover {
+            background: #1a6f8f;
+        }
+
+        .remove-service {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .remove-service:hover {
+            background: #ffe9e9;
+        }
+
+        /* Totals Grid */
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .total-card {
+            background: #f8fbfe;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e2eaf0;
+        }
+
+        .total-card .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0a2f44;
+        }
+
+        .total-card label {
+            font-size: 10px;
+            color: #6c757d;
+        }
+
+        .payable-card {
+            background: #e0f2fe;
+            border: 2px solid #0f5c7a;
+        }
+
+        .payable-card .value {
+            color: #0f5c7a;
+            font-size: 22px;
+        }
+
+        .warning-message {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #e65100;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            border-top: 1px solid #e2eaf0;
+        }
+
+        .page-btn {
+            background: #f4f9fe;
+            border: 1px solid #e2eaf0;
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .page-btn:hover {
+            background: #e0f2fe;
+        }
+
+        .page-btn.active {
+            background: #0f5c7a;
+            color: white;
+            border-color: #0f5c7a;
+        }
+
+        /* Loading & No Data */
+        .loading, .no-data, .empty-prompt {
             text-align: center;
             padding: 40px;
             color: #8ba0b0;
+            font-size: 13px;
         }
-        .message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 16px;
-            text-align: center;
-            font-size: 12px;
+
+        .empty-prompt i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.6;
         }
-        .success { background: #e0f7ef; color: #146b3a; }
-        .error { background: #ffe9e9; color: #b91c1c; }
-        .info { background: #e0f2fe; color: #075985; }
-        .warning { background: #fff3e0; color: #b45f06; }
-        .stats-badge {
-            background: #e0f2fe;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 500;
-        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .memos-table {
-                font-size: 11px;
-            }
-            .memos-table th, .memos-table td {
-                padding: 8px 4px;
-            }
-            .filter-row {
+            .filters-card {
                 flex-direction: column;
-                align-items: stretch;
             }
-            .action-buttons {
-                justify-content: flex-start;
+            .filter-group {
+                width: 100%;
+            }
+            .memos-table {
+                font-size: 10px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .services-table {
+                font-size: 9px;
+            }
+            .service-input {
+                font-size: 9px;
+                padding: 3px;
+            }
+            .totals-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .action-btns {
+                flex-direction: row;
             }
         }
     </style>
@@ -252,477 +652,650 @@
 <body>
 <div class="clinic-header">
     <div class="logo">
-        <h2>📄 Hope Dental · Memos (Filter on Demand)</h2>
+        <h2>📋 Hope Dental · Memo Management</h2>
     </div>
-    <div>
+    <div class="user-info">
+        <span id="userName">Loading...</span>
+        <span id="userRole"></span>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
-        <button class="back-btn" onclick="logout()">🚪 Logout</button>
+        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
     </div>
 </div>
 
 <div class="container">
-    <div class="card">
-        <div class="card-title">
-            📋 Clinical Memos
-            <button class="back-btn" id="refreshDataBtn" style="background:#1e4a6e;">⟳ Reload Data</button>
+    <!-- Filters -->
+    <div class="filters-card">
+        <div class="filter-group">
+            <label>🔍 Search (Patient Name / Memo ID)</label>
+            <input type="text" id="searchInput" placeholder="Search by patient name or memo ID...">
         </div>
-
-        <!-- FILTER SECTION - User must press "Apply Filters" to see results -->
-        <div class="filter-bar">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label><i class="far fa-calendar-alt"></i> From Date</label>
-                    <input type="text" id="startDate" placeholder="Select start date" autocomplete="off">
-                </div>
-                <div class="filter-group">
-                    <label><i class="far fa-calendar-check"></i> To Date</label>
-                    <input type="text" id="endDate" placeholder="Select end date" autocomplete="off">
-                </div>
-                <div class="filter-group search-group">
-                    <label><i class="fas fa-search"></i> Search (Memo ID / Patient Name / Patient ID)</label>
-                    <input type="text" id="searchInput" placeholder="e.g., #MEMO123 or John...">
-                </div>
-                <div class="action-buttons">
-                    <button id="applyFilterBtn" class="primary-filter-btn"><i class="fas fa-filter"></i> Apply Filters</button>
-                    <button id="clearFiltersBtn" class="secondary-btn"><i class="fas fa-eraser"></i> Clear</button>
-                </div>
-            </div>
-            <div class="quick-presets">
-                <span style="font-size:11px; color:#5f7f9a;">Quick date presets:</span>
-                <button id="todayBtn" class="quick-btn">Today</button>
-                <button id="weekBtn" class="quick-btn">This Week</button>
-                <button id="monthBtn" class="quick-btn">This Month</button>
-                <button id="allTimeBtn" class="quick-btn">All Time</button>
-            </div>
+        <div class="filter-group">
+            <label>📅 Date From</label>
+            <input type="date" id="dateFrom">
         </div>
-
-        <!-- Stats and Table -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-            <div class="stats-badge" id="resultStats">No filters applied yet → Press "Apply Filters"</div>
-            <div style="font-size: 11px; color: #6c8eae;"><i class="fas fa-info-circle"></i> Memos appear only after clicking Apply</div>
+        <div class="filter-group">
+            <label>📅 Date To</label>
+            <input type="date" id="dateTo">
         </div>
+        <div class="filter-group">
+            <label>👨‍⚕️ Doctor</label>
+            <select id="doctorFilter"><option value="">All Doctors</option></select>
+        </div>
+        <div class="filter-group">
+            <label>💰 Payment Status</label>
+            <select id="paymentFilter">
+                <option value="">All</option>
+                <option value="paid">Fully Paid</option>
+                <option value="pending">Pending Balance</option>
+                <option value="overpaid">Overpaid</option>
+            </select>
+        </div>
+        <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i> Load & Search</button>
+        <button class="search-btn reset-btn" id="resetBtn"><i class="fas fa-undo"></i> Reset</button>
+    </div>
 
-        <div style="overflow-x: auto;">
+    <!-- Memos Table -->
+    <div class="memos-card">
+        <div class="card-header">
+            <h3><i class="fas fa-file-invoice"></i> All Clinical Memos</h3>
+            <div>Showing <span id="showingCount">0</span> memos</div>
+        </div>
+        <div class="table-wrapper">
             <table class="memos-table">
                 <thead>
                     <tr>
                         <th>Memo ID</th>
                         <th>Date</th>
                         <th>Patient Name</th>
-                        <th>Patient ID</th>
                         <th>Doctor</th>
-                        <th>Total (MVR)</th>
+                        <th>Subtotal</th>
+                        <th>Patient Payable</th>
                         <th>Paid</th>
                         <th>Balance</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="memosTbody">
-                    <tr class="empty-row"><td colspan="9">💡 Set your filters and click "Apply Filters" to view memos</td></tr>
+                <tbody id="memosTableBody">
+                    <tr><td colspan="10" class="empty-prompt"><i class="fas fa-folder-open"></i><br>No data loaded. Click "Load & Search" to view memos</td></tr>
                 </tbody>
             </table>
         </div>
-        <div id="messageBox" class="message" style="display: none;"></div>
+        <div id="pagination" class="pagination"></div>
     </div>
 </div>
 
+<!-- View Modal -->
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-invoice"></i> Memo Details</h3>
+            <button class="close-modal" onclick="closeModal('viewModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="viewModalBody"></div>
+        <div class="modal-footer">
+            <button class="print-btn" id="printFromViewBtn" style="background:#17a2b8; color:white; padding:8px 20px; border-radius:30px;"><i class="fas fa-print"></i> Print Memo</button>
+            <button class="cancel-btn" onclick="closeModal('viewModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Clinical Memo</h3>
+            <button class="close-modal" onclick="closeModal('editModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="editModalBody"></div>
+        <div class="modal-footer">
+            <button class="cancel-btn" onclick="closeModal('editModal')">Cancel</button>
+            <button class="save-edit-btn" id="saveEditBtn"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-trash-alt"></i> Delete Memo</h3>
+            <button class="close-modal" onclick="closeModal('deleteModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this memo?</p>
+            <p style="margin-top: 10px; font-size: 12px; color: #dc3545;"><strong>⚠️ This action cannot be undone!</strong></p>
+            <div id="deleteMemoInfo"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="cancel-btn" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="confirm-delete" id="confirmDeleteBtn"><i class="fas fa-trash"></i> Delete Permanently</button>
+        </div>
+    </div>
+</div>
+
+<script src="firebase-config.js"></script>
 <script>
-    // ========== AUTH CHECK ==========
+    // ========== AUTHORIZATION CHECK ==========
     const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) {
-        window.location.href = 'login.html';
+    if (!loggedInUser) window.location.href = 'login.html';
+    const user = JSON.parse(loggedInUser);
+    if (user.level !== 'Supervisor' && user.level !== 'supervisor') {
+        alert('Access Denied! This page is only for Supervisors.');
+        window.location.href = 'clinicdash.html';
     }
-    try {
-        const user = JSON.parse(loggedInUser);
-        const header = document.querySelector('.clinic-header');
-        const userSpan = document.createElement('div');
-        userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
-        userSpan.innerHTML = `👤 ${user.name || user.username} (${user.level})`;
-        header.insertBefore(userSpan, header.children[1]);
-    } catch(e) {}
-
-    // ========== GLOBALS ==========
-    let allMemos = [];              // All memos from Firestore (loaded once on page load / refresh)
-    let currentDisplayMemos = [];  // Currently displayed memos (after filter apply)
-
-    // Filter state (only used when user clicks Apply)
-    let pendingStartDate = null;
-    let pendingEndDate = null;
-    let pendingSearchQuery = '';
-
-    // Flatpickr instances
-    let startPicker, endPicker;
-
-    // ========== HELPER FUNCTIONS ==========
-    function showMessage(msg, type) {
-        const box = document.getElementById('messageBox');
-        box.innerText = msg;
-        box.className = `message ${type}`;
-        box.style.display = 'block';
-        setTimeout(() => {
-            box.style.display = 'none';
-            box.innerText = '';
-        }, 3000);
-    }
-
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('userRole').textContent = `${user.level} | Memo Management`;
+    
+    let firestoreDB = null, realtimeDB = null;
+    let allMemos = [], filteredMemos = [];
+    let currentPage = 1, itemsPerPage = 15;
+    let currentEditMemoId = null, currentDeleteMemoId = null, currentViewMemo = null;
+    let servicesList = [], doctorsList = [], insuranceList = [];
+    let memosLoaded = false;  // flag to track if data has been fetched
+    
+    // Edit variables
+    let editServices = [];
+    let editDiscountPercent = 0;
+    let editPrimaryInsurance = null;
+    let editPrimaryType = "percent";
+    let editPrimaryPercent = 0;
+    let editPrimaryFixed = 0;
+    let editSecondaryInsurance = { id: "aasandha", name: "Aasandha" };
+    
+    // Escape HTML safely
     function escapeHtml(str) {
         if (!str) return '';
-        return String(str).replace(/[&<>]/g, m => {
+        return String(str).replace(/[&<>]/g, function(m) {
             if (m === '&') return '&amp;';
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
         });
     }
-
-    // Parse memo date safely
-    function parseMemoDate(memo) {
-        if (memo.date) {
-            let parsed = new Date(memo.date);
-            if (!isNaN(parsed)) return parsed;
-        }
-        if (memo.timestamp) {
-            if (typeof memo.timestamp === 'object' && memo.timestamp.toDate) {
-                return memo.timestamp.toDate();
-            } else if (typeof memo.timestamp === 'number') {
-                return new Date(memo.timestamp);
-            } else if (typeof memo.timestamp === 'string') {
-                return new Date(memo.timestamp);
-            }
-        }
-        return null;
+    
+    function formatDate(dateStr) { 
+        if (!dateStr) return 'N/A';
+        try {
+            return new Date(dateStr).toLocaleDateString();
+        } catch(e) { return dateStr; }
     }
-
-    // Core filtering logic based on pending filters (does NOT auto-render)
-    function computeFilteredMemos() {
-        if (!allMemos.length) return [];
-
-        let filtered = [...allMemos];
-
-        // Date filtering
-        if (pendingStartDate || pendingEndDate) {
-            filtered = filtered.filter(memo => {
-                const memoDateObj = parseMemoDate(memo);
-                if (!memoDateObj) return false;
-                const memoDateOnly = new Date(memoDateObj.getFullYear(), memoDateObj.getMonth(), memoDateObj.getDate());
-                if (pendingStartDate && pendingStartDate > memoDateOnly) return false;
-                if (pendingEndDate) {
-                    const endDay = new Date(pendingEndDate.getFullYear(), pendingEndDate.getMonth(), pendingEndDate.getDate());
-                    if (memoDateOnly > endDay) return false;
-                }
-                return true;
-            });
-        }
-
-        // Text search filtering
-        const query = pendingSearchQuery.trim().toLowerCase();
-        if (query) {
-            filtered = filtered.filter(memo => {
-                const memoId = (memo.memoId || '').toLowerCase();
-                const patientName = (memo.patient?.name || '').toLowerCase();
-                const patientId = (memo.patient?.id || '').toLowerCase();
-                return memoId.includes(query) || patientName.includes(query) || patientId.includes(query);
-            });
-        }
-
-        return filtered;
-    }
-
-    // Render the table based on currentDisplayMemos
-    function renderMemosTable() {
-        const tbody = document.getElementById('memosTbody');
-        const statsSpan = document.getElementById('resultStats');
-        
-        if (!currentDisplayMemos.length) {
-            if (allMemos.length === 0 && pendingStartDate === null && pendingEndDate === null && !pendingSearchQuery) {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">📂 No memo data loaded. Click "Reload Data" to fetch from server.</td></tr>';
-                statsSpan.innerHTML = 'No data loaded yet';
-            } else if (allMemos.length > 0 && currentDisplayMemos.length === 0) {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔍 No memos match the current filters. Try adjusting date or search.</td></tr>';
-                statsSpan.innerHTML = `0 memos match (total ${allMemos.length} in system)`;
-            } else {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">✨ Apply filters to see results</td></tr>';
-                statsSpan.innerHTML = 'Filters ready → click "Apply Filters"';
-            }
-            return;
-        }
-
-        // Display results
-        tbody.innerHTML = currentDisplayMemos.map((memo, idx) => {
-            const memoId = memo.memoId || memo.id;
-            let dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
-            if (parseMemoDate(memo) && !memo.date) dateStr = parseMemoDate(memo).toLocaleString();
-            const patientName = memo.patient?.name || 'Unknown';
-            const patientId = memo.patient?.id || '-';
-            const doctorName = memo.doctor?.name || '-';
-            const subtotal = memo.billing?.subtotal || 0;
-            const paid = memo.billing?.paid || 0;
-            const balance = memo.billing?.balance || 0;
-            return `
-                <tr>
-                    <td><strong>${escapeHtml(memoId)}</strong></td>
-                    <td>${escapeHtml(dateStr)}</td>
-                    <td>${escapeHtml(patientName)}</td>
-                    <td>${escapeHtml(patientId)}</td>
-                    <td>${escapeHtml(doctorName)}</td>
-                    <td>MVR ${subtotal.toFixed(2)}</td>
-                    <td>MVR ${paid.toFixed(2)}</td>
-                    <td>MVR ${balance.toFixed(2)}</td>
-                    <td><button class="print-btn" data-memo-idx="${idx}">🖨️ Print</button></td>
-                </tr>
-            `;
-        }).join('');
-
-        statsSpan.innerHTML = `📋 Showing ${currentDisplayMemos.length} memo${currentDisplayMemos.length !== 1 ? 's' : ''} ${allMemos.length ? `(out of ${allMemos.length} total)` : ''}`;
-
-        // Attach print events
-        document.querySelectorAll('.print-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.getAttribute('data-memo-idx'));
-                if (!isNaN(idx) && currentDisplayMemos[idx]) {
-                    printMemo(currentDisplayMemos[idx]);
-                }
-            });
+    
+    // Disabled chat notifications completely
+    function setupGlobalChatListener() { return; }
+    
+    // Load supporting lists (doctors, services, insurance) - these are needed for edit modals even before memos load
+    async function loadDoctorsList() {
+        if (!firestoreDB) return;
+        const snapshot = await firestoreDB.collection("doctors").get();
+        doctorsList = [];
+        const doctorSelect = document.getElementById('doctorFilter');
+        doctorSelect.innerHTML = '<option value="">All Doctors</option>';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            doctorsList.push({ id: doc.id, name: data.name });
+            doctorSelect.innerHTML += `<option value="${escapeHtml(data.name)}">${escapeHtml(data.name)}</option>`;
         });
     }
-
-    // ========== APPLY FILTERS - MAIN ACTION (only this shows memos) ==========
-    function applyFiltersAndShow() {
-        // Read current UI values into pending state
-        const startRaw = document.getElementById('startDate').value;
-        const endRaw = document.getElementById('endDate').value;
-        const searchRaw = document.getElementById('searchInput').value;
+    
+    async function loadServicesList() {
+        if (!firestoreDB) return;
+        const snapshot = await firestoreDB.collection("services").get();
+        servicesList = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            servicesList.push({ id: doc.id, name: data.name, price: data.price, aasandhaCoverAmount: data.aasandhaCoverAmount || 0 });
+        });
+    }
+    
+    async function loadInsuranceList() {
+        if (!firestoreDB) return;
+        const snapshot = await firestoreDB.collection("insurance").get();
+        insuranceList = [];
+        snapshot.forEach(doc => {
+            insuranceList.push({ id: doc.id, ...doc.data() });
+        });
+    }
+    
+    // Main fetch function - loads memos from Firestore
+    async function loadMemosData() {
+        if (!firestoreDB) { setTimeout(loadMemosData, 500); return; }
+        const snapshot = await firestoreDB.collection("memos").orderBy("createdAt", "desc").get();
+        allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        memosLoaded = true;
+        applyFilters();
+    }
+    
+    function applyFilters() {
+        if (!memosLoaded) return;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+        const doctorFilter = document.getElementById('doctorFilter').value;
+        const paymentFilter = document.getElementById('paymentFilter').value;
         
-        pendingSearchQuery = searchRaw;
-        
-        if (startRaw) {
-            const startDate = new Date(startRaw);
-            if (!isNaN(startDate)) pendingStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-            else pendingStartDate = null;
-        } else {
-            pendingStartDate = null;
+        filteredMemos = allMemos.filter(memo => {
+            if (searchTerm && !(memo.patient?.name || '').toLowerCase().includes(searchTerm) && !(memo.memoId || '').toLowerCase().includes(searchTerm)) return false;
+            if (dateFrom && memo.createdAt && memo.createdAt.split('T')[0] < dateFrom) return false;
+            if (dateTo && memo.createdAt && memo.createdAt.split('T')[0] > dateTo) return false;
+            if (doctorFilter && memo.doctor?.name !== doctorFilter) return false;
+            if (paymentFilter) {
+                const balance = memo.billing?.balance || 0;
+                if (paymentFilter === 'paid' && balance !== 0) return false;
+                if (paymentFilter === 'pending' && balance <= 0) return false;
+                if (paymentFilter === 'overpaid' && balance >= 0) return false;
+            }
+            return true;
+        });
+        document.getElementById('showingCount').textContent = filteredMemos.length;
+        renderTable();
+    }
+    
+    function renderTable() {
+        const tbody = document.getElementById('memosTableBody');
+        if (!memosLoaded || filteredMemos.length === 0) {
+            if (!memosLoaded) {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-prompt"><i class="fas fa-folder-open"></i><br>No data loaded. Click "Load & Search" to view memos</td></tr>';
+            } else {
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">No memos found matching the criteria</td></tr>';
+            }
+            document.getElementById('pagination').innerHTML = '';
+            return;
         }
         
-        if (endRaw) {
-            const endDate = new Date(endRaw);
-            if (!isNaN(endDate)) pendingEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-            else pendingEndDate = null;
+        const start = (currentPage - 1) * itemsPerPage;
+        const pageMemos = filteredMemos.slice(start, start + itemsPerPage);
+        tbody.innerHTML = pageMemos.map(memo => {
+            const balance = memo.billing?.balance || 0;
+            let statusClass = 'status-paid';
+            let statusText = 'Paid';
+            if (balance > 0) { statusClass = 'status-pending'; statusText = 'Pending'; }
+            if (balance < 0) { statusClass = 'status-overpaid'; statusText = 'Overpaid'; }
+            
+            return `<tr>
+                <td>${escapeHtml(memo.memoId)}</td>
+                <td>${formatDate(memo.createdAt)}</td>
+                <td><strong>${escapeHtml(memo.patient?.name)}</strong></td>
+                <td>Dr. ${escapeHtml(memo.doctor?.name)}</td>
+                <td>MVR ${(memo.billing?.subtotal || 0).toFixed(2)}</td>
+                <td>MVR ${(memo.billing?.patientPayable || 0).toFixed(2)}</td>
+                <td>MVR ${(memo.billing?.paid || 0).toFixed(2)}</td>
+                <td style="color:${balance>0?'#dc3545':balance<0?'#146b3a':'#28a745'}">MVR ${Math.abs(balance).toFixed(2)}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td class="action-btns">
+                    <button class="view-btn" onclick="viewMemo('${memo.id}')" title="View"><i class="fas fa-eye"></i></button>
+                    <button class="edit-btn" onclick="editMemo('${memo.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="print-btn" onclick="printMemo('${memo.id}')" title="Print"><i class="fas fa-print"></i></button>
+                    <button class="delete-btn" onclick="deleteMemoPrompt('${memo.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </td>
+            </table>`;
+        }).join('');
+        
+        const totalPages = Math.ceil(filteredMemos.length / itemsPerPage);
+        let pagesHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            pagesHtml += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goToPage(${i})">${i}</button>`;
+        }
+        document.getElementById('pagination').innerHTML = pagesHtml;
+    }
+    
+    window.goToPage = (page) => { currentPage = page; renderTable(); };
+    window.printMemo = (memoId) => { 
+        const memo = allMemos.find(m => m.id === memoId); 
+        if(memo) { 
+            localStorage.setItem('printMemoData', JSON.stringify(memo)); 
+            window.open('print-memo.html', '_blank'); 
+        } 
+    };
+    
+    window.viewMemo = async (memoId) => {
+        const memo = allMemos.find(m => m.id === memoId);
+        if (!memo) return;
+        currentViewMemo = memo;
+        const modalBody = document.getElementById('viewModalBody');
+        modalBody.innerHTML = `
+            <div style="background:#f8fbfe;padding:15px;border-radius:16px;margin-bottom:15px;">
+                <strong>Memo ID:</strong> ${escapeHtml(memo.memoId)} | <strong>Date:</strong> ${new Date(memo.createdAt).toLocaleString()}
+            </div>
+            <div style="margin-bottom:15px;">
+                <h4>👤 Patient Information</h4>
+                <p><strong>Name:</strong> ${escapeHtml(memo.patient?.name)}<br>
+                <strong>Phone:</strong> ${escapeHtml(memo.patient?.phone)}<br>
+                <strong>ID Number:</strong> ${escapeHtml(memo.patient?.idNumber)}<br>
+                <strong>Aasandha Eligible:</strong> ${memo.patient?.isCitizen ? 'Yes' : 'No'}</p>
+            </div>
+            <div style="margin-bottom:15px;">
+                <h4>👨‍⚕️ Doctor Information</h4>
+                <p><strong>Name:</strong> Dr. ${escapeHtml(memo.doctor?.name)}<br>
+                <strong>Speciality:</strong> ${escapeHtml(memo.doctor?.speciality)}</p>
+            </div>
+            <div style="margin-bottom:15px;">
+                <h4>📋 Services</h4>
+                <table class="services-table">
+                    <thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Primary Ins</th><th>Aasandha</th><th>Total</th></tr></thead>
+                    <tbody>${(memo.services||[]).map(s => `<tr>
+                        <td>${escapeHtml(s.name)}</td><td>${s.qty}</td><td>MVR ${s.price}</td>
+                        <td>MVR ${(s.primaryInsuranceAmount||0).toFixed(2)}</td><td>MVR ${(s.aasandhaAmount||0).toFixed(2)}</td>
+                        <td>MVR ${(s.total||s.qty*s.price).toFixed(2)}</td>
+                     </tr>`).join('')}</tbody>
+                </table>
+            </div>
+            <div class="totals-grid">
+                <div class="total-card"><label>Subtotal</label><div class="value">MVR ${(memo.billing?.subtotal||0).toFixed(2)}</div></div>
+                <div class="total-card"><label>After Discount</label><div class="value">MVR ${(memo.billing?.afterDiscount||0).toFixed(2)}</div></div>
+                <div class="total-card"><label>Primary Insurance</label><div class="value">MVR ${(memo.billing?.primaryInsurancePayment||0).toFixed(2)}</div></div>
+                <div class="total-card"><label>Aasandha</label><div class="value">MVR ${(memo.billing?.aasandhaPayment||0).toFixed(2)}</div></div>
+                <div class="total-card payable-card"><label>Patient Payable</label><div class="value">MVR ${(memo.billing?.patientPayable||0).toFixed(2)}</div></div>
+                <div class="total-card"><label>Paid</label><div class="value">MVR ${(memo.billing?.paid||0).toFixed(2)}</div></div>
+                <div class="total-card"><label>Balance</label><div class="value">MVR ${Math.abs(memo.billing?.balance||0).toFixed(2)}</div></div>
+            </div>
+            ${memo.notes ? `<div><strong>Notes:</strong><br>${escapeHtml(memo.notes)}</div>` : ''}
+            <div style="font-size:11px;color:#8ba0b0;margin-top:15px;">Created by: ${escapeHtml(memo.createdBy)}</div>
+        `;
+        document.getElementById('viewModal').style.display = 'flex';
+    };
+    
+    document.getElementById('printFromViewBtn').addEventListener('click', () => { 
+        if(currentViewMemo) printMemo(currentViewMemo.id); 
+    });
+    
+    // ---------- Edit functions (unchanged) ----------
+    function calculateEditBilling() {
+        const subtotal = editServices.reduce((sum, s) => sum + (s.qty * s.price), 0);
+        const discAmount = (subtotal * editDiscountPercent) / 100;
+        const afterDiscount = subtotal - discAmount;
+        let primaryTotal = 0, secondaryTotal = 0;
+        
+        if (editPrimaryInsurance && ((editPrimaryType === "percent" && editPrimaryPercent > 0) || (editPrimaryType === "fixed" && editPrimaryFixed > 0))) {
+            const primaryValue = editPrimaryType === "percent" ? editPrimaryPercent : editPrimaryFixed;
+            editServices.forEach(service => {
+                const serviceTotal = service.qty * service.price;
+                const weight = subtotal > 0 ? serviceTotal / subtotal : 0;
+                let remaining = afterDiscount * weight;
+                if (editPrimaryType === "percent") {
+                    service.primaryInsuranceAmount = remaining * (primaryValue / 100);
+                } else {
+                    service.primaryInsuranceAmount = Math.min(remaining, primaryValue * weight);
+                }
+                primaryTotal += service.primaryInsuranceAmount;
+                remaining -= service.primaryInsuranceAmount;
+                
+                if (document.getElementById('editPatientIsCitizen')?.value === 'true') {
+                    const aasandhaLimit = service.aasandhaLimit || 0;
+                    service.aasandhaAmount = Math.min(Math.max(0, remaining), aasandhaLimit);
+                    secondaryTotal += service.aasandhaAmount;
+                }
+            });
         } else {
-            pendingEndDate = null;
+            editServices.forEach(service => {
+                primaryTotal += service.primaryInsuranceAmount || 0;
+                secondaryTotal += service.aasandhaAmount || 0;
+            });
         }
         
-        // Compute filtered list
-        const filtered = computeFilteredMemos();
-        currentDisplayMemos = filtered;
-        renderMemosTable();
+        const patientPayable = Math.max(0, afterDiscount - primaryTotal - secondaryTotal);
+        const el = (id) => document.getElementById(id);
+        if (el('editSubtotal')) el('editSubtotal').innerHTML = subtotal.toFixed(2);
+        if (el('editAfterDiscount')) el('editAfterDiscount').innerHTML = afterDiscount.toFixed(2);
+        if (el('editDiscountAmount')) el('editDiscountAmount').innerHTML = discAmount.toFixed(2);
+        if (el('editPrimaryTotal')) el('editPrimaryTotal').innerHTML = primaryTotal.toFixed(2);
+        if (el('editSecondaryTotal')) el('editSecondaryTotal').innerHTML = secondaryTotal.toFixed(2);
+        if (el('editPatientPayable')) el('editPatientPayable').innerHTML = patientPayable.toFixed(2);
         
-        // Build feedback message
-        let filtersApplied = [];
-        if (pendingStartDate || pendingEndDate) {
-            const fromStr = pendingStartDate ? pendingStartDate.toISOString().slice(0,10) : 'any';
-            const toStr = pendingEndDate ? pendingEndDate.toISOString().slice(0,10) : 'any';
-            filtersApplied.push(`📅 Date: ${fromStr} → ${toStr}`);
-        }
-        if (pendingSearchQuery) filtersApplied.push(`🔍 Search: "${pendingSearchQuery}"`);
-        if (filtersApplied.length) {
-            showMessage(`Filters applied: ${filtersApplied.join(' | ')} → ${currentDisplayMemos.length} results`, "success");
-        } else {
-            showMessage(`No filters active. Showing all ${currentDisplayMemos.length} memos.`, "info");
+        const paid = parseFloat(el('editPaidAmount')?.value) || 0;
+        const balance = patientPayable - paid;
+        if (el('editBalance')) {
+            el('editBalance').innerHTML = Math.abs(balance).toFixed(2);
+            el('editBalance').style.color = balance > 0 ? '#dc3545' : (balance < 0 ? '#146b3a' : '#28a745');
+            if (el('editBalanceLabel')) el('editBalanceLabel').innerHTML = balance > 0 ? 'Balance Due' : (balance < 0 ? 'Change Due' : 'Paid Fully');
         }
     }
-
-    // ========== CLEAR ALL FILTERS ==========
-    function clearAllFilters() {
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
+    
+    function renderEditServices() {
+        const tbody = document.getElementById('editServicesTbody');
+        if (!tbody) return;
+        if (!editServices.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No services added. Select from dropdown to add</td></tr>';
+            return;
+        }
+        tbody.innerHTML = editServices.map((s, idx) => `
+            <tr>
+                <td><input type="text" value="${escapeHtml(s.name)}" onchange="updateEditService(${idx}, 'name', this.value)" class="service-input" style="width:140px;"></td>
+                <td><input type="number" value="${s.qty}" min="1" onchange="updateEditService(${idx}, 'qty', this.value)" class="service-input" style="width:60px;"></td>
+                <td><input type="number" value="${s.price}" step="0.01" onchange="updateEditService(${idx}, 'price', this.value)" class="service-input" style="width:80px;"></td>
+                <td><input type="number" value="${s.primaryInsuranceAmount || 0}" step="0.01" onchange="updateEditService(${idx}, 'primary', this.value)" class="service-input" style="width:80px;"></td>
+                <td><input type="number" value="${s.aasandhaAmount || 0}" step="0.01" onchange="updateEditService(${idx}, 'aasandha', this.value)" class="service-input" style="width:80px;"></td>
+                <td>MVR ${(s.qty * s.price).toFixed(2)}</td>
+                <td><button class="remove-service" onclick="removeEditService(${idx})"><i class="fas fa-trash"></i></button></td>
+            </tr>
+        `).join('');
+        calculateEditBilling();
+    }
+    
+    window.updateEditService = (idx, field, value) => {
+        if (field === 'name') editServices[idx].name = value;
+        else if (field === 'qty') editServices[idx].qty = Math.max(1, parseInt(value) || 1);
+        else if (field === 'price') editServices[idx].price = parseFloat(value) || 0;
+        else if (field === 'primary') editServices[idx].primaryInsuranceAmount = parseFloat(value) || 0;
+        else if (field === 'aasandha') editServices[idx].aasandhaAmount = parseFloat(value) || 0;
+        renderEditServices();
+    };
+    
+    window.removeEditService = (idx) => { 
+        editServices.splice(idx, 1); 
+        renderEditServices(); 
+    };
+    
+    function addEditServiceFromDropdown() {
+        const select = document.getElementById('editServiceSelect');
+        const opt = select?.selectedOptions[0];
+        if (!opt || !opt.value) return;
+        editServices.push({
+            id: Date.now(), name: opt.dataset.name, qty: 1, price: parseFloat(opt.dataset.price),
+            primaryInsuranceAmount: 0, aasandhaAmount: 0, aasandhaLimit: parseFloat(opt.dataset.aasandhaAmt) || 0
+        });
+        select.value = "";
+        renderEditServices();
+    }
+    
+    window.editMemo = async (memoId) => {
+        const memo = allMemos.find(m => m.id === memoId);
+        if (!memo) return;
+        currentEditMemoId = memoId;
+        
+        editServices = (memo.services || []).map(s => ({ ...s, aasandhaLimit: 0 }));
+        editDiscountPercent = memo.discount?.percent || 0;
+        
+        // ensure services/insurance lists are loaded (they are loaded on init)
+        const serviceOptions = servicesList.map(s => `<option value="${s.id}" data-name="${s.name}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount || 0}">${escapeHtml(s.name)} - MVR ${s.price}</option>`).join('');
+        const insuranceOptions = insuranceList.map(i => `<option value="${i.id}" data-name="${i.name}" data-default-coverage="${i.defaultCoverage || 0}">${escapeHtml(i.name)}</option>`).join('');
+        
+        const modalBody = document.getElementById('editModalBody');
+        modalBody.innerHTML = `
+            <div class="form-grid">
+                <div class="form-group"><label>Patient Name *</label><input type="text" id="editPatientName" value="${escapeHtml(memo.patient?.name || '')}"></div>
+                <div class="form-group"><label>Patient Phone</label><input type="text" id="editPatientPhone" value="${escapeHtml(memo.patient?.phone || '')}"></div>
+                <div class="form-group"><label>Patient ID Number</label><input type="text" id="editPatientIdNumber" value="${escapeHtml(memo.patient?.idNumber || '')}"></div>
+                <div class="form-group"><label>Nationality</label><input type="text" id="editPatientNationality" value="${escapeHtml(memo.patient?.nationality || '')}"></div>
+                <div class="form-group"><label>Aasandha Eligible</label><select id="editPatientIsCitizen"><option value="false">No</option><option value="true" ${memo.patient?.isCitizen ? 'selected' : ''}>Yes</option></select></div>
+                <div class="form-group"><label>Doctor Name</label><input type="text" id="editDoctorName" value="${escapeHtml(memo.doctor?.name || '')}"></div>
+                <div class="form-group"><label>Doctor Speciality</label><input type="text" id="editDoctorSpeciality" value="${escapeHtml(memo.doctor?.speciality || '')}"></div>
+            </div>
+            <div class="insurance-section">
+                <div class="insurance-header"><h4>🏥 Primary Insurance</h4><div class="insurance-toggle"><button id="editPrimaryPercentBtn" class="active">% Percentage</button><button id="editPrimaryFixedBtn">💰 Fixed Amount</button></div></div>
+                <select id="editPrimaryInsuranceSelect" style="width:100%;margin-bottom:10px;"><option value="">-- No Primary Insurance --</option>${insuranceOptions}</select>
+                <div class="insurance-inputs"><div class="form-group"><label>Coverage %</label><input type="number" id="editPrimaryPercent" value="0" step="1" min="0" max="100"></div><div class="form-group"><label>Fixed Amount (MVR)</label><input type="number" id="editPrimaryFixed" value="0" step="10" min="0"></div></div>
+            </div>
+            <div class="insurance-section"><div class="insurance-header"><h4>🏥 Aasandha (Secondary Insurance)</h4></div><small>Per service limit based on government pricing</small></div>
+            <div class="form-group">
+                <label>📋 Services</label>
+                <div class="add-service-row"><select id="editServiceSelect">${serviceOptions}</select><button onclick="addEditServiceFromDropdown()">+ Add</button></div>
+                <table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Primary Ins</th><th>Aasandha</th><th>Total</th><th></th></tr></thead><tbody id="editServicesTbody"></tbody></table>
+            </div>
+            <div class="form-group"><label>Discount %</label><input type="number" id="editDiscountPercent" step="1" value="${editDiscountPercent}"></div>
+            <div class="form-group"><label>Amount Paid (MVR)</label><input type="number" id="editPaidAmount" step="0.01" value="${memo.billing?.paid || 0}"></div>
+            <div class="form-group"><label>Notes</label><textarea id="editNotes" rows="2">${escapeHtml(memo.notes || '')}</textarea></div>
+            <div class="totals-grid">
+                <div class="total-card"><label>Subtotal</label><div class="value" id="editSubtotal">0.00</div></div>
+                <div class="total-card"><label>After Discount</label><div class="value" id="editAfterDiscount">0.00</div></div>
+                <div class="total-card"><label>Discount Amount</label><div class="value" id="editDiscountAmount">0.00</div></div>
+                <div class="total-card"><label>Primary Insurance</label><div class="value" id="editPrimaryTotal">0.00</div></div>
+                <div class="total-card"><label>Aasandha</label><div class="value" id="editSecondaryTotal">0.00</div></div>
+                <div class="total-card payable-card"><label>Patient Payable</label><div class="value" id="editPatientPayable">0.00</div></div>
+            </div>
+            <div class="warning-message"><strong id="editBalanceLabel">Balance Due</strong>: MVR <span id="editBalance">0.00</span></div>
+        `;
+        
+        document.getElementById('editPrimaryPercentBtn').onclick = () => {
+            editPrimaryType = "percent";
+            document.getElementById('editPrimaryPercentBtn').classList.add('active');
+            document.getElementById('editPrimaryFixedBtn').classList.remove('active');
+            document.getElementById('editPrimaryPercent').style.display = 'flex';
+            document.getElementById('editPrimaryFixed').style.display = 'none';
+            calculateEditBilling();
+        };
+        document.getElementById('editPrimaryFixedBtn').onclick = () => {
+            editPrimaryType = "fixed";
+            document.getElementById('editPrimaryFixedBtn').classList.add('active');
+            document.getElementById('editPrimaryPercentBtn').classList.remove('active');
+            document.getElementById('editPrimaryPercent').style.display = 'none';
+            document.getElementById('editPrimaryFixed').style.display = 'flex';
+            calculateEditBilling();
+        };
+        document.getElementById('editPrimaryInsuranceSelect').onchange = (e) => {
+            const opt = e.target.selectedOptions[0];
+            if (opt && opt.value) {
+                editPrimaryInsurance = insuranceList.find(i => i.id === opt.value);
+                const defaultCoverage = editPrimaryInsurance?.defaultCoverage || 0;
+                if (defaultCoverage > 0) {
+                    document.getElementById('editPrimaryPercent').value = defaultCoverage;
+                    editPrimaryPercent = defaultCoverage;
+                }
+            } else { editPrimaryInsurance = null; }
+            calculateEditBilling();
+        };
+        document.getElementById('editPrimaryPercent').oninput = (e) => { editPrimaryPercent = parseFloat(e.target.value) || 0; calculateEditBilling(); };
+        document.getElementById('editPrimaryFixed').oninput = (e) => { editPrimaryFixed = parseFloat(e.target.value) || 0; calculateEditBilling(); };
+        document.getElementById('editDiscountPercent').oninput = (e) => { editDiscountPercent = parseFloat(e.target.value) || 0; calculateEditBilling(); };
+        document.getElementById('editPaidAmount').oninput = () => calculateEditBilling();
+        document.getElementById('editPatientIsCitizen').onchange = () => calculateEditBilling();
+        
+        renderEditServices();
+        document.getElementById('editModal').style.display = 'flex';
+    };
+    
+    document.getElementById('saveEditBtn').addEventListener('click', async () => {
+        if (!currentEditMemoId || !editServices.length) { alert("Please add at least one service"); return; }
+        const patientName = document.getElementById('editPatientName').value;
+        if (!patientName) { alert("Please enter patient name"); return; }
+        const subtotal = editServices.reduce((sum, s) => sum + (s.qty * s.price), 0);
+        const discountPercent = parseFloat(document.getElementById('editDiscountPercent').value) || 0;
+        const discountAmount = (subtotal * discountPercent) / 100;
+        const afterDiscount = subtotal - discountAmount;
+        let primaryTotal = 0, secondaryTotal = 0;
+        editServices.forEach(s => { primaryTotal += s.primaryInsuranceAmount || 0; secondaryTotal += s.aasandhaAmount || 0; });
+        const patientPayable = Math.max(0, afterDiscount - primaryTotal - secondaryTotal);
+        const paidAmount = parseFloat(document.getElementById('editPaidAmount').value) || 0;
+        const updatedData = {
+            patient: {
+                name: patientName, phone: document.getElementById('editPatientPhone').value,
+                idNumber: document.getElementById('editPatientIdNumber').value,
+                nationality: document.getElementById('editPatientNationality').value,
+                isCitizen: document.getElementById('editPatientIsCitizen').value === 'true'
+            },
+            doctor: { name: document.getElementById('editDoctorName').value, speciality: document.getElementById('editDoctorSpeciality').value },
+            services: editServices.map(s => ({
+                name: s.name, qty: s.qty, price: s.price, total: s.qty * s.price,
+                primaryInsuranceAmount: s.primaryInsuranceAmount || 0, aasandhaAmount: s.aasandhaAmount || 0
+            })),
+            discount: { percent: discountPercent, reason: "Manual Edit", amount: discountAmount },
+            billing: {
+                subtotal, afterDiscount, primaryInsurancePayment: primaryTotal, aasandhaPayment: secondaryTotal,
+                totalInsurancePayment: primaryTotal + secondaryTotal, patientPayable, paid: paidAmount, balance: patientPayable - paidAmount
+            },
+            notes: document.getElementById('editNotes').value,
+            updatedAt: new Date().toISOString(), updatedBy: user.username
+        };
+        await firestoreDB.collection("memos").doc(currentEditMemoId).update(updatedData);
+        alert("Memo updated successfully!");
+        closeModal('editModal');
+        // After edit, reload data to reflect changes
+        await loadMemosData();
+    });
+    
+    window.deleteMemoPrompt = (memoId) => {
+        const memo = allMemos.find(m => m.id === memoId);
+        if (memo) {
+            currentDeleteMemoId = memoId;
+            document.getElementById('deleteMemoInfo').innerHTML = `<p><strong>Memo ID:</strong> ${escapeHtml(memo.memoId)}<br><strong>Patient:</strong> ${escapeHtml(memo.patient?.name)}</p>`;
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+    };
+    
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        await firestoreDB.collection("memos").doc(currentDeleteMemoId).delete();
+        alert("Memo deleted successfully!");
+        closeModal('deleteModal');
+        await loadMemosData();
+    });
+    
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+    window.closeModal = closeModal;
+    window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; };
+    
+    // Reset filters and reload memos
+    document.getElementById('resetBtn').onclick = async () => {
         document.getElementById('searchInput').value = '';
-        pendingStartDate = null;
-        pendingEndDate = null;
-        pendingSearchQuery = '';
-        // After clearing, we do NOT automatically show results. The user must press "Apply Filters"
-        // But we want to reset the display to empty state showing instruction.
-        currentDisplayMemos = [];
-        renderMemosTable();
-        showMessage("Filters cleared. Click 'Apply Filters' to view all memos (or set new filters).", "info");
-    }
-
-    // ========== PRESET DATES (updates UI fields but does NOT auto-apply) ==========
-    function setDatePreset(preset) {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        let start = null, end = null;
-        if (preset === 'today') {
-            start = new Date(today);
-            end = new Date(today);
-        } else if (preset === 'week') {
-            const day = today.getDay();
-            const diffToMonday = (day === 0 ? 6 : day - 1);
-            start = new Date(today);
-            start.setDate(today.getDate() - diffToMonday);
-            end = new Date(today);
-        } else if (preset === 'month') {
-            start = new Date(today.getFullYear(), today.getMonth(), 1);
-            end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        } else if (preset === 'all') {
-            start = null;
-            end = null;
-        }
-        
-        if (start && startPicker) {
-            const startStr = start.toISOString().slice(0,10);
-            document.getElementById('startDate').value = startStr;
-            if (startPicker.setDate) startPicker.setDate(start);
-        } else if (preset === 'all') {
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            if (startPicker) startPicker.clear();
-            if (endPicker) endPicker.clear();
-        }
-        
-        if (end && endPicker) {
-            const endStr = end.toISOString().slice(0,10);
-            document.getElementById('endDate').value = endStr;
-            if (endPicker.setDate) endPicker.setDate(end);
-        }
-        
-        // Important: presets only fill the date fields but do NOT automatically show memos.
-        showMessage(`Date preset "${preset}" applied to fields. Click "Apply Filters" to see results.`, "info");
-    }
-
-    // ========== LOAD MEMOS FROM FIRESTORE (only loads data, does not auto-display) ==========
-    async function loadMemosDataOnly() {
-        if (!window.db) {
-            setTimeout(loadMemosDataOnly, 500);
-            return;
-        }
-        const tbody = document.getElementById('memosTbody');
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔄 Loading memo data from server...</td></tr>';
-        try {
-            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
-            allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // After loading data, reset the display to empty (filters not applied automatically)
-            currentDisplayMemos = [];
-            renderMemosTable();
-            showMessage(`✅ Loaded ${allMemos.length} memos from database. Use filters + Apply to view.`, "success");
-        } catch (error) {
-            console.error("Error loading memos:", error);
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">❌ Error loading memos. Check console.</td></tr>';
-            showMessage("Error loading memos: " + error.message, "error");
-        }
-    }
-
-    // ========== PRINT MEMO (A5 optimized receipt - same design) ==========
-    function printMemo(memo) {
-        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-        if (!printWindow) {
-            alert("Please allow pop-ups to print the memo.");
-            return;
-        }
-
-        const memoId = memo.memoId || memo.id;
-        const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
-        const patient = memo.patient || {};
-        const doctor = memo.doctor || {};
-        const services = memo.services || [];
-        const discount = memo.discount || {};
-        const billing = memo.billing || {};
-        const insurances = memo.insurances || [];
-
-        let insuranceHtml = '';
-        if (insurances.length > 0) {
-            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
-            insurances.forEach(ins => {
-                insuranceHtml += `<span class="insurance-item">${ins.name}: MVR ${(ins.amount || 0).toFixed(2)} (${ins.priority})</span>`;
-            });
-            insuranceHtml += `</div></div>`;
-        }
-
-        let servicesHtml = '';
-        if (services.length > 0) {
-            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Primary Ins</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
-            services.forEach(s => {
-                servicesHtml += `<tr><td>${escapeHtml(s.name)}</td><td class="center">${s.qty}</td><td class="right">MVR ${(s.price || 0).toFixed(2)}</td><td class="right">MVR ${(s.total || 0).toFixed(2)}</td><td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td><td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td><td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td></tr>`;
-            });
-            servicesHtml += `</tbody></table>`;
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        document.getElementById('doctorFilter').value = '';
+        document.getElementById('paymentFilter').value = '';
+        currentPage = 1;
+        await loadMemosData();
+    };
+    
+    // Search button: load memos if not loaded, then apply filters (which re-evaluates based on current filter values)
+    document.getElementById('searchBtn').onclick = async () => {
+        currentPage = 1;
+        if (!memosLoaded) {
+            await loadMemosData();
         } else {
-            servicesHtml = '<div class="no-services">No services recorded.</div>';
+            applyFilters();
         }
-
-        const printContent = `<!DOCTYPE html>
-        <html><head><meta charset="UTF-8"><title>Hope Dental - Memo ${memoId}</title>
-        <style>
-            @page { size: A5; margin: 8mm; }
-            body { font-family: 'Inter','Segoe UI',sans-serif; margin:0; padding:0; background:white; color:#1e2a36; font-size:11px; line-height:1.4; }
-            .receipt { max-width:100%; margin:0 auto; background:white; }
-            .header { text-align:center; border-bottom:2px solid #0a2f44; padding-bottom:6px; margin-bottom:12px; position:relative; }
-            .header h1 { color:#0a2f44; margin:0; font-size:20px; }
-            .header p { margin:3px 0; font-size:9px; color:#5f7f9a; }
-            .memo-title { text-align:center; background:#e0f2fe; padding:4px; border-radius:20px; margin:8px 0; font-weight:bold; font-size:12px; }
-            .info-grid { display:flex; justify-content:space-between; background:#f4f9fe; padding:8px 10px; border-radius:12px; margin:10px 0; gap:15px; flex-wrap:wrap; }
-            .info-box { flex:1; }
-            .info-box strong { font-size:10px; color:#0a2f44; display:block; margin-bottom:4px; border-left:2px solid #0f5c7a; padding-left:6px; }
-            .services-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:9px; }
-            .services-table th { background:#f4f9fe; padding:5px 4px; text-align:left; border-bottom:1px solid #d0dfe8; }
-            .services-table td { padding:4px; border-bottom:1px solid #e9edf2; }
-            .right { text-align:right; }
-            .center { text-align:center; }
-            .insurance-box { background:#fff8e7; padding:6px 10px; border-radius:10px; margin:10px 0; font-size:9px; }
-            .insurance-list { display:flex; flex-wrap:wrap; gap:12px; margin-top:4px; }
-            .insurance-item { background:white; padding:2px 8px; border-radius:20px; border:1px solid #f0c674; }
-            .totals-box { background:linear-gradient(135deg,#f0f9ff,#e8f4fd); border:1px solid #0f5c7a; border-radius:12px; padding:10px; margin:12px 0; }
-            .totals-row { display:flex; justify-content:space-between; padding:4px 0; font-size:10px; }
-            .totals-row.total { font-weight:800; font-size:13px; border-top:1px dashed #8ba0b0; margin-top:6px; padding-top:6px; }
-            .footer { text-align:center; font-size:8px; color:#8ba0b0; border-top:1px solid #ddd; padding-top:8px; margin-top:12px; }
-            .no-services { background:#f9f9f9; padding:20px; text-align:center; border-radius:8px; font-style:italic; }
-            @media print { body { margin:0; padding:0; } .no-print { display:none; } }
-        </style>
-        </head><body>
-        <div class="receipt">
-            <div class="header"><img src="hope1.png" alt="Logo" style="position:absolute; left:10px; top:5px; height:80px;"><h1>Hope Dental Clinic</h1><p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p><p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p><p><strong>CLINICAL MEMO / RECEIPT</strong></p></div>
-            <div class="memo-title">MEMO NO: ${memoId} | DATE: ${dateStr}</div>
-            <div class="info-grid"><div class="info-box"><strong>PATIENT DETAILS</strong><div>Name: ${escapeHtml(patient.name || '')}</div><div>ID: ${escapeHtml(patient.id || '')}</div><div>Contact: ${escapeHtml(patient.phone || '')}</div><div>Nationality: ${escapeHtml(patient.nationality || '')}</div><div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div></div><div class="info-box"><strong>DOCTOR DETAILS</strong><div>Name: ${escapeHtml(doctor.name || '')}</div><div>Speciality: ${escapeHtml(doctor.speciality || '')}</div></div></div>
-            ${servicesHtml} ${insuranceHtml}
-            <div class="totals-box"><div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div><div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div><div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div><div class="totals-row"><span>Primary Insurance Paid:</span><span>MVR ${(billing.primaryInsurancePayment || 0).toFixed(2)}</span></div><div class="totals-row"><span>Aasandha (Govt.) Paid:</span><span>MVR ${(billing.aasandhaPayment || 0).toFixed(2)}</span></div><div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div><div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div><div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div></div>
-            <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt.</div>
-            <div class="no-print" style="text-align:center; margin-top:15px;"><button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px;">🖨️ Print</button> <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px;">Close</button></div>
-        </div><\/body><\/html>`;
-        printWindow.document.write(printContent);
-        printWindow.document.close();
+    };
+    
+    document.getElementById('searchInput').addEventListener('keypress', async (e) => { 
+        if (e.key === 'Enter') {
+            currentPage = 1;
+            if (!memosLoaded) {
+                await loadMemosData();
+            } else {
+                applyFilters();
+            }
+        } 
+    });
+    
+    document.getElementById('logoutBtn').addEventListener('click', () => { 
+        localStorage.clear(); 
+        sessionStorage.clear(); 
+        window.location.href = 'login.html'; 
+    });
+    
+    // Initialization: only load supporting data (doctors, services, insurance) but NOT memos
+    async function init() {
+        if (window.db) firestoreDB = window.db;
+        if (window.rtdb) realtimeDB = window.rtdb;
+        // No chat listener
+        if (!firestoreDB) { setTimeout(init, 500); return; }
+        await loadDoctorsList();
+        await loadServicesList();
+        await loadInsuranceList();
+        // memos are NOT loaded here - user must click Load & Search
+        // Show empty prompt
+        memosLoaded = false;
+        renderTable();
     }
-
-    // ========== LOGOUT ==========
-    function logout() {
-        localStorage.removeItem('loggedInUser');
-        sessionStorage.removeItem('clinic_user_session');
-        window.location.href = 'login.html';
-    }
-
-    // ========== INIT EVENT LISTENERS & PICKERS ==========
-    function init() {
-        startPicker = flatpickr("#startDate", { dateFormat: "Y-m-d", allowInput: true });
-        endPicker = flatpickr("#endDate", { dateFormat: "Y-m-d", allowInput: true });
-        
-        document.getElementById('applyFilterBtn').addEventListener('click', applyFiltersAndShow);
-        document.getElementById('clearFiltersBtn').addEventListener('click', clearAllFilters);
-        document.getElementById('refreshDataBtn').addEventListener('click', loadMemosDataOnly);
-        document.getElementById('todayBtn').addEventListener('click', () => setDatePreset('today'));
-        document.getElementById('weekBtn').addEventListener('click', () => setDatePreset('week'));
-        document.getElementById('monthBtn').addEventListener('click', () => setDatePreset('month'));
-        document.getElementById('allTimeBtn').addEventListener('click', () => setDatePreset('all'));
-        
-        // On page load, load data but DO NOT auto-show memos (empty display)
-        loadMemosDataOnly();
-    }
-
-    // Wait for Firebase
-    function waitForFirebase() {
-        if (window.db) {
-            init();
-        } else {
-            setTimeout(waitForFirebase, 500);
-        }
-    }
-    waitForFirebase();
+    init();
 </script>
 </body>
 </html>

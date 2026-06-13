@@ -23,205 +23,56 @@
             padding: 20px;
         }
         .container {
-            max-width: 900px;
+            max-width: 500px;
             margin: 0 auto;
         }
         .card {
             background: white;
             border-radius: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            padding: 24px;
+            padding: 30px;
             border: 1px solid #e2eaf0;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #0f5c7a;
-        }
-        .logo h2 {
-            font-size: 1.3rem;
-            color: #0a2f44;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .back-btn {
-            background: #1e4a6e;
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 12px;
-            transition: 0.2s;
-        }
-        .back-btn:hover {
-            background: #0f3b55;
-        }
-        .print-area {
-            background: #f8fafd;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        .print-title {
-            font-weight: 600;
-            color: #1f4d6e;
-            margin-bottom: 15px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .memo-preview {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #e2eaf0;
-            margin-top: 15px;
-        }
-        .loading {
             text-align: center;
-            padding: 50px;
-            color: #8ba0b0;
         }
         .loading-spinner {
             display: inline-block;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 4px solid #e0f2fe;
             border-top-color: #0f5c7a;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .loading-text {
+            color: #1f4d6e;
+            font-size: 14px;
+            margin-top: 10px;
+        }
         .error {
             color: #b91c1c;
             background: #ffe9e9;
-            padding: 15px;
+            padding: 20px;
             border-radius: 12px;
             margin-top: 15px;
-            text-align: center;
         }
-        .memo-details {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .detail-row {
-            display: flex;
-            padding: 12px 15px;
-            border-bottom: 1px solid #e9edf2;
-        }
-        .detail-label {
-            width: 140px;
-            font-weight: 600;
-            color: #1f4d6e;
-            font-size: 12px;
-        }
-        .detail-value {
-            flex: 1;
-            font-size: 12px;
-            color: #1e2a36;
-        }
-        .services-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 11px;
-        }
-        .services-table th, .services-table td {
-            padding: 8px 6px;
-            text-align: left;
-            border-bottom: 1px solid #e9edf2;
-        }
-        .services-table th {
-            background: #f4f9fe;
-            font-weight: 600;
-            color: #1f4d6e;
-        }
-        .services-table .right {
-            text-align: right;
-        }
-        .totals-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .total-card {
-            background: #f8fbfe;
-            padding: 10px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid #e2eaf0;
-        }
-        .total-card .value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #0a2f44;
-        }
-        .total-card label {
-            font-size: 10px;
-            color: #6c757d;
-        }
-        .payable-card {
-            background: #e0f2fe;
-            border: 2px solid #0f5c7a;
-        }
-        .payable-card .value {
-            color: #0f5c7a;
-            font-size: 20px;
-        }
-        .print-btn-large {
-            background: #0f5c7a;
-            color: white;
+        .close-btn {
+            background: #1e4a6e;
             border: none;
-            padding: 12px 28px;
-            border-radius: 40px;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 30px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
             font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
+            margin-top: 20px;
             transition: 0.2s;
         }
-        .print-btn-large:hover {
-            background: #0a4a63;
-            transform: translateY(-1px);
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .status-paid {
-            background: #e0f7ef;
-            color: #146b3a;
-        }
-        .status-pending {
-            background: #ffe9e9;
-            color: #b91c1c;
-        }
-        @media (max-width: 600px) {
-            body { padding: 12px; }
-            .card { padding: 16px; }
-            .detail-row { flex-direction: column; gap: 5px; }
-            .detail-label { width: 100%; }
+        .close-btn:hover {
+            background: #0f3b55;
         }
     </style>
     <script src="firebase-config.js"></script>
@@ -229,20 +80,11 @@
 <body>
 <div class="container">
     <div class="card">
-        <div class="header">
-            <div class="logo">
-                <h2><i class="fas fa-print"></i> Hope Dental · Print Memo</h2>
-            </div>
-            <div>
-                <button class="back-btn" onclick="window.close()"><i class="fas fa-times"></i> Close</button>
-            </div>
-        </div>
-
-        <div id="mainContent">
-            <div class="loading" id="loadingDiv">
-                <div class="loading-spinner"></div>
-                <p>Loading memo from link...</p>
-                <p style="font-size: 11px; margin-top: 10px;">Memo ID: <span id="displayMemoId">-</span></p>
+        <div id="statusContent">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">
+                <i class="fas fa-print"></i> Loading memo and preparing print...<br>
+                <small style="color: #8ba0b0;">Please wait</small>
             </div>
         </div>
     </div>
@@ -254,10 +96,6 @@
     if (!loggedInUser) {
         window.location.href = 'login.html';
     }
-
-    // Use the existing db from firebase-config.js, don't redeclare
-    // The firebase-config.js should already initialize window.db
-    let currentMemo = null;
 
     function escapeHtml(str) {
         if (!str) return '';
@@ -283,7 +121,7 @@
             let p = new Date(memo.createdAt);
             if (!isNaN(p)) return p;
         }
-        return null;
+        return new Date();
     }
 
     function getActiveInsurance(memo) {
@@ -298,19 +136,8 @@
         };
     }
 
-    // ========== PRINT FUNCTION ==========
-    function printMemoReceipt(memo) {
-        if (!memo) {
-            alert("No memo data to print.");
-            return;
-        }
-
-        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-        if (!printWindow) {
-            alert("Please allow pop-ups to print the memo.");
-            return;
-        }
-
+    // ========== DIRECT PRINT FUNCTION - Opens print window immediately ==========
+    function openPrintWindow(memo) {
         const memoId = memo.memoId || memo.id;
         const dateObj = parseMemoDate(memo);
         const dateStr = dateObj ? dateObj.toLocaleString() : (memo.date || 'N/A');
@@ -335,7 +162,7 @@
         
         let servicesHtml = '';
         if (services.length > 0) {
-            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th><tr></thead><tbody>`;
+            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
             services.forEach(s => {
                 servicesHtml += `<tr>
                     <td>${escapeHtml(s.name)}</td>
@@ -527,6 +354,12 @@
                     }
                 }
             </style>
+            <script>
+                // Auto-print when page loads
+                window.onload = function() {
+                    window.print();
+                };
+            <\/script>
         </head>
         <body>
             <div class="receipt">
@@ -569,21 +402,32 @@
                     Thank you for choosing Hope Dental.<br>
                     This is a computer-generated receipt. Valid without signature.
                 </div>
-                <div class="no-print" style="text-align:center; margin-top:15px;">
-                    <button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px; cursor:pointer;">🖨️ Print this Memo</button>
-                    <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px; margin-left:10px; cursor:pointer;">Close</button>
-                </div>
             </div>
         </body>
         </html>`;
 
-        printWindow.document.write(printContent);
-        printWindow.document.close();
+        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+        if (printWindow) {
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            // Close the original window after a short delay
+            setTimeout(() => {
+                window.close();
+            }, 1000);
+        } else {
+            // If popup blocked, show error
+            document.getElementById('statusContent').innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Pop-up blocked! Please allow pop-ups for this site and try again.</p>
+                    <button class="close-btn" onclick="window.close()">Close</button>
+                </div>
+            `;
+        }
     }
 
     // ========== SEARCH MEMO BY ID ==========
     async function searchMemoById(memoId) {
-        // Use window.db from firebase-config.js
         if (!window.db) return null;
         
         try {
@@ -607,144 +451,49 @@
         }
     }
 
-    // ========== DISPLAY MEMO DETAILS ==========
-    function displayMemoDetails(memo) {
-        const memoId = memo.memoId || memo.id;
-        const dateObj = parseMemoDate(memo);
-        const dateStr = dateObj ? dateObj.toLocaleString() : (memo.date || 'N/A');
-        const patient = memo.patient || {};
-        const doctor = memo.doctor || {};
-        const services = memo.services || [];
-        const billing = memo.billing || {};
-        const balance = billing.balance || 0;
-        const statusClass = balance === 0 ? 'status-paid' : 'status-pending';
-        const statusText = balance === 0 ? 'Fully Paid' : (balance > 0 ? 'Balance Due' : 'Overpaid');
-        
-        let servicesHtml = '';
-        if (services.length > 0) {
-            servicesHtml = `
-                <h4 style="margin: 15px 0 10px 0; color: #1f4d6e;">📋 Services</h4>
-                <table class="services-table">
-                    <thead>
-                        <tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr>
-                    </thead>
-                    <tbody>
-                        ${services.map(s => `
-                            <tr>
-                                <td>${escapeHtml(s.name)}</td>
-                                <td>${s.qty}</td>
-                                <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
-                                <td class="right">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
-                                <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
-                                <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
-                                <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } else {
-            servicesHtml = '<p style="margin: 15px 0; color: #8ba0b0;">No services recorded.</p>';
-        }
-        
-        const mainContent = document.getElementById('mainContent');
-        mainContent.innerHTML = `
-            <div class="print-area">
-                <div class="print-title">
-                    <span><i class="fas fa-file-invoice"></i> Memo Details</span>
-                    <span class="status-badge ${statusClass}">${statusText}</span>
-                </div>
-                
-                <div class="memo-preview">
-                    <div class="memo-details">
-                        <div class="detail-row">
-                            <div class="detail-label">Memo ID:</div>
-                            <div class="detail-value"><strong>${escapeHtml(memoId)}</strong></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Date:</div>
-                            <div class="detail-value">${escapeHtml(dateStr)}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Patient Name:</div>
-                            <div class="detail-value">${escapeHtml(patient.name || 'Unknown')}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Patient ID:</div>
-                            <div class="detail-value">${escapeHtml(patient.id || patient.idNumber || '-')}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Phone:</div>
-                            <div class="detail-value">${escapeHtml(patient.phone || '-')}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Doctor:</div>
-                            <div class="detail-value">Dr. ${escapeHtml(doctor.name || '-')} (${escapeHtml(doctor.speciality || '-')})</div>
-                        </div>
-                        ${servicesHtml}
-                        
-                        <div class="totals-grid">
-                            <div class="total-card"><label>Subtotal</label><div class="value">MVR ${(billing.subtotal || 0).toFixed(2)}</div></div>
-                            <div class="total-card"><label>After Discount</label><div class="value">MVR ${(billing.afterDiscount || 0).toFixed(2)}</div></div>
-                            <div class="total-card"><label>Primary Insurance</label><div class="value">MVR ${(billing.primaryInsurancePayment || 0).toFixed(2)}</div></div>
-                            <div class="total-card"><label>Aasandha</label><div class="value">MVR ${(billing.aasandhaPayment || 0).toFixed(2)}</div></div>
-                            <div class="total-card payable-card"><label>Patient Payable</label><div class="value">MVR ${(billing.patientPayable || 0).toFixed(2)}</div></div>
-                            <div class="total-card"><label>Paid</label><div class="value">MVR ${(billing.paid || 0).toFixed(2)}</div></div>
-                        </div>
-                        
-                        <div style="margin-top: 15px; text-align: center;">
-                            <button id="printReceiptBtn" class="print-btn-large"><i class="fas fa-print"></i> Print Receipt (A5)</button>
-                        </div>
-                        
-                        ${memo.notes ? `<div style="margin-top: 15px; padding: 10px; background: #f8fbfe; border-radius: 8px;"><strong>Notes:</strong><br>${escapeHtml(memo.notes)}</div>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('printReceiptBtn').addEventListener('click', () => {
-            printMemoReceipt(memo);
-        });
-    }
-
-    // ========== LOAD MEMO FROM URL ==========
-    async function loadMemoFromUrl() {
+    // ========== LOAD AND PRINT DIRECTLY ==========
+    async function loadAndPrint() {
         const urlParams = new URLSearchParams(window.location.search);
         const memoId = urlParams.get('memoId');
         
-        const displaySpan = document.getElementById('displayMemoId');
-        if (displaySpan) displaySpan.textContent = memoId || '?';
-        
         if (!memoId) {
-            const mainContent = document.getElementById('mainContent');
-            mainContent.innerHTML = `
+            document.getElementById('statusContent').innerHTML = `
                 <div class="error">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>No memo ID provided in the URL.</p>
                     <p style="margin-top: 10px;">Use: print-memo.html?memoId=1006</p>
+                    <button class="close-btn" onclick="window.close()">Close</button>
                 </div>
             `;
             return;
         }
         
         if (!window.db) {
-            setTimeout(loadMemoFromUrl, 500);
+            setTimeout(loadAndPrint, 500);
             return;
         }
         
-        console.log("Searching for memo:", memoId);
         const memo = await searchMemoById(memoId);
         
         if (memo) {
-            currentMemo = memo;
-            displayMemoDetails(memo);
+            // Update status to show success
+            document.getElementById('statusContent').innerHTML = `
+                <div style="color: #146b3a;">
+                    <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <div class="loading-text">Memo found! Opening print window...</div>
+                </div>
+            `;
+            // Open print window directly
+            setTimeout(() => {
+                openPrintWindow(memo);
+            }, 500);
         } else {
-            const mainContent = document.getElementById('mainContent');
-            mainContent.innerHTML = `
+            document.getElementById('statusContent').innerHTML = `
                 <div class="error">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Memo not found with ID: <strong>${escapeHtml(memoId)}</strong></p>
                     <p style="margin-top: 10px;">Please check the memo ID and try again.</p>
+                    <button class="close-btn" onclick="window.close()">Close</button>
                 </div>
             `;
         }
@@ -753,7 +502,7 @@
     // ========== INITIALIZATION ==========
     function init() {
         if (window.db) {
-            loadMemoFromUrl();
+            loadAndPrint();
         } else {
             setTimeout(init, 500);
         }

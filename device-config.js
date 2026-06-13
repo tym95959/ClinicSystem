@@ -1,6 +1,6 @@
 // DEVICE CONFIGURATION FILE
-// Store this on your server - users can still view it if they know the path
+// Store this file on your server - this is where the master password lives
 window.DEVICE_CONFIG = {
-    deviceMasterPassword: "HopeDental2025!",
+    deviceMasterPassword: "HopeDental2025!",  // Change this to your secure password
     authExpiryDays: 365
 };

@@ -102,9 +102,10 @@
             min-width: 280px;
         }
 
+        /* Header with white-to-turquoise gradient */
         .header {
-            background: linear-gradient(135deg, #008b8b 0%, #20b2aa 100%);
-            color: white;
+            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
+            color: #004d4d;
             padding: 16px 24px;
             border-radius: 20px;
             margin-bottom: 20px;
@@ -113,23 +114,58 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(32,178,170,0.3);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            color: #008b8b;
+            background: white;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #006666, #20b2aa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
         }
 
         .user-info-card {
-            background: rgba(255,255,255,0.2);
+            background: rgba(0,139,139,0.1);
+            backdrop-filter: blur(4px);
             padding: 8px 16px;
             border-radius: 16px;
+            border: 1px solid rgba(0,128,128,0.2);
         }
 
         .user-name {
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
+            color: #004d4d;
         }
 
         .user-role {
             font-size: 10px;
-            opacity: 0.9;
+            opacity: 0.8;
             margin-top: 2px;
+            color: #006666;
         }
 
         .logout-btn {
@@ -143,6 +179,10 @@
             font-weight: 600;
             margin-top: 5px;
             width: 100%;
+            transition: 0.2s;
+        }
+        .logout-btn:hover {
+            background: #c0392b;
         }
 
         .welcome-section {
@@ -558,16 +598,26 @@
                 right: 10px;
                 top: 10px;
             }
+            .header h1 {
+                font-size: 1.1rem;
+            }
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.4rem;
+            }
         }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
     <div class="header">
-        <h1>
-            <img src="hope1.png" alt="Hope Dental Logo" style="height:100px; vertical-align:middle; margin-right:10px;">
-            Hope Dental Clinic
-        </h1>
+        <div class="logo-area">
+            <div class="logo-icon">
+                <img src="hope1.png" alt="Hope Dental Logo" style="height:80px; vertical-align:middle; margin-right:10px;">
+            </div>
+            <h1>Hope Dental Clinic</h1>
+        </div>
         <div class="user-info-card">
             <div class="user-name" id="userName">Loading...</div>
             <div class="user-role" id="userRole"></div>

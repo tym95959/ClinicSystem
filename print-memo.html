@@ -64,110 +64,44 @@
         .back-btn:hover {
             background: #0f3b55;
         }
-        .search-section {
+        .print-area {
             background: #f8fafd;
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 25px;
         }
-        .search-title {
+        .print-title {
             font-weight: 600;
             color: #1f4d6e;
             margin-bottom: 15px;
             font-size: 14px;
-        }
-        .search-input-group {
             display: flex;
-            gap: 12px;
+            align-items: center;
+            gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 15px;
+            justify-content: space-between;
         }
-        .search-input-group input {
-            flex: 1;
-            padding: 10px 16px;
-            border: 1.5px solid #dce5ec;
-            border-radius: 30px;
-            font-size: 13px;
-            background: white;
-        }
-        .search-input-group input:focus {
-            outline: none;
-            border-color: #0f5c7a;
-        }
-        .search-btn {
-            background: #0f5c7a;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-        }
-        .search-btn:hover {
-            background: #0a4a63;
-        }
-        .memo-result {
-            display: none;
-            background: #f4f9fe;
-            border-radius: 16px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-        .memo-info {
-            margin-bottom: 15px;
-            padding: 10px;
+        .memo-preview {
             background: white;
             border-radius: 12px;
-            border-left: 4px solid #0f5c7a;
-        }
-        .memo-info p {
-            margin: 6px 0;
-            font-size: 13px;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 12px;
+            padding: 20px;
+            border: 1px solid #e2eaf0;
             margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        .print-memo-btn {
-            background: #0f5c7a;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .print-memo-btn:hover {
-            background: #0a4a63;
-        }
-        .another-btn {
-            background: #eef2f7;
-            border: 1px solid #cbdde9;
-            color: #1f4d6e;
-            padding: 10px 20px;
-            border-radius: 30px;
-            cursor: pointer;
         }
         .loading {
             text-align: center;
-            padding: 30px;
+            padding: 50px;
             color: #8ba0b0;
         }
         .loading-spinner {
             display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid #e0f2fe;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0f2fe;
             border-top-color: #0f5c7a;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -175,41 +109,119 @@
         .error {
             color: #b91c1c;
             background: #ffe9e9;
-            padding: 12px;
+            padding: 15px;
             border-radius: 12px;
             margin-top: 15px;
+            text-align: center;
         }
-        .success-info {
-            color: #146b3a;
-            background: #e0f7ef;
-            padding: 12px;
+        .memo-details {
+            background: white;
             border-radius: 12px;
-            margin-top: 15px;
+            overflow: hidden;
         }
-        .message-box {
-            margin-top: 15px;
+        .detail-row {
+            display: flex;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9edf2;
+        }
+        .detail-label {
+            width: 140px;
+            font-weight: 600;
+            color: #1f4d6e;
+            font-size: 12px;
+        }
+        .detail-value {
+            flex: 1;
+            font-size: 12px;
+            color: #1e2a36;
+        }
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+        .services-table th, .services-table td {
+            padding: 8px 6px;
+            text-align: left;
+            border-bottom: 1px solid #e9edf2;
+        }
+        .services-table th {
+            background: #f4f9fe;
+            font-weight: 600;
+            color: #1f4d6e;
+        }
+        .services-table .right {
+            text-align: right;
+        }
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .total-card {
+            background: #f8fbfe;
             padding: 10px;
             border-radius: 12px;
-            font-size: 12px;
-            display: none;
-        }
-        .auto-print-banner {
-            background: linear-gradient(135deg, #e0f2fe, #b8e0f0);
-            border-radius: 12px;
-            padding: 15px;
             text-align: center;
-            margin-bottom: 20px;
-            border: 1px solid #0f5c7a;
+            border: 1px solid #e2eaf0;
         }
-        .auto-print-banner i {
-            font-size: 24px;
+        .total-card .value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a2f44;
+        }
+        .total-card label {
+            font-size: 10px;
+            color: #6c757d;
+        }
+        .payable-card {
+            background: #e0f2fe;
+            border: 2px solid #0f5c7a;
+        }
+        .payable-card .value {
             color: #0f5c7a;
-            margin-bottom: 8px;
+            font-size: 20px;
+        }
+        .print-btn-large {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+        .print-btn-large:hover {
+            background: #0a4a63;
+            transform: translateY(-1px);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-paid {
+            background: #e0f7ef;
+            color: #146b3a;
+        }
+        .status-pending {
+            background: #ffe9e9;
+            color: #b91c1c;
         }
         @media (max-width: 600px) {
             body { padding: 12px; }
             .card { padding: 16px; }
-            .search-input-group { flex-direction: column; }
+            .detail-row { flex-direction: column; gap: 5px; }
+            .detail-label { width: 100%; }
         }
     </style>
     <script src="firebase-config.js"></script>
@@ -226,27 +238,13 @@
             </div>
         </div>
 
-        <!-- Auto-print status banner -->
-        <div id="autoPrintBanner" class="auto-print-banner" style="display: none;">
-            <i class="fas fa-spinner fa-pulse"></i>
-            <p id="autoPrintStatus">Loading memo from link...</p>
-        </div>
-
-        <div class="search-section">
-            <div class="search-title">
-                <i class="fas fa-search"></i> Find Memo by ID or Patient
+        <div id="mainContent">
+            <!-- Content will be loaded here -->
+            <div class="loading" id="loadingDiv">
+                <div class="loading-spinner"></div>
+                <p>Loading memo from link...</p>
+                <p style="font-size: 11px; margin-top: 10px;">Memo ID: <span id="displayMemoId">-</span></p>
             </div>
-            <div class="search-input-group">
-                <input type="text" id="memoSearchInput" placeholder="Enter Memo ID, Patient Name, or Patient ID..." autocomplete="off">
-                <button id="searchMemoBtn" class="search-btn"><i class="fas fa-search"></i> Find Memo</button>
-            </div>
-            <div id="memoResultArea" class="memo-result"></div>
-            <div id="messageBox" class="message-box"></div>
-        </div>
-
-        <div style="text-align: center; padding: 20px 0; color: #8ba0b0; font-size: 12px;">
-            <i class="fas fa-info-circle"></i> Search for a memo using Memo ID, Patient Name, or Patient ID.<br>
-            Once found, click "Print Receipt" to open a beautiful A5 print-ready receipt.
         </div>
     </div>
 </div>
@@ -260,18 +258,6 @@
 
     let db = null;
     let currentMemo = null;
-    let printWindowOpened = false;
-
-    function showMessage(msg, type) {
-        const box = document.getElementById('messageBox');
-        box.innerText = msg;
-        box.className = `message-box ${type === 'error' ? 'error' : 'success-info'}`;
-        box.style.display = 'block';
-        setTimeout(() => {
-            box.style.display = 'none';
-            box.innerText = '';
-        }, 4000);
-    }
 
     function escapeHtml(str) {
         if (!str) return '';
@@ -313,16 +299,16 @@
     }
 
     // ========== PRINT FUNCTION ==========
-    function printMemoReceipt(memo, autoClose = true) {
+    function printMemoReceipt(memo) {
         if (!memo) {
-            showMessage("No memo data to print.", "error");
-            return false;
+            alert("No memo data to print.");
+            return;
         }
 
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) {
             alert("Please allow pop-ups to print the memo.");
-            return false;
+            return;
         }
 
         const memoId = memo.memoId || memo.id;
@@ -369,8 +355,6 @@
         let insurancePaymentRow = '';
         if (activeInsurance && activeInsurance.amount > 0) {
             insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR ${activeInsurance.amount.toFixed(2)}</span></div>`;
-        } else if (activeInsurance && activeInsurance.name) {
-            insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR 0.00</span></div>`;
         }
         
         let aasandhaRow = '';
@@ -595,11 +579,9 @@
 
         printWindow.document.write(printContent);
         printWindow.document.close();
-        
-        return true;
     }
 
-    // ========== SEARCH MEMO BY ID (EXACT MATCH) ==========
+    // ========== SEARCH MEMO BY ID ==========
     async function searchMemoById(memoId) {
         if (!db) return null;
         
@@ -624,187 +606,159 @@
         }
     }
 
-    // ========== SEARCH MEMO BY TEXT ==========
-    async function searchMemoByText(searchQuery) {
-        if (!db) return null;
-        
-        try {
-            const searchLower = searchQuery.toLowerCase();
-            const memosRef = db.collection("memos");
-            const allMemosSnapshot = await memosRef.orderBy("timestamp", "desc").limit(100).get();
-            
-            for (const doc of allMemosSnapshot.docs) {
-                const memoData = doc.data();
-                const memoIdMatch = (memoData.memoId || '').toLowerCase().includes(searchLower);
-                const patientNameMatch = (memoData.patient?.name || '').toLowerCase().includes(searchLower);
-                const patientIdMatch = (memoData.patient?.id || memoData.patient?.idNumber || '').toLowerCase().includes(searchLower);
-                
-                if (memoIdMatch || patientNameMatch || patientIdMatch) {
-                    return { id: doc.id, ...memoData };
-                }
-            }
-            return null;
-        } catch (error) {
-            console.error("Text search error:", error);
-            return null;
-        }
-    }
-
-    // ========== AUTO LOAD AND PRINT FROM URL ==========
-    async function autoLoadAndPrint() {
-        const memoIdParam = getUrlParameter('memoId');
-        
-        if (!memoIdParam) {
-            // No memoId in URL, just show normal search interface
-            return;
-        }
-        
-        const banner = document.getElementById('autoPrintBanner');
-        const statusEl = document.getElementById('autoPrintStatus');
-        banner.style.display = 'block';
-        statusEl.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Loading memo...';
-        
-        if (!db) {
-            statusEl.innerHTML = 'Waiting for database connection...';
-            setTimeout(() => autoLoadAndPrint(), 500);
-            return;
-        }
-        
-        statusEl.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Searching for memo...';
-        
-        let memo = await searchMemoById(memoIdParam);
-        
-        if (!memo) {
-            // Try as text search
-            memo = await searchMemoByText(memoIdParam);
-        }
-        
-        if (memo) {
-            currentMemo = memo;
-            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Memo found! Opening print window...';
-            banner.style.backgroundColor = '#e0f7ef';
-            
-            // Display the memo info in the result area
-            displayMemoResult(memo, true);
-            
-            // Automatically trigger print after a short delay
-            setTimeout(() => {
-                const success = printMemoReceipt(memo, false);
-                if (success) {
-                    statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Print window opened. You can now close this tab.';
-                } else {
-                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to open print window. Please use the print button below.';
-                }
-            }, 500);
-        } else {
-            statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Memo "${escapeHtml(memoIdParam)}" not found. Please try searching manually.`;
-            banner.style.backgroundColor = '#ffe9e9';
-            banner.style.borderColor = '#dc3545';
-        }
-    }
-    
-    // ========== MANUAL SEARCH ==========
-    async function searchMemo() {
-        const searchQuery = document.getElementById('memoSearchInput').value.trim();
-        const resultArea = document.getElementById('memoResultArea');
-        
-        if (!searchQuery) {
-            showMessage("Please enter a Memo ID, Patient Name, or Patient ID to search.", "error");
-            return;
-        }
-        
-        if (!db) {
-            showMessage("Firebase not ready yet. Please wait.", "error");
-            return;
-        }
-        
-        resultArea.style.display = 'block';
-        resultArea.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Searching...</div>';
-        
-        let memo = await searchMemoById(searchQuery);
-        
-        if (!memo) {
-            memo = await searchMemoByText(searchQuery);
-        }
-        
-        if (memo) {
-            currentMemo = memo;
-            displayMemoResult(memo, false);
-            showMessage("Memo found!", "success-info");
-        } else {
-            resultArea.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> No memo found matching "${escapeHtml(searchQuery)}". Try a different search term.</div>`;
-            currentMemo = null;
-        }
-    }
-    
-    function displayMemoResult(memo, isAutoMode = false) {
-        const resultArea = document.getElementById('memoResultArea');
+    // ========== DISPLAY MEMO DETAILS ==========
+    function displayMemoDetails(memo) {
         const memoId = memo.memoId || memo.id;
-        const patientName = memo.patient?.name || 'Unknown';
-        const patientId = memo.patient?.id || memo.patient?.idNumber || '-';
-        const doctorName = memo.doctor?.name || '-';
-        const total = memo.billing?.subtotal || 0;
-        const paid = memo.billing?.paid || 0;
-        const balance = memo.billing?.balance || 0;
         const dateObj = parseMemoDate(memo);
         const dateStr = dateObj ? dateObj.toLocaleString() : (memo.date || 'N/A');
+        const patient = memo.patient || {};
+        const doctor = memo.doctor || {};
+        const services = memo.services || [];
+        const billing = memo.billing || {};
+        const balance = billing.balance || 0;
+        const statusClass = balance === 0 ? 'status-paid' : 'status-pending';
+        const statusText = balance === 0 ? 'Fully Paid' : (balance > 0 ? 'Balance Due' : 'Overpaid');
         
-        resultArea.innerHTML = `
-            <div class="memo-info">
-                <p><strong><i class="fas fa-file-invoice"></i> Memo ID:</strong> ${escapeHtml(memoId)}</p>
-                <p><strong><i class="far fa-calendar-alt"></i> Date:</strong> ${escapeHtml(dateStr)}</p>
-                <p><strong><i class="fas fa-user"></i> Patient:</strong> ${escapeHtml(patientName)} (ID: ${escapeHtml(patientId)})</p>
-                <p><strong><i class="fas fa-user-md"></i> Doctor:</strong> ${escapeHtml(doctorName)}</p>
-                <p><strong><i class="fas fa-rupee-sign"></i> Total:</strong> MVR ${total.toFixed(2)} | <strong>Paid:</strong> MVR ${paid.toFixed(2)} | <strong>Balance:</strong> MVR ${balance.toFixed(2)}</p>
-            </div>
-            <div class="action-buttons">
-                <button id="printNowBtn" class="print-memo-btn"><i class="fas fa-print"></i> Print Receipt (A5)</button>
-                ${!isAutoMode ? '<button id="clearSearchBtn" class="another-btn"><i class="fas fa-eraser"></i> Clear & Search New</button>' : ''}
+        let servicesHtml = '';
+        if (services.length > 0) {
+            servicesHtml = `
+                <h4 style="margin: 15px 0 10px 0; color: #1f4d6e;">📋 Services</h4>
+                <table class="services-table">
+                    <thead>
+                        <tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr>
+                    </thead>
+                    <tbody>
+                        ${services.map(s => `
+                            <tr>
+                                <td>${escapeHtml(s.name)}</td>
+                                <td>${s.qty}</td>
+                                <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
+                                <td class="right">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
+                                <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
+                                <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
+                                <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else {
+            servicesHtml = '<p style="margin: 15px 0; color: #8ba0b0;">No services recorded.</p>';
+        }
+        
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="print-area">
+                <div class="print-title">
+                    <span><i class="fas fa-file-invoice"></i> Memo Details</span>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                
+                <div class="memo-preview">
+                    <div class="memo-details">
+                        <div class="detail-row">
+                            <div class="detail-label">Memo ID:</div>
+                            <div class="detail-value"><strong>${escapeHtml(memoId)}</strong></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Date:</div>
+                            <div class="detail-value">${escapeHtml(dateStr)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Patient Name:</div>
+                            <div class="detail-value">${escapeHtml(patient.name || 'Unknown')}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Patient ID:</div>
+                            <div class="detail-value">${escapeHtml(patient.id || patient.idNumber || '-')}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Phone:</div>
+                            <div class="detail-value">${escapeHtml(patient.phone || '-')}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Doctor:</div>
+                            <div class="detail-value">Dr. ${escapeHtml(doctor.name || '-')} (${escapeHtml(doctor.speciality || '-')})</div>
+                        </div>
+                        ${servicesHtml}
+                        
+                        <div class="totals-grid">
+                            <div class="total-card"><label>Subtotal</label><div class="value">MVR ${(billing.subtotal || 0).toFixed(2)}</div></div>
+                            <div class="total-card"><label>After Discount</label><div class="value">MVR ${(billing.afterDiscount || 0).toFixed(2)}</div></div>
+                            <div class="total-card"><label>Primary Insurance</label><div class="value">MVR ${(billing.primaryInsurancePayment || 0).toFixed(2)}</div></div>
+                            <div class="total-card"><label>Aasandha</label><div class="value">MVR ${(billing.aasandhaPayment || 0).toFixed(2)}</div></div>
+                            <div class="total-card payable-card"><label>Patient Payable</label><div class="value">MVR ${(billing.patientPayable || 0).toFixed(2)}</div></div>
+                            <div class="total-card"><label>Paid</label><div class="value">MVR ${(billing.paid || 0).toFixed(2)}</div></div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button id="printReceiptBtn" class="print-btn-large"><i class="fas fa-print"></i> Print Receipt (A5)</button>
+                        </div>
+                        
+                        ${memo.notes ? `<div style="margin-top: 15px; padding: 10px; background: #f8fbfe; border-radius: 8px;"><strong>Notes:</strong><br>${escapeHtml(memo.notes)}</div>` : ''}
+                    </div>
+                </div>
             </div>
         `;
         
-        document.getElementById('printNowBtn').addEventListener('click', () => {
-            if (currentMemo) printMemoReceipt(currentMemo, false);
-            else showMessage("No memo loaded to print.", "error");
+        document.getElementById('printReceiptBtn').addEventListener('click', () => {
+            printMemoReceipt(memo);
         });
+    }
+
+    // ========== LOAD MEMO FROM URL ==========
+    async function loadMemoFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const memoId = urlParams.get('memoId');
         
-        if (!isAutoMode) {
-            document.getElementById('clearSearchBtn').addEventListener('click', () => {
-                document.getElementById('memoSearchInput').value = '';
-                resultArea.style.display = 'none';
-                resultArea.innerHTML = '';
-                currentMemo = null;
-                showMessage("Search cleared. Enter new memo details.", "success-info");
-            });
+        const displaySpan = document.getElementById('displayMemoId');
+        if (displaySpan) displaySpan.textContent = memoId || '?';
+        
+        if (!memoId) {
+            const mainContent = document.getElementById('mainContent');
+            mainContent.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>No memo ID provided in the URL.</p>
+                    <p style="margin-top: 10px;">Use: print-memo.html?memoId=1006</p>
+                </div>
+            `;
+            return;
         }
         
-        resultArea.style.display = 'block';
-    }
-    
-    // ========== URL PARAMETER HELPER ==========
-    function getUrlParameter(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
+        if (!db) {
+            setTimeout(loadMemoFromUrl, 500);
+            return;
+        }
+        
+        console.log("Searching for memo:", memoId);
+        const memo = await searchMemoById(memoId);
+        
+        if (memo) {
+            currentMemo = memo;
+            displayMemoDetails(memo);
+        } else {
+            const mainContent = document.getElementById('mainContent');
+            mainContent.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Memo not found with ID: <strong>${escapeHtml(memoId)}</strong></p>
+                    <p style="margin-top: 10px;">Please check the memo ID and try again.</p>
+                </div>
+            `;
+        }
     }
     
     // ========== INITIALIZATION ==========
     function initFirebase() {
         if (window.db) {
             db = window.db;
-            // Start auto-load from URL if present
-            autoLoadAndPrint();
+            loadMemoFromUrl();
         } else {
             setTimeout(initFirebase, 500);
         }
     }
     
-    // Event listeners for manual search
-    document.getElementById('searchMemoBtn').addEventListener('click', searchMemo);
-    document.getElementById('memoSearchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchMemo();
-    });
-    
-    // Start
     initFirebase();
 </script>
 </body>

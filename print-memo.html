@@ -239,7 +239,6 @@
         </div>
 
         <div id="mainContent">
-            <!-- Content will be loaded here -->
             <div class="loading" id="loadingDiv">
                 <div class="loading-spinner"></div>
                 <p>Loading memo from link...</p>
@@ -250,13 +249,14 @@
 </div>
 
 <script>
-    // ========== Firebase & Auth ==========
+    // ========== Auth Check ==========
     const loggedInUser = localStorage.getItem('loggedInUser');
     if (!loggedInUser) {
         window.location.href = 'login.html';
     }
 
-    let db = null;
+    // Use the existing db from firebase-config.js, don't redeclare
+    // The firebase-config.js should already initialize window.db
     let currentMemo = null;
 
     function escapeHtml(str) {
@@ -335,7 +335,7 @@
         
         let servicesHtml = '';
         if (services.length > 0) {
-            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
+            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th><tr></thead><tbody>`;
             services.forEach(s => {
                 servicesHtml += `<tr>
                     <td>${escapeHtml(s.name)}</td>
@@ -583,18 +583,19 @@
 
     // ========== SEARCH MEMO BY ID ==========
     async function searchMemoById(memoId) {
-        if (!db) return null;
+        // Use window.db from firebase-config.js
+        if (!window.db) return null;
         
         try {
             // Try exact match on memoId field
-            const exactMatch = await db.collection("memos").where("memoId", "==", memoId).limit(1).get();
+            const exactMatch = await window.db.collection("memos").where("memoId", "==", memoId).limit(1).get();
             if (!exactMatch.empty) {
                 const doc = exactMatch.docs[0];
                 return { id: doc.id, ...doc.data() };
             }
             
             // If not found, try searching by document ID
-            const docRef = await db.collection("memos").doc(memoId).get();
+            const docRef = await window.db.collection("memos").doc(memoId).get();
             if (docRef.exists) {
                 return { id: docRef.id, ...docRef.data() };
             }
@@ -726,7 +727,7 @@
             return;
         }
         
-        if (!db) {
+        if (!window.db) {
             setTimeout(loadMemoFromUrl, 500);
             return;
         }
@@ -750,16 +751,15 @@
     }
     
     // ========== INITIALIZATION ==========
-    function initFirebase() {
+    function init() {
         if (window.db) {
-            db = window.db;
             loadMemoFromUrl();
         } else {
-            setTimeout(initFirebase, 500);
+            setTimeout(init, 500);
         }
     }
     
-    initFirebase();
+    init();
 </script>
 </body>
 </html>

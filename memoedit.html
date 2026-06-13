@@ -606,11 +606,17 @@
         }
 
         /* Loading & No Data */
-        .loading, .no-data {
+        .loading, .no-data, .empty-prompt {
             text-align: center;
             padding: 40px;
             color: #8ba0b0;
             font-size: 13px;
+        }
+
+        .empty-prompt i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.6;
         }
 
         /* Responsive */
@@ -684,7 +690,7 @@
                 <option value="overpaid">Overpaid</option>
             </select>
         </div>
-        <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i> Search</button>
+        <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i> Load & Search</button>
         <button class="search-btn reset-btn" id="resetBtn"><i class="fas fa-undo"></i> Reset</button>
     </div>
 
@@ -711,7 +717,7 @@
                     </tr>
                 </thead>
                 <tbody id="memosTableBody">
-                    <tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> Loading memos...</td></tr>
+                    <tr><td colspan="10" class="empty-prompt"><i class="fas fa-folder-open"></i><br>No data loaded. Click "Load & Search" to view memos</td></tr>
                 </tbody>
             </table>
         </div>
@@ -786,6 +792,7 @@
     let currentPage = 1, itemsPerPage = 15;
     let currentEditMemoId = null, currentDeleteMemoId = null, currentViewMemo = null;
     let servicesList = [], doctorsList = [], insuranceList = [];
+    let memosLoaded = false;  // flag to track if data has been fetched
     
     // Edit variables
     let editServices = [];
@@ -814,16 +821,10 @@
         } catch(e) { return dateStr; }
     }
     
-    // ========== CHAT NOTIFICATION POPUP COMPLETELY REMOVED ==========
-    // No notification function, no toast, no audio popups. The entire chat listener is disabled.
+    // Disabled chat notifications completely
+    function setupGlobalChatListener() { return; }
     
-    function setupGlobalChatListener() {
-        // All chat notification functionality removed as per request.
-        // No popups, no audio, no UI interruptions.
-        return;
-    }
-    
-    // Load data
+    // Load supporting lists (doctors, services, insurance) - these are needed for edit modals even before memos load
     async function loadDoctorsList() {
         if (!firestoreDB) return;
         const snapshot = await firestoreDB.collection("doctors").get();
@@ -856,14 +857,17 @@
         });
     }
     
-    async function loadMemos() {
-        if (!firestoreDB) { setTimeout(loadMemos, 500); return; }
+    // Main fetch function - loads memos from Firestore
+    async function loadMemosData() {
+        if (!firestoreDB) { setTimeout(loadMemosData, 500); return; }
         const snapshot = await firestoreDB.collection("memos").orderBy("createdAt", "desc").get();
         allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        memosLoaded = true;
         applyFilters();
     }
     
     function applyFilters() {
+        if (!memosLoaded) return;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const dateFrom = document.getElementById('dateFrom').value;
         const dateTo = document.getElementById('dateTo').value;
@@ -889,14 +893,18 @@
     
     function renderTable() {
         const tbody = document.getElementById('memosTableBody');
-        const start = (currentPage - 1) * itemsPerPage;
-        const pageMemos = filteredMemos.slice(start, start + itemsPerPage);
-        if (!pageMemos.length) { 
-            tbody.innerHTML = '<tr><td colspan="10" class="no-data">No memos found</td></tr>'; 
-            document.getElementById('pagination').innerHTML = ''; 
-            return; 
+        if (!memosLoaded || filteredMemos.length === 0) {
+            if (!memosLoaded) {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-prompt"><i class="fas fa-folder-open"></i><br>No data loaded. Click "Load & Search" to view memos</td></tr>';
+            } else {
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">No memos found matching the criteria</td></tr>';
+            }
+            document.getElementById('pagination').innerHTML = '';
+            return;
         }
         
+        const start = (currentPage - 1) * itemsPerPage;
+        const pageMemos = filteredMemos.slice(start, start + itemsPerPage);
         tbody.innerHTML = pageMemos.map(memo => {
             const balance = memo.billing?.balance || 0;
             let statusClass = 'status-paid';
@@ -920,7 +928,7 @@
                     <button class="print-btn" onclick="printMemo('${memo.id}')" title="Print"><i class="fas fa-print"></i></button>
                     <button class="delete-btn" onclick="deleteMemoPrompt('${memo.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                 </td>
-            </tr>`;
+            </table>`;
         }).join('');
         
         const totalPages = Math.ceil(filteredMemos.length / itemsPerPage);
@@ -969,7 +977,7 @@
                         <td>${escapeHtml(s.name)}</td><td>${s.qty}</td><td>MVR ${s.price}</td>
                         <td>MVR ${(s.primaryInsuranceAmount||0).toFixed(2)}</td><td>MVR ${(s.aasandhaAmount||0).toFixed(2)}</td>
                         <td>MVR ${(s.total||s.qty*s.price).toFixed(2)}</td>
-                    </tr>`).join('')}</tbody>
+                     </tr>`).join('')}</tbody>
                 </table>
             </div>
             <div class="totals-grid">
@@ -991,7 +999,7 @@
         if(currentViewMemo) printMemo(currentViewMemo.id); 
     });
     
-    // Edit functions (same as original, fully functional)
+    // ---------- Edit functions (unchanged) ----------
     function calculateEditBilling() {
         const subtotal = editServices.reduce((sum, s) => sum + (s.qty * s.price), 0);
         const discAmount = (subtotal * editDiscountPercent) / 100;
@@ -1098,8 +1106,7 @@
         editServices = (memo.services || []).map(s => ({ ...s, aasandhaLimit: 0 }));
         editDiscountPercent = memo.discount?.percent || 0;
         
-        await Promise.all([loadServicesList(), loadInsuranceList()]);
-        
+        // ensure services/insurance lists are loaded (they are loaded on init)
         const serviceOptions = servicesList.map(s => `<option value="${s.id}" data-name="${s.name}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount || 0}">${escapeHtml(s.name)} - MVR ${s.price}</option>`).join('');
         const insuranceOptions = insuranceList.map(i => `<option value="${i.id}" data-name="${i.name}" data-default-coverage="${i.defaultCoverage || 0}">${escapeHtml(i.name)}</option>`).join('');
         
@@ -1212,7 +1219,8 @@
         await firestoreDB.collection("memos").doc(currentEditMemoId).update(updatedData);
         alert("Memo updated successfully!");
         closeModal('editModal');
-        loadMemos();
+        // After edit, reload data to reflect changes
+        await loadMemosData();
     });
     
     window.deleteMemoPrompt = (memoId) => {
@@ -1228,24 +1236,44 @@
         await firestoreDB.collection("memos").doc(currentDeleteMemoId).delete();
         alert("Memo deleted successfully!");
         closeModal('deleteModal');
-        loadMemos();
+        await loadMemosData();
     });
     
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     window.closeModal = closeModal;
     window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; };
     
-    document.getElementById('resetBtn').onclick = () => {
+    // Reset filters and reload memos
+    document.getElementById('resetBtn').onclick = async () => {
         document.getElementById('searchInput').value = '';
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
         document.getElementById('doctorFilter').value = '';
         document.getElementById('paymentFilter').value = '';
         currentPage = 1;
-        applyFilters();
+        await loadMemosData();
     };
-    document.getElementById('searchBtn').onclick = () => { currentPage = 1; applyFilters(); };
-    document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') { currentPage = 1; applyFilters(); } });
+    
+    // Search button: load memos if not loaded, then apply filters (which re-evaluates based on current filter values)
+    document.getElementById('searchBtn').onclick = async () => {
+        currentPage = 1;
+        if (!memosLoaded) {
+            await loadMemosData();
+        } else {
+            applyFilters();
+        }
+    };
+    
+    document.getElementById('searchInput').addEventListener('keypress', async (e) => { 
+        if (e.key === 'Enter') {
+            currentPage = 1;
+            if (!memosLoaded) {
+                await loadMemosData();
+            } else {
+                applyFilters();
+            }
+        } 
+    });
     
     document.getElementById('logoutBtn').addEventListener('click', () => { 
         localStorage.clear(); 
@@ -1253,16 +1281,19 @@
         window.location.href = 'login.html'; 
     });
     
+    // Initialization: only load supporting data (doctors, services, insurance) but NOT memos
     async function init() {
         if (window.db) firestoreDB = window.db;
         if (window.rtdb) realtimeDB = window.rtdb;
-        // Chat notification listener is DISABLED to remove all popups.
-        // setupGlobalChatListener() is not called.
+        // No chat listener
         if (!firestoreDB) { setTimeout(init, 500); return; }
         await loadDoctorsList();
         await loadServicesList();
         await loadInsuranceList();
-        await loadMemos();
+        // memos are NOT loaded here - user must click Load & Search
+        // Show empty prompt
+        memosLoaded = false;
+        renderTable();
     }
     init();
 </script>

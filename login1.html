@@ -3,36 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Hope Dental Clinic | Secure Access System</title>
+    <title>Hope Dental Clinic | Secure Login</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <!-- Device config - separate file for master password -->
+    <!-- Device Config (separate file for master password) -->
     <script src="device-config.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
         }
 
         body {
             min-height: 100vh;
-            background: linear-gradient(135deg, #e6f7f5 0%, #ffffff 50%, #b8e6e0 100%);
+            background: linear-gradient(135deg, #0b2b44 0%, #071a2b 100%);
             display: flex;
-            align-items: center;
             justify-content: center;
-            padding: 20px;
+            align-items: center;
+            padding: 24px;
             position: relative;
-            animation: gradientShift 10s ease infinite;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background: linear-gradient(135deg, #e6f7f5 0%, #ffffff 50%, #b8e6e0 100%); }
-            50% { background: linear-gradient(135deg, #ffffff 0%, #e6f7f5 50%, #20b2aa 100%); }
         }
 
         body::before {
@@ -40,227 +33,84 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20,20 L30,20 L25,15 Z" fill="rgba(32,178,170,0.08)"/><circle cx="70" cy="30" r="3" fill="rgba(32,178,170,0.1)"/><circle cx="30" cy="70" r="4" fill="rgba(32,178,170,0.08)"/><rect x="60" y="60" width="8" height="8" rx="2" fill="rgba(32,178,170,0.08)"/></svg>');
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="30" cy="20" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="50" cy="15" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="70" cy="25" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="85" cy="10" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="15" cy="40" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="45" cy="50" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="75" cy="45" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="60" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="25" cy="70" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="55" cy="80" r="2" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="85" r="1.5" fill="rgba(255,255,255,0.05)"/></svg>');
             background-repeat: repeat;
-            background-size: 30px;
+            opacity: 0.5;
             pointer-events: none;
         }
 
-        .auth-container {
-            max-width: 500px;
+        /* Device Auth Panel Styles */
+        .device-auth-container {
+            max-width: 450px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(10px);
-            border-radius: 48px;
-            box-shadow: 0 30px 60px -20px rgba(0, 100, 100, 0.4), 0 0 0 1px rgba(32, 178, 170, 0.2);
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             overflow: hidden;
             position: relative;
             z-index: 1;
-            transition: all 0.3s ease;
+            animation: slideUp 0.5s ease-out;
         }
 
-        .header-section {
-            background: linear-gradient(135deg, #ffffff 0%, #e8f8f6 100%);
-            padding: 32px 28px;
-            text-align: center;
-            border-bottom: 2px solid #20b2aa;
+        .device-panel {
+            padding: 36px 32px;
         }
 
-        .logo-wrapper {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .logo-icon {
-            background: linear-gradient(135deg, #20b2aa, #0f8a82);
-            width: 60px;
-            height: 60px;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 8px 20px rgba(32, 178, 170, 0.3);
-        }
-
-        .header-section h1 {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #006666, #20b2aa);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .header-section p {
-            color: #5a8f8a;
-            font-size: 14px;
-            margin-top: 8px;
-        }
-
-        .status-chip {
-            background: #e6f7f5;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #0f8a82;
-            display: inline-block;
-            margin-top: 12px;
-        }
-
-        .panel {
-            padding: 32px 28px;
-            transition: all 0.4s ease;
-        }
-
-        .hidden-panel {
-            display: none;
-        }
-
-        .input-field {
+        .device-input-group {
             margin-bottom: 24px;
         }
 
-        .input-field label {
+        .device-input-group label {
             display: block;
             font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #20b2aa;
             margin-bottom: 8px;
+            color: #1e2f3e;
+            font-size: 14px;
         }
 
-        .input-wrapper {
-            display: flex;
-            align-items: center;
-            background: #f9fffe;
-            border: 2px solid #d4efeb;
-            border-radius: 24px;
-            padding: 4px 18px;
-            transition: all 0.2s;
-        }
-
-        .input-wrapper:focus-within {
-            border-color: #20b2aa;
-            box-shadow: 0 0 0 4px rgba(32, 178, 170, 0.1);
-        }
-
-        .input-icon {
-            font-size: 20px;
-            margin-right: 12px;
-            color: #20b2aa;
-        }
-
-        .input-wrapper input {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 14px 0;
-            font-size: 15px;
-            outline: none;
-            color: #1a4a44;
-            font-weight: 500;
-        }
-
-        .toggle-password {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #20b2aa;
-            padding: 0 8px;
-            transition: transform 0.2s;
-        }
-
-        .toggle-password:hover {
-            transform: scale(1.1);
-        }
-
-        .auth-button {
+        .device-input-group input {
             width: 100%;
-            background: linear-gradient(135deg, #20b2aa, #0f8a82);
+            padding: 14px 18px;
+            border: 2px solid #e2edf2;
+            border-radius: 16px;
+            font-size: 15px;
+            background: #ffffff;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .device-input-group input:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+        }
+
+        .device-auth-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
             border: none;
-            padding: 16px;
-            border-radius: 32px;
+            padding: 14px;
+            border-radius: 16px;
             font-size: 16px;
             font-weight: 700;
-            color: white;
             cursor: pointer;
-            margin-top: 16px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 8px 20px rgba(32, 178, 170, 0.3);
+            transition: all 0.2s;
+            margin-top: 8px;
         }
 
-        .auth-button:hover:not(:disabled) {
+        .device-auth-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(32, 178, 170, 0.4);
+            box-shadow: 0 8px 20px rgba(15, 92, 122, 0.3);
         }
 
-        .auth-button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .auth-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .message-panel {
-            background: #f0fbf9;
-            border-radius: 20px;
-            padding: 14px 18px;
+        .device-info-badge {
+            background: #e2f0fa;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            text-align: center;
             margin-top: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
-            border-left: 4px solid #20b2aa;
-            color: #1a6b63;
-        }
-
-        .message-panel.error {
-            background: #ffeef0;
-            border-left-color: #e74c3c;
-            color: #c0392b;
-        }
-
-        .message-panel.success {
-            background: #e0f5f0;
-            border-left-color: #27ae60;
-            color: #1e8449;
-        }
-
-        .message-panel.warning {
-            background: #fff8e8;
-            border-left-color: #f39c12;
-            color: #b86f0c;
-        }
-
-        .info-badge {
-            background: #e8f4f2;
-            padding: 8px 12px;
-            border-radius: 16px;
-            font-size: 11px;
-            text-align: center;
-            margin-top: 16px;
-            color: #0f8a82;
-        }
-
-        .footer-links {
-            background: #f9fffe;
-            padding: 16px 20px;
-            text-align: center;
-            border-top: 1px solid #d4efeb;
-            font-size: 11px;
-            color: #8abfba;
+            color: #075f8c;
         }
 
         .reset-link {
@@ -271,559 +121,690 @@
         .reset-link button {
             background: none;
             border: none;
-            color: #20b2aa;
+            color: #0f5c7a;
             text-decoration: underline;
             cursor: pointer;
             font-size: 12px;
             padding: 4px 12px;
             border-radius: 20px;
-            transition: background 0.2s;
         }
 
         .reset-link button:hover {
-            background: #e6f7f5;
+            background: #e2f0fa;
         }
 
-        .loader-icon {
+        .hidden-panel {
+            display: none;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .brand {
+            background: linear-gradient(135deg, #0a2f44 0%, #0f5c7a 100%);
+            padding: 32px 24px;
+            text-align: center;
+            color: white;
+        }
+
+        .brand h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .brand p {
+            font-size: 14px;
+            opacity: 0.85;
+            margin-top: 8px;
+        }
+
+        .badge-system {
+            background: rgba(255, 255, 255, 0.2);
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 60px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+
+        .login-form-container {
+            padding: 36px 32px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e2f3e;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2edf2;
+            border-radius: 16px;
+            font-size: 15px;
+            background: #ffffff;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 92, 122, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .message-box {
+            margin-top: 20px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-msg {
+            background: #ffe9e9;
+            color: #b91c1c;
+            border-left: 4px solid #b91c1c;
+        }
+
+        .success-msg {
+            background: #e0f7ef;
+            color: #146b3a;
+            border-left: 4px solid #146b3a;
+        }
+
+        .info-msg {
+            background: #e2f0fa;
+            color: #075f8c;
+            border-left: 4px solid #075f8c;
+        }
+
+        .secure-badge {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #eef3fa;
+        }
+
+        .secure-badge span {
+            font-size: 11px;
+            color: #8ba0ae;
+        }
+
+        .footer-note {
+            background: #fafdff;
+            padding: 16px;
+            text-align: center;
+            font-size: 11px;
+            color: #8ba0ae;
+            border-top: 1px solid #eef3fa;
+        }
+
+        .loading-spinner {
             display: inline-block;
             width: 16px;
             height: 16px;
             border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
             border-radius: 50%;
+            border-top-color: white;
             animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        .device-info {
-            background: #e8f4f2;
-            border-radius: 16px;
-            padding: 12px;
-            margin-top: 16px;
-            font-size: 11px;
-            color: #0f8a82;
-            text-align: center;
+        .btn-text {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .online-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #2ecc71;
+            box-shadow: 0 0 4px #2ecc71;
+            margin-right: 6px;
+            vertical-align: middle;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
         }
     </style>
 </head>
 <body>
 
-<div class="auth-container" id="authContainer">
-    <div class="header-section">
-        <div class="logo-wrapper">
-            <div class="logo-icon">🦷</div>
-            <div>
-                <h1>Hope Dental Clinic</h1>
-                <p>Secure Healthcare Management</p>
-            </div>
-        </div>
-        <div>
-            <span class="status-chip" id="statusChip">🔐 Device Authentication Required</span>
-        </div>
+<!-- Device Authorization Panel -->
+<div id="devicePanel" class="device-auth-container">
+    <div class="brand">
+        <h1>
+            <span>🔐</span>
+            Device Authorization
+        </h1>
+        <p>Secure Access Required</p>
+        <div class="badge-system">⚠️ One-time verification per year</div>
     </div>
-
-    <!-- Device Authorization Panel -->
-    <div id="devicePanel" class="panel">
-        <div class="input-field">
-            <label>🔐 DEVICE MASTER PASSWORD</label>
-            <div class="input-wrapper">
-                <span class="input-icon">🔒</span>
-                <input type="password" id="devicePassword" placeholder="Enter device master password" autocomplete="off">
-                <button type="button" class="toggle-password" id="toggleDevicePw">👁️</button>
-            </div>
+    <div class="device-panel">
+        <div class="device-input-group">
+            <label>🔒 Device Master Password</label>
+            <input type="password" id="devicePassword" placeholder="Enter device master password" autocomplete="off">
         </div>
-        
-        <button type="button" class="auth-button" id="deviceAuthBtn">
-            <span>✅</span> Authorize This Device <span>→</span>
+        <button type="button" class="device-auth-btn" id="deviceAuthBtn">
+            <span class="btn-text">✅ Authorize This Device</span>
         </button>
-        
-        <div id="deviceMessage" class="message-panel">
-            <span>🔔</span>
-            <span>Enter the device master password. This authorizes this device for one full year.</span>
-        </div>
-        
-        <div class="info-badge">
-            💡 Device authorization survives cache clearing, browser updates, and system reboots
+        <div id="deviceMessage" class="message-box"></div>
+        <div class="device-info-badge">
+            💡 This device needs to be authorized once per year. <br>
+            Authorization survives cache clearing and browser updates.
         </div>
     </div>
-
-    <!-- User Login Panel -->
-    <div id="userPanel" class="panel hidden-panel">
-        <div class="input-field">
-            <label>👤 USERNAME</label>
-            <div class="input-wrapper">
-                <span class="input-icon">👨‍⚕️</span>
-                <input type="text" id="username" placeholder="Enter your username" autocomplete="off">
-            </div>
-        </div>
-        
-        <div class="input-field">
-            <label>🔑 PASSWORD</label>
-            <div class="input-wrapper">
-                <span class="input-icon">🔐</span>
-                <input type="password" id="userPassword" placeholder="Enter your password" autocomplete="off">
-                <button type="button" class="toggle-password" id="toggleUserPw">👁️</button>
-            </div>
-        </div>
-        
-        <button type="button" class="auth-button" id="userAuthBtn">
-            <span>➡️</span> Sign In to Dashboard
-        </button>
-        
-        <div id="userMessage" class="message-panel">
-            <span>👋</span>
-            <span>Device verified. Please enter your credentials.</span>
-        </div>
-        
-        <div class="reset-link">
-            <button type="button" id="resetDeviceBtn">⟳ Reset device authorization</button>
-        </div>
-        
-        <div id="deviceInfo" class="device-info"></div>
-    </div>
-
-    <div class="footer-links">
-        <span>🔐 SHA-256 Encrypted</span>&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span>💾 Cache-Safe Authentication</span>&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span>⏱️ One-Year Authorization</span>
+    <div class="footer-note">
+        © 2025 Hope Dental Clinic · All rights reserved
     </div>
 </div>
 
+<!-- Login Panel (Original, hidden until device authorized) -->
+<div id="loginPanel" class="login-card hidden-panel">
+    <div class="brand">
+        <h1>
+            <span>🏥</span>
+            Hope Dental Clinic
+        </h1>
+        <p>Secure Healthcare Management System</p>
+        <div class="badge-system">🔐 HIPAA Compliant · Live Online Tracking</div>
+    </div>
+
+    <div class="login-form-container">
+        <form id="loginForm">
+            <div class="input-group">
+                <label>👤 Username</label>
+                <input type="text" id="username" placeholder="Enter your username" autocomplete="off" required>
+            </div>
+            <div class="input-group">
+                <label>🔒 Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">
+                <span class="btn-text">➡️ Login to Dashboard</span>
+            </button>
+            <div id="message" class="message-box"></div>
+        </form>
+
+        <div class="secure-badge">
+            <span>🔐 SHA-256 Encrypted</span>
+            <span>☁️ Firebase Firestore</span>
+            <span><span class="online-dot"></span> Live Online Status</span>
+        </div>
+        
+        <div class="reset-link">
+            <button type="button" id="resetDeviceBtn">⟳ Reset Device Authorization</button>
+        </div>
+    </div>
+    <div class="footer-note">
+        © 2025 Hope Dental Clinic · All rights reserved
+    </div>
+</div>
+
+<script src="firebase-config.js"></script>
+
 <script>
-    (function() {
-        // ===================================================================
-        // DEVICE AUTHENTICATION - Using external config file
-        // User authentication from Firebase (as in your original code)
-        // ===================================================================
-        
-        const STORAGE_KEY = 'hopedental_device_auth';
-        const AUTH_EXPIRY_DAYS = 365;
-        
-        let firestoreDB = null;
-        let realtimeDB = null;
-        
-        // ===================================================================
-        // PERSISTENT STORAGE FUNCTIONS
-        // ===================================================================
-        function getExpiryDate() {
-            const date = new Date();
-            date.setDate(date.getDate() + AUTH_EXPIRY_DAYS);
-            return date.toISOString();
+    // ===================================================================
+    // DEVICE AUTHORIZATION MODULE
+    // ===================================================================
+    const STORAGE_KEY = 'hopedental_device_auth';
+    const AUTH_EXPIRY_DAYS = 365;
+    
+    // Device authorization functions
+    function getExpiryDate() {
+        const date = new Date();
+        date.setDate(date.getDate() + AUTH_EXPIRY_DAYS);
+        return date.toISOString();
+    }
+    
+    function generateDeviceId() {
+        let deviceId = localStorage.getItem('device_id');
+        if (!deviceId) {
+            deviceId = 'dev_' + Math.random().toString(36).substr(2, 16);
+            try { localStorage.setItem('device_id', deviceId); } catch(e) {}
         }
+        return deviceId;
+    }
+    
+    function saveDeviceAuthorization() {
+        const authData = {
+            authorized: true,
+            authorizedAt: new Date().toISOString(),
+            expiresAt: getExpiryDate(),
+            deviceId: generateDeviceId()
+        };
         
-        function generateDeviceId() {
-            let deviceId = localStorage.getItem('device_id');
-            if (!deviceId) {
-                deviceId = 'dev_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
-                try { localStorage.setItem('device_id', deviceId); } catch(e) {}
-            }
-            return deviceId;
-        }
+        const authString = JSON.stringify(authData);
         
-        function saveDeviceAuthorization() {
-            const authData = {
-                authorized: true,
-                authorizedAt: new Date().toISOString(),
-                expiresAt: getExpiryDate(),
-                deviceId: generateDeviceId()
-            };
-            
-            const authString = JSON.stringify(authData);
-            
-            try { localStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
-            try { sessionStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
-            
-            // Cookie - survives cache clearing!
+        try { localStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
+        try { sessionStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
+        
+        // Cookie - survives cache clearing!
+        try {
+            document.cookie = `${STORAGE_KEY}=${encodeURIComponent(authString)}; expires=${authData.expiresAt}; path=/; SameSite=Lax`;
+        } catch(e) {}
+        
+        return true;
+    }
+    
+    function isDeviceAuthorized() {
+        // Check Cookie first (most persistent)
+        const cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
+        if (cookieMatch) {
             try {
-                document.cookie = `${STORAGE_KEY}=${encodeURIComponent(authString)}; expires=${authData.expiresAt}; path=/; SameSite=Lax`;
+                const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
+                if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
+                    return true;
+                }
             } catch(e) {}
-            
-            return true;
         }
         
-        function isDeviceAuthorized() {
-            // Check Cookie first (most persistent)
+        // Check localStorage
+        try {
+            const localData = localStorage.getItem(STORAGE_KEY);
+            if (localData) {
+                const authData = JSON.parse(localData);
+                if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
+                    return true;
+                }
+            }
+        } catch(e) {}
+        
+        return false;
+    }
+    
+    function clearDeviceAuthorization() {
+        try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+        try { 
+            document.cookie = `${STORAGE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        } catch(e) {}
+    }
+    
+    function getRemainingDays() {
+        try {
             const cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
             if (cookieMatch) {
-                try {
-                    const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
-                    if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
-                        return true;
-                    }
-                } catch(e) {}
+                const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
+                const expiry = new Date(authData.expiresAt);
+                const now = new Date();
+                const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+                return daysLeft > 0 ? daysLeft : 0;
             }
-            
-            // Check localStorage
-            try {
-                const localData = localStorage.getItem(STORAGE_KEY);
-                if (localData) {
-                    const authData = JSON.parse(localData);
-                    if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
-                        return true;
-                    }
-                }
-            } catch(e) {}
-            
+        } catch(e) {}
+        return 0;
+    }
+    
+    function showDeviceMessage(msg, type) {
+        const msgDiv = document.getElementById('deviceMessage');
+        if (!msgDiv) return;
+        msgDiv.innerHTML = msg;
+        msgDiv.className = `message-box ${type}-msg`;
+        setTimeout(() => {
+            if (msgDiv.innerHTML === msg) {
+                msgDiv.innerHTML = '';
+                msgDiv.className = 'message-box';
+            }
+        }, 4000);
+    }
+    
+    // ===================================================================
+    // ORIGINAL LOGIN FUNCTIONS (from your code)
+    // ===================================================================
+    let firestoreDB = null;
+    let realtimeDB = null;
+
+    async function sha256Hash(text) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function showMessage(msg, type) {
+        const messageDiv = document.getElementById('message');
+        if (!messageDiv) return;
+        messageDiv.innerHTML = msg;
+        messageDiv.className = `message-box ${type}-msg`;
+        setTimeout(() => {
+            if (messageDiv.innerHTML === msg) {
+                messageDiv.innerHTML = '';
+                messageDiv.className = 'message-box';
+            }
+        }, 4000);
+    }
+
+    function setLoading(isLoading) {
+        const loginBtn = document.getElementById('loginBtn');
+        if (!loginBtn) return;
+        if (isLoading) {
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="btn-text"><span class="loading-spinner"></span>Verifying...</span>';
+        } else {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<span class="btn-text">➡️ Login to Dashboard</span>';
+        }
+    }
+
+    async function saveOnlineUserRTDB(username, name, level) {
+        if (!realtimeDB) return false;
+        try {
+            await realtimeDB.ref(`online_users/${username}`).set({
+                username: username, 
+                name: name, 
+                Level: level, 
+                status: "online"
+            });
+            console.log(`✅ User ${username} marked online`);
+            return true;
+        } catch (err) {
+            console.error("Error saving online user:", err);
             return false;
         }
-        
-        function clearDeviceAuthorization() {
-            try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
-            try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
-            try { 
-                document.cookie = `${STORAGE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-            } catch(e) {}
+    }
+
+    async function removeOnlineUserRTDB(username) {
+        if (!realtimeDB || !username) return;
+        try {
+            await realtimeDB.ref(`online_users/${username}`).remove();
+            console.log(`✅ User ${username} removed`);
+        } catch (err) {
+            console.warn("Error removing online user:", err);
         }
-        
-        function getRemainingDays() {
+    }
+
+    function getRedirectUrl(userLevel) {
+        if (userLevel === "Doctor") {
+            return "doctor-portal.html";
+        } else {
+            return "clinicdash.html";
+        }
+    }
+
+    // Handle login (original)
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            
+            if (!username || !password) {
+                showMessage("❌ Please enter both username and password.", "error");
+                return;
+            }
+            
+            setLoading(true);
+            
             try {
-                const cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
-                if (cookieMatch) {
-                    const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
-                    const expiry = new Date(authData.expiresAt);
-                    const now = new Date();
-                    const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-                    return daysLeft > 0 ? daysLeft : 0;
+                if (!firestoreDB) {
+                    showMessage("❌ System error. Please refresh.", "error");
+                    setLoading(false);
+                    return;
                 }
-            } catch(e) {}
-            return 0;
-        }
-        
-        // ===================================================================
-        // HELPER FUNCTIONS
-        // ===================================================================
-        function setDeviceMessage(text, type = 'info') {
-            const msgDiv = document.getElementById('deviceMessage');
-            if (!msgDiv) return;
-            const msgSpan = msgDiv.querySelector('span:last-child');
-            if (msgSpan) msgSpan.innerText = text;
-            msgDiv.className = 'message-panel';
-            if (type === 'error') msgDiv.classList.add('error');
-            else if (type === 'success') msgDiv.classList.add('success');
-            else if (type === 'warning') msgDiv.classList.add('warning');
-        }
-
-        function setUserMessage(text, type = 'info') {
-            const msgDiv = document.getElementById('userMessage');
-            if (!msgDiv) return;
-            const msgSpan = msgDiv.querySelector('span:last-child');
-            if (msgSpan) msgSpan.innerText = text;
-            msgDiv.className = 'message-panel';
-            if (type === 'error') msgDiv.classList.add('error');
-            else if (type === 'success') msgDiv.classList.add('success');
-            else if (type === 'warning') msgDiv.classList.add('warning');
-        }
-
-        // SHA-256 hash function for Firebase user authentication
-        async function sha256Hash(text) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(text);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-        
-        // ===================================================================
-        // DEVICE AUTHENTICATION (from external device-config.js)
-        // ===================================================================
-        function verifyDevicePassword(password) {
-            if (typeof window.DEVICE_CONFIG === 'undefined') {
-                setDeviceMessage('❌ Configuration error. Please contact administrator.', 'error');
-                return false;
-            }
-            
-            if (password === window.DEVICE_CONFIG.deviceMasterPassword) {
-                return true;
-            }
-            return false;
-        }
-        
-        // ===================================================================
-        // USER AUTHENTICATION (from Firebase - same as your original code)
-        // ===================================================================
-        async function authenticateUser(username, password) {
-            if (!firestoreDB) {
-                setUserMessage('❌ System error. Please refresh.', 'error');
-                return false;
-            }
-            
-            try {
-                const userDoc = await firestoreDB.collection("users").doc(username.toLowerCase()).get();
+                
+                const userDoc = await firestoreDB.collection("users").doc(username).get();
                 
                 if (!userDoc.exists) {
-                    setUserMessage("❌ Invalid username or password.", "error");
-                    return false;
+                    showMessage("❌ Invalid username or password.", "error");
+                    setLoading(false);
+                    passwordInput.value = '';
+                    return;
                 }
                 
                 const userData = userDoc.data();
                 const hashedInput = await sha256Hash(password);
                 
-                if (hashedInput !== userData.passwordHash) {
-                    setUserMessage("❌ Invalid username or password.", "error");
-                    return false;
-                }
-                
-                // Save online user to Realtime DB
-                if (realtimeDB) {
-                    try {
-                        await realtimeDB.ref(`online_users/${username}`).set({
-                            username: username,
-                            name: userData.name,
-                            Level: userData.Level,
-                            status: "online",
-                            loginTime: Date.now()
-                        });
-                    } catch(e) {}
-                }
-                
-                // Create session
-                const userSession = {
-                    username: userData.username,
-                    name: userData.name,
-                    level: userData.Level,
-                    job: userData.Job,
-                    speciality: userData.speciality || null,
-                    loginTime: Date.now()
-                };
-                
-                localStorage.setItem('loggedInUser', JSON.stringify(userSession));
-                sessionStorage.setItem('clinic_user_session', JSON.stringify(userSession));
-                
-                // For doctors, also store doctor session
-                if (userData.Level === "Doctor") {
-                    const doctorSession = {
-                        id: userData.username,
-                        name: userData.name,
-                        speciality: userData.speciality || "General Physician",
-                        email: userData.email || ""
+                if (hashedInput === userData.passwordHash) {
+                    await removeOnlineUserRTDB(username);
+                    await saveOnlineUserRTDB(username, userData.name, userData.Level);
+                    
+                    const userSession = { 
+                        username: userData.username, 
+                        name: userData.name, 
+                        level: userData.Level,
+                        job: userData.Job,
+                        speciality: userData.speciality || null,
+                        loginTime: Date.now()
                     };
-                    sessionStorage.setItem('doctorSession', JSON.stringify(doctorSession));
-                    localStorage.setItem('currentDoctor', JSON.stringify(doctorSession));
-                }
-                
-                setUserMessage(`✅ Welcome ${userData.name}! Redirecting...`, "success");
-                
-                setTimeout(() => {
+                    
+                    localStorage.setItem('loggedInUser', JSON.stringify(userSession));
+                    sessionStorage.setItem('clinic_user_session', JSON.stringify(userSession));
+                    
                     if (userData.Level === "Doctor") {
-                        window.location.href = "doctor-portal.html";
-                    } else {
-                        window.location.href = "clinicdash.html";
+                        const doctorSession = {
+                            id: userData.username,
+                            name: userData.name,
+                            speciality: userData.speciality || "General Physician",
+                            email: userData.email || ""
+                        };
+                        sessionStorage.setItem('doctorSession', JSON.stringify(doctorSession));
+                        localStorage.setItem('currentDoctor', JSON.stringify(doctorSession));
                     }
-                }, 1200);
-                
-                return true;
+                    
+                    const redirectUrl = getRedirectUrl(userData.Level);
+                    showMessage(`✅ Welcome ${userData.name}! Redirecting...`, "success");
+                    
+                    setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 1000);
+                } else {
+                    showMessage("❌ Invalid username or password.", "error");
+                    passwordInput.value = '';
+                    setLoading(false);
+                }
             } catch (error) {
                 console.error("Login error:", error);
-                setUserMessage("❌ Authentication error. Please try again.", "error");
-                return false;
+                showMessage("❌ Authentication error. Please try again.", "error");
+                setLoading(false);
             }
+        });
+    }
+
+    async function clearExistingSession() {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (loggedInUser) {
+            try {
+                const session = JSON.parse(loggedInUser);
+                if (session.username && realtimeDB) {
+                    await removeOnlineUserRTDB(session.username);
+                }
+            } catch(e) {}
         }
-        
-        // ===================================================================
-        // UI FUNCTIONS
-        // ===================================================================
-        function authorizeDevice() {
-            const enteredPassword = document.getElementById('devicePassword').value;
-            if (!enteredPassword || enteredPassword.trim() === '') {
-                setDeviceMessage('⚠️ Please enter the device master password.', 'warning');
-                return false;
-            }
-            
-            if (typeof window.DEVICE_CONFIG === 'undefined') {
-                setDeviceMessage('❌ System configuration not loaded. Please refresh the page.', 'error');
-                return false;
-            }
-            
-            const isValid = verifyDevicePassword(enteredPassword);
-            if (!isValid) {
-                setDeviceMessage('❌ Invalid device master password. Access denied.', 'error');
-                document.getElementById('devicePassword').value = '';
-                document.getElementById('devicePassword').focus();
-                return false;
-            }
-            
-            saveDeviceAuthorization();
-            setDeviceMessage('✅ Device authorized successfully! Access valid for 365 days.', 'success');
-            
+        localStorage.removeItem('loggedInUser');
+        sessionStorage.removeItem('clinic_user_session');
+        sessionStorage.removeItem('doctorSession');
+        localStorage.removeItem('currentDoctor');
+    }
+
+    function waitForFirebase() {
+        if (window.db && window.rtdb) {
+            firestoreDB = window.db;
+            realtimeDB = window.rtdb;
+            console.log("✅ Firebase ready");
+            clearExistingSession();
+            showMessage("🔐 System ready. Please log in with your credentials.", "info");
             setTimeout(() => {
-                switchToUserPanel();
-            }, 800);
-            return true;
+                const messageDiv = document.getElementById('message');
+                if (messageDiv && messageDiv.innerHTML === "🔐 System ready. Please log in with your credentials.") {
+                    messageDiv.innerHTML = '';
+                    messageDiv.className = 'message-box';
+                }
+            }, 3000);
+        } else {
+            setTimeout(waitForFirebase, 500);
         }
+    }
+    
+    // ===================================================================
+    // DEVICE AUTHENTICATION HANDLER
+    // ===================================================================
+    async function authorizeDevice() {
+        const devicePassword = document.getElementById('devicePassword').value;
         
-        function switchToUserPanel() {
-            const devicePanel = document.getElementById('devicePanel');
-            const userPanel = document.getElementById('userPanel');
-            const statusChip = document.getElementById('statusChip');
-            const deviceInfoDiv = document.getElementById('deviceInfo');
-            
-            devicePanel.style.opacity = '0';
-            setTimeout(() => {
-                devicePanel.classList.add('hidden-panel');
-                userPanel.classList.remove('hidden-panel');
-                userPanel.style.opacity = '0';
-                setTimeout(() => {
-                    userPanel.style.opacity = '1';
-                    statusChip.innerHTML = '✅ Device Authorized';
-                    statusChip.style.background = '#27ae60';
-                    statusChip.style.color = 'white';
-                    
-                    const daysLeft = getRemainingDays();
-                    deviceInfoDiv.innerHTML = `🔐 Device authorized — Expires in ${daysLeft} days (annual renewal required)`;
-                    
-                    setUserMessage('Device verified! Please login with your credentials.', 'success');
-                    setTimeout(() => document.getElementById('username').focus(), 100);
-                }, 50);
-            }, 200);
-        }
-        
-        function resetDeviceAuth() {
-            if (confirm('⚠️ WARNING: This will reset device authorization. You will need to re-enter the device master password. Continue?')) {
-                clearDeviceAuthorization();
-                window.location.reload();
-            }
-        }
-        
-        // ===================================================================
-        // FIREBASE INITIALIZATION (from your original code)
-        // ===================================================================
-        function waitForFirebase() {
-            if (window.db && window.rtdb) {
-                firestoreDB = window.db;
-                realtimeDB = window.rtdb;
-                console.log("✅ Firebase ready");
-                return true;
-            }
+        if (!devicePassword || devicePassword.trim() === '') {
+            showDeviceMessage("❌ Please enter the device master password.", "error");
             return false;
         }
         
-        // Clear existing session on page load
-        async function clearExistingSession() {
-            const loggedInUser = localStorage.getItem('loggedInUser');
-            if (loggedInUser && realtimeDB) {
-                try {
-                    const session = JSON.parse(loggedInUser);
-                    if (session.username && realtimeDB) {
-                        await realtimeDB.ref(`online_users/${session.username}`).remove();
-                    }
-                } catch(e) {}
-            }
-            localStorage.removeItem('loggedInUser');
-            sessionStorage.removeItem('clinic_user_session');
-            sessionStorage.removeItem('doctorSession');
-            localStorage.removeItem('currentDoctor');
+        if (typeof window.DEVICE_CONFIG === 'undefined') {
+            showDeviceMessage("❌ Configuration error. Make sure device-config.js exists.", "error");
+            return false;
         }
         
-        // ===================================================================
-        // INITIALIZATION
-        // ===================================================================
-        async function initialize() {
-            // Wait for Firebase
-            const firebaseInterval = setInterval(() => {
-                if (waitForFirebase()) {
-                    clearInterval(firebaseInterval);
-                    clearExistingSession();
-                }
-            }, 500);
-            
-            // Wait for device config
-            const configInterval = setInterval(() => {
-                if (typeof window.DEVICE_CONFIG !== 'undefined') {
-                    clearInterval(configInterval);
-                    
-                    const authorized = isDeviceAuthorized();
-                    
-                    if (authorized) {
-                        document.getElementById('devicePanel').classList.add('hidden-panel');
-                        document.getElementById('userPanel').classList.remove('hidden-panel');
-                        const statusChip = document.getElementById('statusChip');
-                        statusChip.innerHTML = '✅ Device Authorized';
-                        statusChip.style.background = '#27ae60';
-                        statusChip.style.color = 'white';
-                        
-                        const daysLeft = getRemainingDays();
-                        document.getElementById('deviceInfo').innerHTML = `🔐 Device authorized — ${daysLeft} days remaining (annual renewal)`;
-                        
-                        setUserMessage('Device verified! Please login with your credentials.', 'success');
-                        setTimeout(() => document.getElementById('username').focus(), 100);
-                    } else {
-                        document.getElementById('devicePanel').classList.remove('hidden-panel');
-                        document.getElementById('userPanel').classList.add('hidden-panel');
-                        setTimeout(() => document.getElementById('devicePassword').focus(), 100);
-                    }
-                }
-            }, 100);
+        if (devicePassword !== window.DEVICE_CONFIG.deviceMasterPassword) {
+            showDeviceMessage("❌ Invalid device master password. Access denied.", "error");
+            document.getElementById('devicePassword').value = '';
+            return false;
         }
         
-        // ===================================================================
-        // EVENT LISTENERS
-        // ===================================================================
-        document.getElementById('deviceAuthBtn').addEventListener('click', () => {
-            const btn = document.getElementById('deviceAuthBtn');
-            btn.disabled = true;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="loader-icon"></span> Verifying device...';
-            
-            setTimeout(() => {
-                authorizeDevice();
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }, 100);
-        });
+        saveDeviceAuthorization();
+        showDeviceMessage("✅ Device authorized successfully! Redirecting...", "success");
         
-        document.getElementById('userAuthBtn').addEventListener('click', async () => {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('userPassword').value;
+        setTimeout(() => {
+            document.getElementById('devicePanel').classList.add('hidden-panel');
+            document.getElementById('loginPanel').classList.remove('hidden-panel');
+            waitForFirebase();
+        }, 1500);
+        
+        return true;
+    }
+    
+    // ===================================================================
+    // INITIALIZATION - Check if device is already authorized
+    // ===================================================================
+    function checkDeviceAuthorization() {
+        const authorized = isDeviceAuthorized();
+        
+        if (authorized) {
+            // Device already authorized, show login panel directly
+            document.getElementById('devicePanel').classList.add('hidden-panel');
+            document.getElementById('loginPanel').classList.remove('hidden-panel');
+            waitForFirebase();
             
-            if (!username || !password) {
-                setUserMessage('⚠️ Please enter both username and password.', 'warning');
-                return;
+            // Show remaining days
+            const daysLeft = getRemainingDays();
+            const deviceInfo = document.createElement('div');
+            deviceInfo.style.cssText = 'background: #e2f0fa; padding: 8px; border-radius: 8px; font-size: 11px; text-align: center; margin-top: 10px;';
+            deviceInfo.innerHTML = `🔐 Device authorized — ${daysLeft} days remaining until renewal`;
+            const resetLinkDiv = document.querySelector('.reset-link');
+            if (resetLinkDiv && !document.getElementById('deviceInfoDisplay')) {
+                deviceInfo.id = 'deviceInfoDisplay';
+                resetLinkDiv.parentNode.insertBefore(deviceInfo, resetLinkDiv);
             }
-            
-            const btn = document.getElementById('userAuthBtn');
-            btn.disabled = true;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="loader-icon"></span> Authenticating...';
-            
-            await authenticateUser(username, password);
-            
+        } else {
+            // Need device authorization
+            document.getElementById('devicePanel').classList.remove('hidden-panel');
+            document.getElementById('loginPanel').classList.add('hidden-panel');
+            document.getElementById('devicePassword').focus();
+        }
+    }
+    
+    // Event listeners
+    document.getElementById('deviceAuthBtn').addEventListener('click', () => {
+        const btn = document.getElementById('deviceAuthBtn');
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="btn-text"><span class="loading-spinner"></span>Verifying...</span>';
+        
+        authorizeDevice().finally(() => {
             btn.disabled = false;
             btn.innerHTML = originalText;
         });
-        
-        document.getElementById('resetDeviceBtn').addEventListener('click', resetDeviceAuth);
-        
-        document.getElementById('devicePassword').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('deviceAuthBtn').click();
+    });
+    
+    document.getElementById('devicePassword').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('deviceAuthBtn').click();
+        }
+    });
+    
+    const resetDeviceBtn = document.getElementById('resetDeviceBtn');
+    if (resetDeviceBtn) {
+        resetDeviceBtn.addEventListener('click', () => {
+            if (confirm('⚠️ WARNING: This will reset device authorization for this browser. You will need to re-enter the device master password to access the system again. Continue?')) {
+                clearDeviceAuthorization();
+                window.location.reload();
+            }
         });
-        
-        document.getElementById('username').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('userPassword').focus();
-        });
-        
-        document.getElementById('userPassword').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('userAuthBtn').click();
-        });
-        
-        document.getElementById('toggleDevicePw').addEventListener('click', () => {
-            const input = document.getElementById('devicePassword');
-            const type = input.type === 'password' ? 'text' : 'password';
-            input.type = type;
-            document.getElementById('toggleDevicePw').textContent = type === 'password' ? '👁️' : '🙈';
-        });
-        
-        document.getElementById('toggleUserPw').addEventListener('click', () => {
-            const input = document.getElementById('userPassword');
-            const type = input.type === 'password' ? 'text' : 'password';
-            input.type = type;
-            document.getElementById('toggleUserPw').textContent = type === 'password' ? '👁️' : '🙈';
-        });
-        
-        initialize();
-    })();
+    }
+    
+    // Start the app
+    checkDeviceAuthorization();
 </script>
 </body>
 </html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hope Dental Clinic | Secure Access System</title>
+    
+    <!-- Load configuration files -->
+    <script src="device-config.js"></script>
+    <script src="users.js"></script>
+    <script src="deviceauth.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e6f7f5 0%, #ffffff 50%, #b8e6e0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            animation: gradientShift 10s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background: linear-gradient(135deg, #e6f7f5 0%, #ffffff 50%, #b8e6e0 100%); }
+            50% { background: linear-gradient(135deg, #ffffff 0%, #e6f7f5 50%, #20b2aa 100%); }
+        }
+
+        /* Decorative elements */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20,20 L30,20 L25,15 Z" fill="rgba(32,178,170,0.08)"/><circle cx="70" cy="30" r="3" fill="rgba(32,178,170,0.1)"/><circle cx="30" cy="70" r="4" fill="rgba(32,178,170,0.08)"/><rect x="60" y="60" width="8" height="8" rx="2" fill="rgba(32,178,170,0.08)"/></svg>');
+            background-repeat: repeat;
+            background-size: 30px;
+            pointer-events: none;
+        }
+
+        .auth-container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            box-shadow: 0 30px 60px -20px rgba(0, 100, 100, 0.4), 0 0 0 1px rgba(32, 178, 170, 0.2);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, #ffffff 0%, #e8f8f6 100%);
+            padding: 32px 28px;
+            text-align: center;
+            border-bottom: 2px solid #20b2aa;
+        }
+
+        .logo-wrapper {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, #20b2aa, #0f8a82);
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 8px 20px rgba(32, 178, 170, 0.3);
+        }
+
+        .header-section h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #006666, #20b2aa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header-section p {
+            color: #5a8f8a;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .status-chip {
+            background: #e6f7f5;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #0f8a82;
+            display: inline-block;
+            margin-top: 12px;
+        }
+
+        .panel {
+            padding: 32px 28px;
+            transition: all 0.4s ease;
+        }
+
+        .hidden-panel {
+            display: none;
+        }
+
+        .input-field {
+            margin-bottom: 24px;
+        }
+
+        .input-field label {
+            display: block;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #20b2aa;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #f9fffe;
+            border: 2px solid #d4efeb;
+            border-radius: 24px;
+            padding: 4px 18px;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #20b2aa;
+            box-shadow: 0 0 0 4px rgba(32, 178, 170, 0.1);
+        }
+
+        .input-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            color: #20b2aa;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 14px 0;
+            font-size: 15px;
+            outline: none;
+            color: #1a4a44;
+            font-weight: 500;
+        }
+
+        .toggle-password {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #20b2aa;
+            padding: 0 8px;
+            transition: transform 0.2s;
+        }
+
+        .toggle-password:hover {
+            transform: scale(1.1);
+        }
+
+        .auth-button {
+            width: 100%;
+            background: linear-gradient(135deg, #20b2aa, #0f8a82);
+            border: none;
+            padding: 16px;
+            border-radius: 32px;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(32, 178, 170, 0.3);
+        }
+
+        .auth-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(32, 178, 170, 0.4);
+        }
+
+        .auth-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .auth-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .message-panel {
+            background: #f0fbf9;
+            border-radius: 20px;
+            padding: 14px 18px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            border-left: 4px solid #20b2aa;
+            color: #1a6b63;
+        }
+
+        .message-panel.error {
+            background: #ffeef0;
+            border-left-color: #e74c3c;
+            color: #c0392b;
+        }
+
+        .message-panel.success {
+            background: #e0f5f0;
+            border-left-color: #27ae60;
+            color: #1e8449;
+        }
+
+        .message-panel.warning {
+            background: #fff8e8;
+            border-left-color: #f39c12;
+            color: #b86f0c;
+        }
+
+        .info-badge {
+            background: #e8f4f2;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 16px;
+            color: #0f8a82;
+        }
+
+        .footer-links {
+            background: #f9fffe;
+            padding: 16px 20px;
+            text-align: center;
+            border-top: 1px solid #d4efeb;
+            font-size: 11px;
+            color: #8abfba;
+        }
+
+        .reset-link {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .reset-link button {
+            background: none;
+            border: none;
+            color: #20b2aa;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            transition: background 0.2s;
+        }
+
+        .reset-link button:hover {
+            background: #e6f7f5;
+        }
+
+        .loader-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .device-info {
+            background: #e8f4f2;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 11px;
+            color: #0f8a82;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container" id="authContainer">
+    <div class="header-section">
+        <div class="logo-wrapper">
+            <div class="logo-icon">🦷</div>
+            <div>
+                <h1>Hope Dental  Clinic</h1>
+                <p>Secure Healthcare Management</p>
+            </div>
+        </div>
+        <div>
+            <span class="status-chip" id="statusChip">🔐 Device Authentication Required</span>
+        </div>
+    </div>
+
+    <!-- Device Authorization Panel -->
+    <div id="devicePanel" class="panel">
+        <div class="input-field">
+            <label>🔐 DEVICE MASTER PASSWORD</label>
+            <div class="input-wrapper">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="devicePassword" placeholder="Enter device master password" autocomplete="off">
+                <button type="button" class="toggle-password" id="toggleDevicePw">👁️</button>
+            </div>
+        </div>
+        
+        <button type="button" class="auth-button" id="deviceAuthBtn">
+            <span>✅</span> Authorize This Device <span>→</span>
+        </button>
+        
+        <div id="deviceMessage" class="message-panel">
+            <span>🔔</span>
+            <span>Enter the device master password. This authorizes this device for one full year.</span>
+        </div>
+        
+        <div class="info-badge">
+            💡 Device authorization survives cache clearing, browser updates, and system reboots
+        </div>
+    </div>
+
+    <!-- User Login Panel -->
+    <div id="userPanel" class="panel hidden-panel">
+        <div class="input-field">
+            <label>👤 USERNAME</label>
+            <div class="input-wrapper">
+                <span class="input-icon">👨‍⚕️</span>
+                <input type="text" id="username" placeholder="Enter your username" autocomplete="off">
+            </div>
+        </div>
+        
+        <div class="input-field">
+            <label>🔑 PASSWORD</label>
+            <div class="input-wrapper">
+                <span class="input-icon">🔐</span>
+                <input type="password" id="userPassword" placeholder="Enter your password" autocomplete="off">
+                <button type="button" class="toggle-password" id="toggleUserPw">👁️</button>
+            </div>
+        </div>
+        
+        <button type="button" class="auth-button" id="userAuthBtn">
+            <span>➡️</span> Sign In to Dashboard
+        </button>
+        
+        <div id="userMessage" class="message-panel">
+            <span>👋</span>
+            <span>Device verified. Please enter your credentials.</span>
+        </div>
+        
+        <div class="reset-link">
+            <button type="button" id="resetDeviceBtn">⟳ Reset device authorization (requires re-verification)</button>
+        </div>
+        
+        <div id="deviceInfo" class="device-info"></div>
+    </div>
+
+    <div class="footer-links">
+        <span>🔐 SHA-256 Encrypted</span>&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span>💾 Cache-Safe Authentication</span>&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span>⏱️ One-Year Authorization</span>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM Elements
+        const devicePanel = document.getElementById('devicePanel');
+        const userPanel = document.getElementById('userPanel');
+        const devicePasswordInput = document.getElementById('devicePassword');
+        const deviceAuthBtn = document.getElementById('deviceAuthBtn');
+        const deviceMessageDiv = document.getElementById('deviceMessage');
+        const toggleDevicePw = document.getElementById('toggleDevicePw');
+        const usernameInput = document.getElementById('username');
+        const userPasswordInput = document.getElementById('userPassword');
+        const userAuthBtn = document.getElementById('userAuthBtn');
+        const userMessageDiv = document.getElementById('userMessage');
+        const toggleUserPw = document.getElementById('toggleUserPw');
+        const resetDeviceBtn = document.getElementById('resetDeviceBtn');
+        const statusChip = document.getElementById('statusChip');
+        const deviceInfoDiv = document.getElementById('deviceInfo');
+
+        let isProcessing = false;
+
+        // Helper functions
+        function setDeviceMessage(text, type = 'info') {
+            const msgSpan = deviceMessageDiv.querySelector('span:last-child');
+            if (msgSpan) msgSpan.innerText = text;
+            deviceMessageDiv.className = 'message-panel';
+            if (type === 'error') deviceMessageDiv.classList.add('error');
+            else if (type === 'success') deviceMessageDiv.classList.add('success');
+            else if (type === 'warning') deviceMessageDiv.classList.add('warning');
+        }
+
+        function setUserMessage(text, type = 'info') {
+            const msgSpan = userMessageDiv.querySelector('span:last-child');
+            if (msgSpan) msgSpan.innerText = text;
+            userMessageDiv.className = 'message-panel';
+            if (type === 'error') userMessageDiv.classList.add('error');
+            else if (type === 'success') userMessageDiv.classList.add('success');
+            else if (type === 'warning') userMessageDiv.classList.add('warning');
+        }
+
+        // SHA-256 hash function
+        async function sha256Hash(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Switch to user panel
+        async function switchToUserPanel() {
+            devicePanel.style.opacity = '0';
+            setTimeout(() => {
+                devicePanel.classList.add('hidden-panel');
+                userPanel.classList.remove('hidden-panel');
+                userPanel.style.opacity = '0';
+                setTimeout(() => {
+                    userPanel.style.opacity = '1';
+                    statusChip.innerHTML = '✅ Device Authorized';
+                    statusChip.style.background = '#27ae60';
+                    statusChip.style.color = 'white';
+                    
+                    // Show device info
+                    const daysLeft = DeviceAuth.getRemainingTime();
+                    deviceInfoDiv.innerHTML = `🔐 Device authorized — Expires in ${daysLeft} days (annual renewal required)`;
+                    
+                    setUserMessage('Device verification successful! Your session is cache-safe and will persist for one year.', 'success');
+                    setTimeout(() => usernameInput.focus(), 100);
+                }, 50);
+            }, 200);
+        }
+
+        // Authorize device
+        async function authorizeDevice() {
+            const enteredPassword = devicePasswordInput.value;
+            if (!enteredPassword || enteredPassword.trim() === '') {
+                setDeviceMessage('⚠️ Please enter the device master password.', 'warning');
+                return false;
+            }
+            
+            const isValid = await DeviceAuth.verifyDevicePassword(enteredPassword);
+            if (!isValid) {
+                setDeviceMessage('❌ Invalid device master password. Access denied.', 'error');
+                devicePasswordInput.value = '';
+                devicePasswordInput.focus();
+                return false;
+            }
+            
+            DeviceAuth.saveAuthorization();
+            setDeviceMessage('✅ Device authorized successfully! Access valid for 365 days. Redirecting...', 'success');
+            
+            setTimeout(() => {
+                switchToUserPanel();
+            }, 800);
+            return true;
+        }
+
+        // Authenticate user
+        async function authenticateUser() {
+            const username = usernameInput.value.trim();
+            const password = userPasswordInput.value;
+            
+            if (!username || !password) {
+                setUserMessage('⚠️ Please enter both username and password.', 'warning');
+                return false;
+            }
+            
+            const matchedUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+            if (!matchedUser) {
+                setUserMessage('❌ Invalid username or password.', 'error');
+                userPasswordInput.value = '';
+                return false;
+            }
+            
+            const hashedInput = await sha256Hash(password);
+            if (hashedInput !== matchedUser.passwordHash) {
+                setUserMessage('❌ Invalid username or password.', 'error');
+                userPasswordInput.value = '';
+                return false;
+            }
+            
+            // Create session
+            const userSession = {
+                username: matchedUser.username,
+                name: matchedUser.name,
+                level: matchedUser.Level,
+                rcno: matchedUser.RCNo,
+                loginTime: new Date().toISOString()
+            };
+            
+            localStorage.setItem('loggedInUser', JSON.stringify(userSession));
+            sessionStorage.setItem('clinic_user_session', JSON.stringify(userSession));
+            
+            setUserMessage(`✅ Welcome ${matchedUser.name}! Redirecting to dashboard...`, 'success');
+            userAuthBtn.disabled = true;
+            
+            setTimeout(() => {
+                // Redirect based on user level
+                if (matchedUser.Level === "Doctor") {
+                    window.location.href = "doctor-portal.html";
+                } else {
+                    window.location.href = "clinicdash.html";
+                }
+            }, 1200);
+            
+            return true;
+        }
+
+        // Reset device authorization
+        function resetDeviceAuth() {
+            if (confirm('⚠️ WARNING: This will reset device authorization for this browser. You will need to re-enter the device master password to access the system again. Continue?')) {
+                DeviceAuth.clearAuthorization();
+                window.location.reload();
+            }
+        }
+
+        // Event listeners
+        deviceAuthBtn.addEventListener('click', async () => {
+            if (isProcessing) return;
+            isProcessing = true;
+            deviceAuthBtn.disabled = true;
+            const originalText = deviceAuthBtn.innerHTML;
+            deviceAuthBtn.innerHTML = '<span class="loader-icon"></span> Verifying device...';
+            
+            setTimeout(async () => {
+                await authorizeDevice();
+                deviceAuthBtn.disabled = false;
+                deviceAuthBtn.innerHTML = originalText;
+                isProcessing = false;
+            }, 100);
+        });
+
+        userAuthBtn.addEventListener('click', async () => {
+            if (isProcessing) return;
+            isProcessing = true;
+            userAuthBtn.disabled = true;
+            const originalText = userAuthBtn.innerHTML;
+            userAuthBtn.innerHTML = '<span class="loader-icon"></span> Authenticating...';
+            
+            try {
+                await authenticateUser();
+                if (!localStorage.getItem('loggedInUser')) {
+                    userAuthBtn.disabled = false;
+                    userAuthBtn.innerHTML = originalText;
+                }
+            } catch(err) {
+                userAuthBtn.disabled = false;
+                userAuthBtn.innerHTML = originalText;
+            } finally {
+                isProcessing = false;
+            }
+        });
+
+        resetDeviceBtn.addEventListener('click', resetDeviceAuth);
+
+        // Enter key handlers
+        devicePasswordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') deviceAuthBtn.click();
+        });
+        
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') userPasswordInput.focus();
+        });
+        
+        userPasswordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') userAuthBtn.click();
+        });
+
+        // Toggle password visibility
+        toggleDevicePw.addEventListener('click', () => {
+            const type = devicePasswordInput.type === 'password' ? 'text' : 'password';
+            devicePasswordInput.type = type;
+            toggleDevicePw.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        toggleUserPw.addEventListener('click', () => {
+            const type = userPasswordInput.type === 'password' ? 'text' : 'password';
+            userPasswordInput.type = type;
+            toggleUserPw.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        // Initialize - check if device already authorized
+        async function initialize() {
+            const isAuthorized = await DeviceAuth.isAuthorized();
+            
+            if (isAuthorized) {
+                // Device already authorized, show user panel directly
+                devicePanel.classList.add('hidden-panel');
+                userPanel.classList.remove('hidden-panel');
+                statusChip.innerHTML = '✅ Device Authorized';
+                statusChip.style.background = '#27ae60';
+                statusChip.style.color = 'white';
+                
+                const daysLeft = DeviceAuth.getRemainingTime();
+                deviceInfoDiv.innerHTML = `🔐 Device authorized — ${daysLeft} days remaining (annual renewal)`;
+                
+                setUserMessage('Device verification successful! Your session is cache-safe. Please log in.', 'success');
+                setTimeout(() => usernameInput.focus(), 100);
+            } else {
+                // Need device authorization
+                devicePanel.classList.remove('hidden-panel');
+                userPanel.classList.add('hidden-panel');
+                statusChip.innerHTML = '🔐 Device Authentication Required';
+                setTimeout(() => devicePasswordInput.focus(), 100);
+            }
+        }
+
+        initialize();
+        
+        console.log('Hope Dental Secure Login System - Cache-safe device authorization active');
+    })();
+</script>
+
+</body>
+</html>

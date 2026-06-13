@@ -2,67 +2,723 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Hope Dental · All Memos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #eef2f7; font-family: 'Inter', sans-serif; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { background: #0a2f44; color: white; padding: 12px 20px; border-radius: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 1.5rem; }
-        table { width: 100%; background: white; border-radius: 20px; border-collapse: collapse; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f1f6fa; color: #1f5e7e; }
-        .btn { background: #0f5c7a; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; text-decoration: none; display: inline-block; }
-        .btn:hover { background: #0a2f44; }
-        .print-btn { background: #146b3a; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Print Memo (A5 Receipt)</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            padding: 24px;
+            border: 1px solid #e2eaf0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #0f5c7a;
+        }
+        .logo h2 {
+            font-size: 1.3rem;
+            color: #0a2f44;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .back-btn {
+            background: #1e4a6e;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: #0f3b55;
+        }
+        .search-section {
+            background: #f8fafd;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .search-title {
+            font-weight: 600;
+            color: #1f4d6e;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .search-input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .search-input-group input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1.5px solid #dce5ec;
+            border-radius: 30px;
+            font-size: 13px;
+            background: white;
+        }
+        .search-input-group input:focus {
+            outline: none;
+            border-color: #0f5c7a;
+        }
+        .search-btn {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .search-btn:hover {
+            background: #0a4a63;
+        }
+        .memo-result {
+            display: none;
+            background: #f4f9fe;
+            border-radius: 16px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .memo-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 12px;
+            border-left: 4px solid #0f5c7a;
+        }
+        .memo-info p {
+            margin: 6px 0;
+            font-size: 13px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .print-memo-btn {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .print-memo-btn:hover {
+            background: #0a4a63;
+        }
+        .another-btn {
+            background: #eef2f7;
+            border: 1px solid #cbdde9;
+            color: #1f4d6e;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #8ba0b0;
+        }
+        .error {
+            color: #b91c1c;
+            background: #ffe9e9;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        .success-info {
+            color: #146b3a;
+            background: #e0f7ef;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        .message-box {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: none;
+        }
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .card { padding: 16px; }
+            .search-input-group { flex-direction: column; }
+        }
+    </style>
     <script src="firebase-config.js"></script>
 </head>
 <body>
 <div class="container">
-    <div class="header">
-        <h1>📄 Clinical Memos</h1>
-        <a href="index.html" class="btn">+ New Memo</a>
-    </div>
-    <div style="overflow-x: auto;">
-        <table id="memosTable">
-            <thead><tr><th>Date</th><th>Memo ID</th><th>Patient</th><th>Doctor</th><th>Total</th><th>Paid</th><th>Balance</th><th>Actions</th></tr></thead>
-            <tbody><tr><td colspan="8">Loading...</td></tr></tbody>
-        </table>
+    <div class="card">
+        <div class="header">
+            <div class="logo">
+                <h2><i class="fas fa-print"></i> Hope Dental · Print Memo</h2>
+            </div>
+            <div>
+                <button class="back-btn" onclick="window.close()"><i class="fas fa-times"></i> Close</button>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-title">
+                <i class="fas fa-search"></i> Find Memo by ID or Patient
+            </div>
+            <div class="search-input-group">
+                <input type="text" id="memoSearchInput" placeholder="Enter Memo ID, Patient Name, or Patient ID..." autocomplete="off">
+                <button id="searchMemoBtn" class="search-btn"><i class="fas fa-search"></i> Find Memo</button>
+            </div>
+            <div id="memoResultArea" class="memo-result"></div>
+            <div id="messageBox" class="message-box"></div>
+        </div>
+
+        <div style="text-align: center; padding: 20px 0; color: #8ba0b0; font-size: 12px;">
+            <i class="fas fa-info-circle"></i> Search for a memo using Memo ID, Patient Name, or Patient ID.<br>
+            Once found, click "Print Receipt" to open a beautiful A5 print-ready receipt.
+        </div>
     </div>
 </div>
+
 <script>
-    if (!window.db) alert("Firebase not loaded. Check firebase-config.js");
-    async function loadMemos() {
-        const tbody = document.querySelector('#memosTable tbody');
-        try {
-            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
-            if (snapshot.empty) { tbody.innerHTML = '<tr><td colspan="8">No memos found</td></tr>'; return; }
-            let html = '';
-            snapshot.forEach(doc => {
-                const m = doc.data();
-                html += `<tr>
-                    <td>${new Date(m.timestamp).toLocaleString()}</td>
-                    <td>${m.memoId || doc.id}</td>
-                    <td>${escapeHtml(m.patient?.name || '')}</td>
-                    <td>${escapeHtml(m.doctor?.name || '')}</td>
-                    <td>MVR ${m.billing?.patientPayable?.toFixed(2) || 0}</td>
-                    <td>MVR ${m.billing?.paid?.toFixed(2) || 0}</td>
-                    <td>MVR ${m.billing?.balance?.toFixed(2) || 0}</td>
-                    <td><button class="btn print-btn" onclick="viewMemo('${m.memoId || doc.id}')">🖨️ View/Print</button></td>
+    // ========== Firebase & Auth ==========
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) {
+        // Redirect to login if not authenticated (but allow popup context)
+        window.location.href = 'login.html';
+    }
+
+    let db = null;
+    let currentMemo = null; // Store the currently loaded memo
+
+    // Helper functions
+    function showMessage(msg, type) {
+        const box = document.getElementById('messageBox');
+        box.innerText = msg;
+        box.className = `message-box ${type === 'error' ? 'error' : 'success-info'}`;
+        box.style.display = 'block';
+        setTimeout(() => {
+            box.style.display = 'none';
+            box.innerText = '';
+        }, 4000);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function parseMemoDate(memo) {
+        if (memo.date) {
+            let p = new Date(memo.date);
+            if (!isNaN(p)) return p;
+        }
+        if (memo.timestamp) {
+            if (typeof memo.timestamp === 'object' && memo.timestamp.toDate) return memo.timestamp.toDate();
+            if (typeof memo.timestamp === 'number') return new Date(memo.timestamp);
+            if (typeof memo.timestamp === 'string') return new Date(memo.timestamp);
+        }
+        return null;
+    }
+
+    // Smart Insurance: Get first available insurance (no priority labels)
+    function getActiveInsurance(memo) {
+        const insurances = memo.insurances || [];
+        if (insurances.length === 0) return null;
+        const firstInsurance = insurances[0];
+        let paymentAmount = memo.billing?.primaryInsurancePayment || 0;
+        if (paymentAmount === 0 && firstInsurance.amount) paymentAmount = firstInsurance.amount;
+        return {
+            name: firstInsurance.name || 'Insurance',
+            amount: paymentAmount
+        };
+    }
+
+    // ========== PRINT FUNCTION (A5 optimized, beautiful receipt) ==========
+    function printMemoReceipt(memo) {
+        if (!memo) {
+            showMessage("No memo data to print.", "error");
+            return;
+        }
+
+        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+        if (!printWindow) {
+            alert("Please allow pop-ups to print the memo.");
+            return;
+        }
+
+        const memoId = memo.memoId || memo.id;
+        const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
+        const patient = memo.patient || {};
+        const doctor = memo.doctor || {};
+        const services = memo.services || [];
+        const discount = memo.discount || {};
+        const billing = memo.billing || {};
+        const insurances = memo.insurances || [];
+        
+        const activeInsurance = getActiveInsurance(memo);
+        const aasandhaPayment = billing.aasandhaPayment || 0;
+        
+        // Insurance coverage section (all insurances)
+        let insuranceHtml = '';
+        if (insurances.length > 0) {
+            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
+            insurances.forEach(ins => {
+                insuranceHtml += `<span class="insurance-item">${escapeHtml(ins.name)}: MVR ${(ins.amount || 0).toFixed(2)}</span>`;
+            });
+            insuranceHtml += `</div></div>`;
+        }
+        
+        // Services table
+        let servicesHtml = '';
+        if (services.length > 0) {
+            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
+            services.forEach(s => {
+                servicesHtml += `<tr>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td class="center">${s.qty}</td>
+                    <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.total || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
                 </tr>`;
             });
-            tbody.innerHTML = html;
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="8">Error loading memos</td></tr>'; console.error(e); }
+            servicesHtml += `</tbody><tr>`;
+        } else {
+            servicesHtml = '<div class="no-services">No services recorded.</div>';
+        }
+        
+        // Insurance payment row (only if exists)
+        let insurancePaymentRow = '';
+        if (activeInsurance && activeInsurance.amount > 0) {
+            insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR ${activeInsurance.amount.toFixed(2)}</span></div>`;
+        } else if (activeInsurance && activeInsurance.name) {
+            insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR 0.00</span></div>`;
+        }
+        
+        // Aasandha row (only if amount > 0)
+        let aasandhaRow = '';
+        if (aasandhaPayment > 0) {
+            aasandhaRow = `<div class="totals-row"><span>🏛️ Aasandha (Govt.) Paid:</span><span>MVR ${aasandhaPayment.toFixed(2)}</span></div>`;
+        }
+
+        const printContent = `<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Hope Dental - Receipt ${memoId}</title>
+            <style>
+                @page {
+                    size: A5;
+                    margin: 8mm;
+                }
+                body {
+                    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    background: white;
+                    color: #1e2a36;
+                    font-size: 11px;
+                    line-height: 1.4;
+                }
+                .receipt {
+                    max-width: 100%;
+                    margin: 0 auto;
+                    background: white;
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #0a2f44;
+                    padding-bottom: 6px;
+                    margin-bottom: 12px;
+                    position: relative;
+                }
+                .header h1 {
+                    color: #0a2f44;
+                    margin: 0;
+                    font-size: 20px;
+                }
+                .header p {
+                    margin: 3px 0;
+                    font-size: 9px;
+                    color: #5f7f9a;
+                }
+                .memo-title {
+                    text-align: center;
+                    background: #e0f2fe;
+                    padding: 4px;
+                    border-radius: 20px;
+                    margin: 8px 0;
+                    font-weight: bold;
+                    font-size: 12px;
+                }
+                .info-grid {
+                    display: flex;
+                    justify-content: space-between;
+                    background: #f4f9fe;
+                    padding: 8px 10px;
+                    border-radius: 12px;
+                    margin: 10px 0;
+                    gap: 15px;
+                    flex-wrap: wrap;
+                }
+                .info-box {
+                    flex: 1;
+                }
+                .info-box strong {
+                    font-size: 10px;
+                    color: #0a2f44;
+                    display: block;
+                    margin-bottom: 4px;
+                    border-left: 2px solid #0f5c7a;
+                    padding-left: 6px;
+                }
+                .info-box div {
+                    font-size: 10px;
+                    margin: 3px 0;
+                }
+                .services-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 10px 0;
+                    font-size: 9px;
+                }
+                .services-table th {
+                    background: #f4f9fe;
+                    padding: 5px 4px;
+                    text-align: left;
+                    font-weight: 600;
+                    border-bottom: 1px solid #d0dfe8;
+                }
+                .services-table td {
+                    padding: 4px;
+                    border-bottom: 1px solid #e9edf2;
+                }
+                .services-table .right {
+                    text-align: right;
+                }
+                .services-table .center {
+                    text-align: center;
+                }
+                .insurance-box {
+                    background: #fff8e7;
+                    padding: 6px 10px;
+                    border-radius: 10px;
+                    margin: 10px 0;
+                    font-size: 9px;
+                }
+                .insurance-list {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 12px;
+                    margin-top: 4px;
+                }
+                .insurance-item {
+                    background: white;
+                    padding: 2px 8px;
+                    border-radius: 20px;
+                    border: 1px solid #f0c674;
+                }
+                .totals-box {
+                    background: linear-gradient(135deg, #f0f9ff, #e8f4fd);
+                    border: 1px solid #0f5c7a;
+                    border-radius: 12px;
+                    padding: 10px;
+                    margin: 12px 0;
+                }
+                .totals-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 4px 0;
+                    font-size: 10px;
+                }
+                .totals-row.total {
+                    font-weight: 800;
+                    font-size: 13px;
+                    border-top: 1px dashed #8ba0b0;
+                    margin-top: 6px;
+                    padding-top: 6px;
+                }
+                .footer {
+                    text-align: center;
+                    font-size: 8px;
+                    color: #8ba0b0;
+                    border-top: 1px solid #ddd;
+                    padding-top: 8px;
+                    margin-top: 12px;
+                }
+                .no-services {
+                    background: #f9f9f9;
+                    padding: 20px;
+                    text-align: center;
+                    border-radius: 8px;
+                    font-style: italic;
+                }
+                .no-print {
+                    display: none;
+                }
+                @media print {
+                    body {
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .no-print {
+                        display: none;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt">
+                <div class="header">
+                    <img src="hope1.png" alt="Hope Dental Logo" style="position:absolute; left:10px; top:5px; height:80px;">
+                    <h1>Hope Dental Clinic</h1>
+                    <p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p>
+                    <p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p>
+                    <p><strong>CLINICAL MEMO / RECEIPT</strong></p>
+                </div>
+                <div class="memo-title">MEMO NO: ${escapeHtml(memoId)} | DATE: ${escapeHtml(dateStr)}</div>
+                <div class="info-grid">
+                    <div class="info-box">
+                        <strong>PATIENT DETAILS</strong>
+                        <div>Name: ${escapeHtml(patient.name || '')}</div>
+                        <div>ID: ${escapeHtml(patient.id || '')}</div>
+                        <div>Contact: ${escapeHtml(patient.phone || '')}</div>
+                        <div>Nationality: ${escapeHtml(patient.nationality || '')}</div>
+                        <div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div>
+                    </div>
+                    <div class="info-box">
+                        <strong>DOCTOR DETAILS</strong>
+                        <div>Name: ${escapeHtml(doctor.name || '')}</div>
+                        <div>Speciality: ${escapeHtml(doctor.speciality || '')}</div>
+                    </div>
+                </div>
+                ${servicesHtml}
+                ${insuranceHtml}
+                <div class="totals-box">
+                    <div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
+                    <div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                    <div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
+                    ${insurancePaymentRow}
+                    ${aasandhaRow}
+                    <div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
+                    <div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
+                    <div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div>
+                </div>
+                <div class="footer">
+                    Thank you for choosing Hope Dental.<br>
+                    This is a computer-generated receipt. Valid without signature.
+                </div>
+                <div class="no-print" style="text-align:center; margin-top:15px;">
+                    <button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px; cursor:pointer;">🖨️ Print this Memo</button>
+                    <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px; margin-left:10px; cursor:pointer;">Close</button>
+                </div>
+            </div>
+        </body>
+        </html>`;
+
+        printWindow.document.write(printContent);
+        printWindow.document.close();
     }
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
-    window.viewMemo = (memoId) => {
-        window.open(`view-memo.html?id=${memoId}`, '_blank');
-    };
-    if(window.db) loadMemos(); else setTimeout(()=>loadMemos(), 500);
+
+    // ========== SEARCH MEMO FROM FIRESTORE ==========
+    async function searchMemo() {
+        const searchQuery = document.getElementById('memoSearchInput').value.trim();
+        const resultArea = document.getElementById('memoResultArea');
+        
+        if (!searchQuery) {
+            showMessage("Please enter a Memo ID, Patient Name, or Patient ID to search.", "error");
+            return;
+        }
+        
+        if (!db) {
+            showMessage("Firebase not ready yet. Please wait.", "error");
+            return;
+        }
+        
+        resultArea.style.display = 'block';
+        resultArea.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i> Searching...</div>';
+        
+        try {
+            // Query memos collection for matching fields
+            const memosRef = db.collection("memos");
+            let querySnapshot = null;
+            
+            // Try to search by memoId first (exact match)
+            querySnapshot = await memosRef.where("memoId", "==", searchQuery).limit(1).get();
+            
+            if (querySnapshot.empty) {
+                // Try searching by patient name (case-insensitive via >= and <=)
+                const searchLower = searchQuery.toLowerCase();
+                // Fallback: get all memos and filter client-side (Firestore doesn't support proper substring search without index)
+                // For better UX, we'll get recent memos and filter
+                const allMemosSnapshot = await memosRef.orderBy("timestamp", "desc").limit(50).get();
+                let foundMemo = null;
+                
+                for (const doc of allMemosSnapshot.docs) {
+                    const memoData = doc.data();
+                    const memoIdMatch = (memoData.memoId || '').toLowerCase().includes(searchLower);
+                    const patientNameMatch = (memoData.patient?.name || '').toLowerCase().includes(searchLower);
+                    const patientIdMatch = (memoData.patient?.id || '').toLowerCase().includes(searchLower);
+                    
+                    if (memoIdMatch || patientNameMatch || patientIdMatch) {
+                        foundMemo = { id: doc.id, ...memoData };
+                        break;
+                    }
+                }
+                
+                if (foundMemo) {
+                    currentMemo = foundMemo;
+                    displayMemoResult(currentMemo);
+                    showMessage("Memo found!", "success-info");
+                } else {
+                    resultArea.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> No memo found matching "${escapeHtml(searchQuery)}". Try a different search term.</div>`;
+                    currentMemo = null;
+                }
+            } else {
+                // Found by memoId
+                const doc = querySnapshot.docs[0];
+                currentMemo = { id: doc.id, ...doc.data() };
+                displayMemoResult(currentMemo);
+                showMessage("Memo found!", "success-info");
+            }
+            
+        } catch (error) {
+            console.error("Search error:", error);
+            resultArea.innerHTML = `<div class="error"><i class="fas fa-exclamation-circle"></i> Error searching: ${error.message}</div>`;
+            currentMemo = null;
+        }
+    }
+    
+    function displayMemoResult(memo) {
+        const resultArea = document.getElementById('memoResultArea');
+        const memoId = memo.memoId || memo.id;
+        const patientName = memo.patient?.name || 'Unknown';
+        const patientId = memo.patient?.id || '-';
+        const doctorName = memo.doctor?.name || '-';
+        const total = memo.billing?.subtotal || 0;
+        const paid = memo.billing?.paid || 0;
+        const balance = memo.billing?.balance || 0;
+        const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
+        
+        resultArea.innerHTML = `
+            <div class="memo-info">
+                <p><strong><i class="fas fa-file-invoice"></i> Memo ID:</strong> ${escapeHtml(memoId)}</p>
+                <p><strong><i class="far fa-calendar-alt"></i> Date:</strong> ${escapeHtml(dateStr)}</p>
+                <p><strong><i class="fas fa-user"></i> Patient:</strong> ${escapeHtml(patientName)} (ID: ${escapeHtml(patientId)})</p>
+                <p><strong><i class="fas fa-user-md"></i> Doctor:</strong> ${escapeHtml(doctorName)}</p>
+                <p><strong><i class="fas fa-rupee-sign"></i> Total:</strong> MVR ${total.toFixed(2)} | <strong>Paid:</strong> MVR ${paid.toFixed(2)} | <strong>Balance:</strong> MVR ${balance.toFixed(2)}</p>
+            </div>
+            <div class="action-buttons">
+                <button id="printNowBtn" class="print-memo-btn"><i class="fas fa-print"></i> Print Receipt (A5)</button>
+                <button id="clearSearchBtn" class="another-btn"><i class="fas fa-eraser"></i> Clear & Search New</button>
+            </div>
+        `;
+        
+        document.getElementById('printNowBtn').addEventListener('click', () => {
+            if (currentMemo) printMemoReceipt(currentMemo);
+            else showMessage("No memo loaded to print.", "error");
+        });
+        
+        document.getElementById('clearSearchBtn').addEventListener('click', () => {
+            document.getElementById('memoSearchInput').value = '';
+            resultArea.style.display = 'none';
+            resultArea.innerHTML = '';
+            currentMemo = null;
+            showMessage("Search cleared. Enter new memo details.", "success-info");
+        });
+    }
+    
+    // ========== URL PARAMETER HANDLER (for launching from another page) ==========
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+    
+    async function loadMemoFromUrl() {
+        const memoIdParam = getUrlParameter('memoId');
+        const patientIdParam = getUrlParameter('patientId');
+        const patientNameParam = getUrlParameter('patientName');
+        
+        if (!memoIdParam && !patientIdParam && !patientNameParam) return;
+        
+        if (!db) {
+            setTimeout(loadMemoFromUrl, 500);
+            return;
+        }
+        
+        let searchTerm = memoIdParam || patientIdParam || patientNameParam;
+        if (searchTerm) {
+            document.getElementById('memoSearchInput').value = searchTerm;
+            // Auto search after Firebase ready
+            setTimeout(() => searchMemo(), 300);
+        }
+    }
+    
+    // ========== INITIALIZATION ==========
+    function initFirebase() {
+        if (window.db) {
+            db = window.db;
+            // Check if launched with URL parameters
+            loadMemoFromUrl();
+        } else {
+            setTimeout(initFirebase, 500);
+        }
+    }
+    
+    // Event listeners
+    document.getElementById('searchMemoBtn').addEventListener('click', searchMemo);
+    document.getElementById('memoSearchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchMemo();
+    });
+    
+    // Start
+    initFirebase();
 </script>
 </body>
 </html>

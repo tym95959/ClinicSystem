@@ -23,15 +23,15 @@
 
         /* Header */
         .clinic-header {
-            background: linear-gradient(135deg, #0a2f44, #0b3b4f);
-            color: white;
-            padding: 16px 28px;
+            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
+            color: #004d4d;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .logo h2 {
             font-size: 1.4rem;
@@ -149,12 +149,13 @@
 </head>
 <body>
 <div class="clinic-header">
-    <div class="logo">
-        <h2><i class="fas fa-chart-pie"></i> Hope Dental · Reports</h2>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="hope1.png" alt="Hope Dental Logo" style="height: 50px; vertical-align: middle;">
+        <h1 style="font-size: 1.3rem; font-weight: 600; margin: 0; background: linear-gradient(135deg, #006666, #20b2aa); -webkit-background-clip: text; background-clip: text; color: transparent;">Hope Dental Clinic / Reports</h1>
     </div>
-    <div class="header-actions">
-        <button class="btn-outline" onclick="window.location.href='clinicdash.html'"><i class="fas fa-arrow-left"></i> Dashboard</button>
-        <button class="btn-outline" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    <div>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+        <button class="back-btn" onclick="logout()">🚪 Logout</button>
     </div>
 </div>
 

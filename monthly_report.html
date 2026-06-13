@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Monthly Financial Report</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f4f7fc;
+            color: #1a2c3e;
+        }
+
+        /* Header */
+        .clinic-header {
+            background: linear-gradient(135deg, #0a2f44, #0b3b4f);
+            color: white;
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .logo h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo h2 i {
+            font-size: 1.5rem;
+            color: #7ab7d4;
+        }
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-outline {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .btn-primary {
+            background: #1e6f5c;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .btn-secondary {
+            background: #e67e22;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 28px auto;
+            padding: 0 24px;
+        }
+
+        /* Filter Card */
+        .filter-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            align-items: flex-end;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03), 0 0 0 1px #e9edf2;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #2c6e8f;
+        }
+        .filter-group input {
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 170px;
+        }
+        .filter-group input:focus {
+            outline: none;
+            border-color: #1e6f5c;
+            box-shadow: 0 0 0 3px rgba(30,111,92,0.1);
+        }
+        .btn-generate {
+            background: #1e6f5c;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 13px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Table */
+        .table-wrapper {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+            border: 1px solid #edf2f7;
+            overflow-x: auto;
+            margin-bottom: 28px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 1000px;
+        }
+        .data-table th {
+            background: #f8fafc;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 700;
+            color: #1f5e7e;
+            font-size: 11px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .data-table td {
+            padding: 12px 12px;
+            border-bottom: 1px solid #f0f4f9;
+            vertical-align: top;
+        }
+        .data-table tr:hover td {
+            background: #fafcff;
+        }
+        .badge-pri {
+            background: #e1f0fa;
+            color: #0f5c7a;
+            padding: 3px 8px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-sec {
+            background: #e6f4ea;
+            color: #1e6f5c;
+            padding: 3px 8px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8ba0b0;
+            background: white;
+            border-radius: 24px;
+        }
+
+        /* Cards at bottom */
+        .summary-cards-section {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            margin-top: 8px;
+        }
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 16px 20px;
+            flex: 1;
+            min-width: 160px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-left: 5px solid #1e6f5c;
+        }
+        .stat-card h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #5d7182;
+            margin-bottom: 6px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1a2c3e;
+        }
+        .stat-sub {
+            font-size: 10px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .insurance-grid, .payment-grid {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #edf2f7;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1f5e7e;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+        .company-grid, .paytype-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+        }
+        .company-item, .paytype-item {
+            background: #f9fcfe;
+            border-radius: 16px;
+            padding: 12px 14px;
+            text-align: center;
+            border: 1px solid #e9edf2;
+        }
+        .company-name, .paytype-name {
+            font-weight: 700;
+            font-size: 13px;
+            color: #2c6e8f;
+        }
+        .company-amount, .paytype-amount {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1a2c3e;
+            margin: 6px 0;
+        }
+        .company-count, .paytype-count {
+            font-size: 10px;
+            color: #7891a3;
+        }
+
+        @media print {
+            .clinic-header, .filter-card, .btn-outline, .btn-primary, .btn-secondary, .btn-generate {
+                display: none !important;
+            }
+            .table-wrapper, .stat-card, .insurance-grid, .payment-grid {
+                border: 1px solid #ccc !important;
+                box-shadow: none;
+            }
+            .data-table th, .data-table td {
+                border: 1px solid #aaa !important;
+            }
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .container {
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo">
+        <h2><i class="fas fa-chart-line"></i> Hope Dental · Monthly Financial Report</h2>
+    </div>
+    <div class="header-actions">
+        <button class="btn-outline" onclick="window.location.href='clinicdash.html'"><i class="fas fa-arrow-left"></i> Dashboard</button>
+        <button class="btn-outline" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="filter-card">
+        <div class="filter-group">
+            <label><i class="far fa-calendar-alt"></i> FROM DATE</label>
+            <input type="date" id="startDate">
+        </div>
+        <div class="filter-group">
+            <label><i class="far fa-calendar-alt"></i> TO DATE</label>
+            <input type="date" id="endDate">
+        </div>
+        <div class="filter-group">
+            <button class="btn-generate" onclick="loadMonthlyReport()"><i class="fas fa-sync-alt"></i> Generate Report</button>
+        </div>
+        <div class="filter-group">
+            <button class="btn-primary" onclick="printReport()"><i class="fas fa-print"></i> Print</button>
+        </div>
+        <div class="filter-group">
+            <button class="btn-secondary" onclick="exportToCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+        </div>
+    </div>
+
+    <div id="reportContainer">
+        <div class="empty-message">
+            <i class="fas fa-chart-simple" style="font-size: 42px; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
+            Select a date range and click "Generate Report"
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== AUTH CHECK ==========
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) window.location.href = 'login.html';
+    try {
+        const user = JSON.parse(loggedInUser);
+        const header = document.querySelector('.clinic-header');
+        const userSpan = document.createElement('div');
+        userSpan.style.cssText = 'background: rgba(255,255,255,0.12); padding: 5px 14px; border-radius: 40px; font-size: 12px; font-weight: 500;';
+        userSpan.innerHTML = `<i class="fas fa-user-circle"></i> ${user.name || user.username} (${user.level})`;
+        header.insertBefore(userSpan, header.children[1]);
+    } catch(e) {}
+
+    // Set default date range: current month
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+    let currentReportData = [];
+
+    async function loadMonthlyReport() {
+        const startRaw = document.getElementById('startDate').value;
+        const endRaw = document.getElementById('endDate').value;
+        if (!startRaw || !endRaw) {
+            alert('Please select start and end dates');
+            return;
+        }
+        if (!window.db) {
+            setTimeout(() => loadMonthlyReport(), 400);
+            return;
+        }
+
+        try {
+            const startDateObj = new Date(startRaw);
+            startDateObj.setHours(0,0,0,0);
+            const endDateObj = new Date(endRaw);
+            endDateObj.setHours(23,59,59,999);
+
+            const snapshot = await window.db.collection("memos")
+                .where("createdAt", ">=", startDateObj.toISOString())
+                .where("createdAt", "<=", endDateObj.toISOString())
+                .get();
+
+            const memos = [];
+            snapshot.forEach(doc => memos.push({ id: doc.id, ...doc.data() }));
+            currentReportData = memos;
+            renderMonthlyReport(memos, startRaw, endRaw);
+        } catch (err) {
+            console.error(err);
+            document.getElementById('reportContainer').innerHTML = `<div class="empty-message">❌ Error loading data: ${err.message}</div>`;
+        }
+    }
+
+    function renderMonthlyReport(memos, startDate, endDate) {
+        if (!memos.length) {
+            document.getElementById('reportContainer').innerHTML = `<div class="empty-message">📭 No records found for the selected period.</div>`;
+            return;
+        }
+
+        let totalRevenue = 0, totalPaid = 0, totalDiscount = 0;
+        const insuranceCompanyTotals = {};
+        const payTypeTotals = {};
+        const rows = [];
+
+        memos.forEach(memo => {
+            const billing = memo.billing || {};
+            const services = memo.services || [];
+            const doctor = memo.doctor?.name || 'N/A';
+            const patientName = memo.patient?.name || 'N/A';
+            const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
+            
+            let serviceDesc = '';
+            if (services.length) {
+                serviceDesc = services.map(s => `${s.name || 'Service'} (${s.qty || 1})`).join('; ');
+            } else if (memo.treatment) {
+                serviceDesc = memo.treatment;
+            } else {
+                serviceDesc = '—';
+            }
+            const totalBill = billing.afterDiscount || billing.subtotal || 0;
+            const paidAmount = billing.paid || 0;
+            let payType = billing.paymentMethod || (billing.cashAmount ? 'Cash' : (billing.cardAmount ? 'Card' : 'Unknown'));
+            if (!payType && paidAmount > 0) payType = 'Cash';
+            if (!payType) payType = '—';
+            
+            if (paidAmount > 0 && payType !== '—') {
+                if (!payTypeTotals[payType]) payTypeTotals[payType] = { amount: 0, count: 0 };
+                payTypeTotals[payType].amount += paidAmount;
+                payTypeTotals[payType].count++;
+            }
+            
+            const discount = billing.discount?.amount || 0;
+            totalRevenue += totalBill;
+            totalPaid += paidAmount;
+            totalDiscount += discount;
+
+            let primaryName = '—', primaryAmount = 0;
+            let secondaryName = '—', secondaryAmount = 0;
+            const insurances = memo.insurances || [];
+            
+            insurances.forEach(ins => {
+                const insName = ins.name || 'Unknown';
+                const insAmount = ins.amount || 0;
+                if (!insuranceCompanyTotals[insName]) insuranceCompanyTotals[insName] = { amount: 0, count: 0 };
+                insuranceCompanyTotals[insName].amount += insAmount;
+                insuranceCompanyTotals[insName].count++;
+                
+                if (insName.toLowerCase() === 'aasandha') {
+                    secondaryName = insName;
+                    secondaryAmount = insAmount;
+                } else {
+                    if (primaryName === '—') primaryName = insName;
+                    else primaryName += ', ' + insName;
+                    primaryAmount += insAmount;
+                }
+            });
+            
+            if (insurances.length === 0) {
+                const legPrimary = billing.primaryInsurancePayment || billing.insurancePayment || 0;
+                const legAasandha = billing.aasandhaPayment || 0;
+                if (legPrimary > 0) {
+                    primaryName = 'Primary Insurance';
+                    primaryAmount = legPrimary;
+                    if (!insuranceCompanyTotals['Primary Insurance']) insuranceCompanyTotals['Primary Insurance'] = { amount: 0, count: 0 };
+                    insuranceCompanyTotals['Primary Insurance'].amount += legPrimary;
+                    insuranceCompanyTotals['Primary Insurance'].count++;
+                }
+                if (legAasandha > 0) {
+                    secondaryName = 'Aasandha';
+                    secondaryAmount = legAasandha;
+                    if (!insuranceCompanyTotals['Aasandha']) insuranceCompanyTotals['Aasandha'] = { amount: 0, count: 0 };
+                    insuranceCompanyTotals['Aasandha'].amount += legAasandha;
+                    insuranceCompanyTotals['Aasandha'].count++;
+                }
+            }
+
+            rows.push({
+                date: visitDate,
+                patient: patientName,
+                doctor: doctor,
+                service: serviceDesc,
+                price: totalBill,
+                primaryName: primaryName,
+                primaryAmt: primaryAmount,
+                secondaryName: secondaryName,
+                secondaryAmt: secondaryAmount,
+                paid: paidAmount,
+                payType: payType
+            });
+        });
+
+        const totalOutstanding = totalRevenue - totalPaid;
+        const collectionRate = totalRevenue > 0 ? ((totalPaid / totalRevenue) * 100).toFixed(1) : 0;
+
+        // Build insurance company grid
+        const sortedCompanies = Object.keys(insuranceCompanyTotals).sort();
+        const companyGridHtml = sortedCompanies.map(company => {
+            const data = insuranceCompanyTotals[company];
+            return `
+                <div class="company-item">
+                    <div class="company-name">${escapeHtml(company)}</div>
+                    <div class="company-amount">MVR ${data.amount.toFixed(2)}</div>
+                    <div class="company-count">${data.count} claim(s)</div>
+                </div>
+            `;
+        }).join('');
+
+        // Build payment method grid
+        const sortedPayTypes = Object.keys(payTypeTotals).sort();
+        const payTypeGridHtml = sortedPayTypes.map(pt => {
+            const data = payTypeTotals[pt];
+            return `
+                <div class="paytype-item">
+                    <div class="paytype-name">${escapeHtml(pt)}</div>
+                    <div class="paytype-amount">MVR ${data.amount.toFixed(2)}</div>
+                    <div class="paytype-count">${data.count} transaction(s)</div>
+                </div>
+            `;
+        }).join('');
+
+        // Final HTML: Table first, then all summary cards at the bottom
+        const html = `
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Service(s)</th><th>Price (MVR)</th><th>Primary Insurance</th><th>Pri. Amount</th><th>Secondary Insurance</th><th>Sec. Amount</th><th>Paid (MVR)</th><th>Pay Type</th></tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(r => `
+                            <tr>
+                                <td>${r.date}</td>
+                                <td>${escapeHtml(r.patient)}</strong></td>
+                                <td>${escapeHtml(r.doctor)}</strong></td>
+                                <td style="max-width:220px; white-space:normal;">${escapeHtml(r.service.substring(0, 100))}${r.service.length > 100 ? '…' : ''}</td>
+                                <td>MVR ${r.price.toFixed(2)}</strong></td>
+                                <td><span class="badge-pri">${escapeHtml(r.primaryName)}</span></strong></td>
+                                <td>MVR ${r.primaryAmt.toFixed(2)}</strong></td>
+                                <td><span class="badge-sec">${escapeHtml(r.secondaryName)}</span></strong></td>
+                                <td>MVR ${r.secondaryAmt.toFixed(2)}</strong></td>
+                                <td>MVR ${r.paid.toFixed(2)}</strong></td>
+                                <td>${escapeHtml(r.payType)}</strong></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="summary-cards-section">
+                <div class="stats-row">
+                    <div class="stat-card"><h4><i class="fas fa-chart-line"></i> Total Revenue (After Disc)</h4><div class="stat-value">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-sub">${memos.length} visits</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-hand-holding-usd"></i> Amount Collected</h4><div class="stat-value">MVR ${totalPaid.toFixed(2)}</div><div class="stat-sub">Collection rate: ${collectionRate}%</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-tags"></i> Discounts Given</h4><div class="stat-value">MVR ${totalDiscount.toFixed(2)}</div><div class="stat-sub">Total discount</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-chart-pie"></i> Outstanding Balance</h4><div class="stat-value">MVR ${totalOutstanding.toFixed(2)}</div><div class="stat-sub">To be collected</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-percent"></i> Collection Efficiency</h4><div class="stat-value">${collectionRate}%</div><div class="stat-sub">Paid / Revenue</div></div>
+                </div>
+                <div class="insurance-grid">
+                    <div class="section-title"><i class="fas fa-building"></i> Insurance Breakdown by Company</div>
+                    <div class="company-grid">${companyGridHtml || '<div class="empty-message">No insurance claims in this period</div>'}</div>
+                </div>
+                <div class="payment-grid">
+                    <div class="section-title"><i class="fas fa-credit-card"></i> Payment Method Breakdown</div>
+                    <div class="paytype-grid">${payTypeGridHtml || '<div class="empty-message">No payment transactions recorded</div>'}</div>
+                </div>
+            </div>
+        `;
+        document.getElementById('reportContainer').innerHTML = html;
+    }
+
+    function exportToCSV() {
+        if (!currentReportData.length) {
+            alert('No data to export. Please generate report first.');
+            return;
+        }
+        const startRaw = document.getElementById('startDate').value;
+        const endRaw = document.getElementById('endDate').value;
+        const csvRows = [["Date", "Patient Name", "Doctor", "Services", "Total Bill (MVR)", "Primary Insurance", "Primary Amount", "Secondary Insurance", "Secondary Amount", "Paid Amount", "Pay Type"]];
+        
+        currentReportData.forEach(memo => {
+            const billing = memo.billing || {};
+            const services = memo.services || [];
+            const doctor = memo.doctor?.name || 'N/A';
+            const patientName = memo.patient?.name || 'N/A';
+            const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
+            let serviceDesc = services.map(s => `${s.name || 'Service'} (${s.qty || 1})`).join('; ');
+            if (!serviceDesc && memo.treatment) serviceDesc = memo.treatment;
+            if (!serviceDesc) serviceDesc = '—';
+            const totalBill = billing.afterDiscount || billing.subtotal || 0;
+            const paidAmount = billing.paid || 0;
+            let payType = billing.paymentMethod || (billing.cashAmount ? 'Cash' : (billing.cardAmount ? 'Card' : 'Unknown'));
+            if (!payType && paidAmount > 0) payType = 'Cash';
+            if (!payType) payType = '—';
+            
+            let primaryName = '—', primaryAmt = 0, secondaryName = '—', secondaryAmt = 0;
+            const insurances = memo.insurances || [];
+            insurances.forEach(ins => {
+                if (ins.name?.toLowerCase() === 'aasandha') {
+                    secondaryName = ins.name;
+                    secondaryAmt = ins.amount || 0;
+                } else {
+                    if (primaryName === '—') primaryName = ins.name;
+                    else primaryName += ', ' + ins.name;
+                    primaryAmt += ins.amount || 0;
+                }
+            });
+            if (insurances.length === 0) {
+                const legPri = billing.primaryInsurancePayment || billing.insurancePayment || 0;
+                const legSec = billing.aasandhaPayment || 0;
+                if (legPri) { primaryName = 'Primary Insurance'; primaryAmt = legPri; }
+                if (legSec) { secondaryName = 'Aasandha'; secondaryAmt = legSec; }
+            }
+            csvRows.push([
+                visitDate, patientName, doctor, serviceDesc.replace(/,/g, ';'), totalBill,
+                primaryName, primaryAmt, secondaryName, secondaryAmt, paidAmount, payType
+            ]);
+        });
+        
+        const csvContent = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `monthly_report_${startRaw}_to_${endRaw}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    function printReport() {
+        window.print();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    function logout() {
+        localStorage.removeItem('loggedInUser');
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    function waitForFirebase() {
+        if (window.db) {
+            loadMonthlyReport();
+        } else {
+            setTimeout(waitForFirebase, 400);
+        }
+    }
+    waitForFirebase();
+</script>
+</body>
+</html>

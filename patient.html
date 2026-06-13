@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Patient Manager (Add + List + Delete)</title>
+    <title>Hope Dental | Patient Manager (Add, Edit, Delete)</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <!-- Firebase Config -->
+    <!-- Firebase Config (external file expected) -->
     <script src="firebase-config.js"></script>
     <style>
         * {
@@ -42,7 +42,7 @@
             gap: 6px;
         }
 
-        .back-btn {
+        .back-btn, .logout-btn {
             background: #1e4a6e;
             border: none;
             color: white;
@@ -51,9 +51,10 @@
             cursor: pointer;
             font-weight: 500;
             font-size: 11px;
+            margin-left: 8px;
         }
 
-        .back-btn:hover {
+        .back-btn:hover, .logout-btn:hover {
             background: #c63d2f;
         }
 
@@ -144,7 +145,7 @@
             transform: none;
         }
 
-        .btn-sm {
+        .btn-secondary {
             background: #e2eaf0;
             border: none;
             padding: 6px 14px;
@@ -152,23 +153,41 @@
             cursor: pointer;
             font-size: 11px;
             transition: 0.2s;
+            font-weight: 500;
         }
 
-        .btn-sm:hover {
+        .btn-secondary:hover {
             background: #cbdde9;
         }
 
-        .btn-danger {
-            background: #ffe9e9;
-            color: #b91c1c;
+        .btn-edit {
+            background: #e0f2fe;
+            color: #075985;
             border: none;
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 30px;
             cursor: pointer;
             font-size: 11px;
+            margin-right: 8px;
+            transition: 0.2s;
         }
 
-        .btn-danger:hover {
+        .btn-edit:hover {
+            background: #b9e0f5;
+        }
+
+        .btn-delete {
+            background: #ffe9e9;
+            color: #b91c1c;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: 0.2s;
+        }
+
+        .btn-delete:hover {
             background: #ffd4d4;
         }
 
@@ -199,7 +218,7 @@
         }
 
         .status-badge {
-            background: #e0f2fe;
+            background: #fef7e0;
             padding: 8px 12px;
             border-radius: 12px;
             margin-bottom: 20px;
@@ -249,21 +268,6 @@
             color: #8ba0b0;
         }
 
-        .delete-btn {
-            background: #ffe9e9;
-            border: none;
-            color: #b91c1c;
-            padding: 5px 12px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 11px;
-            transition: 0.2s;
-        }
-
-        .delete-btn:hover {
-            background: #ffd4d4;
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 0 16px;
@@ -280,30 +284,40 @@
             .patients-table th, .patients-table td {
                 padding: 8px 4px;
             }
+            .btn-edit, .btn-delete {
+                display: inline-block;
+                margin: 2px;
+            }
         }
     </style>
 </head>
 <body>
 <div class="clinic-header">
     <div style="display: flex; align-items: center; gap: 12px;">
-        <img src="hope1.png" alt="Hope Dental Logo" style="height: 50px; vertical-align: middle;">
+        <img src="hope1.png" alt="Hope Dental Logo" style="height: 50px; vertical-align: middle;" onerror="this.style.display='none'">
         <h1 style="font-size: 1.3rem; font-weight: 600; margin: 0; background: linear-gradient(135deg, #006666, #20b2aa); -webkit-background-clip: text; background-clip: text; color: transparent;">Hope Dental CLINIC</h1>
     </div>
     <div>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
-        <button class="back-btn" onclick="logout()">🚪 Logout</button>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     </div>
 </div>
 
 <div class="container">
-    <!-- Add New Patient Card -->
+    <!-- Add / Edit Patient Card -->
     <div class="card">
-        <div class="card-title">👤 Register New Patient</div>
+        <div class="card-title">
+            <span>👤 <span id="formModeLabel">Register New Patient</span></span>
+            <button class="btn-secondary" id="cancelEditBtn" style="display: none;">✖ Cancel Edit</button>
+        </div>
         <div id="connectionStatus" class="status-badge" style="background: #fef7e0; color: #a5670e;">
             🔄 Checking Firebase connection...
         </div>
 
         <form id="patientForm">
+            <!-- hidden firestore doc id for editing -->
+            <input type="hidden" id="editFirestoreId" value="">
+            
             <div class="form-group">
                 <label>Full Name <span class="required">*</span></label>
                 <input type="text" id="patientName" placeholder="Enter patient's full name" required>
@@ -354,7 +368,7 @@
     <div class="card">
         <div class="card-title">
             📋 Existing Patients
-            <button class="btn-sm" id="refreshPatientsBtn">⟳ Refresh List</button>
+            <button class="btn-secondary" id="refreshPatientsBtn">⟳ Refresh List</button>
         </div>
 
         <div class="search-bar">
@@ -401,6 +415,8 @@
     // ========== GLOBALS ==========
     let allPatients = [];
     let firebaseReady = false;
+    let editMode = false;           // true when editing an existing patient
+    let currentEditFirestoreId = null;
     
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type, containerId = 'messageBox') {
@@ -451,20 +467,31 @@
         }
     }
     
-    // ========== DUPLICATE CHECKS ==========
-    async function checkDuplicateIdNumber(idNumber) {
+    // ========== DUPLICATE CHECKS (exclude current patient when editing) ==========
+    async function checkDuplicateIdNumber(idNumber, excludeFirestoreId = null) {
         if (!idNumber) return false;
-        const snapshot = await window.db.collection("patients").where("idNumber", "==", idNumber).limit(1).get();
-        return !snapshot.empty;
+        let query = window.db.collection("patients").where("idNumber", "==", idNumber).limit(1);
+        const snapshot = await query.get();
+        if (snapshot.empty) return false;
+        if (excludeFirestoreId) {
+            const matchDoc = snapshot.docs[0];
+            if (matchDoc.id === excludeFirestoreId) return false;
+        }
+        return true;
     }
     
-    async function checkDuplicateContact(contactNo) {
+    async function checkDuplicateContact(contactNo, excludeFirestoreId = null) {
         if (!contactNo) return false;
-        const snapshot = await window.db.collection("patients").where("contactNo", "==", contactNo).limit(1).get();
-        return !snapshot.empty;
+        let query = window.db.collection("patients").where("contactNo", "==", contactNo).limit(1);
+        const snapshot = await query.get();
+        if (snapshot.empty) return false;
+        if (excludeFirestoreId) {
+            const matchDoc = snapshot.docs[0];
+            if (matchDoc.id === excludeFirestoreId) return false;
+        }
+        return true;
     }
     
-    // ========== FORM VALIDATION ==========
     function validateForm(name, idNumber, contactNo) {
         if (!name || name.trim() === '') {
             showMessage('❌ Please enter patient name', 'error');
@@ -481,7 +508,7 @@
         return true;
     }
     
-    function resetForm() {
+    function resetFormToAddMode() {
         document.getElementById('patientName').value = '';
         document.getElementById('nationality').value = 'Maldivian';
         document.getElementById('dob').value = '';
@@ -489,9 +516,35 @@
         document.getElementById('contactNo').value = '';
         document.getElementById('email').value = '';
         document.getElementById('address').value = '';
+        document.getElementById('editFirestoreId').value = '';
+        editMode = false;
+        currentEditFirestoreId = null;
+        document.getElementById('formModeLabel').innerText = 'Register New Patient';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        const saveBtn = document.getElementById('savePatientBtn');
+        saveBtn.innerHTML = '💾 Save Patient to Firebase';
     }
     
-    // ========== SAVE PATIENT ==========
+    function populateFormForEdit(patient) {
+        document.getElementById('patientName').value = patient.name || '';
+        document.getElementById('nationality').value = patient.nationality || 'Maldivian';
+        document.getElementById('dob').value = patient.dob || '';
+        document.getElementById('idNumber').value = patient.idNumber || '';
+        document.getElementById('contactNo').value = patient.contactNo || '';
+        document.getElementById('email').value = patient.email || '';
+        document.getElementById('address').value = patient.address || '';
+        document.getElementById('editFirestoreId').value = patient.firestoreId;
+        editMode = true;
+        currentEditFirestoreId = patient.firestoreId;
+        document.getElementById('formModeLabel').innerText = '✏️ Edit Patient';
+        document.getElementById('cancelEditBtn').style.display = 'inline-block';
+        const saveBtn = document.getElementById('savePatientBtn');
+        saveBtn.innerHTML = '✏️ Update Patient';
+        // Scroll to form smoothly
+        document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // ========== SAVE (CREATE OR UPDATE) ==========
     document.getElementById('patientForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -512,10 +565,12 @@
         
         const saveBtn = document.getElementById('savePatientBtn');
         const originalText = saveBtn.textContent;
-        saveBtn.textContent = '⏳ Checking duplicates...';
+        saveBtn.textContent = '⏳ Validating...';
         saveBtn.disabled = true;
         
-        const idExists = await checkDuplicateIdNumber(idNumber);
+        // Duplicate checks with exclusion for edit mode
+        const excludeId = editMode ? currentEditFirestoreId : null;
+        const idExists = await checkDuplicateIdNumber(idNumber, excludeId);
         if (idExists) {
             showMessage(`❌ A patient with ID Number "${idNumber}" already exists.`, 'error');
             saveBtn.textContent = originalText;
@@ -523,8 +578,7 @@
             return;
         }
         
-        saveBtn.textContent = '⏳ Checking contact...';
-        const contactExists = await checkDuplicateContact(contactNo);
+        const contactExists = await checkDuplicateContact(contactNo, excludeId);
         if (contactExists) {
             showMessage(`❌ A patient with Contact Number "${contactNo}" already exists.`, 'error');
             saveBtn.textContent = originalText;
@@ -532,31 +586,53 @@
             return;
         }
         
-        saveBtn.textContent = '⏳ Generating ID...';
-        const patientId = await generatePatientId();
-        const isCitizen = nationality === 'Maldivian';
-        
-        const patientData = {
-            id: patientId,
-            name: name,
-            nationality: nationality,
-            isCitizen: isCitizen,
-            dob: dob || '',
-            idNumber: idNumber,
-            contactNo: contactNo,
-            email: email || '',
-            address: address || '',
-            createdBy: JSON.parse(loggedInUser).username || 'unknown',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-        
         saveBtn.textContent = '⏳ Saving...';
+        
         try {
-            await window.db.collection("patients").add(patientData);
-            showMessage(`✅ Patient "${name}" registered! ID: ${patientId}`, 'success');
-            resetForm();
-            loadAllPatients();  // refresh the list
+            const isCitizen = nationality === 'Maldivian';
+            const currentUser = JSON.parse(loggedInUser);
+            const now = new Date().toISOString();
+            
+            if (editMode) {
+                // UPDATE existing patient
+                const updateData = {
+                    name: name,
+                    nationality: nationality,
+                    isCitizen: isCitizen,
+                    dob: dob || '',
+                    idNumber: idNumber,
+                    contactNo: contactNo,
+                    email: email || '',
+                    address: address || '',
+                    updatedBy: currentUser.username || 'unknown',
+                    updatedAt: now
+                };
+                await window.db.collection("patients").doc(currentEditFirestoreId).update(updateData);
+                showMessage(`✅ Patient "${name}" updated successfully.`, 'success');
+                resetFormToAddMode();
+                loadAllPatients(); // refresh list
+            } else {
+                // CREATE new patient
+                const patientId = await generatePatientId();
+                const patientData = {
+                    id: patientId,
+                    name: name,
+                    nationality: nationality,
+                    isCitizen: isCitizen,
+                    dob: dob || '',
+                    idNumber: idNumber,
+                    contactNo: contactNo,
+                    email: email || '',
+                    address: address || '',
+                    createdBy: currentUser.username || 'unknown',
+                    createdAt: now,
+                    updatedAt: now
+                };
+                await window.db.collection("patients").add(patientData);
+                showMessage(`✅ Patient "${name}" registered! ID: ${patientId}`, 'success');
+                resetFormToAddMode();
+                loadAllPatients();
+            }
         } catch (error) {
             console.error(error);
             showMessage(`❌ Failed: ${error.message}`, 'error');
@@ -566,7 +642,12 @@
         }
     });
     
-    // ========== LOAD & RENDER PATIENTS ==========
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
+        resetFormToAddMode();
+        showMessage('Edit cancelled. Form cleared.', 'info');
+    });
+    
+    // ========== LOAD & RENDER PATIENTS (with Edit + Delete) ==========
     async function loadAllPatients() {
         if (!window.db) return;
         const tbody = document.getElementById('patientsList');
@@ -594,23 +675,37 @@
         
         tbody.innerHTML = patients.map(p => `
             <tr>
-                <td><strong>${escapeHtml(p.id || p.patientId)}</strong></td>
+                <td><strong>${escapeHtml(p.id || p.patientId || '—')}</strong></td>
                 <td>${escapeHtml(p.name)}</td>
                 <td>${escapeHtml(p.idNumber || '—')}</td>
                 <td>${escapeHtml(p.contactNo || '—')}</td>
                 <td>${escapeHtml(p.nationality || '—')}</td>
                 <td>
-                    <button class="delete-btn" data-firestore-id="${p.firestoreId}" data-name="${escapeHtml(p.name)}">🗑️ Delete</button>
-                 </td>
+                    <button class="btn-edit" data-firestore-id="${p.firestoreId}" data-patient-json='${escapeJson(JSON.stringify(p))}'>✏️ Edit</button>
+                    <button class="btn-delete" data-firestore-id="${p.firestoreId}" data-name="${escapeHtml(p.name)}">🗑️ Delete</button>
+                </td>
             </tr>
         `).join('');
         
-        // Attach delete event listeners
-        document.querySelectorAll('.delete-btn').forEach(btn => {
+        // Attach Edit events
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const patientJson = btn.getAttribute('data-patient-json');
+                if (patientJson) {
+                    try {
+                        const patient = JSON.parse(patientJson);
+                        populateFormForEdit(patient);
+                    } catch (err) { console.error(err); }
+                }
+            });
+        });
+        
+        // Attach Delete events
+        document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const firestoreId = btn.getAttribute('data-firestore-id');
                 const patientName = btn.getAttribute('data-name');
-                if (confirm(`Delete patient "${patientName}"? This action cannot be undone.`)) {
+                if (confirm(`Delete patient "${patientName}" permanently? This cannot be undone.`)) {
                     await deletePatient(firestoreId, patientName);
                 }
             });
@@ -622,7 +717,12 @@
         try {
             await window.db.collection("patients").doc(firestoreId).delete();
             showMessage(`🗑️ Patient "${patientName}" deleted successfully.`, 'success', 'listMessage');
-            loadAllPatients(); // refresh after deletion
+            // If currently editing a patient that was just deleted, reset form.
+            if (editMode && currentEditFirestoreId === firestoreId) {
+                resetFormToAddMode();
+                showMessage('Deleted patient was in edit mode. Form cleared.', 'info');
+            }
+            loadAllPatients(); // refresh
         } catch (error) {
             console.error("Delete error:", error);
             showMessage(`❌ Failed to delete: ${error.message}`, 'error', 'listMessage');
@@ -644,7 +744,7 @@
         renderPatientsList(filtered);
     }
     
-    // ========== ESCAPE HTML ==========
+    // ========== ESCAPE HELPERS ==========
     function escapeHtml(str) {
         if (!str) return '';
         return String(str).replace(/[&<>]/g, m => {
@@ -653,6 +753,11 @@
             if (m === '>') return '&gt;';
             return m;
         });
+    }
+    
+    function escapeJson(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
     
     // ========== LOGOUT ==========
@@ -696,20 +801,18 @@
             document.getElementById('patientsList').innerHTML = '<tr class="empty-row"><td colspan="6">⚠️ Firebase not connected. Check config.</td></tr>';
         }
         
-        // Set max date for DOB
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('dob').max = today;
         
-        // Nationality placeholder change
-        document.getElementById('nationality').addEventListener('change', function(e) {
-            const idInput = document.getElementById('idNumber');
+        const nationalitySelect = document.getElementById('nationality');
+        const idInput = document.getElementById('idNumber');
+        nationalitySelect.addEventListener('change', function(e) {
             idInput.placeholder = e.target.value === 'Maldivian' 
                 ? 'e.g., A123456 (ID Card Number)' 
                 : 'e.g., N1234567 (Passport Number)';
         });
-        document.getElementById('nationality').dispatchEvent(new Event('change'));
+        nationalitySelect.dispatchEvent(new Event('change'));
         
-        // Search listener
         document.getElementById('searchPatientInput').addEventListener('input', searchPatients);
         document.getElementById('refreshPatientsBtn').addEventListener('click', loadAllPatients);
     }

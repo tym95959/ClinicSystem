@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Appointment Scheduler (Cancel + Delete)</title>
+    <title>Hope Dental | Appointment Scheduler (Custom Duration)</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -25,43 +25,35 @@
         .input-group input, .input-group select, .input-group textarea { padding: 10px 14px; border: 1.5px solid #e2eaf0; border-radius: 16px; font-size: 13px; transition: 0.2s; background: white; }
         .search-section { background: #f8fbfe; border-radius: 20px; padding: 20px; margin-bottom: 8px; }
         .availability-card { background: #e6f4ea; padding: 16px 20px; border-radius: 20px; margin-top: 20px; }
-        .time-slots { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
-        .time-slot { background: white; border: 2px solid #cbdde9; border-radius: 40px; padding: 8px 20px; cursor: pointer; transition: 0.2s; font-weight: 500; font-size: 13px; }
-        .time-slot:hover:not(.booked) { background: #0f5c7a; color: white; border-color: #0f5c7a; }
-        .time-slot.booked { background: #ffe9e9; border-color: #b91c1c; color: #b91c1c; cursor: not-allowed; text-decoration: line-through; }
-        .time-slot.selected { background: #146b3a; border-color: #146b3a; color: white; }
-        .patient-search-result { background: #f0f6fc; padding: 12px 16px; border-radius: 16px; margin-top: 8px; cursor: pointer; transition: 0.2s; }
-        .patient-search-result:hover { background: #e0f0fa; }
-        .add-new-btn { background: none; border: none; color: #0f5c7a; cursor: pointer; font-size: 12px; margin-top: 8px; font-weight: 500; text-decoration: underline; }
+        .time-slot-custom { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+        .time-slot-custom .input-group { flex: 1; min-width: 120px; }
+        .existing-appointments-list { margin-top: 12px; background: #fef9e3; padding: 10px; border-radius: 16px; font-size: 12px; max-height: 150px; overflow-y: auto; }
+        .existing-appointments-list strong { color: #b91c1c; }
+        .btn-primary { background: #0f5c7a; color: white; border: none; padding: 12px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; }
+        .btn-primary:hover { background: #08455c; }
+        .btn-sm { background: #e2eaf0; border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 11px; margin: 0 4px; transition: 0.2s; }
+        .btn-danger-sm { background: #ffe9e9; color: #b91c1c; border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 11px; margin: 0 4px; transition: 0.2s; }
         .appointments-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .appointments-table th, .appointments-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e9edf2; vertical-align: middle; font-size: 13px; }
         .appointments-table th { background: #f4f9fe; font-weight: 600; color: #1f4d6e; }
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 40px; font-size: 11px; font-weight: 500; }
         .status-scheduled { background: #e0f2fe; color: #075985; }
-        .status-confirmed { background: #e0f7ef; color: #146b3a; }
-        .status-completed { background: #e6e9f0; color: #475569; }
         .status-cancelled { background: #ffe9e9; color: #b91c1c; }
-        .btn-primary { background: #0f5c7a; color: white; border: none; padding: 12px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; }
-        .btn-primary:hover { background: #08455c; }
-        .btn-sm { background: #e2eaf0; border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 11px; margin: 0 4px; transition: 0.2s; }
-        .btn-sm:hover { background: #cbdde9; }
-        .btn-danger-sm { background: #ffe9e9; color: #b91c1c; border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 11px; margin: 0 4px; transition: 0.2s; }
-        .btn-danger-sm:hover { background: #ffd4d4; }
+        .status-completed { background: #e6e9f0; color: #475569; }
         .message { margin-top: 16px; padding: 12px; border-radius: 28px; text-align: center; font-size: 12px; }
         .success { background: #e0f7ef; color: #146b3a; }
         .error { background: #ffe9e9; color: #b91c1c; }
         .info { background: #e0f2fe; color: #075985; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; border-radius: 28px; padding: 28px 32px; max-width: 450px; width: 90%; }
-        .modal-content h3 { font-size: 1.3rem; color: #0a2f44; margin-bottom: 20px; }
-        .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
         .toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e2f3a; color: white; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 1200; transition: 0.2s; pointer-events: none; white-space: nowrap; }
         @media (max-width:600px){ .toast-msg { white-space: normal; max-width: 90%; } }
+        .add-new-btn { background: none; border: none; color: #0f5c7a; cursor: pointer; font-size: 12px; margin-top: 8px; font-weight: 500; text-decoration: underline; }
     </style>
 </head>
 <body>
 <div class="clinic-header">
-    <div class="logo"><h2>📅 Hope Dental · Smart Scheduler</h2></div>
+    <div class="logo"><h2>📅 Hope Dental · Smart Scheduler (Custom Duration)</h2></div>
     <div><button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button></div>
 </div>
 
@@ -81,12 +73,27 @@
             </div>
         </div>
 
-        <!-- Time Slots based on duty allocation -->
+        <!-- Custom Time + Duration Section -->
         <div id="timeSlotsContainer" style="display: none;">
             <div class="availability-card">
-                <strong>⏰ Available Time Slots for <span id="selectedDoctorName"></span> on <span id="selectedDateDisplay"></span></strong>
-                <div id="timeSlotsList" class="time-slots"></div>
-                <div id="dutyInfoMessage" style="font-size: 11px; margin-top: 10px; color: #2c6e2c;"></div>
+                <strong>⏰ Duty Hours for <span id="selectedDoctorName"></span> on <span id="selectedDateDisplay"></span></strong>
+                <div id="dutyInfoMessage" style="font-size: 12px; margin-top: 8px; color: #2c6e2c;"></div>
+                <div class="time-slot-custom" style="margin-top: 15px;">
+                    <div class="input-group">
+                        <label>🕒 Start Time</label>
+                        <input type="time" id="customStartTime" step="60">
+                    </div>
+                    <div class="input-group">
+                        <label>⏱️ Duration (minutes)</label>
+                        <input type="number" id="customDuration" min="1" value="30" step="1" style="width: 120px;">
+                    </div>
+                    <div class="input-group">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn-primary" id="checkAvailabilityBtn" style="padding: 10px 20px;">✓ Check & Book</button>
+                    </div>
+                </div>
+                <div id="availabilityResult" class="info" style="margin-top: 12px; display: none;"></div>
+                <div id="existingAppointmentsList" class="existing-appointments-list" style="display: none;"></div>
             </div>
         </div>
 
@@ -115,20 +122,12 @@
                 <select id="serviceSelect"><option value="">-- Select Service --</option></select>
                 <button type="button" class="add-new-btn" id="addServiceBtn">+ Add New Service</button>
             </div>
-        </div>
-
-        <div class="form-row">
-            <div class="input-group">
-                <label>⏰ Selected Time</label>
-                <input type="text" id="selectedTime" placeholder="Select a time slot" readonly style="background:#f8f9fb;">
-            </div>
             <div class="input-group">
                 <label>📝 Notes</label>
                 <input type="text" id="appointmentNotes" placeholder="Reason for visit">
             </div>
         </div>
 
-        <button class="btn-primary" id="bookAppointmentBtn">📅 Book Appointment</button>
         <div id="bookingMessage" class="message"></div>
     </div>
 
@@ -137,7 +136,7 @@
         <div class="card-title">📋 Appointments <button class="btn-sm" id="refreshAppointmentsBtn">⟳ Refresh</button></div>
         <div style="overflow-x:auto;">
             <table class="appointments-table">
-                <thead><tr><th>Date</th><th>Time</th><th>Doctor</th><th>Patient</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Date</th><th>Time</th><th>Duration</th><th>Doctor</th><th>Patient</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody id="appointmentsList"></tbody>
             </table>
         </div>
@@ -179,6 +178,8 @@
         let servicesList = [];
         let appointments = [];
         let dutyAllocations = [];
+        let currentDoctorId = null;
+        let currentDate = null;
 
         function showToast(msg, isError=false) {
             const toast = document.getElementById('toastMsg');
@@ -190,7 +191,7 @@
         function showMessage(msg, type) {
             const div = document.getElementById('bookingMessage');
             div.innerText = msg; div.className = `message ${type}`;
-            setTimeout(() => { div.innerText = ''; div.className = 'message'; }, 3000);
+            setTimeout(() => { div.innerText = ''; div.className = 'message'; }, 4000);
         }
 
         // ========== LOAD DATA ==========
@@ -234,86 +235,249 @@
             const snap = await window.db.collection("appointments").orderBy("date", "desc").get();
             appointments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderAppointments();
+            // If doctor/date selected, refresh conflict display
+            if (currentDoctorId && currentDate) displayExistingAppointments();
         }
 
-        // ========== TIME SLOTS (duty-based) ==========
-        function generateTimeSlots(startTime, endTime) {
-            const slots = [];
-            const start = new Date(`2000-01-01T${startTime}:00`);
-            const end = new Date(`2000-01-01T${endTime}:00`);
-            let current = start;
-            while (current < end) {
-                const hours = current.getHours().toString().padStart(2,'0');
-                const minutes = current.getMinutes().toString().padStart(2,'0');
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                const hour12 = hours % 12 || 12;
-                slots.push(`${hour12}:${minutes} ${ampm}`);
-                current.setMinutes(current.getMinutes() + 30);
-            }
-            return slots;
-        }
-
+        // ========== DUTY & TIME VALIDATION ==========
         function getDutyForDoctor(doctorId, date) {
             return dutyAllocations.find(d => d.doctorId === doctorId && d.date === date);
         }
 
-        async function isTimeSlotBooked(doctorId, date, time) {
-            return appointments.some(apt => apt.doctorId === doctorId && apt.date === date && apt.time === time && apt.status !== 'Cancelled');
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return null;
+            let [hour, minute] = timeStr.split(':');
+            return parseInt(hour) * 60 + parseInt(minute);
         }
 
-        async function renderTimeSlots(doctorId, date) {
-            const container = document.getElementById('timeSlotsContainer');
-            const slotsList = document.getElementById('timeSlotsList');
-            const dutyMsgSpan = document.getElementById('dutyInfoMessage');
-            if (!doctorId || !date) { container.style.display = 'none'; return; }
+        function minutesToTime(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+        }
 
+        function formatTimeForDisplay(timeStr) {
+            if (!timeStr) return '';
+            let [hour, minute] = timeStr.split(':');
+            let h = parseInt(hour);
+            let ampm = h >= 12 ? 'PM' : 'AM';
+            let h12 = h % 12 || 12;
+            return `${h12}:${minute} ${ampm}`;
+        }
+
+        async function isTimeSlotAvailable(doctorId, date, startTime, durationMinutes) {
+            const startMinutes = timeToMinutes(startTime);
+            const endMinutes = startMinutes + durationMinutes;
+            // Check within duty hours
+            const duty = getDutyForDoctor(doctorId, date);
+            if (!duty) return false;
+            const dutyStart = timeToMinutes(duty.startTime);
+            const dutyEnd = timeToMinutes(duty.endTime);
+            if (startMinutes < dutyStart || endMinutes > dutyEnd) return false;
+            // Check conflicts with existing appointments (including those with duration)
+            for (let apt of appointments) {
+                if (apt.doctorId === doctorId && apt.date === date && apt.status !== 'Cancelled' && apt.startTime && apt.durationMinutes) {
+                    const aptStart = timeToMinutes(apt.startTime);
+                    const aptEnd = aptStart + apt.durationMinutes;
+                    if ((startMinutes < aptEnd && endMinutes > aptStart)) return false;
+                } else if (apt.doctorId === doctorId && apt.date === date && apt.status !== 'Cancelled' && apt.time) {
+                    // Legacy appointments stored with only time (assuming 30 min default)
+                    const legacyStart = timeToMinutes(apt.time);
+                    const legacyEnd = legacyStart + 30;
+                    if ((startMinutes < legacyEnd && endMinutes > legacyStart)) return false;
+                }
+            }
+            return true;
+        }
+
+        async function displayDoctorDutyAndExisting() {
+            const doctorId = document.getElementById('doctorSelect').value;
+            const date = document.getElementById('appointmentDate').value;
+            if (!doctorId || !date) {
+                document.getElementById('timeSlotsContainer').style.display = 'none';
+                return;
+            }
+            currentDoctorId = doctorId;
+            currentDate = date;
             const doctor = doctorsList.find(d => d.id === doctorId);
-            if (!doctor) { container.style.display = 'none'; return; }
+            if (!doctor) return;
             document.getElementById('selectedDoctorName').innerText = doctor.name || doctor.username;
             document.getElementById('selectedDateDisplay').innerText = date;
 
             const duty = getDutyForDoctor(doctorId, date);
+            const dutyMsgSpan = document.getElementById('dutyInfoMessage');
             if (!duty) {
-                slotsList.innerHTML = '<div style="padding:12px; background:#ffe9e9; border-radius:20px; color:#b91c1c;">❌ No duty assigned for this doctor on this date. Please contact supervisor.</div>';
-                dutyMsgSpan.innerHTML = '';
-                container.style.display = 'block';
+                dutyMsgSpan.innerHTML = '<span style="color:#b91c1c;">❌ No duty assigned for this doctor on this date. Please contact supervisor.</span>';
+                document.getElementById('timeSlotsContainer').style.display = 'block';
+                document.getElementById('existingAppointmentsList').style.display = 'none';
                 return;
             }
-
-            const allSlots = generateTimeSlots(duty.startTime, duty.endTime);
-            if (allSlots.length === 0) {
-                slotsList.innerHTML = '<div class="error">⚠️ Duty timing is invalid (start >= end).</div>';
-                container.style.display = 'block';
-                return;
-            }
-
-            const availableSlots = [];
-            for (const slot of allSlots) {
-                const booked = await isTimeSlotBooked(doctorId, date, slot);
-                if (!booked) availableSlots.push(slot);
-            }
-
-            slotsList.innerHTML = '';
-            if (availableSlots.length === 0) {
-                slotsList.innerHTML = '<div style="padding:12px; background:#ffe9e9; border-radius:20px; color:#b91c1c;">❌ No available slots (all booked or duty hours restricted)</div>';
-            } else {
-                availableSlots.forEach(slot => {
-                    const slotDiv = document.createElement('div');
-                    slotDiv.className = 'time-slot';
-                    slotDiv.innerText = slot;
-                    slotDiv.onclick = () => {
-                        document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('selected'));
-                        slotDiv.classList.add('selected');
-                        document.getElementById('selectedTime').value = slot;
-                    };
-                    slotsList.appendChild(slotDiv);
-                });
-            }
-            dutyMsgSpan.innerHTML = `🕒 Duty hours: ${duty.startTime} - ${duty.endTime} (30-min slots)`;
-            container.style.display = 'block';
+            dutyMsgSpan.innerHTML = `🕒 Duty hours: ${formatTimeForDisplay(duty.startTime)} - ${formatTimeForDisplay(duty.endTime)}`;
+            document.getElementById('timeSlotsContainer').style.display = 'block';
+            displayExistingAppointments();
         }
 
-        // ========== PATIENT SEARCH & AUTO-FILL ==========
+        async function displayExistingAppointments() {
+            const doctorId = currentDoctorId;
+            const date = currentDate;
+            if (!doctorId || !date) return;
+            const existing = appointments.filter(apt => apt.doctorId === doctorId && apt.date === date && apt.status !== 'Cancelled');
+            const container = document.getElementById('existingAppointmentsList');
+            if (existing.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+            let html = `<strong>📌 Existing appointments on this day:</strong><ul style="margin: 6px 0 0 18px;">`;
+            existing.forEach(apt => {
+                let timeDisplay = apt.startTime ? `${formatTimeForDisplay(apt.startTime)} (${apt.durationMinutes} min)` : apt.time;
+                html += `<li><strong>${apt.time || apt.startTime}</strong> – ${apt.patientName} (${apt.doctorName})</li>`;
+            });
+            html += `</ul>`;
+            container.innerHTML = html;
+        }
+
+        async function checkAvailabilityAndBook() {
+            const doctorId = document.getElementById('doctorSelect').value;
+            const date = document.getElementById('appointmentDate').value;
+            const startTime = document.getElementById('customStartTime').value;
+            const duration = parseInt(document.getElementById('customDuration').value);
+            const patientId = document.getElementById('patientId').value.trim();
+            const patientName = document.getElementById('patientName').value.trim();
+            const contact = document.getElementById('contactNo').value.trim();
+            const serviceId = document.getElementById('serviceSelect').value;
+            const notes = document.getElementById('appointmentNotes').value.trim();
+
+            const resultDiv = document.getElementById('availabilityResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'info';
+
+            if (!doctorId || !date || !startTime || !duration) {
+                resultDiv.innerHTML = '⚠️ Please select doctor, date, start time, and duration.';
+                return;
+            }
+            if (duration < 1) {
+                resultDiv.innerHTML = '⚠️ Duration must be at least 1 minute.';
+                return;
+            }
+            if (!patientId || !patientName || !contact) {
+                resultDiv.innerHTML = '⚠️ Please provide Patient ID, Name, and Contact Number.';
+                return;
+            }
+
+            const duty = getDutyForDoctor(doctorId, date);
+            if (!duty) {
+                resultDiv.innerHTML = '❌ No duty assigned for this doctor on this date.';
+                return;
+            }
+            const dutyStart = timeToMinutes(duty.startTime);
+            const dutyEnd = timeToMinutes(duty.endTime);
+            const startMinutes = timeToMinutes(startTime);
+            const endMinutes = startMinutes + duration;
+            if (startMinutes < dutyStart || endMinutes > dutyEnd) {
+                resultDiv.innerHTML = `❌ Appointment time (${formatTimeForDisplay(startTime)} for ${duration} min) is outside duty hours (${formatTimeForDisplay(duty.startTime)} - ${formatTimeForDisplay(duty.endTime)}).`;
+                return;
+            }
+            const available = await isTimeSlotAvailable(doctorId, date, startTime, duration);
+            if (!available) {
+                resultDiv.innerHTML = '❌ This time slot conflicts with an existing appointment. Please choose another start time or adjust duration.';
+                return;
+            }
+
+            // Proceed to book
+            const doctor = doctorsList.find(d => d.id === doctorId);
+            const service = servicesList.find(s => s.id === serviceId);
+            try {
+                await window.db.collection("appointments").add({
+                    doctorId, doctorName: doctor.name || doctor.username, doctorSpeciality: doctor.speciality || '',
+                    date, startTime, durationMinutes: duration,
+                    time: formatTimeForDisplay(startTime), // for display
+                    patientId, patientName, contact: contact,
+                    serviceId: serviceId || null, serviceName: service?.name || null,
+                    status: 'Scheduled', notes, createdBy: currentUser.username,
+                    createdAt: new Date().toISOString()
+                });
+                await loadAppointments();
+                // Reset form
+                document.getElementById('customStartTime').value = '';
+                document.getElementById('customDuration').value = '30';
+                document.getElementById('patientName').value = '';
+                document.getElementById('patientId').value = '';
+                document.getElementById('contactNo').value = '';
+                document.getElementById('patientSearch').value = '';
+                document.getElementById('appointmentNotes').value = '';
+                document.getElementById('serviceSelect').value = '';
+                resultDiv.innerHTML = `✅ Appointment booked for ${patientName} at ${formatTimeForDisplay(startTime)} for ${duration} minutes.`;
+                resultDiv.className = 'success';
+                setTimeout(() => { resultDiv.style.display = 'none'; }, 3000);
+                displayExistingAppointments();
+                showMessage(`✅ Appointment booked successfully`, "success");
+            } catch(e) {
+                resultDiv.innerHTML = 'Error: ' + e.message;
+                resultDiv.className = 'error';
+            }
+        }
+
+        // ========== CANCEL & DELETE APPOINTMENTS ==========
+        window.cancelAppointment = async function(id) {
+            const apt = appointments.find(a => a.id === id);
+            if (!apt) return;
+            if (confirm(`Cancel appointment for ${apt.patientName} on ${apt.date}?`)) {
+                try {
+                    await window.db.collection("appointments").doc(id).update({ status: 'Cancelled' });
+                    await loadAppointments();
+                    showMessage(`Appointment cancelled`, "success");
+                    if (currentDoctorId && currentDate && apt.doctorId === currentDoctorId && apt.date === currentDate) {
+                        displayExistingAppointments();
+                    }
+                } catch(e) { showMessage("Error cancelling: " + e.message, "error"); }
+            }
+        };
+
+        window.deleteAppointment = async function(id) {
+            const apt = appointments.find(a => a.id === id);
+            if (!apt) return;
+            if (confirm(`⚠️ PERMANENT DELETE!\n\nDelete appointment for ${apt.patientName} on ${apt.date}? This cannot be undone.`)) {
+                try {
+                    await window.db.collection("appointments").doc(id).delete();
+                    await loadAppointments();
+                    showMessage(`Appointment deleted permanently`, "info");
+                    if (currentDoctorId && currentDate && apt.doctorId === currentDoctorId && apt.date === currentDate) {
+                        displayExistingAppointments();
+                    }
+                } catch(e) { showMessage("Error deleting: " + e.message, "error"); }
+            }
+        };
+
+        function renderAppointments() {
+            const tbody = document.getElementById('appointmentsList');
+            const noMsg = document.getElementById('noAppointmentsMsg');
+            if (appointments.length === 0) { tbody.innerHTML = ''; noMsg.style.display = 'block'; return; }
+            noMsg.style.display = 'none';
+            tbody.innerHTML = appointments.map(apt => {
+                let statusClass = '';
+                if (apt.status === 'Scheduled') statusClass = 'status-scheduled';
+                else if (apt.status === 'Cancelled') statusClass = 'status-cancelled';
+                else statusClass = 'status-completed';
+                const timeDisplay = apt.startTime ? `${formatTimeForDisplay(apt.startTime)} (${apt.durationMinutes} min)` : apt.time;
+                const isCancelled = apt.status === 'Cancelled';
+                return `<tr>
+                    <td>${apt.date}</td>
+                    <td><strong>${timeDisplay}</strong></td>
+                    <td>${apt.durationMinutes ? apt.durationMinutes+' min' : '30 min'}</td>
+                    <td>${apt.doctorName}<br><small>${apt.doctorSpeciality || ''}</small></td>
+                    <td>${apt.patientName}<br><small>${apt.patientId}</small></td>
+                    <td>${apt.serviceName || '—'}</td>
+                    <td><span class="status-badge ${statusClass}">${apt.status}</span></td>
+                    <td class="actions">
+                        ${!isCancelled ? `<button class="btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>` : ''}
+                        <button class="btn-danger-sm" onclick="deleteAppointment('${apt.id}')">Delete</button>
+                      </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ========== PATIENT SEARCH ==========
         function searchPatients(query) {
             if (!query.trim()) return [];
             const q = query.toLowerCase();
@@ -347,119 +511,6 @@
             document.getElementById('patientSearchResults').innerHTML = '';
         };
 
-        // ========== BOOK APPOINTMENT ==========
-        async function bookAppointment() {
-            const doctorId = document.getElementById('doctorSelect').value;
-            const date = document.getElementById('appointmentDate').value;
-            const selectedTime = document.getElementById('selectedTime').value;
-            const patientId = document.getElementById('patientId').value.trim();
-            const patientName = document.getElementById('patientName').value.trim();
-            const contact = document.getElementById('contactNo').value.trim();
-            const serviceId = document.getElementById('serviceSelect').value;
-            const notes = document.getElementById('appointmentNotes').value.trim();
-
-            if (!doctorId || !date || !selectedTime) {
-                showMessage("Please select doctor, date, and time slot", "error"); return;
-            }
-            if (!patientId || !patientName || !contact) {
-                showMessage("Please provide Patient ID, Name, and Contact Number", "error"); return;
-            }
-
-            const alreadyBooked = await isTimeSlotBooked(doctorId, date, selectedTime);
-            if (alreadyBooked) {
-                showMessage("Slot no longer available", "error");
-                renderTimeSlots(doctorId, date);
-                document.getElementById('selectedTime').value = '';
-                return;
-            }
-            const doctor = doctorsList.find(d => d.id === doctorId);
-            const service = servicesList.find(s => s.id === serviceId);
-            try {
-                await window.db.collection("appointments").add({
-                    doctorId, doctorName: doctor.name || doctor.username, doctorSpeciality: doctor.speciality || '',
-                    date, time: selectedTime, patientId, patientName, contact: contact,
-                    serviceId: serviceId || null, serviceName: service?.name || null,
-                    status: 'Scheduled', notes, createdBy: currentUser.username,
-                    createdAt: new Date().toISOString()
-                });
-                await loadAppointments();
-                // Reset form (keep doctor/date)
-                document.getElementById('selectedTime').value = '';
-                document.getElementById('patientName').value = '';
-                document.getElementById('patientId').value = '';
-                document.getElementById('contactNo').value = '';
-                document.getElementById('patientSearch').value = '';
-                document.getElementById('appointmentNotes').value = '';
-                document.getElementById('serviceSelect').value = '';
-                renderTimeSlots(doctorId, date);
-                showMessage(`✅ Appointment booked for ${patientName}`, "success");
-            } catch(e) { showMessage("Error: " + e.message, "error"); }
-        }
-
-        // ========== CANCEL & DELETE APPOINTMENTS ==========
-        window.cancelAppointment = async function(id) {
-            const apt = appointments.find(a => a.id === id);
-            if (!apt) return;
-            if (confirm(`Cancel appointment for ${apt.patientName} on ${apt.date} at ${apt.time}?`)) {
-                try {
-                    await window.db.collection("appointments").doc(id).update({ status: 'Cancelled' });
-                    await loadAppointments();
-                    showMessage(`Appointment cancelled`, "success");
-                    // Refresh time slots for current selection
-                    const doctorId = document.getElementById('doctorSelect').value;
-                    const date = document.getElementById('appointmentDate').value;
-                    if (doctorId && date && apt.doctorId === doctorId && apt.date === date) {
-                        renderTimeSlots(doctorId, date);
-                    }
-                } catch(e) { showMessage("Error cancelling: " + e.message, "error"); }
-            }
-        };
-
-        window.deleteAppointment = async function(id) {
-            const apt = appointments.find(a => a.id === id);
-            if (!apt) return;
-            if (confirm(`⚠️ PERMANENT DELETE!\n\nDelete appointment for ${apt.patientName} on ${apt.date} at ${apt.time}? This action cannot be undone.`)) {
-                try {
-                    await window.db.collection("appointments").doc(id).delete();
-                    await loadAppointments();
-                    showMessage(`Appointment deleted permanently`, "info");
-                    // Refresh time slots if the deleted appointment matches current selection
-                    const doctorId = document.getElementById('doctorSelect').value;
-                    const date = document.getElementById('appointmentDate').value;
-                    if (doctorId && date && apt.doctorId === doctorId && apt.date === date) {
-                        renderTimeSlots(doctorId, date);
-                    }
-                } catch(e) { showMessage("Error deleting: " + e.message, "error"); }
-            }
-        };
-
-        function renderAppointments() {
-            const tbody = document.getElementById('appointmentsList');
-            const noMsg = document.getElementById('noAppointmentsMsg');
-            if (appointments.length === 0) { tbody.innerHTML = ''; noMsg.style.display = 'block'; return; }
-            noMsg.style.display = 'none';
-            tbody.innerHTML = appointments.map(apt => {
-                let statusClass = '';
-                if (apt.status === 'Scheduled') statusClass = 'status-scheduled';
-                else if (apt.status === 'Cancelled') statusClass = 'status-cancelled';
-                else statusClass = 'status-completed';
-                
-                const isCancelled = apt.status === 'Cancelled';
-                return `<tr>
-                    <td>${apt.date}</td>
-                    <td><strong>${apt.time}</strong></td>
-                    <td>${apt.doctorName}<br><small>${apt.doctorSpeciality || ''}</small></td>
-                    <td>${apt.patientName}<br><small>${apt.patientId}</small></td>
-                    <td>${apt.serviceName || '—'}</td>
-                    <td><span class="status-badge ${statusClass}">${apt.status}</span></td>
-                    <td class="actions">
-                        ${!isCancelled ? `<button class="btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>` : ''}
-                        <button class="btn-danger-sm" onclick="deleteAppointment('${apt.id}')">Delete</button>
-                     </td>
-                </tr>`;
-            }).join('');
-        }
-
         // ========== ADD PATIENT / SERVICE ==========
         async function addPatient() {
             const name = document.getElementById('newPatientName').value.trim();
@@ -486,18 +537,15 @@
 
         // ========== EVENT LISTENERS ==========
         document.getElementById('doctorSelect').addEventListener('change', () => {
-            const docId = document.getElementById('doctorSelect').value;
-            const date = document.getElementById('appointmentDate').value;
-            if (docId && date) renderTimeSlots(docId, date);
-            else document.getElementById('timeSlotsContainer').style.display = 'none';
+            displayDoctorDutyAndExisting();
+            document.getElementById('availabilityResult').style.display = 'none';
         });
         document.getElementById('appointmentDate').addEventListener('change', () => {
-            const docId = document.getElementById('doctorSelect').value;
-            const date = document.getElementById('appointmentDate').value;
-            if (docId && date) renderTimeSlots(docId, date);
+            displayDoctorDutyAndExisting();
+            document.getElementById('availabilityResult').style.display = 'none';
         });
         document.getElementById('patientSearch').addEventListener('input', (e) => displayPatientSearchResults(searchPatients(e.target.value)));
-        document.getElementById('bookAppointmentBtn').onclick = bookAppointment;
+        document.getElementById('checkAvailabilityBtn').onclick = checkAvailabilityAndBook;
         document.getElementById('refreshAppointmentsBtn').onclick = loadAppointments;
         document.getElementById('refreshDoctorsBtn').onclick = async () => { await loadDoctors(); showToast("Doctors refreshed", false); };
         document.getElementById('addPatientBtn').onclick = () => document.getElementById('patientModal').style.display = 'flex';

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Memos List (Filter on Demand) | Print with Insurance Name</title>
+    <title>Hope Dental | Memos List (Filter on Demand) | Smart Insurance Display</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -278,7 +278,7 @@
                 <tbody id="memosTbody">
                     <tr class="empty-row"><td colspan="9">💡 Set your filters and click "Apply Filters" to view memos</td></tr>
                 </tbody>
-            </table>
+             </table>
         </div>
         <div id="messageBox" class="message" style="display: none;"></div>
     </div>
@@ -326,18 +326,21 @@
         return null;
     }
 
-    // Helper: Get primary insurance name from memo's insurances array (priority = 1 or first)
-    function getPrimaryInsuranceName(memo) {
+    // SMART INSURANCE: Get the FIRST available insurance (no priority labels)
+    // Returns object with { name, amount } or null if none
+    function getActiveInsurance(memo) {
         const insurances = memo.insurances || [];
         if (insurances.length === 0) return null;
-        // Find insurance with priority === 1, otherwise take first
-        const primary = insurances.find(ins => ins.priority === 1) || insurances[0];
-        return primary.name || null;
-    }
-
-    // Helper: Get primary insurance payment amount from billing
-    function getPrimaryInsurancePayment(memo) {
-        return memo.billing?.primaryInsurancePayment || 0;
+        // Simply take the first insurance in the array (if multiple exist, first is considered active)
+        const firstInsurance = insurances[0];
+        // Get payment amount from billing if available, otherwise from insurance.amount
+        let paymentAmount = memo.billing?.primaryInsurancePayment || 0;
+        // If payment is zero but insurance has amount, use that
+        if (paymentAmount === 0 && firstInsurance.amount) paymentAmount = firstInsurance.amount;
+        return {
+            name: firstInsurance.name || 'Insurance',
+            amount: paymentAmount
+        };
     }
 
     // Core filter logic
@@ -416,7 +419,7 @@
         });
     }
 
-    // UPDATED PRINT FUNCTION: Shows Primary Insurance NAME instead of generic label
+    // UPDATED PRINT FUNCTION: Only show insurance if exists, use first available as primary without labels
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) { alert("Please allow pop-ups to print."); return; }
@@ -430,17 +433,16 @@
         const billing = memo.billing || {};
         const insurances = memo.insurances || [];
         
-        // Get primary insurance details: name + amount
-        const primaryInsName = getPrimaryInsuranceName(memo);
-        const primaryInsPayment = getPrimaryInsurancePayment(memo);
+        // Get active insurance (first available) - returns null if none
+        const activeInsurance = getActiveInsurance(memo);
         const aasandhaPayment = billing.aasandhaPayment || 0;
         
-        // Build insurance coverage section (separate from primary label)
+        // Build insurance coverage section (show all insurances for transparency, but without priority labels)
         let insuranceHtml = '';
         if (insurances.length > 0) {
-            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage Details</strong><div class="insurance-list">`;
+            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
             insurances.forEach(ins => {
-                insuranceHtml += `<span class="insurance-item">${ins.name}: MVR ${(ins.amount || 0).toFixed(2)} (${ins.priority === 1 ? 'Primary' : ins.priority === 2 ? 'Secondary' : 'Other'})</span>`;
+                insuranceHtml += `<span class="insurance-item">${escapeHtml(ins.name)}: MVR ${(ins.amount || 0).toFixed(2)}</span>`;
             });
             insuranceHtml += `</div></div>`;
         }
@@ -448,7 +450,7 @@
         // Services table
         let servicesHtml = '';
         if (services.length > 0) {
-            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Primary Ins</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
+            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
             services.forEach(s => {
                 servicesHtml += `<tr>
                     <td>${escapeHtml(s.name)}</td>
@@ -465,12 +467,19 @@
             servicesHtml = '<div class="no-services">No services recorded.</div>';
         }
         
-        // Build primary insurance display string with name
-        let primaryInsDisplay = '';
-        if (primaryInsName) {
-            primaryInsDisplay = `<div class="totals-row"><span>🏥 ${escapeHtml(primaryInsName)} (Primary) Paid:</span><span>MVR ${primaryInsPayment.toFixed(2)}</span></div>`;
-        } else {
-            primaryInsDisplay = `<div class="totals-row"><span>🏥 Primary Insurance Paid:</span><span>MVR ${primaryInsPayment.toFixed(2)}</span></div>`;
+        // Build insurance payment row - ONLY show if there is an active insurance with amount > 0 OR if insurance exists
+        let insurancePaymentRow = '';
+        if (activeInsurance && activeInsurance.amount > 0) {
+            insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR ${activeInsurance.amount.toFixed(2)}</span></div>`;
+        } else if (activeInsurance && activeInsurance.name) {
+            // Show even if amount is zero for transparency
+            insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR 0.00</span></div>`;
+        }
+        
+        // Aasandha row - only show if amount > 0
+        let aasandhaRow = '';
+        if (aasandhaPayment > 0) {
+            aasandhaRow = `<div class="totals-row"><span>🏛️ Aasandha (Govt.) Paid:</span><span>MVR ${aasandhaPayment.toFixed(2)}</span></div>`;
         }
 
         const printContent = `<!DOCTYPE html>
@@ -532,8 +541,8 @@
                 <div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
                 <div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div>
                 <div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
-                ${primaryInsDisplay}
-                <div class="totals-row"><span>🏛️ Aasandha (Govt.) Paid:</span><span>MVR ${aasandhaPayment.toFixed(2)}</span></div>
+                ${insurancePaymentRow}
+                ${aasandhaRow}
                 <div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
                 <div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
                 <div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div>

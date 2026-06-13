@@ -72,27 +72,39 @@
 
         .brand {
             background: linear-gradient(135deg, #ffffff 0%, #e8f8f6 100%);
-            padding: 20px 28px;
+            padding: 30px 28px;
             text-align: center;
             border-bottom: 3px solid #20b2aa;
+            position: relative;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .logo-container img {
+            height: 65px;
+            width: auto;
+            object-fit: contain;
         }
 
         .brand h1 {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
             background: linear-gradient(135deg, #006666, #20b2aa);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
+            margin: 0;
         }
 
         .brand p {
-            font-size: 14px;
+            font-size: 13px;
             color: #5a8f8a;
             margin-top: 8px;
         }
@@ -102,18 +114,18 @@
             display: inline-block;
             padding: 6px 16px;
             border-radius: 60px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            margin-top: 16px;
+            margin-top: 12px;
             color: #0f8a82;
         }
 
         .device-panel, .login-form-container {
-            padding: 36px 32px;
+            padding: 32px 32px;
         }
 
         .input-group, .device-input-group {
-            margin-bottom: 24px;
+            margin-bottom: 22px;
         }
 
         .input-group label, .device-input-group label {
@@ -121,7 +133,7 @@
             font-weight: 600;
             margin-bottom: 8px;
             color: #1a6b63;
-            font-size: 13px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -148,7 +160,7 @@
             background: linear-gradient(135deg, #20b2aa, #0f8a82);
             color: white;
             border: none;
-            padding: 16px;
+            padding: 15px;
             border-radius: 40px;
             font-size: 16px;
             font-weight: 700;
@@ -320,9 +332,23 @@
             border: 1px solid #c0e0da;
         }
 
-        .tooth-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .logo-container img {
+                height: 50px;
+            }
+            
+            .brand h1 {
+                font-size: 22px;
+            }
+            
+            .device-panel, .login-form-container {
+                padding: 24px 20px;
+            }
+            
+            .logo-container {
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -331,12 +357,10 @@
 <!-- Device Authorization Panel -->
 <div id="devicePanel" class="device-auth-container">
     <div class="brand">
-        <img src="hope1.png"
-         alt="Hope Dental Logo"
-         style="position:absolute; left:20px; top:10px; height:100px;">
-        <h1>
-            Device Authorization
-        </h1>
+        <div class="logo-container">
+            <img src="hope1.png" alt="Hope Dental Logo" onerror="this.style.display='none'">
+            <h1>Device Authorization</h1>
+        </div>
         <p>Secure Access Required</p>
         <div class="badge-system">✨ One-time verification per year</div>
     </div>
@@ -365,15 +389,12 @@
 <!-- Login Panel (Original, hidden until device authorized) -->
 <div id="loginPanel" class="login-card hidden-panel">
     <div class="brand">
-        <img src="hope1.png"
-         alt="Hope Dental Logo"
-         style="position:center; left:0px; top:0px; height:100px;">
-        <br>
-        <h1>
-            Hope Dental Clinic
-        </h1>
+        <div class="logo-container">
+            <img src="hope1.png" alt="Hope Dental Logo" onerror="this.style.display='none'">
+            <h1>Hope Dental Clinic</h1>
+        </div>
         <p>Secure Healthcare Management System</p>
-        
+        <div class="badge-system">🏥 HIPAA Compliant · Live Tracking</div>
     </div>
 
     <div class="login-form-container">

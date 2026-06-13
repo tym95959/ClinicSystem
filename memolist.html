@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Memos List (Filter on Demand)</title>
+    <title>Hope Dental | Memos List (Filter on Demand) | Print with Insurance Name</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Flatpickr for elegant date range picker -->
+    <!-- Flatpickr -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <style>
         * {
@@ -22,12 +21,10 @@
             box-sizing: border-box;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
         }
-
         body {
             background: #eef2f7;
             min-height: 100vh;
         }
-
         .clinic-header {
             background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
             color: #004d4d;
@@ -45,7 +42,6 @@
             align-items: center;
             gap: 6px;
         }
-
         .back-btn {
             background: #1e4a6e;
             border: none;
@@ -60,13 +56,11 @@
         .back-btn:hover {
             background: #0f3b55;
         }
-
         .container {
             max-width: 1400px;
             margin: 20px auto;
             padding: 0 20px;
         }
-
         .card {
             background: white;
             border-radius: 20px;
@@ -74,7 +68,6 @@
             padding: 20px 24px;
             border: 1px solid #e2eaf0;
         }
-
         .card-title {
             font-size: 1.2rem;
             font-weight: 600;
@@ -88,8 +81,6 @@
             flex-wrap: wrap;
             gap: 12px;
         }
-
-        /* Filter bar */
         .filter-bar {
             background: #f8fafd;
             border-radius: 20px;
@@ -123,11 +114,6 @@
             border-radius: 30px;
             font-size: 13px;
             background: white;
-            transition: 0.2s;
-        }
-        .filter-group input:focus {
-            border-color: #0f5c7a;
-            outline: none;
         }
         .search-group {
             flex: 2;
@@ -175,7 +161,6 @@
             border-radius: 30px;
             font-size: 11px;
             cursor: pointer;
-            transition: 0.2s;
         }
         .quick-btn:hover {
             background: #e0f2fe;
@@ -204,7 +189,6 @@
             border-radius: 20px;
             cursor: pointer;
             font-size: 11px;
-            transition: 0.2s;
         }
         .print-btn:hover {
             background: #cbdde9;
@@ -224,7 +208,6 @@
         .success { background: #e0f7ef; color: #146b3a; }
         .error { background: #ffe9e9; color: #b91c1c; }
         .info { background: #e0f2fe; color: #075985; }
-        .warning { background: #fff3e0; color: #b45f06; }
         .stats-badge {
             background: #e0f2fe;
             padding: 4px 12px;
@@ -233,19 +216,9 @@
             font-weight: 500;
         }
         @media (max-width: 768px) {
-            .memos-table {
-                font-size: 11px;
-            }
-            .memos-table th, .memos-table td {
-                padding: 8px 4px;
-            }
-            .filter-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .action-buttons {
-                justify-content: flex-start;
-            }
+            .memos-table { font-size: 11px; }
+            .memos-table th, .memos-table td { padding: 8px 4px; }
+            .filter-row { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -266,8 +239,6 @@
             📋 Clinical Memos
             <button class="back-btn" id="refreshDataBtn" style="background:#1e4a6e;">⟳ Reload Data</button>
         </div>
-
-        <!-- FILTER SECTION - User must press "Apply Filters" to see results -->
         <div class="filter-bar">
             <div class="filter-row">
                 <div class="filter-group">
@@ -295,27 +266,14 @@
                 <button id="allTimeBtn" class="quick-btn">All Time</button>
             </div>
         </div>
-
-        <!-- Stats and Table -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <div class="stats-badge" id="resultStats">No filters applied yet → Press "Apply Filters"</div>
             <div style="font-size: 11px; color: #6c8eae;"><i class="fas fa-info-circle"></i> Memos appear only after clicking Apply</div>
         </div>
-
         <div style="overflow-x: auto;">
             <table class="memos-table">
                 <thead>
-                    <tr>
-                        <th>Memo ID</th>
-                        <th>Date</th>
-                        <th>Patient Name</th>
-                        <th>Patient ID</th>
-                        <th>Doctor</th>
-                        <th>Total (MVR)</th>
-                        <th>Paid</th>
-                        <th>Balance</th>
-                        <th>Actions</th>
-                    </tr>
+                    <tr><th>Memo ID</th><th>Date</th><th>Patient Name</th><th>Patient ID</th><th>Doctor</th><th>Total (MVR)</th><th>Paid</th><th>Balance</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="memosTbody">
                     <tr class="empty-row"><td colspan="9">💡 Set your filters and click "Apply Filters" to view memos</td></tr>
@@ -327,11 +285,9 @@
 </div>
 
 <script>
-    // ========== AUTH CHECK ==========
+    // Auth check
     const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) {
-        window.location.href = 'login.html';
-    }
+    if (!loggedInUser) window.location.href = 'login.html';
     try {
         const user = JSON.parse(loggedInUser);
         const header = document.querySelector('.clinic-header');
@@ -341,104 +297,87 @@
         header.insertBefore(userSpan, header.children[1]);
     } catch(e) {}
 
-    // ========== GLOBALS ==========
-    let allMemos = [];              // All memos from Firestore (loaded once on page load / refresh)
-    let currentDisplayMemos = [];  // Currently displayed memos (after filter apply)
-
-    // Filter state (only used when user clicks Apply)
-    let pendingStartDate = null;
-    let pendingEndDate = null;
-    let pendingSearchQuery = '';
-
-    // Flatpickr instances
+    // Globals
+    let allMemos = [];
+    let currentDisplayMemos = [];
+    let pendingStartDate = null, pendingEndDate = null, pendingSearchQuery = '';
     let startPicker, endPicker;
 
-    // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type) {
         const box = document.getElementById('messageBox');
         box.innerText = msg;
         box.className = `message ${type}`;
         box.style.display = 'block';
-        setTimeout(() => {
-            box.style.display = 'none';
-            box.innerText = '';
-        }, 3000);
+        setTimeout(() => { box.style.display = 'none'; box.innerText = ''; }, 3000);
     }
 
     function escapeHtml(str) {
         if (!str) return '';
-        return String(str).replace(/[&<>]/g, m => {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
+        return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
-    // Parse memo date safely
     function parseMemoDate(memo) {
-        if (memo.date) {
-            let parsed = new Date(memo.date);
-            if (!isNaN(parsed)) return parsed;
-        }
+        if (memo.date) { let p = new Date(memo.date); if (!isNaN(p)) return p; }
         if (memo.timestamp) {
-            if (typeof memo.timestamp === 'object' && memo.timestamp.toDate) {
-                return memo.timestamp.toDate();
-            } else if (typeof memo.timestamp === 'number') {
-                return new Date(memo.timestamp);
-            } else if (typeof memo.timestamp === 'string') {
-                return new Date(memo.timestamp);
-            }
+            if (typeof memo.timestamp === 'object' && memo.timestamp.toDate) return memo.timestamp.toDate();
+            if (typeof memo.timestamp === 'number') return new Date(memo.timestamp);
+            if (typeof memo.timestamp === 'string') return new Date(memo.timestamp);
         }
         return null;
     }
 
-    // Core filtering logic based on pending filters (does NOT auto-render)
+    // Helper: Get primary insurance name from memo's insurances array (priority = 1 or first)
+    function getPrimaryInsuranceName(memo) {
+        const insurances = memo.insurances || [];
+        if (insurances.length === 0) return null;
+        // Find insurance with priority === 1, otherwise take first
+        const primary = insurances.find(ins => ins.priority === 1) || insurances[0];
+        return primary.name || null;
+    }
+
+    // Helper: Get primary insurance payment amount from billing
+    function getPrimaryInsurancePayment(memo) {
+        return memo.billing?.primaryInsurancePayment || 0;
+    }
+
+    // Core filter logic
     function computeFilteredMemos() {
         if (!allMemos.length) return [];
-
         let filtered = [...allMemos];
-
-        // Date filtering
         if (pendingStartDate || pendingEndDate) {
             filtered = filtered.filter(memo => {
-                const memoDateObj = parseMemoDate(memo);
-                if (!memoDateObj) return false;
-                const memoDateOnly = new Date(memoDateObj.getFullYear(), memoDateObj.getMonth(), memoDateObj.getDate());
-                if (pendingStartDate && pendingStartDate > memoDateOnly) return false;
+                const d = parseMemoDate(memo);
+                if (!d) return false;
+                const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                if (pendingStartDate && pendingStartDate > day) return false;
                 if (pendingEndDate) {
                     const endDay = new Date(pendingEndDate.getFullYear(), pendingEndDate.getMonth(), pendingEndDate.getDate());
-                    if (memoDateOnly > endDay) return false;
+                    if (day > endDay) return false;
                 }
                 return true;
             });
         }
-
-        // Text search filtering
         const query = pendingSearchQuery.trim().toLowerCase();
         if (query) {
             filtered = filtered.filter(memo => {
-                const memoId = (memo.memoId || '').toLowerCase();
-                const patientName = (memo.patient?.name || '').toLowerCase();
-                const patientId = (memo.patient?.id || '').toLowerCase();
-                return memoId.includes(query) || patientName.includes(query) || patientId.includes(query);
+                const mid = (memo.memoId || '').toLowerCase();
+                const pname = (memo.patient?.name || '').toLowerCase();
+                const pid = (memo.patient?.id || '').toLowerCase();
+                return mid.includes(query) || pname.includes(query) || pid.includes(query);
             });
         }
-
         return filtered;
     }
 
-    // Render the table based on currentDisplayMemos
     function renderMemosTable() {
         const tbody = document.getElementById('memosTbody');
         const statsSpan = document.getElementById('resultStats');
-        
         if (!currentDisplayMemos.length) {
             if (allMemos.length === 0 && pendingStartDate === null && pendingEndDate === null && !pendingSearchQuery) {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">📂 No memo data loaded. Click "Reload Data" to fetch from server.</td></tr>';
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">📂 No memo data loaded. Click "Reload Data" to fetch.</td></tr>';
                 statsSpan.innerHTML = 'No data loaded yet';
             } else if (allMemos.length > 0 && currentDisplayMemos.length === 0) {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔍 No memos match the current filters. Try adjusting date or search.</td></tr>';
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔍 No memos match current filters. Try adjusting.</td></tr>';
                 statsSpan.innerHTML = `0 memos match (total ${allMemos.length} in system)`;
             } else {
                 tbody.innerHTML = '<tr class="empty-row"><td colspan="9">✨ Apply filters to see results</td></tr>';
@@ -446,8 +385,6 @@
             }
             return;
         }
-
-        // Display results
         tbody.innerHTML = currentDisplayMemos.map((memo, idx) => {
             const memoId = memo.memoId || memo.id;
             let dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
@@ -458,166 +395,31 @@
             const subtotal = memo.billing?.subtotal || 0;
             const paid = memo.billing?.paid || 0;
             const balance = memo.billing?.balance || 0;
-            return `
-                <tr>
-                    <td><strong>${escapeHtml(memoId)}</strong></td>
-                    <td>${escapeHtml(dateStr)}</td>
-                    <td>${escapeHtml(patientName)}</td>
-                    <td>${escapeHtml(patientId)}</td>
-                    <td>${escapeHtml(doctorName)}</td>
-                    <td>MVR ${subtotal.toFixed(2)}</td>
-                    <td>MVR ${paid.toFixed(2)}</td>
-                    <td>MVR ${balance.toFixed(2)}</td>
-                    <td><button class="print-btn" data-memo-idx="${idx}">🖨️ Print</button></td>
-                </tr>
-            `;
+            return `<tr>
+                <td><strong>${escapeHtml(memoId)}</strong></td>
+                <td>${escapeHtml(dateStr)}</td>
+                <td>${escapeHtml(patientName)}</td>
+                <td>${escapeHtml(patientId)}</td>
+                <td>${escapeHtml(doctorName)}</td>
+                <td>MVR ${subtotal.toFixed(2)}</td>
+                <td>MVR ${paid.toFixed(2)}</td>
+                <td>MVR ${balance.toFixed(2)}</td>
+                <td><button class="print-btn" data-memo-idx="${idx}">🖨️ Print</button></td>
+            </tr>`;
         }).join('');
-
         statsSpan.innerHTML = `📋 Showing ${currentDisplayMemos.length} memo${currentDisplayMemos.length !== 1 ? 's' : ''} ${allMemos.length ? `(out of ${allMemos.length} total)` : ''}`;
-
-        // Attach print events
         document.querySelectorAll('.print-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.getAttribute('data-memo-idx'));
-                if (!isNaN(idx) && currentDisplayMemos[idx]) {
-                    printMemo(currentDisplayMemos[idx]);
-                }
+                if (!isNaN(idx) && currentDisplayMemos[idx]) printMemo(currentDisplayMemos[idx]);
             });
         });
     }
 
-    // ========== APPLY FILTERS - MAIN ACTION (only this shows memos) ==========
-    function applyFiltersAndShow() {
-        // Read current UI values into pending state
-        const startRaw = document.getElementById('startDate').value;
-        const endRaw = document.getElementById('endDate').value;
-        const searchRaw = document.getElementById('searchInput').value;
-        
-        pendingSearchQuery = searchRaw;
-        
-        if (startRaw) {
-            const startDate = new Date(startRaw);
-            if (!isNaN(startDate)) pendingStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-            else pendingStartDate = null;
-        } else {
-            pendingStartDate = null;
-        }
-        
-        if (endRaw) {
-            const endDate = new Date(endRaw);
-            if (!isNaN(endDate)) pendingEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-            else pendingEndDate = null;
-        } else {
-            pendingEndDate = null;
-        }
-        
-        // Compute filtered list
-        const filtered = computeFilteredMemos();
-        currentDisplayMemos = filtered;
-        renderMemosTable();
-        
-        // Build feedback message
-        let filtersApplied = [];
-        if (pendingStartDate || pendingEndDate) {
-            const fromStr = pendingStartDate ? pendingStartDate.toISOString().slice(0,10) : 'any';
-            const toStr = pendingEndDate ? pendingEndDate.toISOString().slice(0,10) : 'any';
-            filtersApplied.push(`📅 Date: ${fromStr} → ${toStr}`);
-        }
-        if (pendingSearchQuery) filtersApplied.push(`🔍 Search: "${pendingSearchQuery}"`);
-        if (filtersApplied.length) {
-            showMessage(`Filters applied: ${filtersApplied.join(' | ')} → ${currentDisplayMemos.length} results`, "success");
-        } else {
-            showMessage(`No filters active. Showing all ${currentDisplayMemos.length} memos.`, "info");
-        }
-    }
-
-    // ========== CLEAR ALL FILTERS ==========
-    function clearAllFilters() {
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        document.getElementById('searchInput').value = '';
-        pendingStartDate = null;
-        pendingEndDate = null;
-        pendingSearchQuery = '';
-        // After clearing, we do NOT automatically show results. The user must press "Apply Filters"
-        // But we want to reset the display to empty state showing instruction.
-        currentDisplayMemos = [];
-        renderMemosTable();
-        showMessage("Filters cleared. Click 'Apply Filters' to view all memos (or set new filters).", "info");
-    }
-
-    // ========== PRESET DATES (updates UI fields but does NOT auto-apply) ==========
-    function setDatePreset(preset) {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        let start = null, end = null;
-        if (preset === 'today') {
-            start = new Date(today);
-            end = new Date(today);
-        } else if (preset === 'week') {
-            const day = today.getDay();
-            const diffToMonday = (day === 0 ? 6 : day - 1);
-            start = new Date(today);
-            start.setDate(today.getDate() - diffToMonday);
-            end = new Date(today);
-        } else if (preset === 'month') {
-            start = new Date(today.getFullYear(), today.getMonth(), 1);
-            end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        } else if (preset === 'all') {
-            start = null;
-            end = null;
-        }
-        
-        if (start && startPicker) {
-            const startStr = start.toISOString().slice(0,10);
-            document.getElementById('startDate').value = startStr;
-            if (startPicker.setDate) startPicker.setDate(start);
-        } else if (preset === 'all') {
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            if (startPicker) startPicker.clear();
-            if (endPicker) endPicker.clear();
-        }
-        
-        if (end && endPicker) {
-            const endStr = end.toISOString().slice(0,10);
-            document.getElementById('endDate').value = endStr;
-            if (endPicker.setDate) endPicker.setDate(end);
-        }
-        
-        // Important: presets only fill the date fields but do NOT automatically show memos.
-        showMessage(`Date preset "${preset}" applied to fields. Click "Apply Filters" to see results.`, "info");
-    }
-
-    // ========== LOAD MEMOS FROM FIRESTORE (only loads data, does not auto-display) ==========
-    async function loadMemosDataOnly() {
-        if (!window.db) {
-            setTimeout(loadMemosDataOnly, 500);
-            return;
-        }
-        const tbody = document.getElementById('memosTbody');
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔄 Loading memo data from server...</td></tr>';
-        try {
-            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
-            allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // After loading data, reset the display to empty (filters not applied automatically)
-            currentDisplayMemos = [];
-            renderMemosTable();
-            showMessage(`✅ Loaded ${allMemos.length} memos from database. Use filters + Apply to view.`, "success");
-        } catch (error) {
-            console.error("Error loading memos:", error);
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">❌ Error loading memos. Check console.</td></tr>';
-            showMessage("Error loading memos: " + error.message, "error");
-        }
-    }
-
-    // ========== PRINT MEMO (A5 optimized receipt - same design) ==========
+    // UPDATED PRINT FUNCTION: Shows Primary Insurance NAME instead of generic label
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-        if (!printWindow) {
-            alert("Please allow pop-ups to print the memo.");
-            return;
-        }
+        if (!printWindow) { alert("Please allow pop-ups to print."); return; }
 
         const memoId = memo.memoId || memo.id;
         const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
@@ -627,25 +429,48 @@
         const discount = memo.discount || {};
         const billing = memo.billing || {};
         const insurances = memo.insurances || [];
-
+        
+        // Get primary insurance details: name + amount
+        const primaryInsName = getPrimaryInsuranceName(memo);
+        const primaryInsPayment = getPrimaryInsurancePayment(memo);
+        const aasandhaPayment = billing.aasandhaPayment || 0;
+        
+        // Build insurance coverage section (separate from primary label)
         let insuranceHtml = '';
         if (insurances.length > 0) {
-            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
+            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage Details</strong><div class="insurance-list">`;
             insurances.forEach(ins => {
-                insuranceHtml += `<span class="insurance-item">${ins.name}: MVR ${(ins.amount || 0).toFixed(2)} (${ins.priority})</span>`;
+                insuranceHtml += `<span class="insurance-item">${ins.name}: MVR ${(ins.amount || 0).toFixed(2)} (${ins.priority === 1 ? 'Primary' : ins.priority === 2 ? 'Secondary' : 'Other'})</span>`;
             });
             insuranceHtml += `</div></div>`;
         }
-
+        
+        // Services table
         let servicesHtml = '';
         if (services.length > 0) {
             servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Primary Ins</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
             services.forEach(s => {
-                servicesHtml += `<tr><td>${escapeHtml(s.name)}</td><td class="center">${s.qty}</td><td class="right">MVR ${(s.price || 0).toFixed(2)}</td><td class="right">MVR ${(s.total || 0).toFixed(2)}</td><td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td><td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td><td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td></tr>`;
+                servicesHtml += `<tr>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td class="center">${s.qty}</td>
+                    <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.total || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
+                </tr>`;
             });
             servicesHtml += `</tbody></table>`;
         } else {
             servicesHtml = '<div class="no-services">No services recorded.</div>';
+        }
+        
+        // Build primary insurance display string with name
+        let primaryInsDisplay = '';
+        if (primaryInsName) {
+            primaryInsDisplay = `<div class="totals-row"><span>🏥 ${escapeHtml(primaryInsName)} (Primary) Paid:</span><span>MVR ${primaryInsPayment.toFixed(2)}</span></div>`;
+        } else {
+            primaryInsDisplay = `<div class="totals-row"><span>🏥 Primary Insurance Paid:</span><span>MVR ${primaryInsPayment.toFixed(2)}</span></div>`;
         }
 
         const printContent = `<!DOCTYPE html>
@@ -678,30 +503,115 @@
         </style>
         </head><body>
         <div class="receipt">
-            <div class="header"><img src="hope1.png" alt="Logo" style="position:absolute; left:10px; top:5px; height:80px;"><h1>Hope Dental Clinic</h1><p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p><p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p><p><strong>CLINICAL MEMO / RECEIPT</strong></p></div>
-            <div class="memo-title">MEMO NO: ${memoId} | DATE: ${dateStr}</div>
-            <div class="info-grid"><div class="info-box"><strong>PATIENT DETAILS</strong><div>Name: ${escapeHtml(patient.name || '')}</div><div>ID: ${escapeHtml(patient.id || '')}</div><div>Contact: ${escapeHtml(patient.phone || '')}</div><div>Nationality: ${escapeHtml(patient.nationality || '')}</div><div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div></div><div class="info-box"><strong>DOCTOR DETAILS</strong><div>Name: ${escapeHtml(doctor.name || '')}</div><div>Speciality: ${escapeHtml(doctor.speciality || '')}</div></div></div>
-            ${servicesHtml} ${insuranceHtml}
-            <div class="totals-box"><div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div><div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div><div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div><div class="totals-row"><span>Primary Insurance Paid:</span><span>MVR ${(billing.primaryInsurancePayment || 0).toFixed(2)}</span></div><div class="totals-row"><span>Aasandha (Govt.) Paid:</span><span>MVR ${(billing.aasandhaPayment || 0).toFixed(2)}</span></div><div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div><div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div><div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div></div>
-            <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt.</div>
-            <div class="no-print" style="text-align:center; margin-top:15px;"><button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px;">🖨️ Print</button> <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px;">Close</button></div>
-        </div><\/body><\/html>`;
+            <div class="header">
+                <img src="hope1.png" alt="Hope Dental Logo" style="position:absolute; left:10px; top:5px; height:80px;">
+                <h1>Hope Dental Clinic</h1>
+                <p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p>
+                <p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p>
+                <p><strong>CLINICAL MEMO / RECEIPT</strong></p>
+            </div>
+            <div class="memo-title">MEMO NO: ${escapeHtml(memoId)} | DATE: ${escapeHtml(dateStr)}</div>
+            <div class="info-grid">
+                <div class="info-box">
+                    <strong>PATIENT DETAILS</strong>
+                    <div>Name: ${escapeHtml(patient.name || '')}</div>
+                    <div>ID: ${escapeHtml(patient.id || '')}</div>
+                    <div>Contact: ${escapeHtml(patient.phone || '')}</div>
+                    <div>Nationality: ${escapeHtml(patient.nationality || '')}</div>
+                    <div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div>
+                </div>
+                <div class="info-box">
+                    <strong>DOCTOR DETAILS</strong>
+                    <div>Name: ${escapeHtml(doctor.name || '')}</div>
+                    <div>Speciality: ${escapeHtml(doctor.speciality || '')}</div>
+                </div>
+            </div>
+            ${servicesHtml}
+            ${insuranceHtml}
+            <div class="totals-box">
+                <div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
+                <div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                <div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
+                ${primaryInsDisplay}
+                <div class="totals-row"><span>🏛️ Aasandha (Govt.) Paid:</span><span>MVR ${aasandhaPayment.toFixed(2)}</span></div>
+                <div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
+                <div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
+                <div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div>
+            </div>
+            <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt. Valid without signature.</div>
+            <div class="no-print" style="text-align:center; margin-top:15px;">
+                <button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px;">🖨️ Print this Memo</button>
+                <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px;">Close</button>
+            </div>
+        </div>
+        </body></html>`;
         printWindow.document.write(printContent);
         printWindow.document.close();
     }
 
-    // ========== LOGOUT ==========
-    function logout() {
-        localStorage.removeItem('loggedInUser');
-        sessionStorage.removeItem('clinic_user_session');
-        window.location.href = 'login.html';
+    function applyFiltersAndShow() {
+        const startRaw = document.getElementById('startDate').value;
+        const endRaw = document.getElementById('endDate').value;
+        const searchRaw = document.getElementById('searchInput').value;
+        pendingSearchQuery = searchRaw;
+        if (startRaw) { let s = new Date(startRaw); if (!isNaN(s)) pendingStartDate = new Date(s.getFullYear(), s.getMonth(), s.getDate()); else pendingStartDate = null; }
+        else pendingStartDate = null;
+        if (endRaw) { let e = new Date(endRaw); if (!isNaN(e)) pendingEndDate = new Date(e.getFullYear(), e.getMonth(), e.getDate()); else pendingEndDate = null; }
+        else pendingEndDate = null;
+        const filtered = computeFilteredMemos();
+        currentDisplayMemos = filtered;
+        renderMemosTable();
+        let msg = [];
+        if (pendingStartDate || pendingEndDate) msg.push(`📅 Date range`);
+        if (pendingSearchQuery) msg.push(`🔍 "${pendingSearchQuery}"`);
+        if (msg.length) showMessage(`Applied ${msg.join(' & ')} → ${currentDisplayMemos.length} results`, "success");
+        else showMessage(`No active filters → showing all ${currentDisplayMemos.length} memos`, "info");
     }
 
-    // ========== INIT EVENT LISTENERS & PICKERS ==========
+    function clearAllFilters() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('searchInput').value = '';
+        pendingStartDate = null; pendingEndDate = null; pendingSearchQuery = '';
+        currentDisplayMemos = [];
+        renderMemosTable();
+        showMessage("Filters cleared. Click 'Apply Filters' to view all memos.", "info");
+    }
+
+    function setDatePreset(preset) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        let start = null, end = null;
+        if (preset === 'today') { start = new Date(today); end = new Date(today); }
+        else if (preset === 'week') { const day = today.getDay(); const diff = (day === 0 ? 6 : day - 1); start = new Date(today); start.setDate(today.getDate() - diff); end = new Date(today); }
+        else if (preset === 'month') { start = new Date(today.getFullYear(), today.getMonth(), 1); end = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
+        else if (preset === 'all') { start = null; end = null; }
+        if (start && startPicker) document.getElementById('startDate').value = start.toISOString().slice(0,10);
+        if (end && endPicker) document.getElementById('endDate').value = end.toISOString().slice(0,10);
+        if (preset === 'all') { document.getElementById('startDate').value = ''; document.getElementById('endDate').value = ''; }
+        showMessage(`Preset "${preset}" applied to date fields. Click "Apply Filters" to see results.`, "info");
+    }
+
+    async function loadMemosDataOnly() {
+        if (!window.db) { setTimeout(loadMemosDataOnly, 500); return; }
+        const tbody = document.getElementById('memosTbody');
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔄 Loading memo data...</td></tr>';
+        try {
+            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
+            allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            currentDisplayMemos = [];
+            renderMemosTable();
+            showMessage(`✅ Loaded ${allMemos.length} memos. Use filters + Apply to view.`, "success");
+        } catch (error) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">❌ Error loading memos.</td></tr>';
+            showMessage("Error: " + error.message, "error");
+        }
+    }
+
+    function logout() { localStorage.removeItem('loggedInUser'); sessionStorage.removeItem('clinic_user_session'); window.location.href = 'login.html'; }
+
     function init() {
         startPicker = flatpickr("#startDate", { dateFormat: "Y-m-d", allowInput: true });
         endPicker = flatpickr("#endDate", { dateFormat: "Y-m-d", allowInput: true });
-        
         document.getElementById('applyFilterBtn').addEventListener('click', applyFiltersAndShow);
         document.getElementById('clearFiltersBtn').addEventListener('click', clearAllFilters);
         document.getElementById('refreshDataBtn').addEventListener('click', loadMemosDataOnly);
@@ -709,19 +619,10 @@
         document.getElementById('weekBtn').addEventListener('click', () => setDatePreset('week'));
         document.getElementById('monthBtn').addEventListener('click', () => setDatePreset('month'));
         document.getElementById('allTimeBtn').addEventListener('click', () => setDatePreset('all'));
-        
-        // On page load, load data but DO NOT auto-show memos (empty display)
         loadMemosDataOnly();
     }
 
-    // Wait for Firebase
-    function waitForFirebase() {
-        if (window.db) {
-            init();
-        } else {
-            setTimeout(waitForFirebase, 500);
-        }
-    }
+    function waitForFirebase() { if (window.db) init(); else setTimeout(waitForFirebase, 500); }
     waitForFirebase();
 </script>
 </body>

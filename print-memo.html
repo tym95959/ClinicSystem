@@ -159,6 +159,19 @@
             padding: 30px;
             color: #8ba0b0;
         }
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0f2fe;
+            border-top-color: #0f5c7a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
         .error {
             color: #b91c1c;
             background: #ffe9e9;
@@ -180,6 +193,19 @@
             font-size: 12px;
             display: none;
         }
+        .auto-print-banner {
+            background: linear-gradient(135deg, #e0f2fe, #b8e0f0);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid #0f5c7a;
+        }
+        .auto-print-banner i {
+            font-size: 24px;
+            color: #0f5c7a;
+            margin-bottom: 8px;
+        }
         @media (max-width: 600px) {
             body { padding: 12px; }
             .card { padding: 16px; }
@@ -198,6 +224,12 @@
             <div>
                 <button class="back-btn" onclick="window.close()"><i class="fas fa-times"></i> Close</button>
             </div>
+        </div>
+
+        <!-- Auto-print status banner -->
+        <div id="autoPrintBanner" class="auto-print-banner" style="display: none;">
+            <i class="fas fa-spinner fa-pulse"></i>
+            <p id="autoPrintStatus">Loading memo from link...</p>
         </div>
 
         <div class="search-section">
@@ -223,14 +255,14 @@
     // ========== Firebase & Auth ==========
     const loggedInUser = localStorage.getItem('loggedInUser');
     if (!loggedInUser) {
-        // Redirect to login if not authenticated (but allow popup context)
         window.location.href = 'login.html';
     }
 
     let db = null;
-    let currentMemo = null; // Store the currently loaded memo
+    let currentMemo = null;
+    let autoPrintInProgress = false;
+    let printWindowOpened = false;
 
-    // Helper functions
     function showMessage(msg, type) {
         const box = document.getElementById('messageBox');
         box.innerText = msg;
@@ -262,10 +294,13 @@
             if (typeof memo.timestamp === 'number') return new Date(memo.timestamp);
             if (typeof memo.timestamp === 'string') return new Date(memo.timestamp);
         }
+        if (memo.createdAt) {
+            let p = new Date(memo.createdAt);
+            if (!isNaN(p)) return p;
+        }
         return null;
     }
 
-    // Smart Insurance: Get first available insurance (no priority labels)
     function getActiveInsurance(memo) {
         const insurances = memo.insurances || [];
         if (insurances.length === 0) return null;
@@ -278,21 +313,22 @@
         };
     }
 
-    // ========== PRINT FUNCTION (A5 optimized, beautiful receipt) ==========
-    function printMemoReceipt(memo) {
+    // ========== PRINT FUNCTION ==========
+    function printMemoReceipt(memo, autoClose = true) {
         if (!memo) {
             showMessage("No memo data to print.", "error");
-            return;
+            return false;
         }
 
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) {
             alert("Please allow pop-ups to print the memo.");
-            return;
+            return false;
         }
 
         const memoId = memo.memoId || memo.id;
-        const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
+        const dateObj = parseMemoDate(memo);
+        const dateStr = dateObj ? dateObj.toLocaleString() : (memo.date || 'N/A');
         const patient = memo.patient || {};
         const doctor = memo.doctor || {};
         const services = memo.services || [];
@@ -303,7 +339,6 @@
         const activeInsurance = getActiveInsurance(memo);
         const aasandhaPayment = billing.aasandhaPayment || 0;
         
-        // Insurance coverage section (all insurances)
         let insuranceHtml = '';
         if (insurances.length > 0) {
             insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
@@ -313,7 +348,6 @@
             insuranceHtml += `</div></div>`;
         }
         
-        // Services table
         let servicesHtml = '';
         if (services.length > 0) {
             servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
@@ -322,18 +356,17 @@
                     <td>${escapeHtml(s.name)}</td>
                     <td class="center">${s.qty}</td>
                     <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.total || 0).toFixed(2)}</td>
+                    <td class="right">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
                     <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
                     <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
                     <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
-                </tr>`;
+                </table>`;
             });
-            servicesHtml += `</tbody><tr>`;
+            servicesHtml += `</tbody></table>`;
         } else {
             servicesHtml = '<div class="no-services">No services recorded.</div>';
         }
         
-        // Insurance payment row (only if exists)
         let insurancePaymentRow = '';
         if (activeInsurance && activeInsurance.amount > 0) {
             insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR ${activeInsurance.amount.toFixed(2)}</span></div>`;
@@ -341,7 +374,6 @@
             insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR 0.00</span></div>`;
         }
         
-        // Aasandha row (only if amount > 0)
         let aasandhaRow = '';
         if (aasandhaPayment > 0) {
             aasandhaRow = `<div class="totals-row"><span>🏛️ Aasandha (Govt.) Paid:</span><span>MVR ${aasandhaPayment.toFixed(2)}</span></div>`;
@@ -527,7 +559,7 @@
                     <div class="info-box">
                         <strong>PATIENT DETAILS</strong>
                         <div>Name: ${escapeHtml(patient.name || '')}</div>
-                        <div>ID: ${escapeHtml(patient.id || '')}</div>
+                        <div>ID: ${escapeHtml(patient.id || patient.idNumber || '')}</div>
                         <div>Contact: ${escapeHtml(patient.phone || '')}</div>
                         <div>Nationality: ${escapeHtml(patient.nationality || '')}</div>
                         <div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div>
@@ -564,9 +596,129 @@
 
         printWindow.document.write(printContent);
         printWindow.document.close();
+        
+        // If autoClose is true and this was an auto-print, close the main window after a short delay
+        if (autoClose) {
+            setTimeout(() => {
+                if (!printWindow.closed) {
+                    // The print window will remain open for user to print/close
+                    // We close the main search window after 2 seconds
+                    window.close();
+                }
+            }, 2000);
+        }
+        
+        return true;
     }
 
-    // ========== SEARCH MEMO FROM FIRESTORE ==========
+    // ========== SEARCH MEMO BY ID (EXACT MATCH) ==========
+    async function searchMemoById(memoId) {
+        if (!db) return null;
+        
+        try {
+            // Try exact match on memoId field
+            const exactMatch = await db.collection("memos").where("memoId", "==", memoId).limit(1).get();
+            if (!exactMatch.empty) {
+                const doc = exactMatch.docs[0];
+                return { id: doc.id, ...doc.data() };
+            }
+            
+            // If not found, try searching by document ID
+            const docRef = await db.collection("memos").doc(memoId).get();
+            if (docRef.exists) {
+                return { id: docRef.id, ...docRef.data() };
+            }
+            
+            return null;
+        } catch (error) {
+            console.error("Search by ID error:", error);
+            return null;
+        }
+    }
+
+    // ========== SEARCH MEMO BY TEXT ==========
+    async function searchMemoByText(searchQuery) {
+        if (!db) return null;
+        
+        try {
+            const searchLower = searchQuery.toLowerCase();
+            const memosRef = db.collection("memos");
+            const allMemosSnapshot = await memosRef.orderBy("timestamp", "desc").limit(100).get();
+            
+            for (const doc of allMemosSnapshot.docs) {
+                const memoData = doc.data();
+                const memoIdMatch = (memoData.memoId || '').toLowerCase().includes(searchLower);
+                const patientNameMatch = (memoData.patient?.name || '').toLowerCase().includes(searchLower);
+                const patientIdMatch = (memoData.patient?.id || memoData.patient?.idNumber || '').toLowerCase().includes(searchLower);
+                
+                if (memoIdMatch || patientNameMatch || patientIdMatch) {
+                    return { id: doc.id, ...memoData };
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error("Text search error:", error);
+            return null;
+        }
+    }
+
+    // ========== AUTO LOAD AND PRINT FROM URL ==========
+    async function autoLoadAndPrint() {
+        const memoIdParam = getUrlParameter('memoId');
+        
+        if (!memoIdParam) {
+            // No memoId in URL, just show normal search interface
+            return;
+        }
+        
+        autoPrintInProgress = true;
+        const banner = document.getElementById('autoPrintBanner');
+        const statusEl = document.getElementById('autoPrintStatus');
+        banner.style.display = 'block';
+        statusEl.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Loading memo...';
+        
+        if (!db) {
+            statusEl.innerHTML = 'Waiting for database connection...';
+            setTimeout(() => autoLoadAndPrint(), 500);
+            return;
+        }
+        
+        statusEl.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Searching for memo...';
+        
+        let memo = await searchMemoById(memoIdParam);
+        
+        if (!memo) {
+            // Try as text search
+            memo = await searchMemoByText(memoIdParam);
+        }
+        
+        if (memo) {
+            currentMemo = memo;
+            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Memo found! Loading print preview...';
+            
+            // Display the memo info in the result area
+            displayMemoResult(memo, true);
+            
+            // Automatically trigger print after a short delay
+            setTimeout(() => {
+                statusEl.innerHTML = '<i class="fas fa-print"></i> Opening print window...';
+                const success = printMemoReceipt(memo, true);
+                if (success) {
+                    statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Print window opened. You may close this tab.';
+                    banner.style.backgroundColor = '#e0f7ef';
+                } else {
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to open print window. Please use the print button below.';
+                }
+            }, 800);
+        } else {
+            statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Memo "${escapeHtml(memoIdParam)}" not found. Please try searching manually.`;
+            banner.style.backgroundColor = '#ffe9e9';
+            banner.style.borderColor = '#dc3545';
+            autoPrintInProgress = false;
+        }
+    }
+    
+    // ========== MANUAL SEARCH ==========
     async function searchMemo() {
         const searchQuery = document.getElementById('memoSearchInput').value.trim();
         const resultArea = document.getElementById('memoResultArea');
@@ -582,69 +734,35 @@
         }
         
         resultArea.style.display = 'block';
-        resultArea.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i> Searching...</div>';
+        resultArea.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Searching...</div>';
         
-        try {
-            // Query memos collection for matching fields
-            const memosRef = db.collection("memos");
-            let querySnapshot = null;
-            
-            // Try to search by memoId first (exact match)
-            querySnapshot = await memosRef.where("memoId", "==", searchQuery).limit(1).get();
-            
-            if (querySnapshot.empty) {
-                // Try searching by patient name (case-insensitive via >= and <=)
-                const searchLower = searchQuery.toLowerCase();
-                // Fallback: get all memos and filter client-side (Firestore doesn't support proper substring search without index)
-                // For better UX, we'll get recent memos and filter
-                const allMemosSnapshot = await memosRef.orderBy("timestamp", "desc").limit(50).get();
-                let foundMemo = null;
-                
-                for (const doc of allMemosSnapshot.docs) {
-                    const memoData = doc.data();
-                    const memoIdMatch = (memoData.memoId || '').toLowerCase().includes(searchLower);
-                    const patientNameMatch = (memoData.patient?.name || '').toLowerCase().includes(searchLower);
-                    const patientIdMatch = (memoData.patient?.id || '').toLowerCase().includes(searchLower);
-                    
-                    if (memoIdMatch || patientNameMatch || patientIdMatch) {
-                        foundMemo = { id: doc.id, ...memoData };
-                        break;
-                    }
-                }
-                
-                if (foundMemo) {
-                    currentMemo = foundMemo;
-                    displayMemoResult(currentMemo);
-                    showMessage("Memo found!", "success-info");
-                } else {
-                    resultArea.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> No memo found matching "${escapeHtml(searchQuery)}". Try a different search term.</div>`;
-                    currentMemo = null;
-                }
-            } else {
-                // Found by memoId
-                const doc = querySnapshot.docs[0];
-                currentMemo = { id: doc.id, ...doc.data() };
-                displayMemoResult(currentMemo);
-                showMessage("Memo found!", "success-info");
-            }
-            
-        } catch (error) {
-            console.error("Search error:", error);
-            resultArea.innerHTML = `<div class="error"><i class="fas fa-exclamation-circle"></i> Error searching: ${error.message}</div>`;
+        let memo = await searchMemoById(searchQuery);
+        
+        if (!memo) {
+            memo = await searchMemoByText(searchQuery);
+        }
+        
+        if (memo) {
+            currentMemo = memo;
+            displayMemoResult(memo, false);
+            showMessage("Memo found!", "success-info");
+        } else {
+            resultArea.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> No memo found matching "${escapeHtml(searchQuery)}". Try a different search term.</div>`;
             currentMemo = null;
         }
     }
     
-    function displayMemoResult(memo) {
+    function displayMemoResult(memo, isAutoMode = false) {
         const resultArea = document.getElementById('memoResultArea');
         const memoId = memo.memoId || memo.id;
         const patientName = memo.patient?.name || 'Unknown';
-        const patientId = memo.patient?.id || '-';
+        const patientId = memo.patient?.id || memo.patient?.idNumber || '-';
         const doctorName = memo.doctor?.name || '-';
         const total = memo.billing?.subtotal || 0;
         const paid = memo.billing?.paid || 0;
         const balance = memo.billing?.balance || 0;
-        const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
+        const dateObj = parseMemoDate(memo);
+        const dateStr = dateObj ? dateObj.toLocaleString() : (memo.date || 'N/A');
         
         resultArea.innerHTML = `
             <div class="memo-info">
@@ -656,62 +774,46 @@
             </div>
             <div class="action-buttons">
                 <button id="printNowBtn" class="print-memo-btn"><i class="fas fa-print"></i> Print Receipt (A5)</button>
-                <button id="clearSearchBtn" class="another-btn"><i class="fas fa-eraser"></i> Clear & Search New</button>
+                ${!isAutoMode ? '<button id="clearSearchBtn" class="another-btn"><i class="fas fa-eraser"></i> Clear & Search New</button>' : ''}
             </div>
         `;
         
         document.getElementById('printNowBtn').addEventListener('click', () => {
-            if (currentMemo) printMemoReceipt(currentMemo);
+            if (currentMemo) printMemoReceipt(currentMemo, false);
             else showMessage("No memo loaded to print.", "error");
         });
         
-        document.getElementById('clearSearchBtn').addEventListener('click', () => {
-            document.getElementById('memoSearchInput').value = '';
-            resultArea.style.display = 'none';
-            resultArea.innerHTML = '';
-            currentMemo = null;
-            showMessage("Search cleared. Enter new memo details.", "success-info");
-        });
+        if (!isAutoMode) {
+            document.getElementById('clearSearchBtn').addEventListener('click', () => {
+                document.getElementById('memoSearchInput').value = '';
+                resultArea.style.display = 'none';
+                resultArea.innerHTML = '';
+                currentMemo = null;
+                showMessage("Search cleared. Enter new memo details.", "success-info");
+            });
+        }
+        
+        resultArea.style.display = 'block';
     }
     
-    // ========== URL PARAMETER HANDLER (for launching from another page) ==========
+    // ========== URL PARAMETER HELPER ==========
     function getUrlParameter(name) {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get(name);
-    }
-    
-    async function loadMemoFromUrl() {
-        const memoIdParam = getUrlParameter('memoId');
-        const patientIdParam = getUrlParameter('patientId');
-        const patientNameParam = getUrlParameter('patientName');
-        
-        if (!memoIdParam && !patientIdParam && !patientNameParam) return;
-        
-        if (!db) {
-            setTimeout(loadMemoFromUrl, 500);
-            return;
-        }
-        
-        let searchTerm = memoIdParam || patientIdParam || patientNameParam;
-        if (searchTerm) {
-            document.getElementById('memoSearchInput').value = searchTerm;
-            // Auto search after Firebase ready
-            setTimeout(() => searchMemo(), 300);
-        }
     }
     
     // ========== INITIALIZATION ==========
     function initFirebase() {
         if (window.db) {
             db = window.db;
-            // Check if launched with URL parameters
-            loadMemoFromUrl();
+            // Start auto-load from URL if present
+            autoLoadAndPrint();
         } else {
             setTimeout(initFirebase, 500);
         }
     }
     
-    // Event listeners
+    // Event listeners for manual search
     document.getElementById('searchMemoBtn').addEventListener('click', searchMemo);
     document.getElementById('memoSearchInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') searchMemo();

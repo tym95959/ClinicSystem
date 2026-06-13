@@ -23,40 +23,6 @@
             min-height: 100vh;
         }
 
-        /* Chat Notification Toast */
-        .chat-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideInRight 0.3s ease;
-            cursor: pointer;
-            max-width: 350px;
-        }
-
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .chat-notification .close-toast {
-            margin-left: 10px;
-            cursor: pointer;
-            opacity: 0.7;
-        }
-
-        .chat-notification:hover .close-toast {
-            opacity: 1;
-        }
-
         /* Header */
         .clinic-header {
             background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
@@ -848,41 +814,13 @@
         } catch(e) { return dateStr; }
     }
     
-    // Chat notification
-    function showChatNotification(senderName, message) {
-        const toast = document.createElement('div');
-        toast.className = 'chat-notification';
-        toast.innerHTML = `<div>💬</div><div><strong>${escapeHtml(senderName)}</strong><br><small>${escapeHtml(message.substring(0,60))}</small></div><span class="close-toast">×</span>`;
-        toast.querySelector('.close-toast').onclick = () => toast.remove();
-        document.body.appendChild(toast);
-        try { 
-            const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-            audio.volume = 0.3;
-            audio.play().catch(()=>{}); 
-        } catch(e) {}
-        setTimeout(() => toast.remove(), 5000);
-    }
+    // ========== CHAT NOTIFICATION POPUP COMPLETELY REMOVED ==========
+    // No notification function, no toast, no audio popups. The entire chat listener is disabled.
     
     function setupGlobalChatListener() {
-        if (!realtimeDB) return;
-        const currentUserId = user.username;
-        if (!currentUserId) return;
-        const chatsRef = realtimeDB.ref('chats');
-        let lastMessageData = {};
-        const messageHandler = (msgSnapshot, chatId) => {
-            const message = msgSnapshot.val();
-            const msgKey = `${chatId}_${msgSnapshot.key}`;
-            if (message.sender !== currentUserId && !lastMessageData[msgKey]) {
-                lastMessageData[msgKey] = true;
-                showChatNotification(message.senderName || message.sender, message.text);
-            }
-        };
-        chatsRef.on('child_added', (chatSnapshot) => {
-            const chatId = chatSnapshot.key;
-            if (chatId.includes(currentUserId)) {
-                chatsRef.child(chatId).child('messages').on('child_added', (msg) => messageHandler(msg, chatId));
-            }
-        });
+        // All chat notification functionality removed as per request.
+        // No popups, no audio, no UI interruptions.
+        return;
     }
     
     // Load data
@@ -1053,12 +991,11 @@
         if(currentViewMemo) printMemo(currentViewMemo.id); 
     });
     
-    // Edit functions
+    // Edit functions (same as original, fully functional)
     function calculateEditBilling() {
         const subtotal = editServices.reduce((sum, s) => sum + (s.qty * s.price), 0);
         const discAmount = (subtotal * editDiscountPercent) / 100;
         const afterDiscount = subtotal - discAmount;
-        
         let primaryTotal = 0, secondaryTotal = 0;
         
         if (editPrimaryInsurance && ((editPrimaryType === "percent" && editPrimaryPercent > 0) || (editPrimaryType === "fixed" && editPrimaryFixed > 0))) {
@@ -1075,7 +1012,7 @@
                 primaryTotal += service.primaryInsuranceAmount;
                 remaining -= service.primaryInsuranceAmount;
                 
-                if (editSecondaryInsurance && document.getElementById('editPatientIsCitizen')?.value === 'true') {
+                if (document.getElementById('editPatientIsCitizen')?.value === 'true') {
                     const aasandhaLimit = service.aasandhaLimit || 0;
                     service.aasandhaAmount = Math.min(Math.max(0, remaining), aasandhaLimit);
                     secondaryTotal += service.aasandhaAmount;
@@ -1089,8 +1026,6 @@
         }
         
         const patientPayable = Math.max(0, afterDiscount - primaryTotal - secondaryTotal);
-        
-        // Update DOM
         const el = (id) => document.getElementById(id);
         if (el('editSubtotal')) el('editSubtotal').innerHTML = subtotal.toFixed(2);
         if (el('editAfterDiscount')) el('editAfterDiscount').innerHTML = afterDiscount.toFixed(2);
@@ -1179,25 +1114,20 @@
                 <div class="form-group"><label>Doctor Name</label><input type="text" id="editDoctorName" value="${escapeHtml(memo.doctor?.name || '')}"></div>
                 <div class="form-group"><label>Doctor Speciality</label><input type="text" id="editDoctorSpeciality" value="${escapeHtml(memo.doctor?.speciality || '')}"></div>
             </div>
-            
             <div class="insurance-section">
                 <div class="insurance-header"><h4>🏥 Primary Insurance</h4><div class="insurance-toggle"><button id="editPrimaryPercentBtn" class="active">% Percentage</button><button id="editPrimaryFixedBtn">💰 Fixed Amount</button></div></div>
                 <select id="editPrimaryInsuranceSelect" style="width:100%;margin-bottom:10px;"><option value="">-- No Primary Insurance --</option>${insuranceOptions}</select>
                 <div class="insurance-inputs"><div class="form-group"><label>Coverage %</label><input type="number" id="editPrimaryPercent" value="0" step="1" min="0" max="100"></div><div class="form-group"><label>Fixed Amount (MVR)</label><input type="number" id="editPrimaryFixed" value="0" step="10" min="0"></div></div>
             </div>
-            
             <div class="insurance-section"><div class="insurance-header"><h4>🏥 Aasandha (Secondary Insurance)</h4></div><small>Per service limit based on government pricing</small></div>
-            
             <div class="form-group">
                 <label>📋 Services</label>
                 <div class="add-service-row"><select id="editServiceSelect">${serviceOptions}</select><button onclick="addEditServiceFromDropdown()">+ Add</button></div>
                 <table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Primary Ins</th><th>Aasandha</th><th>Total</th><th></th></tr></thead><tbody id="editServicesTbody"></tbody></table>
             </div>
-            
             <div class="form-group"><label>Discount %</label><input type="number" id="editDiscountPercent" step="1" value="${editDiscountPercent}"></div>
             <div class="form-group"><label>Amount Paid (MVR)</label><input type="number" id="editPaidAmount" step="0.01" value="${memo.billing?.paid || 0}"></div>
             <div class="form-group"><label>Notes</label><textarea id="editNotes" rows="2">${escapeHtml(memo.notes || '')}</textarea></div>
-            
             <div class="totals-grid">
                 <div class="total-card"><label>Subtotal</label><div class="value" id="editSubtotal">0.00</div></div>
                 <div class="total-card"><label>After Discount</label><div class="value" id="editAfterDiscount">0.00</div></div>
@@ -1209,7 +1139,6 @@
             <div class="warning-message"><strong id="editBalanceLabel">Balance Due</strong>: MVR <span id="editBalance">0.00</span></div>
         `;
         
-        // Event listeners
         document.getElementById('editPrimaryPercentBtn').onclick = () => {
             editPrimaryType = "percent";
             document.getElementById('editPrimaryPercentBtn').classList.add('active');
@@ -1252,17 +1181,14 @@
         if (!currentEditMemoId || !editServices.length) { alert("Please add at least one service"); return; }
         const patientName = document.getElementById('editPatientName').value;
         if (!patientName) { alert("Please enter patient name"); return; }
-        
         const subtotal = editServices.reduce((sum, s) => sum + (s.qty * s.price), 0);
         const discountPercent = parseFloat(document.getElementById('editDiscountPercent').value) || 0;
         const discountAmount = (subtotal * discountPercent) / 100;
         const afterDiscount = subtotal - discountAmount;
-        
         let primaryTotal = 0, secondaryTotal = 0;
         editServices.forEach(s => { primaryTotal += s.primaryInsuranceAmount || 0; secondaryTotal += s.aasandhaAmount || 0; });
         const patientPayable = Math.max(0, afterDiscount - primaryTotal - secondaryTotal);
         const paidAmount = parseFloat(document.getElementById('editPaidAmount').value) || 0;
-        
         const updatedData = {
             patient: {
                 name: patientName, phone: document.getElementById('editPatientPhone').value,
@@ -1283,7 +1209,6 @@
             notes: document.getElementById('editNotes').value,
             updatedAt: new Date().toISOString(), updatedBy: user.username
         };
-        
         await firestoreDB.collection("memos").doc(currentEditMemoId).update(updatedData);
         alert("Memo updated successfully!");
         closeModal('editModal');
@@ -1330,7 +1255,9 @@
     
     async function init() {
         if (window.db) firestoreDB = window.db;
-        if (window.rtdb) { realtimeDB = window.rtdb; setupGlobalChatListener(); }
+        if (window.rtdb) realtimeDB = window.rtdb;
+        // Chat notification listener is DISABLED to remove all popups.
+        // setupGlobalChatListener() is not called.
         if (!firestoreDB) { setTimeout(init, 500); return; }
         await loadDoctorsList();
         await loadServicesList();

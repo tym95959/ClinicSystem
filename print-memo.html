@@ -260,7 +260,6 @@
 
     let db = null;
     let currentMemo = null;
-    let autoPrintInProgress = false;
     let printWindowOpened = false;
 
     function showMessage(msg, type) {
@@ -360,7 +359,7 @@
                     <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
                     <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
                     <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
-                </table>`;
+                </tr>`;
             });
             servicesHtml += `</tbody></table>`;
         } else {
@@ -597,17 +596,6 @@
         printWindow.document.write(printContent);
         printWindow.document.close();
         
-        // If autoClose is true and this was an auto-print, close the main window after a short delay
-        if (autoClose) {
-            setTimeout(() => {
-                if (!printWindow.closed) {
-                    // The print window will remain open for user to print/close
-                    // We close the main search window after 2 seconds
-                    window.close();
-                }
-            }, 2000);
-        }
-        
         return true;
     }
 
@@ -671,7 +659,6 @@
             return;
         }
         
-        autoPrintInProgress = true;
         const banner = document.getElementById('autoPrintBanner');
         const statusEl = document.getElementById('autoPrintStatus');
         banner.style.display = 'block';
@@ -694,27 +681,25 @@
         
         if (memo) {
             currentMemo = memo;
-            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Memo found! Loading print preview...';
+            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Memo found! Opening print window...';
+            banner.style.backgroundColor = '#e0f7ef';
             
             // Display the memo info in the result area
             displayMemoResult(memo, true);
             
             // Automatically trigger print after a short delay
             setTimeout(() => {
-                statusEl.innerHTML = '<i class="fas fa-print"></i> Opening print window...';
-                const success = printMemoReceipt(memo, true);
+                const success = printMemoReceipt(memo, false);
                 if (success) {
-                    statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Print window opened. You may close this tab.';
-                    banner.style.backgroundColor = '#e0f7ef';
+                    statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Print window opened. You can now close this tab.';
                 } else {
                     statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to open print window. Please use the print button below.';
                 }
-            }, 800);
+            }, 500);
         } else {
             statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Memo "${escapeHtml(memoIdParam)}" not found. Please try searching manually.`;
             banner.style.backgroundColor = '#ffe9e9';
             banner.style.borderColor = '#dc3545';
-            autoPrintInProgress = false;
         }
     }
     

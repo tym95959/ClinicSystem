@@ -170,7 +170,7 @@
 <body>
 <div class="clinic-header">
     <div class="logo">
-        <h2>📄 Hope Dental · Memos List & Print (A5 Receipt)</h2>
+        <h2>📄 Hope Dental · Memos List </h2>
     </div>
     <div>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
@@ -538,12 +538,32 @@
             </head>
             <body>
                 <div class="receipt">
-                    <div class="header">
-                        <h1>🏥 Hope Dental Clinic</h1>
-                        <p>B. Machangolhi, Malé, Maldives | Tel: +960 123-4567</p>
-                        <p><strong>CLINICAL MEMO / RECEIPT</strong></p>
+                    <div class="header" style="position:relative; text-align:center; padding:10px 0;">
+
+                        <!-- Logo on Left -->
+                        <img src="hope1.png"
+                            alt="Hope Dental Logo"
+                            style="position:absolute; left:20px; top:10px; height:100px;">
+
+                        <!-- Centered Content -->
+                        <h1 style="margin:0; color:#2c3e50;">Hope Dental Clinic</h1>
+
+                        <p style="margin:5px 0;">
+                            📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives
+                        </p>
+
+                        <p style="margin:5px 0;">
+                            ☎️ <a href="tel:+9603001516">+960 300-1516</a>
+                            &nbsp; | &nbsp;
+                            💬 <a href="https://wa.me/9607951515" target="_blank">795-1515</a>
+                        </p>
+
+                        <p style="margin:5px 0;">
+                            <strong>CLINICAL MEMO / RECEIPT</strong>
+                        </p>
+
                     </div>
-                    
+
                     <div class="memo-title">
                         MEMO NO: ${memoId} | DATE: ${dateStr}
                     </div>

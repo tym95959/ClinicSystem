@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Memos List & Print (A5 Receipt)</title>
+    <title>Hope Dental | Memos List (Filter on Demand)</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Flatpickr for elegant date range picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <style>
@@ -52,6 +55,10 @@
             cursor: pointer;
             font-weight: 500;
             font-size: 11px;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: #0f3b55;
         }
 
         .container {
@@ -82,49 +89,113 @@
             gap: 12px;
         }
 
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        /* Filter bar */
+        .filter-bar {
+            background: #f8fafd;
+            border-radius: 20px;
+            padding: 15px 18px;
+            margin-bottom: 25px;
+            border: 1px solid #e0e9f0;
         }
-
-        .search-bar input {
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
             flex: 1;
-            padding: 8px 14px;
-            border: 1.5px solid #e2eaf0;
+            min-width: 140px;
+        }
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1f4d6e;
+            letter-spacing: 0.3px;
+        }
+        .filter-group input, .filter-group .flatpickr-input {
+            padding: 8px 12px;
+            border: 1.5px solid #dce5ec;
             border-radius: 30px;
             font-size: 13px;
+            background: white;
+            transition: 0.2s;
         }
-
-        .search-bar button {
+        .filter-group input:focus {
+            border-color: #0f5c7a;
+            outline: none;
+        }
+        .search-group {
+            flex: 2;
+            min-width: 200px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .primary-filter-btn {
             background: #0f5c7a;
             color: white;
             border: none;
-            padding: 8px 20px;
+            padding: 8px 24px;
             border-radius: 30px;
             cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-
+        .secondary-btn {
+            background: #eef2f7;
+            border: 1px solid #cbdde9;
+            color: #1f4d6e;
+            padding: 8px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .quick-presets {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+        .quick-btn {
+            background: white;
+            border: 1px solid #cbdde9;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .quick-btn:hover {
+            background: #e0f2fe;
+        }
         .memos-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
-
         .memos-table th, .memos-table td {
             padding: 12px 8px;
             text-align: left;
             border-bottom: 1px solid #e9edf2;
             font-size: 13px;
         }
-
         .memos-table th {
             background: #f4f9fe;
             font-weight: 600;
             color: #1f4d6e;
         }
-
         .print-btn {
             background: #e0f2fe;
             color: #0f5c7a;
@@ -133,18 +204,16 @@
             border-radius: 20px;
             cursor: pointer;
             font-size: 11px;
+            transition: 0.2s;
         }
-
         .print-btn:hover {
             background: #cbdde9;
         }
-
         .empty-row {
             text-align: center;
             padding: 40px;
             color: #8ba0b0;
         }
-
         .message {
             margin-top: 15px;
             padding: 10px;
@@ -152,11 +221,17 @@
             text-align: center;
             font-size: 12px;
         }
-
         .success { background: #e0f7ef; color: #146b3a; }
         .error { background: #ffe9e9; color: #b91c1c; }
         .info { background: #e0f2fe; color: #075985; }
-
+        .warning { background: #fff3e0; color: #b45f06; }
+        .stats-badge {
+            background: #e0f2fe;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+        }
         @media (max-width: 768px) {
             .memos-table {
                 font-size: 11px;
@@ -164,13 +239,20 @@
             .memos-table th, .memos-table td {
                 padding: 8px 4px;
             }
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .action-buttons {
+                justify-content: flex-start;
+            }
         }
     </style>
 </head>
 <body>
 <div class="clinic-header">
     <div class="logo">
-        <h2>📄 Hope Dental · Memos List </h2>
+        <h2>📄 Hope Dental · Memos (Filter on Demand)</h2>
     </div>
     <div>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
@@ -181,13 +263,43 @@
 <div class="container">
     <div class="card">
         <div class="card-title">
-            📋 All Clinical Memos
-            <button class="back-btn" id="refreshBtn" style="background:#1e4a6e;">⟳ Refresh</button>
+            📋 Clinical Memos
+            <button class="back-btn" id="refreshDataBtn" style="background:#1e4a6e;">⟳ Reload Data</button>
         </div>
 
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="🔍 Search by Memo ID, Patient Name, or Patient ID...">
-            <button id="searchBtn">Search</button>
+        <!-- FILTER SECTION - User must press "Apply Filters" to see results -->
+        <div class="filter-bar">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label><i class="far fa-calendar-alt"></i> From Date</label>
+                    <input type="text" id="startDate" placeholder="Select start date" autocomplete="off">
+                </div>
+                <div class="filter-group">
+                    <label><i class="far fa-calendar-check"></i> To Date</label>
+                    <input type="text" id="endDate" placeholder="Select end date" autocomplete="off">
+                </div>
+                <div class="filter-group search-group">
+                    <label><i class="fas fa-search"></i> Search (Memo ID / Patient Name / Patient ID)</label>
+                    <input type="text" id="searchInput" placeholder="e.g., #MEMO123 or John...">
+                </div>
+                <div class="action-buttons">
+                    <button id="applyFilterBtn" class="primary-filter-btn"><i class="fas fa-filter"></i> Apply Filters</button>
+                    <button id="clearFiltersBtn" class="secondary-btn"><i class="fas fa-eraser"></i> Clear</button>
+                </div>
+            </div>
+            <div class="quick-presets">
+                <span style="font-size:11px; color:#5f7f9a;">Quick date presets:</span>
+                <button id="todayBtn" class="quick-btn">Today</button>
+                <button id="weekBtn" class="quick-btn">This Week</button>
+                <button id="monthBtn" class="quick-btn">This Month</button>
+                <button id="allTimeBtn" class="quick-btn">All Time</button>
+            </div>
+        </div>
+
+        <!-- Stats and Table -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div class="stats-badge" id="resultStats">No filters applied yet → Press "Apply Filters"</div>
+            <div style="font-size: 11px; color: #6c8eae;"><i class="fas fa-info-circle"></i> Memos appear only after clicking Apply</div>
         </div>
 
         <div style="overflow-x: auto;">
@@ -206,7 +318,7 @@
                     </tr>
                 </thead>
                 <tbody id="memosTbody">
-                    <tr class="empty-row"><td colspan="9">Loading memos...</td></tr>
+                    <tr class="empty-row"><td colspan="9">💡 Set your filters and click "Apply Filters" to view memos</td></tr>
                 </tbody>
             </table>
         </div>
@@ -215,7 +327,7 @@
 </div>
 
 <script>
-    // ========== AUTH ==========
+    // ========== AUTH CHECK ==========
     const loggedInUser = localStorage.getItem('loggedInUser');
     if (!loggedInUser) {
         window.location.href = 'login.html';
@@ -230,8 +342,16 @@
     } catch(e) {}
 
     // ========== GLOBALS ==========
-    let allMemos = [];
-    let filteredMemos = [];
+    let allMemos = [];              // All memos from Firestore (loaded once on page load / refresh)
+    let currentDisplayMemos = [];  // Currently displayed memos (after filter apply)
+
+    // Filter state (only used when user clicks Apply)
+    let pendingStartDate = null;
+    let pendingEndDate = null;
+    let pendingSearchQuery = '';
+
+    // Flatpickr instances
+    let startPicker, endPicker;
 
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type) {
@@ -255,37 +375,83 @@
         });
     }
 
-    // ========== LOAD MEMOS FROM FIRESTORE ==========
-    async function loadMemos() {
-        if (!window.db) {
-            setTimeout(loadMemos, 500);
-            return;
+    // Parse memo date safely
+    function parseMemoDate(memo) {
+        if (memo.date) {
+            let parsed = new Date(memo.date);
+            if (!isNaN(parsed)) return parsed;
         }
-        const tbody = document.getElementById('memosTbody');
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Loading memos...</td></tr>';
-        try {
-            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
-            allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            filteredMemos = [...allMemos];
-            renderMemosTable();
-            showMessage(`Loaded ${allMemos.length} memos`, "success");
-        } catch (error) {
-            console.error("Error loading memos:", error);
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Error loading memos. Check console.</td></tr>';
-            showMessage("Error loading memos: " + error.message, "error");
+        if (memo.timestamp) {
+            if (typeof memo.timestamp === 'object' && memo.timestamp.toDate) {
+                return memo.timestamp.toDate();
+            } else if (typeof memo.timestamp === 'number') {
+                return new Date(memo.timestamp);
+            } else if (typeof memo.timestamp === 'string') {
+                return new Date(memo.timestamp);
+            }
         }
+        return null;
     }
 
-    // ========== RENDER TABLE ==========
+    // Core filtering logic based on pending filters (does NOT auto-render)
+    function computeFilteredMemos() {
+        if (!allMemos.length) return [];
+
+        let filtered = [...allMemos];
+
+        // Date filtering
+        if (pendingStartDate || pendingEndDate) {
+            filtered = filtered.filter(memo => {
+                const memoDateObj = parseMemoDate(memo);
+                if (!memoDateObj) return false;
+                const memoDateOnly = new Date(memoDateObj.getFullYear(), memoDateObj.getMonth(), memoDateObj.getDate());
+                if (pendingStartDate && pendingStartDate > memoDateOnly) return false;
+                if (pendingEndDate) {
+                    const endDay = new Date(pendingEndDate.getFullYear(), pendingEndDate.getMonth(), pendingEndDate.getDate());
+                    if (memoDateOnly > endDay) return false;
+                }
+                return true;
+            });
+        }
+
+        // Text search filtering
+        const query = pendingSearchQuery.trim().toLowerCase();
+        if (query) {
+            filtered = filtered.filter(memo => {
+                const memoId = (memo.memoId || '').toLowerCase();
+                const patientName = (memo.patient?.name || '').toLowerCase();
+                const patientId = (memo.patient?.id || '').toLowerCase();
+                return memoId.includes(query) || patientName.includes(query) || patientId.includes(query);
+            });
+        }
+
+        return filtered;
+    }
+
+    // Render the table based on currentDisplayMemos
     function renderMemosTable() {
         const tbody = document.getElementById('memosTbody');
-        if (!filteredMemos.length) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No memos found.</td></tr>';
+        const statsSpan = document.getElementById('resultStats');
+        
+        if (!currentDisplayMemos.length) {
+            if (allMemos.length === 0 && pendingStartDate === null && pendingEndDate === null && !pendingSearchQuery) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">📂 No memo data loaded. Click "Reload Data" to fetch from server.</td></tr>';
+                statsSpan.innerHTML = 'No data loaded yet';
+            } else if (allMemos.length > 0 && currentDisplayMemos.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔍 No memos match the current filters. Try adjusting date or search.</td></tr>';
+                statsSpan.innerHTML = `0 memos match (total ${allMemos.length} in system)`;
+            } else {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="9">✨ Apply filters to see results</td></tr>';
+                statsSpan.innerHTML = 'Filters ready → click "Apply Filters"';
+            }
             return;
         }
-        tbody.innerHTML = filteredMemos.map(memo => {
+
+        // Display results
+        tbody.innerHTML = currentDisplayMemos.map((memo, idx) => {
             const memoId = memo.memoId || memo.id;
-            const dateStr = memo.date || (memo.timestamp ? new Date(memo.timestamp).toLocaleString() : 'N/A');
+            let dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
+            if (parseMemoDate(memo) && !memo.date) dateStr = parseMemoDate(memo).toLocaleString();
             const patientName = memo.patient?.name || 'Unknown';
             const patientId = memo.patient?.id || '-';
             const doctorName = memo.doctor?.name || '-';
@@ -302,23 +468,150 @@
                     <td>MVR ${subtotal.toFixed(2)}</td>
                     <td>MVR ${paid.toFixed(2)}</td>
                     <td>MVR ${balance.toFixed(2)}</td>
-                    <td><button class="print-btn" data-memo-idx="${filteredMemos.indexOf(memo)}">🖨️ Print</button></td>
+                    <td><button class="print-btn" data-memo-idx="${idx}">🖨️ Print</button></td>
                 </tr>
             `;
         }).join('');
 
-        // Attach print event listeners
+        statsSpan.innerHTML = `📋 Showing ${currentDisplayMemos.length} memo${currentDisplayMemos.length !== 1 ? 's' : ''} ${allMemos.length ? `(out of ${allMemos.length} total)` : ''}`;
+
+        // Attach print events
         document.querySelectorAll('.print-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.getAttribute('data-memo-idx'));
-                if (!isNaN(idx) && filteredMemos[idx]) {
-                    printMemo(filteredMemos[idx]);
+                if (!isNaN(idx) && currentDisplayMemos[idx]) {
+                    printMemo(currentDisplayMemos[idx]);
                 }
             });
         });
     }
 
-    // ========== PRINT MEMO (A5 optimized, beautiful receipt layout) ==========
+    // ========== APPLY FILTERS - MAIN ACTION (only this shows memos) ==========
+    function applyFiltersAndShow() {
+        // Read current UI values into pending state
+        const startRaw = document.getElementById('startDate').value;
+        const endRaw = document.getElementById('endDate').value;
+        const searchRaw = document.getElementById('searchInput').value;
+        
+        pendingSearchQuery = searchRaw;
+        
+        if (startRaw) {
+            const startDate = new Date(startRaw);
+            if (!isNaN(startDate)) pendingStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            else pendingStartDate = null;
+        } else {
+            pendingStartDate = null;
+        }
+        
+        if (endRaw) {
+            const endDate = new Date(endRaw);
+            if (!isNaN(endDate)) pendingEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            else pendingEndDate = null;
+        } else {
+            pendingEndDate = null;
+        }
+        
+        // Compute filtered list
+        const filtered = computeFilteredMemos();
+        currentDisplayMemos = filtered;
+        renderMemosTable();
+        
+        // Build feedback message
+        let filtersApplied = [];
+        if (pendingStartDate || pendingEndDate) {
+            const fromStr = pendingStartDate ? pendingStartDate.toISOString().slice(0,10) : 'any';
+            const toStr = pendingEndDate ? pendingEndDate.toISOString().slice(0,10) : 'any';
+            filtersApplied.push(`📅 Date: ${fromStr} → ${toStr}`);
+        }
+        if (pendingSearchQuery) filtersApplied.push(`🔍 Search: "${pendingSearchQuery}"`);
+        if (filtersApplied.length) {
+            showMessage(`Filters applied: ${filtersApplied.join(' | ')} → ${currentDisplayMemos.length} results`, "success");
+        } else {
+            showMessage(`No filters active. Showing all ${currentDisplayMemos.length} memos.`, "info");
+        }
+    }
+
+    // ========== CLEAR ALL FILTERS ==========
+    function clearAllFilters() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('searchInput').value = '';
+        pendingStartDate = null;
+        pendingEndDate = null;
+        pendingSearchQuery = '';
+        // After clearing, we do NOT automatically show results. The user must press "Apply Filters"
+        // But we want to reset the display to empty state showing instruction.
+        currentDisplayMemos = [];
+        renderMemosTable();
+        showMessage("Filters cleared. Click 'Apply Filters' to view all memos (or set new filters).", "info");
+    }
+
+    // ========== PRESET DATES (updates UI fields but does NOT auto-apply) ==========
+    function setDatePreset(preset) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        let start = null, end = null;
+        if (preset === 'today') {
+            start = new Date(today);
+            end = new Date(today);
+        } else if (preset === 'week') {
+            const day = today.getDay();
+            const diffToMonday = (day === 0 ? 6 : day - 1);
+            start = new Date(today);
+            start.setDate(today.getDate() - diffToMonday);
+            end = new Date(today);
+        } else if (preset === 'month') {
+            start = new Date(today.getFullYear(), today.getMonth(), 1);
+            end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        } else if (preset === 'all') {
+            start = null;
+            end = null;
+        }
+        
+        if (start && startPicker) {
+            const startStr = start.toISOString().slice(0,10);
+            document.getElementById('startDate').value = startStr;
+            if (startPicker.setDate) startPicker.setDate(start);
+        } else if (preset === 'all') {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            if (startPicker) startPicker.clear();
+            if (endPicker) endPicker.clear();
+        }
+        
+        if (end && endPicker) {
+            const endStr = end.toISOString().slice(0,10);
+            document.getElementById('endDate').value = endStr;
+            if (endPicker.setDate) endPicker.setDate(end);
+        }
+        
+        // Important: presets only fill the date fields but do NOT automatically show memos.
+        showMessage(`Date preset "${preset}" applied to fields. Click "Apply Filters" to see results.`, "info");
+    }
+
+    // ========== LOAD MEMOS FROM FIRESTORE (only loads data, does not auto-display) ==========
+    async function loadMemosDataOnly() {
+        if (!window.db) {
+            setTimeout(loadMemosDataOnly, 500);
+            return;
+        }
+        const tbody = document.getElementById('memosTbody');
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔄 Loading memo data from server...</td></tr>';
+        try {
+            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
+            allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // After loading data, reset the display to empty (filters not applied automatically)
+            currentDisplayMemos = [];
+            renderMemosTable();
+            showMessage(`✅ Loaded ${allMemos.length} memos from database. Use filters + Apply to view.`, "success");
+        } catch (error) {
+            console.error("Error loading memos:", error);
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="9">❌ Error loading memos. Check console.</td></tr>';
+            showMessage("Error loading memos: " + error.message, "error");
+        }
+    }
+
+    // ========== PRINT MEMO (A5 optimized receipt - same design) ==========
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) {
@@ -327,7 +620,7 @@
         }
 
         const memoId = memo.memoId || memo.id;
-        const dateStr = memo.date || (memo.timestamp ? new Date(memo.timestamp).toLocaleString() : 'N/A');
+        const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
         const patient = memo.patient || {};
         const doctor = memo.doctor || {};
         const services = memo.services || [];
@@ -335,7 +628,6 @@
         const billing = memo.billing || {};
         const insurances = memo.insurances || [];
 
-        // Format insurance details as a compact list
         let insuranceHtml = '';
         if (insurances.length > 0) {
             insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
@@ -345,293 +637,57 @@
             insuranceHtml += `</div></div>`;
         }
 
-        // Build services table
         let servicesHtml = '';
         if (services.length > 0) {
-            servicesHtml = `
-                <table class="services-table">
-                    <thead>
-                        <tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Primary Ins</th><th>Aasandha</th><th>Patient Pay</th></tr>
-                    </thead>
-                    <tbody>
-            `;
+            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Primary Ins</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
             services.forEach(s => {
-                servicesHtml += `<tr>
-                    <td>${escapeHtml(s.name)}</td>
-                    <td class="center">${s.qty}</td>
-                    <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.total || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
-                </tr>`;
+                servicesHtml += `<tr><td>${escapeHtml(s.name)}</td><td class="center">${s.qty}</td><td class="right">MVR ${(s.price || 0).toFixed(2)}</td><td class="right">MVR ${(s.total || 0).toFixed(2)}</td><td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td><td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td><td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td></tr>`;
             });
             servicesHtml += `</tbody></table>`;
         } else {
             servicesHtml = '<div class="no-services">No services recorded.</div>';
         }
 
-        const printContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Hope Dental - Memo ${memoId}</title>
-                <style>
-                    /* A5 Size: 148mm x 210mm */
-                    @page {
-                        size: A5;
-                        margin: 8mm;
-                    }
-                    body {
-                        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-                        margin: 0;
-                        padding: 0;
-                        background: white;
-                        color: #1e2a36;
-                        font-size: 11px;
-                        line-height: 1.4;
-                    }
-                    .receipt {
-                        max-width: 100%;
-                        margin: 0 auto;
-                        background: white;
-                    }
-                    .header {
-                        text-align: center;
-                        border-bottom: 2px solid #0a2f44;
-                        padding-bottom: 6px;
-                        margin-bottom: 12px;
-                    }
-                    .header h1 {
-                        color: #0a2f44;
-                        margin: 0;
-                        font-size: 20px;
-                        letter-spacing: 1px;
-                    }
-                    .header p {
-                        margin: 3px 0;
-                        font-size: 9px;
-                        color: #5f7f9a;
-                    }
-                    .memo-title {
-                        text-align: center;
-                        background: #e0f2fe;
-                        padding: 4px;
-                        border-radius: 20px;
-                        margin: 8px 0;
-                        font-weight: bold;
-                        font-size: 12px;
-                    }
-                    .info-grid {
-                        display: flex;
-                        justify-content: space-between;
-                        background: #f4f9fe;
-                        padding: 8px 10px;
-                        border-radius: 12px;
-                        margin: 10px 0;
-                        gap: 15px;
-                        flex-wrap: wrap;
-                    }
-                    .info-box {
-                        flex: 1;
-                    }
-                    .info-box strong {
-                        font-size: 10px;
-                        color: #0a2f44;
-                        display: block;
-                        margin-bottom: 4px;
-                        border-left: 2px solid #0f5c7a;
-                        padding-left: 6px;
-                    }
-                    .info-box div {
-                        font-size: 10px;
-                        margin: 3px 0;
-                    }
-                    .services-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 10px 0;
-                        font-size: 9px;
-                    }
-                    .services-table th {
-                        background: #f4f9fe;
-                        padding: 5px 4px;
-                        text-align: left;
-                        font-weight: 600;
-                        border-bottom: 1px solid #d0dfe8;
-                    }
-                    .services-table td {
-                        padding: 4px;
-                        border-bottom: 1px solid #e9edf2;
-                    }
-                    .services-table .center {
-                        text-align: center;
-                    }
-                    .services-table .right {
-                        text-align: right;
-                    }
-                    .insurance-box {
-                        background: #fff8e7;
-                        padding: 6px 10px;
-                        border-radius: 10px;
-                        margin: 10px 0;
-                        font-size: 9px;
-                    }
-                    .insurance-list {
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 12px;
-                        margin-top: 4px;
-                    }
-                    .insurance-item {
-                        background: white;
-                        padding: 2px 8px;
-                        border-radius: 20px;
-                        border: 1px solid #f0c674;
-                    }
-                    .totals-box {
-                        background: linear-gradient(135deg, #f0f9ff 0%, #e8f4fd 100%);
-                        border: 1px solid #0f5c7a;
-                        border-radius: 12px;
-                        padding: 10px;
-                        margin: 12px 0;
-                    }
-                    .totals-row {
-                        display: flex;
-                        justify-content: space-between;
-                        padding: 4px 0;
-                        font-size: 10px;
-                    }
-                    .totals-row.total {
-                        font-weight: 800;
-                        font-size: 13px;
-                        border-top: 1px dashed #8ba0b0;
-                        margin-top: 6px;
-                        padding-top: 6px;
-                    }
-                    .footer {
-                        text-align: center;
-                        font-size: 8px;
-                        color: #8ba0b0;
-                        border-top: 1px solid #ddd;
-                        padding-top: 8px;
-                        margin-top: 12px;
-                    }
-                    .no-services {
-                        background: #f9f9f9;
-                        padding: 20px;
-                        text-align: center;
-                        border-radius: 8px;
-                        font-style: italic;
-                    }
-                    @media print {
-                        body {
-                            margin: 0;
-                            padding: 0;
-                        }
-                        .no-print {
-                            display: none;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="receipt">
-                    <div class="header" style="position:relative; text-align:center; padding:10px 0;">
-
-                        <!-- Logo on Left -->
-                        <img src="hope1.png"
-                            alt="Hope Dental Logo"
-                            style="position:absolute; left:20px; top:10px; height:100px;">
-
-                        <!-- Centered Content -->
-                        <h1 style="margin:0; color:#2c3e50;">Hope Dental Clinic</h1>
-
-                        <p style="margin:5px 0;">
-                            📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives
-                        </p>
-
-                        <p style="margin:5px 0;">
-                            ☎️ <a href="tel:+9603001516">+960 300-1516</a>
-                            &nbsp; | &nbsp;
-                            💬 <a href="https://wa.me/9607951515" target="_blank">795-1515</a>
-                        </p>
-
-                        <p style="margin:5px 0;">
-                            <strong>CLINICAL MEMO / RECEIPT</strong>
-                        </p>
-
-                    </div>
-
-                    <div class="memo-title">
-                        MEMO NO: ${memoId} | DATE: ${dateStr}
-                    </div>
-
-                    <div class="info-grid">
-                        <div class="info-box">
-                            <strong>PATIENT DETAILS</strong>
-                            <div>Name: ${escapeHtml(patient.name || '')}</div>
-                            <div>ID: ${escapeHtml(patient.id || '')}</div>
-                            <div>Contact: ${escapeHtml(patient.phone || '')}</div>
-                            <div>Nationality: ${escapeHtml(patient.nationality || '')}</div>
-                            <div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div>
-                        </div>
-                        <div class="info-box">
-                            <strong>DOCTOR DETAILS</strong>
-                            <div>Name: ${escapeHtml(doctor.name || '')}</div>
-                            <div>Speciality: ${escapeHtml(doctor.speciality || '')}</div>
-                        </div>
-                    </div>
-
-                    <div class="services-table-container">
-                        ${servicesHtml}
-                    </div>
-
-                    ${insuranceHtml}
-
-                    <div class="totals-box">
-                        <div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
-                        <div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div>
-                        <div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
-                        <div class="totals-row"><span>Primary Insurance Paid:</span><span>MVR ${(billing.primaryInsurancePayment || 0).toFixed(2)}</span></div>
-                        <div class="totals-row"><span>Aasandha (Govt.) Paid:</span><span>MVR ${(billing.aasandhaPayment || 0).toFixed(2)}</span></div>
-                        <div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
-                        <div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
-                        <div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div>
-                    </div>
-
-                    <div class="footer">
-                        Thank you for choosing Hope Dental. <br>
-                        This is a computer-generated receipt. Valid without signature.
-                    </div>
-                    <div class="no-print" style="text-align:center; margin-top:15px;">
-                        <button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px;">🖨️ Print this Memo</button>
-                        <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px;">Close</button>
-                    </div>
-                </div>
-            <\/body>
-            <\/html>
-        `;
-
+        const printContent = `<!DOCTYPE html>
+        <html><head><meta charset="UTF-8"><title>Hope Dental - Memo ${memoId}</title>
+        <style>
+            @page { size: A5; margin: 8mm; }
+            body { font-family: 'Inter','Segoe UI',sans-serif; margin:0; padding:0; background:white; color:#1e2a36; font-size:11px; line-height:1.4; }
+            .receipt { max-width:100%; margin:0 auto; background:white; }
+            .header { text-align:center; border-bottom:2px solid #0a2f44; padding-bottom:6px; margin-bottom:12px; position:relative; }
+            .header h1 { color:#0a2f44; margin:0; font-size:20px; }
+            .header p { margin:3px 0; font-size:9px; color:#5f7f9a; }
+            .memo-title { text-align:center; background:#e0f2fe; padding:4px; border-radius:20px; margin:8px 0; font-weight:bold; font-size:12px; }
+            .info-grid { display:flex; justify-content:space-between; background:#f4f9fe; padding:8px 10px; border-radius:12px; margin:10px 0; gap:15px; flex-wrap:wrap; }
+            .info-box { flex:1; }
+            .info-box strong { font-size:10px; color:#0a2f44; display:block; margin-bottom:4px; border-left:2px solid #0f5c7a; padding-left:6px; }
+            .services-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:9px; }
+            .services-table th { background:#f4f9fe; padding:5px 4px; text-align:left; border-bottom:1px solid #d0dfe8; }
+            .services-table td { padding:4px; border-bottom:1px solid #e9edf2; }
+            .right { text-align:right; }
+            .center { text-align:center; }
+            .insurance-box { background:#fff8e7; padding:6px 10px; border-radius:10px; margin:10px 0; font-size:9px; }
+            .insurance-list { display:flex; flex-wrap:wrap; gap:12px; margin-top:4px; }
+            .insurance-item { background:white; padding:2px 8px; border-radius:20px; border:1px solid #f0c674; }
+            .totals-box { background:linear-gradient(135deg,#f0f9ff,#e8f4fd); border:1px solid #0f5c7a; border-radius:12px; padding:10px; margin:12px 0; }
+            .totals-row { display:flex; justify-content:space-between; padding:4px 0; font-size:10px; }
+            .totals-row.total { font-weight:800; font-size:13px; border-top:1px dashed #8ba0b0; margin-top:6px; padding-top:6px; }
+            .footer { text-align:center; font-size:8px; color:#8ba0b0; border-top:1px solid #ddd; padding-top:8px; margin-top:12px; }
+            .no-services { background:#f9f9f9; padding:20px; text-align:center; border-radius:8px; font-style:italic; }
+            @media print { body { margin:0; padding:0; } .no-print { display:none; } }
+        </style>
+        </head><body>
+        <div class="receipt">
+            <div class="header"><img src="hope1.png" alt="Logo" style="position:absolute; left:10px; top:5px; height:80px;"><h1>Hope Dental Clinic</h1><p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p><p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p><p><strong>CLINICAL MEMO / RECEIPT</strong></p></div>
+            <div class="memo-title">MEMO NO: ${memoId} | DATE: ${dateStr}</div>
+            <div class="info-grid"><div class="info-box"><strong>PATIENT DETAILS</strong><div>Name: ${escapeHtml(patient.name || '')}</div><div>ID: ${escapeHtml(patient.id || '')}</div><div>Contact: ${escapeHtml(patient.phone || '')}</div><div>Nationality: ${escapeHtml(patient.nationality || '')}</div><div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div></div><div class="info-box"><strong>DOCTOR DETAILS</strong><div>Name: ${escapeHtml(doctor.name || '')}</div><div>Speciality: ${escapeHtml(doctor.speciality || '')}</div></div></div>
+            ${servicesHtml} ${insuranceHtml}
+            <div class="totals-box"><div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div><div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div><div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div><div class="totals-row"><span>Primary Insurance Paid:</span><span>MVR ${(billing.primaryInsurancePayment || 0).toFixed(2)}</span></div><div class="totals-row"><span>Aasandha (Govt.) Paid:</span><span>MVR ${(billing.aasandhaPayment || 0).toFixed(2)}</span></div><div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div><div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div><div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div></div>
+            <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt.</div>
+            <div class="no-print" style="text-align:center; margin-top:15px;"><button onclick="window.print();" style="padding:6px 16px; background:#0a2f44; color:white; border:none; border-radius:30px;">🖨️ Print</button> <button onclick="window.close();" style="padding:6px 16px; background:#c63d2f; color:white; border:none; border-radius:30px;">Close</button></div>
+        </div><\/body><\/html>`;
         printWindow.document.write(printContent);
         printWindow.document.close();
-    }
-
-    // ========== SEARCH FUNCTION ==========
-    function searchMemos() {
-        const query = document.getElementById('searchInput').value.toLowerCase().trim();
-        if (!query) {
-            filteredMemos = [...allMemos];
-        } else {
-            filteredMemos = allMemos.filter(memo => {
-                const memoId = (memo.memoId || '').toLowerCase();
-                const patientName = (memo.patient?.name || '').toLowerCase();
-                const patientId = (memo.patient?.id || '').toLowerCase();
-                return memoId.includes(query) || patientName.includes(query) || patientId.includes(query);
-            });
-        }
-        renderMemosTable();
     }
 
     // ========== LOGOUT ==========
@@ -641,17 +697,27 @@
         window.location.href = 'login.html';
     }
 
-    // ========== EVENT LISTENERS ==========
-    document.getElementById('refreshBtn').addEventListener('click', loadMemos);
-    document.getElementById('searchBtn').addEventListener('click', searchMemos);
-    document.getElementById('searchInput').addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') searchMemos();
-    });
+    // ========== INIT EVENT LISTENERS & PICKERS ==========
+    function init() {
+        startPicker = flatpickr("#startDate", { dateFormat: "Y-m-d", allowInput: true });
+        endPicker = flatpickr("#endDate", { dateFormat: "Y-m-d", allowInput: true });
+        
+        document.getElementById('applyFilterBtn').addEventListener('click', applyFiltersAndShow);
+        document.getElementById('clearFiltersBtn').addEventListener('click', clearAllFilters);
+        document.getElementById('refreshDataBtn').addEventListener('click', loadMemosDataOnly);
+        document.getElementById('todayBtn').addEventListener('click', () => setDatePreset('today'));
+        document.getElementById('weekBtn').addEventListener('click', () => setDatePreset('week'));
+        document.getElementById('monthBtn').addEventListener('click', () => setDatePreset('month'));
+        document.getElementById('allTimeBtn').addEventListener('click', () => setDatePreset('all'));
+        
+        // On page load, load data but DO NOT auto-show memos (empty display)
+        loadMemosDataOnly();
+    }
 
-    // ========== INIT ==========
+    // Wait for Firebase
     function waitForFirebase() {
         if (window.db) {
-            loadMemos();
+            init();
         } else {
             setTimeout(waitForFirebase, 500);
         }

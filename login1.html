@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Hope Dental Clinic | Secure Access System</title>
-    
-    <!-- Load configuration files -->
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <!-- Device config - separate file for master password -->
     <script src="device-config.js"></script>
-    <script src="users.js"></script>
-    <script src="deviceauth.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -34,7 +35,6 @@
             50% { background: linear-gradient(135deg, #ffffff 0%, #e6f7f5 50%, #20b2aa 100%); }
         }
 
-        /* Decorative elements */
         body::before {
             content: '';
             position: absolute;
@@ -316,7 +316,7 @@
         <div class="logo-wrapper">
             <div class="logo-icon">🦷</div>
             <div>
-                <h1>Hope Dental  Clinic</h1>
+                <h1>Hope Dental Clinic</h1>
                 <p>Secure Healthcare Management</p>
             </div>
         </div>
@@ -379,7 +379,7 @@
         </div>
         
         <div class="reset-link">
-            <button type="button" id="resetDeviceBtn">⟳ Reset device authorization (requires re-verification)</button>
+            <button type="button" id="resetDeviceBtn">⟳ Reset device authorization</button>
         </div>
         
         <div id="deviceInfo" class="device-info"></div>
@@ -394,54 +394,272 @@
 
 <script>
     (function() {
-        // DOM Elements
-        const devicePanel = document.getElementById('devicePanel');
-        const userPanel = document.getElementById('userPanel');
-        const devicePasswordInput = document.getElementById('devicePassword');
-        const deviceAuthBtn = document.getElementById('deviceAuthBtn');
-        const deviceMessageDiv = document.getElementById('deviceMessage');
-        const toggleDevicePw = document.getElementById('toggleDevicePw');
-        const usernameInput = document.getElementById('username');
-        const userPasswordInput = document.getElementById('userPassword');
-        const userAuthBtn = document.getElementById('userAuthBtn');
-        const userMessageDiv = document.getElementById('userMessage');
-        const toggleUserPw = document.getElementById('toggleUserPw');
-        const resetDeviceBtn = document.getElementById('resetDeviceBtn');
-        const statusChip = document.getElementById('statusChip');
-        const deviceInfoDiv = document.getElementById('deviceInfo');
-
-        let isProcessing = false;
-
-        // Helper functions
+        // ===================================================================
+        // DEVICE AUTHENTICATION - Using external config file
+        // User authentication from Firebase (as in your original code)
+        // ===================================================================
+        
+        const STORAGE_KEY = 'hopedental_device_auth';
+        const AUTH_EXPIRY_DAYS = 365;
+        
+        let firestoreDB = null;
+        let realtimeDB = null;
+        
+        // ===================================================================
+        // PERSISTENT STORAGE FUNCTIONS
+        // ===================================================================
+        function getExpiryDate() {
+            const date = new Date();
+            date.setDate(date.getDate() + AUTH_EXPIRY_DAYS);
+            return date.toISOString();
+        }
+        
+        function generateDeviceId() {
+            let deviceId = localStorage.getItem('device_id');
+            if (!deviceId) {
+                deviceId = 'dev_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+                try { localStorage.setItem('device_id', deviceId); } catch(e) {}
+            }
+            return deviceId;
+        }
+        
+        function saveDeviceAuthorization() {
+            const authData = {
+                authorized: true,
+                authorizedAt: new Date().toISOString(),
+                expiresAt: getExpiryDate(),
+                deviceId: generateDeviceId()
+            };
+            
+            const authString = JSON.stringify(authData);
+            
+            try { localStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
+            try { sessionStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
+            
+            // Cookie - survives cache clearing!
+            try {
+                document.cookie = `${STORAGE_KEY}=${encodeURIComponent(authString)}; expires=${authData.expiresAt}; path=/; SameSite=Lax`;
+            } catch(e) {}
+            
+            return true;
+        }
+        
+        function isDeviceAuthorized() {
+            // Check Cookie first (most persistent)
+            const cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
+            if (cookieMatch) {
+                try {
+                    const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
+                    if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
+                        return true;
+                    }
+                } catch(e) {}
+            }
+            
+            // Check localStorage
+            try {
+                const localData = localStorage.getItem(STORAGE_KEY);
+                if (localData) {
+                    const authData = JSON.parse(localData);
+                    if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
+                        return true;
+                    }
+                }
+            } catch(e) {}
+            
+            return false;
+        }
+        
+        function clearDeviceAuthorization() {
+            try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+            try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+            try { 
+                document.cookie = `${STORAGE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            } catch(e) {}
+        }
+        
+        function getRemainingDays() {
+            try {
+                const cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
+                if (cookieMatch) {
+                    const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
+                    const expiry = new Date(authData.expiresAt);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+                    return daysLeft > 0 ? daysLeft : 0;
+                }
+            } catch(e) {}
+            return 0;
+        }
+        
+        // ===================================================================
+        // HELPER FUNCTIONS
+        // ===================================================================
         function setDeviceMessage(text, type = 'info') {
-            const msgSpan = deviceMessageDiv.querySelector('span:last-child');
+            const msgDiv = document.getElementById('deviceMessage');
+            if (!msgDiv) return;
+            const msgSpan = msgDiv.querySelector('span:last-child');
             if (msgSpan) msgSpan.innerText = text;
-            deviceMessageDiv.className = 'message-panel';
-            if (type === 'error') deviceMessageDiv.classList.add('error');
-            else if (type === 'success') deviceMessageDiv.classList.add('success');
-            else if (type === 'warning') deviceMessageDiv.classList.add('warning');
+            msgDiv.className = 'message-panel';
+            if (type === 'error') msgDiv.classList.add('error');
+            else if (type === 'success') msgDiv.classList.add('success');
+            else if (type === 'warning') msgDiv.classList.add('warning');
         }
 
         function setUserMessage(text, type = 'info') {
-            const msgSpan = userMessageDiv.querySelector('span:last-child');
+            const msgDiv = document.getElementById('userMessage');
+            if (!msgDiv) return;
+            const msgSpan = msgDiv.querySelector('span:last-child');
             if (msgSpan) msgSpan.innerText = text;
-            userMessageDiv.className = 'message-panel';
-            if (type === 'error') userMessageDiv.classList.add('error');
-            else if (type === 'success') userMessageDiv.classList.add('success');
-            else if (type === 'warning') userMessageDiv.classList.add('warning');
+            msgDiv.className = 'message-panel';
+            if (type === 'error') msgDiv.classList.add('error');
+            else if (type === 'success') msgDiv.classList.add('success');
+            else if (type === 'warning') msgDiv.classList.add('warning');
         }
 
-        // SHA-256 hash function
-        async function sha256Hash(password) {
+        // SHA-256 hash function for Firebase user authentication
+        async function sha256Hash(text) {
             const encoder = new TextEncoder();
-            const data = encoder.encode(password);
+            const data = encoder.encode(text);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
-
-        // Switch to user panel
-        async function switchToUserPanel() {
+        
+        // ===================================================================
+        // DEVICE AUTHENTICATION (from external device-config.js)
+        // ===================================================================
+        function verifyDevicePassword(password) {
+            if (typeof window.DEVICE_CONFIG === 'undefined') {
+                setDeviceMessage('❌ Configuration error. Please contact administrator.', 'error');
+                return false;
+            }
+            
+            if (password === window.DEVICE_CONFIG.deviceMasterPassword) {
+                return true;
+            }
+            return false;
+        }
+        
+        // ===================================================================
+        // USER AUTHENTICATION (from Firebase - same as your original code)
+        // ===================================================================
+        async function authenticateUser(username, password) {
+            if (!firestoreDB) {
+                setUserMessage('❌ System error. Please refresh.', 'error');
+                return false;
+            }
+            
+            try {
+                const userDoc = await firestoreDB.collection("users").doc(username.toLowerCase()).get();
+                
+                if (!userDoc.exists) {
+                    setUserMessage("❌ Invalid username or password.", "error");
+                    return false;
+                }
+                
+                const userData = userDoc.data();
+                const hashedInput = await sha256Hash(password);
+                
+                if (hashedInput !== userData.passwordHash) {
+                    setUserMessage("❌ Invalid username or password.", "error");
+                    return false;
+                }
+                
+                // Save online user to Realtime DB
+                if (realtimeDB) {
+                    try {
+                        await realtimeDB.ref(`online_users/${username}`).set({
+                            username: username,
+                            name: userData.name,
+                            Level: userData.Level,
+                            status: "online",
+                            loginTime: Date.now()
+                        });
+                    } catch(e) {}
+                }
+                
+                // Create session
+                const userSession = {
+                    username: userData.username,
+                    name: userData.name,
+                    level: userData.Level,
+                    job: userData.Job,
+                    speciality: userData.speciality || null,
+                    loginTime: Date.now()
+                };
+                
+                localStorage.setItem('loggedInUser', JSON.stringify(userSession));
+                sessionStorage.setItem('clinic_user_session', JSON.stringify(userSession));
+                
+                // For doctors, also store doctor session
+                if (userData.Level === "Doctor") {
+                    const doctorSession = {
+                        id: userData.username,
+                        name: userData.name,
+                        speciality: userData.speciality || "General Physician",
+                        email: userData.email || ""
+                    };
+                    sessionStorage.setItem('doctorSession', JSON.stringify(doctorSession));
+                    localStorage.setItem('currentDoctor', JSON.stringify(doctorSession));
+                }
+                
+                setUserMessage(`✅ Welcome ${userData.name}! Redirecting...`, "success");
+                
+                setTimeout(() => {
+                    if (userData.Level === "Doctor") {
+                        window.location.href = "doctor-portal.html";
+                    } else {
+                        window.location.href = "clinicdash.html";
+                    }
+                }, 1200);
+                
+                return true;
+            } catch (error) {
+                console.error("Login error:", error);
+                setUserMessage("❌ Authentication error. Please try again.", "error");
+                return false;
+            }
+        }
+        
+        // ===================================================================
+        // UI FUNCTIONS
+        // ===================================================================
+        function authorizeDevice() {
+            const enteredPassword = document.getElementById('devicePassword').value;
+            if (!enteredPassword || enteredPassword.trim() === '') {
+                setDeviceMessage('⚠️ Please enter the device master password.', 'warning');
+                return false;
+            }
+            
+            if (typeof window.DEVICE_CONFIG === 'undefined') {
+                setDeviceMessage('❌ System configuration not loaded. Please refresh the page.', 'error');
+                return false;
+            }
+            
+            const isValid = verifyDevicePassword(enteredPassword);
+            if (!isValid) {
+                setDeviceMessage('❌ Invalid device master password. Access denied.', 'error');
+                document.getElementById('devicePassword').value = '';
+                document.getElementById('devicePassword').focus();
+                return false;
+            }
+            
+            saveDeviceAuthorization();
+            setDeviceMessage('✅ Device authorized successfully! Access valid for 365 days.', 'success');
+            
+            setTimeout(() => {
+                switchToUserPanel();
+            }, 800);
+            return true;
+        }
+        
+        function switchToUserPanel() {
+            const devicePanel = document.getElementById('devicePanel');
+            const userPanel = document.getElementById('userPanel');
+            const statusChip = document.getElementById('statusChip');
+            const deviceInfoDiv = document.getElementById('deviceInfo');
+            
             devicePanel.style.opacity = '0';
             setTimeout(() => {
                 devicePanel.classList.add('hidden-panel');
@@ -453,196 +671,159 @@
                     statusChip.style.background = '#27ae60';
                     statusChip.style.color = 'white';
                     
-                    // Show device info
-                    const daysLeft = DeviceAuth.getRemainingTime();
+                    const daysLeft = getRemainingDays();
                     deviceInfoDiv.innerHTML = `🔐 Device authorized — Expires in ${daysLeft} days (annual renewal required)`;
                     
-                    setUserMessage('Device verification successful! Your session is cache-safe and will persist for one year.', 'success');
-                    setTimeout(() => usernameInput.focus(), 100);
+                    setUserMessage('Device verified! Please login with your credentials.', 'success');
+                    setTimeout(() => document.getElementById('username').focus(), 100);
                 }, 50);
             }, 200);
         }
-
-        // Authorize device
-        async function authorizeDevice() {
-            const enteredPassword = devicePasswordInput.value;
-            if (!enteredPassword || enteredPassword.trim() === '') {
-                setDeviceMessage('⚠️ Please enter the device master password.', 'warning');
-                return false;
-            }
-            
-            const isValid = await DeviceAuth.verifyDevicePassword(enteredPassword);
-            if (!isValid) {
-                setDeviceMessage('❌ Invalid device master password. Access denied.', 'error');
-                devicePasswordInput.value = '';
-                devicePasswordInput.focus();
-                return false;
-            }
-            
-            DeviceAuth.saveAuthorization();
-            setDeviceMessage('✅ Device authorized successfully! Access valid for 365 days. Redirecting...', 'success');
-            
-            setTimeout(() => {
-                switchToUserPanel();
-            }, 800);
-            return true;
-        }
-
-        // Authenticate user
-        async function authenticateUser() {
-            const username = usernameInput.value.trim();
-            const password = userPasswordInput.value;
-            
-            if (!username || !password) {
-                setUserMessage('⚠️ Please enter both username and password.', 'warning');
-                return false;
-            }
-            
-            const matchedUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-            if (!matchedUser) {
-                setUserMessage('❌ Invalid username or password.', 'error');
-                userPasswordInput.value = '';
-                return false;
-            }
-            
-            const hashedInput = await sha256Hash(password);
-            if (hashedInput !== matchedUser.passwordHash) {
-                setUserMessage('❌ Invalid username or password.', 'error');
-                userPasswordInput.value = '';
-                return false;
-            }
-            
-            // Create session
-            const userSession = {
-                username: matchedUser.username,
-                name: matchedUser.name,
-                level: matchedUser.Level,
-                rcno: matchedUser.RCNo,
-                loginTime: new Date().toISOString()
-            };
-            
-            localStorage.setItem('loggedInUser', JSON.stringify(userSession));
-            sessionStorage.setItem('clinic_user_session', JSON.stringify(userSession));
-            
-            setUserMessage(`✅ Welcome ${matchedUser.name}! Redirecting to dashboard...`, 'success');
-            userAuthBtn.disabled = true;
-            
-            setTimeout(() => {
-                // Redirect based on user level
-                if (matchedUser.Level === "Doctor") {
-                    window.location.href = "doctor-portal.html";
-                } else {
-                    window.location.href = "clinicdash.html";
-                }
-            }, 1200);
-            
-            return true;
-        }
-
-        // Reset device authorization
+        
         function resetDeviceAuth() {
-            if (confirm('⚠️ WARNING: This will reset device authorization for this browser. You will need to re-enter the device master password to access the system again. Continue?')) {
-                DeviceAuth.clearAuthorization();
+            if (confirm('⚠️ WARNING: This will reset device authorization. You will need to re-enter the device master password. Continue?')) {
+                clearDeviceAuthorization();
                 window.location.reload();
             }
         }
-
-        // Event listeners
-        deviceAuthBtn.addEventListener('click', async () => {
-            if (isProcessing) return;
-            isProcessing = true;
-            deviceAuthBtn.disabled = true;
-            const originalText = deviceAuthBtn.innerHTML;
-            deviceAuthBtn.innerHTML = '<span class="loader-icon"></span> Verifying device...';
+        
+        // ===================================================================
+        // FIREBASE INITIALIZATION (from your original code)
+        // ===================================================================
+        function waitForFirebase() {
+            if (window.db && window.rtdb) {
+                firestoreDB = window.db;
+                realtimeDB = window.rtdb;
+                console.log("✅ Firebase ready");
+                return true;
+            }
+            return false;
+        }
+        
+        // Clear existing session on page load
+        async function clearExistingSession() {
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            if (loggedInUser && realtimeDB) {
+                try {
+                    const session = JSON.parse(loggedInUser);
+                    if (session.username && realtimeDB) {
+                        await realtimeDB.ref(`online_users/${session.username}`).remove();
+                    }
+                } catch(e) {}
+            }
+            localStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('clinic_user_session');
+            sessionStorage.removeItem('doctorSession');
+            localStorage.removeItem('currentDoctor');
+        }
+        
+        // ===================================================================
+        // INITIALIZATION
+        // ===================================================================
+        async function initialize() {
+            // Wait for Firebase
+            const firebaseInterval = setInterval(() => {
+                if (waitForFirebase()) {
+                    clearInterval(firebaseInterval);
+                    clearExistingSession();
+                }
+            }, 500);
             
-            setTimeout(async () => {
-                await authorizeDevice();
-                deviceAuthBtn.disabled = false;
-                deviceAuthBtn.innerHTML = originalText;
-                isProcessing = false;
+            // Wait for device config
+            const configInterval = setInterval(() => {
+                if (typeof window.DEVICE_CONFIG !== 'undefined') {
+                    clearInterval(configInterval);
+                    
+                    const authorized = isDeviceAuthorized();
+                    
+                    if (authorized) {
+                        document.getElementById('devicePanel').classList.add('hidden-panel');
+                        document.getElementById('userPanel').classList.remove('hidden-panel');
+                        const statusChip = document.getElementById('statusChip');
+                        statusChip.innerHTML = '✅ Device Authorized';
+                        statusChip.style.background = '#27ae60';
+                        statusChip.style.color = 'white';
+                        
+                        const daysLeft = getRemainingDays();
+                        document.getElementById('deviceInfo').innerHTML = `🔐 Device authorized — ${daysLeft} days remaining (annual renewal)`;
+                        
+                        setUserMessage('Device verified! Please login with your credentials.', 'success');
+                        setTimeout(() => document.getElementById('username').focus(), 100);
+                    } else {
+                        document.getElementById('devicePanel').classList.remove('hidden-panel');
+                        document.getElementById('userPanel').classList.add('hidden-panel');
+                        setTimeout(() => document.getElementById('devicePassword').focus(), 100);
+                    }
+                }
+            }, 100);
+        }
+        
+        // ===================================================================
+        // EVENT LISTENERS
+        // ===================================================================
+        document.getElementById('deviceAuthBtn').addEventListener('click', () => {
+            const btn = document.getElementById('deviceAuthBtn');
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loader-icon"></span> Verifying device...';
+            
+            setTimeout(() => {
+                authorizeDevice();
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }, 100);
         });
-
-        userAuthBtn.addEventListener('click', async () => {
-            if (isProcessing) return;
-            isProcessing = true;
-            userAuthBtn.disabled = true;
-            const originalText = userAuthBtn.innerHTML;
-            userAuthBtn.innerHTML = '<span class="loader-icon"></span> Authenticating...';
+        
+        document.getElementById('userAuthBtn').addEventListener('click', async () => {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('userPassword').value;
             
-            try {
-                await authenticateUser();
-                if (!localStorage.getItem('loggedInUser')) {
-                    userAuthBtn.disabled = false;
-                    userAuthBtn.innerHTML = originalText;
-                }
-            } catch(err) {
-                userAuthBtn.disabled = false;
-                userAuthBtn.innerHTML = originalText;
-            } finally {
-                isProcessing = false;
+            if (!username || !password) {
+                setUserMessage('⚠️ Please enter both username and password.', 'warning');
+                return;
             }
-        });
-
-        resetDeviceBtn.addEventListener('click', resetDeviceAuth);
-
-        // Enter key handlers
-        devicePasswordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') deviceAuthBtn.click();
+            
+            const btn = document.getElementById('userAuthBtn');
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loader-icon"></span> Authenticating...';
+            
+            await authenticateUser(username, password);
+            
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         });
         
-        usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') userPasswordInput.focus();
+        document.getElementById('resetDeviceBtn').addEventListener('click', resetDeviceAuth);
+        
+        document.getElementById('devicePassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('deviceAuthBtn').click();
         });
         
-        userPasswordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') userAuthBtn.click();
+        document.getElementById('username').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('userPassword').focus();
         });
-
-        // Toggle password visibility
-        toggleDevicePw.addEventListener('click', () => {
-            const type = devicePasswordInput.type === 'password' ? 'text' : 'password';
-            devicePasswordInput.type = type;
-            toggleDevicePw.textContent = type === 'password' ? '👁️' : '🙈';
+        
+        document.getElementById('userPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('userAuthBtn').click();
         });
-
-        toggleUserPw.addEventListener('click', () => {
-            const type = userPasswordInput.type === 'password' ? 'text' : 'password';
-            userPasswordInput.type = type;
-            toggleUserPw.textContent = type === 'password' ? '👁️' : '🙈';
+        
+        document.getElementById('toggleDevicePw').addEventListener('click', () => {
+            const input = document.getElementById('devicePassword');
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+            document.getElementById('toggleDevicePw').textContent = type === 'password' ? '👁️' : '🙈';
         });
-
-        // Initialize - check if device already authorized
-        async function initialize() {
-            const isAuthorized = await DeviceAuth.isAuthorized();
-            
-            if (isAuthorized) {
-                // Device already authorized, show user panel directly
-                devicePanel.classList.add('hidden-panel');
-                userPanel.classList.remove('hidden-panel');
-                statusChip.innerHTML = '✅ Device Authorized';
-                statusChip.style.background = '#27ae60';
-                statusChip.style.color = 'white';
-                
-                const daysLeft = DeviceAuth.getRemainingTime();
-                deviceInfoDiv.innerHTML = `🔐 Device authorized — ${daysLeft} days remaining (annual renewal)`;
-                
-                setUserMessage('Device verification successful! Your session is cache-safe. Please log in.', 'success');
-                setTimeout(() => usernameInput.focus(), 100);
-            } else {
-                // Need device authorization
-                devicePanel.classList.remove('hidden-panel');
-                userPanel.classList.add('hidden-panel');
-                statusChip.innerHTML = '🔐 Device Authentication Required';
-                setTimeout(() => devicePasswordInput.focus(), 100);
-            }
-        }
-
+        
+        document.getElementById('toggleUserPw').addEventListener('click', () => {
+            const input = document.getElementById('userPassword');
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+            document.getElementById('toggleUserPw').textContent = type === 'password' ? '👁️' : '🙈';
+        });
+        
         initialize();
-        
-        console.log('Hope Dental Secure Login System - Cache-safe device authorization active');
     })();
 </script>
-
 </body>
 </html>

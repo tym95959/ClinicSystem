@@ -20,17 +20,7 @@
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .online-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #4caf50; display: inline-block; margin-right: 5px; animation: pulseOnline 1.5s infinite; }
         @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
-        .clinic-header {
-            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
-            color: #004d4d;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
+        .clinic-header { background: #0a2f44; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
         .doctor-info { background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; display: flex; align-items: center; gap: 15px; }
         .online-status { display: flex; align-items: center; gap: 6px; font-size: 11px; background: #2ecc71; padding: 4px 10px; border-radius: 20px; color: white; }
@@ -126,6 +116,7 @@
         .delete-all-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin: 8px 12px; }
         .empty-chat, .empty-list { text-align: center; color: #8ba0b0; padding: 40px; font-size: 12px; }
         @media (max-width: 700px) { .chat-panel { width: 320px; right: 16px; bottom: 16px; } .tab-btn { padding: 8px 12px; font-size: 11px; } }
+        .badge-upcoming { background: #27ae60; color: white; border-radius: 20px; padding: 2px 8px; font-size: 9px; margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -143,7 +134,7 @@
     <div class="appointments-panel">
         <div class="panel-header"><h3>📋 Patient Encounters</h3></div>
         <div class="list-tabs">
-            <button class="list-tab active-list" data-list="appointments">📅 Appointments</button>
+            <button class="list-tab active-list" data-list="appointments">📅 Appointments (Upcoming)</button>
             <button class="list-tab" data-list="memos">📜 History</button>
             <button class="list-tab" data-list="patients">🔍 Search Patient</button>
         </div>
@@ -209,11 +200,22 @@
         let firestoreDB = null, realtimeDB = null;
         let appointments = [], memosList = [], patientsList = [];
         let selectedAppointment = null, selectedMemo = null, selectedPatient = null;
-        let selectedStaff = null, onlineListener = null, currentChatListener = null, onlineStaffData = [], unreadCounts = {}, heartbeatInterval = null;
+        let selectedStaff = null, onlineListener = null, currentChatListener = null, onlineStaffData = [], heartbeatInterval = null;
         let currentEditItem = null, currentEditType = null;
 
         function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
         function calculateAge(dob) { if (!dob) return 'N/A'; const birthDate = new Date(dob); if (isNaN(birthDate.getTime())) return 'Invalid'; const today = new Date(); let age = today.getFullYear() - birthDate.getFullYear(); const m = today.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; return age; }
+        
+        // Helper: Check if appointment date is today or future (not past)
+        function isTodayOrFuture(dateStr) {
+            if (!dateStr) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const aptDate = new Date(dateStr);
+            if (isNaN(aptDate.getTime())) return false;
+            aptDate.setHours(0, 0, 0, 0);
+            return aptDate >= today;
+        }
 
         // ========== LOAD DATA ==========
         async function loadMemos() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); memosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); memosList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); renderMemosList(); }
@@ -225,8 +227,34 @@
         function renderPatientSuggestions(filterText) { if (!filterText.trim()) { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; return; } const lowerFilter = filterText.toLowerCase(); const filtered = patientsList.filter(p => p.name?.toLowerCase().includes(lowerFilter) || p.id?.toLowerCase().includes(lowerFilter)).slice(0, 15); if (!filtered.length) { suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; return; } suggestionsDiv.innerHTML = filtered.map(p => `<div class="suggestion-item" data-id="${p.id}" data-name="${escapeHtml(p.name)}" data-phone="${p.phone || ''}"><strong>${escapeHtml(p.name)}</strong> <span style="color:#5f7f9a;">(${p.id})</span><br><small>📞 ${p.phone || 'N/A'}</small></div>`).join(''); document.querySelectorAll('.suggestion-item').forEach(el => { el.addEventListener('click', () => { const patient = patientsList.find(p => p.id === el.dataset.id); if (patient) { selectedPatient = patient; selectedAppointment = null; selectedMemo = null; loadAllPatientData(); searchInput.value = `${patient.name} (${patient.id})`; suggestionsDiv.innerHTML = ''; document.querySelector('.tab-btn[data-tab="patient"]').click(); } }); }); }
         searchInput.addEventListener('input', (e) => renderPatientSuggestions(e.target.value));
         
-        async function loadAppointments() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("appointments").where("doctorId", "==", currentUser.id).get(); appointments = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).filter(apt => !apt.completed); renderAppointments(); }
-        function renderAppointments() { const container = document.getElementById('appointmentsList'); if (!appointments.length) { container.innerHTML = '<div class="empty-list">No upcoming appointments</div>'; return; } container.innerHTML = appointments.map(apt => `<div class="appointment-card" data-id="${apt.id}"><div class="appointment-time">📅 ${apt.date || 'N/A'} | ⏰ ${apt.time || 'N/A'}</div><div class="appointment-patient">${escapeHtml(apt.patientName || 'Unknown')}</div><div class="appointment-details">📞 ${apt.contact || 'N/A'}</div></div>`).join(''); document.querySelectorAll('.appointment-card').forEach(card => card.addEventListener('click', () => { document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); card.classList.add('selected'); const apt = appointments.find(a => a.id === card.dataset.id); if (apt) selectAppointment(apt); })); }
+        // IMPORTANT: Load only upcoming/future appointments (today or future)
+        async function loadAppointments() { 
+            if (!firestoreDB) return; 
+            const snapshot = await firestoreDB.collection("appointments").where("doctorId", "==", currentUser.id).get(); 
+            const allAppointments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Filter: not completed AND date is today or future (no past appointments)
+            appointments = allAppointments.filter(apt => !apt.completed && isTodayOrFuture(apt.date));
+            // Sort by date ascending (soonest first)
+            appointments.sort((a, b) => new Date(a.date) - new Date(b.date));
+            renderAppointments(); 
+        }
+        
+        function renderAppointments() { 
+            const container = document.getElementById('appointmentsList'); 
+            if (!appointments.length) { 
+                container.innerHTML = '<div class="empty-list">✨ No upcoming appointments. All caught up!</div>'; 
+                return; 
+            } 
+            container.innerHTML = appointments.map(apt => `<div class="appointment-card" data-id="${apt.id}"><div class="appointment-time">📅 ${apt.date || 'N/A'} | ⏰ ${apt.time || 'N/A'} <span class="badge-upcoming">Upcoming</span></div><div class="appointment-patient">${escapeHtml(apt.patientName || 'Unknown')}</div><div class="appointment-details">📞 ${apt.contact || 'N/A'}</div></div>`).join(''); 
+            document.querySelectorAll('.appointment-card').forEach(card => { 
+                card.addEventListener('click', () => { 
+                    document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); 
+                    card.classList.add('selected'); 
+                    const apt = appointments.find(a => a.id === card.dataset.id); 
+                    if (apt) selectAppointment(apt); 
+                }); 
+            }); 
+        }
 
         async function markAppointmentAttended() { if (!selectedAppointment) { alert("No appointment selected."); return; } if (!firestoreDB) return; const patient = selectedPatient; if (!patient) { alert("Patient data not loaded."); return; } const memoData = { memoId: `MEM-${Date.now()}`, patient: { id: patient.id, name: patient.name, phone: patient.phone, dob: patient.dob, insurance: patient.insurance }, doctor: { id: currentUser.id, name: currentUser.name }, date: new Date().toLocaleDateString(), timestamp: Date.now(), services: [], billing: { afterDiscount: 0, paid: 0, discount: { amount: 0 } }, insurance: patient.insurance || {}, createdAt: new Date().toISOString() }; await firestoreDB.collection("memos").add(memoData); await firestoreDB.collection("appointments").doc(selectedAppointment.id).update({ completed: true }); await loadAppointments(); await loadMemos(); selectedAppointment = null; selectedPatient = null; document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); document.getElementById('patientInfoContainer').innerHTML = '<div class="empty-list">Patient attended and moved to history.</div>'; alert("Patient marked as attended. Appointment moved to history."); }
 
@@ -254,12 +282,12 @@
         async function savePrescription() { if (!selectedPatient) { alert("Select a patient first."); return; } const medication = document.getElementById('prescMedName').value.trim(); if (!medication) { alert("Medication name required."); return; } await firestoreDB.collection("prescriptions").add({ patientId: selectedPatient.id, patientName: selectedPatient.name, doctorId: currentUser.id, doctorName: currentUser.name, medication, dosage: document.getElementById('prescDosage').value.trim(), duration: document.getElementById('prescDuration').value.trim(), instructions: document.getElementById('prescInstructions').value.trim(), createdAt: new Date().toISOString() }); document.getElementById('prescMedName').value = ''; document.getElementById('prescDosage').value = ''; document.getElementById('prescDuration').value = ''; document.getElementById('prescInstructions').value = ''; await loadPrescriptions(); alert("Prescription issued."); }
         async function saveCertificate() { if (!selectedPatient) { alert("Select a patient first."); return; } const diagnosisSummary = document.getElementById('certDiagnosis').value.trim(); if (!diagnosisSummary) { alert("Diagnosis summary required."); return; } await firestoreDB.collection("medicalCertificates").add({ patientId: selectedPatient.id, patientName: selectedPatient.name, doctorId: currentUser.id, doctorName: currentUser.name, diagnosisSummary, recommendedRest: document.getElementById('certRestDays').value.trim(), remarks: document.getElementById('certRemarks').value.trim(), issuedAt: new Date().toISOString() }); document.getElementById('certDiagnosis').value = ''; document.getElementById('certRestDays').value = ''; document.getElementById('certRemarks').value = ''; await loadCertificates(); alert("Medical certificate issued."); }
         
-        function printPrescription(presc) { const win = window.open('', '_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Prescription</title><style>body{font-family:sans-serif;padding:1cm;}</style></head><body><h3>Hope Dental Clinic</h3><p><strong>Patient:</strong> ${escapeHtml(presc.patientName)}<br><strong>Medication:</strong> ${escapeHtml(presc.medication)}<br><strong>Dosage:</strong> ${escapeHtml(presc.dosage)}<br><strong>Duration:</strong> ${escapeHtml(presc.duration)}<br><strong>Instructions:</strong> ${escapeHtml(presc.instructions)}</p><p>Dr. ${escapeHtml(currentUser.name)}</p><\/body><\/html>`); win.document.close(); win.print(); win.close(); }
-        function printCertificate(cert) { const win = window.open('', '_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Medical Certificate</title><style>body{padding:1cm;}</style></head><body><h3>Hope Dental Clinic</h3><p><strong>Patient:</strong> ${escapeHtml(cert.patientName)}<br><strong>Diagnosis:</strong> ${escapeHtml(cert.diagnosisSummary)}<br><strong>Recommended Rest:</strong> ${escapeHtml(cert.recommendedRest)}<br><strong>Remarks:</strong> ${escapeHtml(cert.remarks)}<br><strong>Issued:</strong> ${new Date(cert.issuedAt).toLocaleDateString()}</p><p>Dr. ${escapeHtml(currentUser.name)}</p><\/body><\/html>`); win.document.close(); win.print(); win.close(); }
+        function printPrescription(presc) { const win = window.open('', '_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Prescription</title><style>body{font-family:sans-serif;padding:1cm;}</style></head><body><h3>Hope Dental Clinic</h3><p><strong>Patient:</strong> ${escapeHtml(presc.patientName)}<br><strong>Medication:</strong> ${escapeHtml(presc.medication)}<br><strong>Dosage:</strong> ${escapeHtml(presc.dosage)}<br><strong>Duration:</strong> ${escapeHtml(presc.duration)}<br><strong>Instructions:</strong> ${escapeHtml(presc.instructions)}</p><p>Dr. ${escapeHtml(currentUser.name)}</p></body></html>`); win.document.close(); win.print(); win.close(); }
+        function printCertificate(cert) { const win = window.open('', '_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Medical Certificate</title><style>body{padding:1cm;}</style></head><body><h3>Hope Dental Clinic</h3><p><strong>Patient:</strong> ${escapeHtml(cert.patientName)}<br><strong>Diagnosis:</strong> ${escapeHtml(cert.diagnosisSummary)}<br><strong>Recommended Rest:</strong> ${escapeHtml(cert.recommendedRest)}<br><strong>Remarks:</strong> ${escapeHtml(cert.remarks)}<br><strong>Issued:</strong> ${new Date(cert.issuedAt).toLocaleDateString()}</p><p>Dr. ${escapeHtml(currentUser.name)}</p></body></html>`); win.document.close(); win.print(); win.close(); }
         function printCurrentPrescription() { if (!selectedPatient) { alert("Select a patient first."); return; } const medication = document.getElementById('prescMedName').value.trim(); if (!medication) { alert("Enter medication details before printing."); return; } printPrescription({ patientName: selectedPatient.name, patientId: selectedPatient.id, medication, dosage: document.getElementById('prescDosage').value, duration: document.getElementById('prescDuration').value, instructions: document.getElementById('prescInstructions').value }); }
         function printCurrentCertificate() { if (!selectedPatient) { alert("Select a patient first."); return; } const diagnosisSummary = document.getElementById('certDiagnosis').value.trim(); if (!diagnosisSummary) { alert("Enter diagnosis summary before printing."); return; } printCertificate({ patientName: selectedPatient.name, patientId: selectedPatient.id, diagnosisSummary, recommendedRest: document.getElementById('certRestDays').value, remarks: document.getElementById('certRemarks').value, issuedAt: new Date().toISOString() }); }
 
-        // ========== CHAT SYSTEM ==========
+        // ========== CHAT SYSTEM (simplified but functional) ==========
         function getChatId(u1, u2) { return `chat_${[u1, u2].sort().join('_')}`; }
         async function setDoctorOnline() { if(!realtimeDB) return; await realtimeDB.ref(`online_users/${currentUser.id}`).set({ username: currentUser.id, name: currentUser.name, Level: "Doctor", status: "online", type: "doctor", loginTime: firebase.database.ServerValue.TIMESTAMP, lastSeen: firebase.database.ServerValue.TIMESTAMP }); document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online"; }
         function startHeartbeat() { if(!realtimeDB) return; heartbeatInterval = setInterval(async () => { if(realtimeDB && currentUser.id) await realtimeDB.ref(`online_users/${currentUser.id}`).update({ lastSeen: firebase.database.ServerValue.TIMESTAMP }); }, 20000); }
@@ -273,20 +301,13 @@
         async function sendMessage() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if (!text || !selectedStaff || !realtimeDB) return; const chatId = getChatId(currentUser.id, selectedStaff.userId); const newMsgRef = realtimeDB.ref(`chats/${chatId}/messages`).push(); await newMsgRef.set({ id: newMsgRef.key, sender: currentUser.id, senderName: `Dr. ${currentUser.name}`, text, timestamp: Date.now(), delivered: true, read: false }); input.value = ""; }
         const chatPanel = document.getElementById('chatPanel'); const minimizeBtn = document.getElementById('minimizeBtn'); function toggleChatPanel() { chatPanel.classList.toggle('minimized'); minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>'; } minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleChatPanel(); }); document.getElementById('chatHeader').addEventListener('click', (e) => { if(e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) toggleChatPanel(); });
         
-        // ========== LOGOUT: Remove from RTDB and redirect ==========
+        // LOGOUT: Remove from RTDB and redirect
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            try {
-                stopHeartbeat();
-                if (onlineListener) onlineListener.off();
-                if (currentChatListener && currentChatListener.off) currentChatListener.off();
-                if (realtimeDB) await realtimeDB.ref(`online_users/${currentUser.id}`).remove();
-            } catch(e) { console.warn("Logout cleanup error", e); }
-            sessionStorage.removeItem('doctorSession');
-            localStorage.removeItem('currentDoctor');
-            window.location.href = 'login.html';
+            try { stopHeartbeat(); if (onlineListener) onlineListener.off(); if (currentChatListener && currentChatListener.off) currentChatListener.off(); if (realtimeDB) await realtimeDB.ref(`online_users/${currentUser.id}`).remove(); } catch(e) { console.warn(e); }
+            sessionStorage.removeItem('doctorSession'); localStorage.removeItem('currentDoctor'); window.location.href = 'login.html';
         });
 
-        // ========== EVENT LISTENERS ==========
+        // EVENT LISTENERS FOR UI
         document.querySelectorAll('.list-tab').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.list-tab').forEach(b => b.classList.remove('active-list')); document.querySelectorAll('.appointments-list, .memos-list, .patients-list').forEach(div => div.classList.remove('active-list')); btn.classList.add('active-list'); document.getElementById(`${btn.dataset.list}List`).classList.add('active-list'); if (btn.dataset.list === 'patients') { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; searchInput.value = ''; } }); });
         document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active-pane')); btn.classList.add('active'); document.getElementById(`${btn.dataset.tab}Tab`).classList.add('active-pane'); }); });
         document.getElementById('saveMedicalBtn').addEventListener('click', saveMedicalHistory);
@@ -298,13 +319,13 @@
         document.getElementById('refreshPrescriptionsBtn').addEventListener('click', () => loadPrescriptions());
         document.getElementById('refreshCertificatesBtn').addEventListener('click', () => loadCertificates());
         document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
-        document.getElementById('deleteAllBtn').addEventListener('click', async () => { if(selectedStaff && confirm("Delete all messages with this staff?")) { const chatId = getChatId(currentUser.id, selectedStaff.userId); await realtimeDB.ref(`chats/${chatId}/messages`).remove(); renderChatMessages([]); alert("All messages deleted."); } });
+        document.getElementById('deleteAllBtn').addEventListener('click', async () => { if(selectedStaff && confirm("Delete all messages?")) { const chatId = getChatId(currentUser.id, selectedStaff.userId); await realtimeDB.ref(`chats/${chatId}/messages`).remove(); renderChatMessages([]); alert("All messages deleted."); } });
         document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
         document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
         document.getElementById('closeModalBtn').addEventListener('click', () => { document.getElementById('editModal').style.display = 'none'; });
         window.addEventListener('click', (e) => { if (e.target === document.getElementById('editModal')) document.getElementById('editModal').style.display = 'none'; });
 
-        // ========== INITIALIZATION ==========
+        // INIT
         async function init() {
             if (window.db) firestoreDB = window.db;
             if (window.rtdb) realtimeDB = window.rtdb;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Staff Live Chat · Direct Messages · Like & Reply</title>
+    <title>Corner Chat Widget · Staff Direct Messaging</title>
     <style>
         * {
             margin: 0;
@@ -12,225 +12,215 @@
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
         }
 
+        /* Main page styling — just to simulate a "dashboard" */
         body {
-            background: linear-gradient(145deg, #e0eafc 0%, #cfdef3 100%);
+            background: linear-gradient(135deg, #eef2ff 0%, #d9e4f5 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 2rem;
         }
 
-        /* main app card */
-        .app-container {
-            max-width: 1400px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(2px);
+        /* mock dashboard content to show it's the main app */
+        .dashboard {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            background: white;
             border-radius: 2rem;
-            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            transition: all 0.2s;
-        }
-
-        /* login overlay */
-        .login-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            transition: 0.2s;
-        }
-
-        .login-card {
-            background: white;
-            padding: 2rem 2rem 2rem 2rem;
-            border-radius: 2rem;
-            width: 340px;
-            text-align: center;
-            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .login-card h2 {
-            margin-bottom: 1rem;
-            color: #1e2a3e;
-        }
-
-        .login-card input {
-            width: 100%;
-            padding: 12px 16px;
-            margin: 12px 0;
-            border: 1px solid #cbd5e1;
-            border-radius: 40px;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .login-card button {
-            background: #1e3a5f;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            font-size: 1rem;
-            transition: 0.2s;
-        }
-
-        .login-card button:hover {
-            background: #0f2b44;
-        }
-
-        /* main chat layout */
-        .chat-layout {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            background: white;
-            border-radius: 1.5rem;
-            overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        /* staff sidebar */
-        .staff-sidebar {
-            width: 280px;
-            background: #f8fafc;
-            border-right: 1px solid #e2e8f0;
-            padding: 1.2rem 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .staff-header {
-            padding: 0 1rem 1rem 1rem;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 1rem;
-        }
-
-        .staff-header h3 {
-            font-size: 1.2rem;
-            color: #0f172a;
-        }
-
-        .staff-badge {
-            background: #e2e8f0;
-            border-radius: 40px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            color: #1e293b;
-            margin-top: 8px;
-            display: inline-block;
-        }
-
-        .staff-list {
-            flex: 1;
-            overflow-y: auto;
-            max-height: 70vh;
-        }
-
-        .staff-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            margin: 4px 8px;
-            border-radius: 60px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: white;
-            border: 1px solid transparent;
-        }
-
-        .staff-item.active {
-            background: #dbeafe;
-            border-color: #3b82f6;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .staff-item:hover:not(.active) {
-            background: #f1f5f9;
-        }
-
-        .staff-avatar {
-            width: 42px;
-            height: 42px;
-            background: #3b82f6;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-        }
-
-        .staff-info {
-            flex: 1;
-        }
-
-        .staff-name {
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .staff-status {
-            font-size: 0.7rem;
-            color: #16a34a;
-        }
-
-        /* chat area */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-            min-height: 600px;
-        }
-
-        .chat-header {
-            padding: 1rem 1.5rem;
-            background: #f9fafb;
-            border-bottom: 1px solid #eef2f6;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
-        .chat-with {
-            font-weight: 700;
-            font-size: 1.2rem;
+        .user-badge {
+            background: #1e3a5f;
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
         }
 
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1.5rem;
             padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: 0.2s;
+        }
+
+        .card h3 {
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        /* ----- FLOATING CHAT WINDOW (CORNER) ----- */
+        .chat-widget-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            background: #fefefe;
+            align-items: flex-end;
+        }
+
+        /* chat toggle button */
+        .chat-toggle-btn {
+            width: 60px;
+            height: 60px;
+            background: #1e3a5f;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+            color: white;
+            font-size: 28px;
+            border: none;
+            margin-bottom: 12px;
+        }
+
+        .chat-toggle-btn:hover {
+            transform: scale(1.05);
+            background: #0f2b44;
+        }
+
+        /* chat window panel */
+        .chat-window {
+            width: 380px;
+            height: 560px;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            transform-origin: bottom right;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .chat-window.closed {
+            transform: scale(0);
+            opacity: 0;
+            pointer-events: none;
+            width: 380px;
+            height: 560px;
+        }
+
+        /* chat header */
+        .chat-header {
+            background: #1e293b;
+            color: white;
+            padding: 1rem 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .chat-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-panel {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        /* staff selector (compact) */
+        .staff-selector {
+            background: #f8fafc;
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .staff-selector label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .staff-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .staff-chip {
+            background: #eef2ff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .staff-chip.active {
+            background: #1e3a5f;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .staff-chip:hover:not(.active) {
+            background: #e0e7ff;
+        }
+
+        /* messages container */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #ffffff;
         }
 
         .message-bubble {
-            max-width: 75%;
-            padding: 10px 14px;
-            border-radius: 22px;
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 20px;
             position: relative;
             word-wrap: break-word;
             background: #f1f5f9;
             align-self: flex-start;
-            transition: 0.1s;
+            font-size: 0.85rem;
         }
 
         .message-bubble.own {
@@ -239,454 +229,519 @@
             border-bottom-right-radius: 6px;
         }
 
-        .message-meta {
-            display: flex;
-            gap: 12px;
-            align-items: center;
+        .msg-name {
+            font-weight: 700;
             font-size: 0.7rem;
-            color: #475569;
-            margin-top: 6px;
-            flex-wrap: wrap;
-        }
-
-        .message-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 6px;
-        }
-
-        .action-btn {
-            background: none;
-            border: none;
-            font-size: 0.75rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 30px;
-            transition: 0.1s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+            margin-bottom: 4px;
             color: #334155;
         }
 
-        .action-btn.liked {
+        .msg-text {
+            line-height: 1.35;
+        }
+
+        .msg-meta {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 0.6rem;
+            color: #5b6e8c;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .msg-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .action-icon {
+            background: none;
+            border: none;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 6px;
+            border-radius: 30px;
+            transition: 0.1s;
+        }
+
+        .action-icon.liked {
             color: #ef4444;
             font-weight: bold;
         }
 
-        .reply-indicator {
-            font-size: 0.7rem;
-            background: #e6edf5;
+        .reply-preview {
+            background: #eef2ff;
             border-radius: 16px;
-            padding: 4px 10px;
-            margin-bottom: 6px;
-            display: inline-block;
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            font-size: 0.7rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .message-input-area {
-            padding: 1rem 1.5rem;
+        .input-area {
+            padding: 0.8rem;
             background: white;
             border-top: 1px solid #eef2f6;
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
-        .message-input-area input {
+        .input-area input {
             flex: 1;
-            padding: 12px 16px;
-            border-radius: 40px;
+            padding: 10px 14px;
+            border-radius: 30px;
             border: 1px solid #cbd5e1;
             outline: none;
+            font-size: 0.85rem;
         }
 
-        .send-btn {
+        .send-icon {
             background: #1e3a5f;
             color: white;
             border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .reply-preview {
-            background: #f1f5f9;
-            padding: 5px 12px;
+            width: 38px;
+            height: 38px;
             border-radius: 30px;
-            font-size: 0.7rem;
-            margin-right: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
         }
 
-        /* popup alert */
-        .live-popup {
+        /* live popup alert (toast) */
+        .live-toast {
             position: fixed;
-            bottom: 24px;
-            right: 24px;
+            bottom: 100px;
+            right: 28px;
             background: #1e293b;
             color: white;
-            padding: 14px 24px;
-            border-radius: 60px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-            font-size: 0.9rem;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.2);
             z-index: 1100;
             display: flex;
             align-items: center;
             gap: 12px;
             backdrop-filter: blur(8px);
-            animation: slideIn 0.2s ease-out;
-            max-width: 320px;
+            animation: slideUp 0.2s ease;
+            max-width: 300px;
+            pointer-events: auto;
         }
 
-        @keyframes slideIn {
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateX(50px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
-                transform: translateX(0);
+                transform: translateY(0);
             }
         }
 
-        .popup-close {
+        .toast-close {
             background: none;
             border: none;
-            color: white;
+            color: #ccc;
             font-weight: bold;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
 
-        @media (max-width: 680px) {
-            .staff-sidebar {
-                width: 100%;
-                max-height: 200px;
-                border-right: none;
-                border-bottom: 1px solid #e2e8f0;
+        @media (max-width: 480px) {
+            .chat-window {
+                width: 320px;
+                height: 500px;
+                right: 10px;
+                bottom: 10px;
             }
-            .message-bubble {
-                max-width: 90%;
+            .chat-widget-container {
+                bottom: 16px;
+                right: 16px;
             }
         }
     </style>
 </head>
 <body>
 
-<div id="app"></div>
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>📋 Staff Dashboard</h1>
+        <div class="user-badge" id="currentUserDisplay">👤 Loading...</div>
+    </div>
+    <div class="cards">
+        <div class="card">
+            <h3>📊 Overview</h3>
+            <p>Your live chat appears as a floating window. Send private messages, like, delete & reply.</p>
+        </div>
+        <div class="card">
+            <h3>💬 Team Chat</h3>
+            <p>Click the floating chat button → select colleague → start messaging instantly.</p>
+        </div>
+        <div class="card">
+            <h3>🔔 Live Alerts</h3>
+            <p>Popup notifications when new messages arrive, even if chat is minimized.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Chat Widget -->
+<div class="chat-widget-container" id="chatWidgetContainer">
+    <button class="chat-toggle-btn" id="chatToggleBtn">💬</button>
+    <div class="chat-window closed" id="chatWindow">
+        <div class="chat-header">
+            <h3>✉️ Staff Direct Chat</h3>
+            <button class="close-panel" id="closeChatBtn">✕</button>
+        </div>
+        <div class="staff-selector">
+            <label>Chat with:</label>
+            <div class="staff-buttons" id="staffChipsContainer"></div>
+        </div>
+        <div class="messages-area" id="chatMessagesContainer">
+            <div style="text-align:center; color:#aaa; padding:2rem;">Select a colleague to start</div>
+        </div>
+        <div id="replyPreviewWidget" style="padding:0 12px;"></div>
+        <div class="input-area">
+            <input type="text" id="messageInputWidget" placeholder="Type a message..." autocomplete="off">
+            <button class="send-icon" id="sendMsgWidgetBtn">➤</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    // ---------- DATA LAYER ----------
-    // each message: { id, fromStaff, toStaff, text, timestamp, likes: [], replyToId (optional) }
-    let messages = [];          // global messages
-    let staffMembers = [
+    // ---------- DATA MODEL ----------
+    // Staff list (static, but login user = current page user, no separate login)
+    const staffMembers = [
         { id: "staff_alice", name: "Alice Chen", avatar: "AC" },
         { id: "staff_bob", name: "Bob Miller", avatar: "BM" },
         { id: "staff_clara", name: "Clara Vega", avatar: "CV" },
         { id: "staff_david", name: "David Kim", avatar: "DK" }
     ];
 
-    let currentLoggedStaff = null;      // { id, name }
-    let activeChatPartnerId = null;      // staff id we're chatting with
-    let replyToMessage = null;            // { id, text, fromStaffName }
+    // Set current logged staff as the first one, but we treat it as "session user".
+    // For demo, current user is Alice. But we allow pick any as logged? To match "login user is current user" 
+    // we will predefine that the current staff (the person using the page) is Alice. 
+    // However we need to show staff name in badge. And they can send messages as Alice.
+    // For realism, let's set logged user = staff_alice (or we can simulate by URL param but fixed).
+    // BUT we need to support that staff can message specific staff, so current user is ONE person.
+    // To satisfy requirement: "the page login user is the current user. no need to sign in separately".
+    // So I'll set currently logged staff to Alice Chen. The user sees her name. All messages are from Alice (or to Alice).
+    // However requirement says "send message to specific staff" -> Alice can send to Bob, Clara, David.
+    // Also all likes, delete, reply from perspective of Alice. Perfect.
+    const CURRENT_STAFF = { id: "staff_alice", name: "Alice Chen" };
 
-    // Helper: generate unique id
+    // Global messages array
+    let messages = [];
+    let activeChatPartnerId = null;        // the staff we are talking to (Bob, Clara, David)
+    let replyToMessage = null;              // { id, text, fromStaffName }
+
+    // Helper functions
     function generateId() {
-        return Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+        return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
     }
 
-    // load dummy messages
-    function seedMockMessages() {
-        if (messages.length > 0) return;
-        const now = Date.now();
-        messages.push({
-            id: generateId(),
-            fromStaff: "staff_alice",
-            toStaff: "staff_bob",
-            text: "Hey Bob, ready for the meeting?",
-            timestamp: now - 3600000,
-            likes: [],
-            replyToId: null
-        });
-        messages.push({
-            id: generateId(),
-            fromStaff: "staff_bob",
-            toStaff: "staff_alice",
-            text: "Sure Alice, I'll join in 5 mins.",
-            timestamp: now - 3500000,
-            likes: ["staff_alice"],
-            replyToId: null
-        });
-        messages.push({
-            id: generateId(),
-            fromStaff: "staff_clara",
-            toStaff: "staff_alice",
-            text: "Alice, could you review the proposal?",
-            timestamp: now - 1800000,
-            likes: [],
-            replyToId: null
-        });
-        messages.push({
-            id: generateId(),
-            fromStaff: "staff_alice",
-            toStaff: "staff_clara",
-            text: "Sure Clara, sending feedback soon.",
-            timestamp: now - 1700000,
-            likes: [],
-            replyToId: null
-        });
-    }
-
-    // get staff name by id
     function getStaffName(staffId) {
         const s = staffMembers.find(m => m.id === staffId);
         return s ? s.name : "Unknown";
     }
 
-    function getStaffAvatar(staffId) {
-        const s = staffMembers.find(m => m.id === staffId);
-        return s ? s.avatar : "??";
+    // Load mock messages (so conversation exists)
+    function seedMockMessages() {
+        if (messages.length > 0) return;
+        const now = Date.now();
+        // messages between Alice (current) and Bob
+        messages.push({ id: generateId(), fromStaff: "staff_alice", toStaff: "staff_bob", text: "Hey Bob, ready for the sprint review?", timestamp: now - 7200000, likes: [], replyToId: null });
+        messages.push({ id: generateId(), fromStaff: "staff_bob", toStaff: "staff_alice", text: "Yes Alice, I've prepared the slides.", timestamp: now - 7100000, likes: ["staff_alice"], replyToId: null });
+        messages.push({ id: generateId(), fromStaff: "staff_alice", toStaff: "staff_clara", text: "Clara, could you share the design files?", timestamp: now - 3600000, likes: [], replyToId: null });
+        messages.push({ id: generateId(), fromStaff: "staff_clara", toStaff: "staff_alice", text: "Sure! Here's the link: figma design", timestamp: now - 3500000, likes: [], replyToId: null });
+        messages.push({ id: generateId(), fromStaff: "staff_david", toStaff: "staff_alice", text: "Alice, backend API is ready for testing", timestamp: now - 1800000, likes: [], replyToId: null });
+        messages.push({ id: generateId(), fromStaff: "staff_alice", toStaff: "staff_david", text: "Great! I'll test it shortly.", timestamp: now - 1700000, likes: [], replyToId: null });
     }
 
-    // get conversation between current logged staff & partner
-    function getConversation(staffA, staffB) {
+    // get conversation between current logged user (Alice) and partnerId
+    function getConversation(partnerId) {
         return messages.filter(m => 
-            (m.fromStaff === staffA && m.toStaff === staffB) ||
-            (m.fromStaff === staffB && m.toStaff === staffA)
+            (m.fromStaff === CURRENT_STAFF.id && m.toStaff === partnerId) ||
+            (m.fromStaff === partnerId && m.toStaff === CURRENT_STAFF.id)
         ).sort((a,b) => a.timestamp - b.timestamp);
     }
 
-    // send message
-    function sendMessage(text, toStaffId, replyTo = null) {
+    // Send message
+    function sendMessage(text, toStaffId, replyToRef = null) {
         if (!text.trim()) return false;
         const newMsg = {
             id: generateId(),
-            fromStaff: currentLoggedStaff.id,
+            fromStaff: CURRENT_STAFF.id,
             toStaff: toStaffId,
             text: text.trim(),
             timestamp: Date.now(),
             likes: [],
-            replyToId: replyTo ? replyTo.id : null
+            replyToId: replyToRef ? replyToRef.id : null
         };
         messages.push(newMsg);
-        // after sending, trigger popup for recipient if recipient is not the current sender AND recipient might be active elsewhere
-        // but we also trigger popup for any new message to that staff if they are logged (this is global system)
-        triggerPopupForNewMessage(newMsg);
+        // Trigger live popup for recipient if the recipient is not sender (but here recipient is partner, not current user)
+        // However popup should appear for Alice if someone else sends a message. But this send is from Alice, no popup for herself.
+        // For realtime popup: when any new message arrives for CURRENT_STAFF (Alice) from any other staff, we trigger.
+        // Since we only add messages via this function from current user OR we could simulate incoming from other staff? Actually other staff can't send except by this simulation.
+        // But to show live popup we also support if any message is added from external (we'll call a function trigger for new incoming)
+        // However messages are only added via sendMessage. For realistic other-staff messages we might also receive via "fake" webhook, but we don't have backend.
+        // To meet "live popup alert" requirement, we'll also add a simulated incoming message after some interval? But we can show popup when other staff already sent? Actually we have some seeded messages but not new.
+        // Better to add periodic dummy or provide demonstration: When user receives a message from someone else while chat is open/minimized we will show popup.
+        // But since only current user sends, to show "incoming", we could add a small demo: After 15 seconds, Clara sends a test message.
+        // However requirement is clearly full system: "live popup alert" on new message. We'll implement the function and also simulate a random colleague message after 20 sec to demo.
+        triggerPopupForIncomingMessageIfNeeded(newMsg);
         return true;
     }
 
-    // like / unlike message
+    // For incoming messages (both from sendMessage if target is another, but that's outgoing from Alice, no popup)
+    // We need popup only when the recipient is current staff AND message not from self.
+    function triggerPopupForIncomingMessageIfNeeded(message) {
+        if (message.toStaff === CURRENT_STAFF.id && message.fromStaff !== CURRENT_STAFF.id) {
+            const senderName = getStaffName(message.fromStaff);
+            const shortText = message.text.length > 45 ? message.text.slice(0,42)+'...' : message.text;
+            showToast(`💬 New from ${senderName}: "${shortText}"`);
+        }
+    }
+
+    // Manually simulate incoming message (to demonstrate live popup and real-time chat)
+    let demoInterval = null;
+    function startDemoIncomingMessages() {
+        if (demoInterval) clearInterval(demoInterval);
+        demoInterval = setInterval(() => {
+            // only send if chat widget maybe active or not, but to show live popup we send a message from random other staff (excluding Alice)
+            const otherStaff = staffMembers.filter(s => s.id !== CURRENT_STAFF.id);
+            if (otherStaff.length === 0) return;
+            const randomStaff = otherStaff[Math.floor(Math.random() * otherStaff.length)];
+            const demoTexts = [
+                "Hey, are you free for a quick sync?",
+                "Just reviewed the document, looks good!",
+                "Can we discuss the new feature?",
+                "Let's catch up after lunch 🍕",
+                "Don't forget the deadline tomorrow!"
+            ];
+            const randomMsg = demoTexts[Math.floor(Math.random() * demoTexts.length)];
+            const newIncoming = {
+                id: generateId(),
+                fromStaff: randomStaff.id,
+                toStaff: CURRENT_STAFF.id,
+                text: randomMsg,
+                timestamp: Date.now(),
+                likes: [],
+                replyToId: null
+            };
+            messages.push(newIncoming);
+            triggerPopupForIncomingMessageIfNeeded(newIncoming);
+            // If currently active chat partner is the one who sent this message, re-render chat window
+            if (activeChatPartnerId === randomStaff.id) {
+                renderChatMessages();
+            } else {
+                // update staff chips to show latest message preview
+                renderStaffChips();
+            }
+            // Also if chat window is closed, still popup already appeared, but we also store unread visual hint
+        }, 35000); // every 35 seconds to not be annoying, but shows live popup.
+    }
+
+    // cleanup interval on page unload, but fine
+    window.addEventListener('beforeunload', () => {
+        if (demoInterval) clearInterval(demoInterval);
+    });
+
+    // Like / unlike message
     function toggleLike(messageId) {
         const msg = messages.find(m => m.id === messageId);
         if (!msg) return;
-        const userId = currentLoggedStaff.id;
+        const userId = CURRENT_STAFF.id;
         if (msg.likes.includes(userId)) {
             msg.likes = msg.likes.filter(id => id !== userId);
         } else {
             msg.likes.push(userId);
         }
-        // re-render UI
-        renderChatArea();
+        renderChatMessages();
     }
 
-    // delete message (only if message belongs to current logged staff)
     function deleteMessage(messageId) {
         const idx = messages.findIndex(m => m.id === messageId);
-        if (idx !== -1 && messages[idx].fromStaff === currentLoggedStaff.id) {
+        if (idx !== -1 && messages[idx].fromStaff === CURRENT_STAFF.id) {
             messages.splice(idx, 1);
-            renderChatArea();
+            renderChatMessages();
+            renderStaffChips();
         } else {
-            showFloatingPopup("You can only delete your own messages!", "warning");
+            showToast("⚠️ You can only delete your own messages.", 2000);
         }
     }
 
-    // reply to message
     function setReplyTarget(message) {
         replyToMessage = {
             id: message.id,
             text: message.text,
             fromStaffName: getStaffName(message.fromStaff)
         };
-        renderChatArea(); // to show reply preview
+        renderReplyPreview();
+        renderChatMessages(); // keep UI fresh
+        document.getElementById('messageInputWidget')?.focus();
     }
 
     function cancelReply() {
         replyToMessage = null;
-        renderChatArea();
+        renderReplyPreview();
+        renderChatMessages();
     }
 
-    // live popup alert
-    let activePopupTimeout = null;
-    function showFloatingPopup(message, type = "info") {
-        const existingPopup = document.querySelector('.live-popup');
-        if(existingPopup) existingPopup.remove();
-        const popupDiv = document.createElement('div');
-        popupDiv.className = 'live-popup';
-        popupDiv.innerHTML = `
-            <span>🔔 ${message}</span>
-            <button class="popup-close">✕</button>
-        `;
-        document.body.appendChild(popupDiv);
-        const closeBtn = popupDiv.querySelector('.popup-close');
-        const removePopup = () => {
-            if(popupDiv) popupDiv.remove();
-            if(activePopupTimeout) clearTimeout(activePopupTimeout);
+    // show live toast
+    let activeToastTimeout = null;
+    function showToast(message, duration = 4000) {
+        const existing = document.querySelector('.live-toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'live-toast';
+        toast.innerHTML = `<span>🔔 ${message}</span><button class="toast-close">✕</button>`;
+        document.body.appendChild(toast);
+        const closeBtn = toast.querySelector('.toast-close');
+        const remove = () => {
+            if (toast) toast.remove();
+            if (activeToastTimeout) clearTimeout(activeToastTimeout);
         };
-        closeBtn.addEventListener('click', removePopup);
-        activePopupTimeout = setTimeout(removePopup, 4000);
+        closeBtn.addEventListener('click', remove);
+        activeToastTimeout = setTimeout(remove, duration);
     }
 
-    // trigger popup for recipient when new message arrives (if recipient is current logged user & message not from self)
-    function triggerPopupForNewMessage(message) {
-        // if recipient is currently logged user and message sender is not logged user
-        if (currentLoggedStaff && message.toStaff === currentLoggedStaff.id && message.fromStaff !== currentLoggedStaff.id) {
-            const senderName = getStaffName(message.fromStaff);
-            const shortText = message.text.length > 40 ? message.text.slice(0,37)+'...' : message.text;
-            showFloatingPopup(`💬 New from ${senderName}: "${shortText}"`);
-        }
-        // also if any staff online maybe but we simulate the logged one only
-        // plus if active chat partner changes, we will re-render anyway
-        if (currentLoggedStaff && activeChatPartnerId === message.fromStaff && message.toStaff === currentLoggedStaff.id) {
-            renderChatArea(); // update messages if same chat open
-        } else if (currentLoggedStaff && message.toStaff === currentLoggedStaff.id) {
-            // if message for current logged user but chat with different partner, we just update sidebar unread style
-            renderStaffList();  // update to show maybe unread indicator (we don't store unread but show last message)
-        }
-    }
-
-    // send message from input
-    function handleSendMessage(inputElem) {
-        const text = inputElem.value.trim();
-        if (!text) return;
-        if (!activeChatPartnerId) {
-            showFloatingPopup("Select a staff member to start chatting", "info");
-            return;
-        }
-        sendMessage(text, activeChatPartnerId, replyToMessage);
-        inputElem.value = '';
-        cancelReply();
-        renderChatArea();
-        renderStaffList();
-    }
-
-    // Render staff list sidebar
-    function renderStaffList() {
-        const container = document.getElementById('staffListContainer');
+    // Render staff chips (sidebar inside widget)
+    function renderStaffChips() {
+        const container = document.getElementById('staffChipsContainer');
         if (!container) return;
-        const otherStaff = staffMembers.filter(s => s.id !== currentLoggedStaff.id);
+        const otherStaff = staffMembers.filter(s => s.id !== CURRENT_STAFF.id);
         container.innerHTML = otherStaff.map(staff => {
-            const isActive = (activeChatPartnerId === staff.id);
-            // find last message between them
-            const conv = getConversation(currentLoggedStaff.id, staff.id);
+            const isActive = activeChatPartnerId === staff.id;
+            // last message preview
+            const conv = getConversation(staff.id);
             const lastMsg = conv.length ? conv[conv.length-1] : null;
-            const lastPreview = lastMsg ? (lastMsg.fromStaff === currentLoggedStaff.id ? "You: " : "") + lastMsg.text.substring(0, 25) : "No messages";
-            return `
-                <div class="staff-item ${isActive ? 'active' : ''}" data-staffid="${staff.id}">
-                    <div class="staff-avatar">${staff.avatar}</div>
-                    <div class="staff-info">
-                        <div class="staff-name">${staff.name}</div>
-                        <div class="staff-status">${lastPreview.length>22?lastPreview.slice(0,20)+'..':lastPreview}</div>
-                    </div>
-                </div>
-            `;
+            let preview = "";
+            if (lastMsg) {
+                const prefix = lastMsg.fromStaff === CURRENT_STAFF.id ? "You: " : "";
+                preview = prefix + lastMsg.text.slice(0, 20) + (lastMsg.text.length > 20 ? ".." : "");
+            } else {
+                preview = "No messages";
+            }
+            return `<button class="staff-chip ${isActive ? 'active' : ''}" data-staffid="${staff.id}" title="${preview}">${staff.name}</button>`;
         }).join('');
-        // attach click events
-        document.querySelectorAll('.staff-item').forEach(el => {
-            const sid = el.getAttribute('data-staffid');
-            el.addEventListener('click', () => {
+        // attach events
+        document.querySelectorAll('.staff-chip').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sid = btn.getAttribute('data-staffid');
                 if (sid) {
                     activeChatPartnerId = sid;
                     cancelReply();
-                    renderStaffList();
-                    renderChatArea();
+                    renderStaffChips();
+                    renderChatMessages();
                 }
             });
         });
     }
 
-    // render message area
-    function renderChatArea() {
-        const chatContainer = document.getElementById('messagesContainer');
-        const chatHeaderSpan = document.getElementById('chatWithName');
-        if (!chatContainer) return;
+    // render messages
+    function renderChatMessages() {
+        const container = document.getElementById('chatMessagesContainer');
+        if (!container) return;
         if (!activeChatPartnerId) {
-            chatHeaderSpan.innerText = "No conversation selected";
-            chatContainer.innerHTML = `<div style="text-align:center; padding:2rem;">👈 Select a staff member to start chatting</div>`;
-            document.getElementById('replyPreviewContainer').innerHTML = '';
+            container.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:2rem;">👈 Select a colleague to message</div>`;
             return;
         }
         const partner = staffMembers.find(s => s.id === activeChatPartnerId);
-        chatHeaderSpan.innerText = partner ? partner.name : "Staff";
-        const conversation = getConversation(currentLoggedStaff.id, activeChatPartnerId);
+        if (!partner) return;
+        const conversation = getConversation(activeChatPartnerId);
         if (conversation.length === 0) {
-            chatContainer.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:2rem;">✨ No messages yet. Send a friendly hello! ✨</div>`;
+            container.innerHTML = `<div style="text-align:center; color:#cbd5e1; padding:2rem;">✨ No messages yet. Send a hello! ✨</div>`;
         } else {
-            chatContainer.innerHTML = conversation.map(msg => {
-                const isOwn = msg.fromStaff === currentLoggedStaff.id;
-                const likedByMe = msg.likes.includes(currentLoggedStaff.id);
+            container.innerHTML = conversation.map(msg => {
+                const isOwn = msg.fromStaff === CURRENT_STAFF.id;
+                const likedByMe = msg.likes.includes(CURRENT_STAFF.id);
                 const likeCount = msg.likes.length;
                 const replyToMsg = msg.replyToId ? messages.find(m => m.id === msg.replyToId) : null;
-                const replyPreviewHtml = replyToMsg ? `<div class="reply-indicator">↩️ replied to "${replyToMsg.text.substring(0, 60)}"</div>` : '';
+                const replyPreviewHtml = replyToMsg ? `<div style="font-size:0.65rem; background:#e6edf5; border-radius:12px; padding:2px 8px; margin-bottom:4px;">↩️ replied: "${replyToMsg.text.substring(0, 45)}"</div>` : '';
                 return `
                     <div class="message-bubble ${isOwn ? 'own' : ''}" data-msgid="${msg.id}">
                         ${replyPreviewHtml}
-                        <div><strong>${isOwn ? 'You' : getStaffName(msg.fromStaff)}</strong>: ${escapeHtml(msg.text)}</div>
-                        <div class="message-meta">
+                        <div class="msg-name">${isOwn ? 'You' : getStaffName(msg.fromStaff)}</div>
+                        <div class="msg-text">${escapeHtml(msg.text)}</div>
+                        <div class="msg-meta">
                             <span>${new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                             <span>❤️ ${likeCount}</span>
                         </div>
-                        <div class="message-actions">
-                            <button class="action-btn like-btn ${likedByMe ? 'liked' : ''}" data-msgid="${msg.id}">${likedByMe ? '❤️ Liked' : '🤍 Like'}</button>
-                            <button class="action-btn reply-btn" data-msgid="${msg.id}" data-msgtext="${escapeAttr(msg.text)}" data-msgfrom="${getStaffName(msg.fromStaff)}">💬 Reply</button>
-                            ${isOwn ? `<button class="action-btn delete-btn" data-msgid="${msg.id}">🗑️ Delete</button>` : ''}
+                        <div class="msg-actions">
+                            <button class="action-icon like-btn ${likedByMe ? 'liked' : ''}" data-msgid="${msg.id}">${likedByMe ? '❤️ Like' : '🤍 Like'}</button>
+                            <button class="action-icon reply-btn" data-msgid="${msg.id}">💬 Reply</button>
+                            ${isOwn ? `<button class="action-icon delete-btn" data-msgid="${msg.id}">🗑️ Delete</button>` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
         }
-        // attach dynamic actions
+        // attach events
         document.querySelectorAll('.like-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const msgId = btn.getAttribute('data-msgid');
-                if(msgId) toggleLike(msgId);
+                const mid = btn.getAttribute('data-msgid');
+                if (mid) toggleLike(mid);
             });
         });
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const msgId = btn.getAttribute('data-msgid');
-                if(msgId) deleteMessage(msgId);
+                const mid = btn.getAttribute('data-msgid');
+                if (mid) deleteMessage(mid);
             });
         });
         document.querySelectorAll('.reply-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const msgId = btn.getAttribute('data-msgid');
-                const originalMsg = messages.find(m => m.id === msgId);
-                if(originalMsg) setReplyTarget(originalMsg);
+                const mid = btn.getAttribute('data-msgid');
+                const original = messages.find(m => m.id === mid);
+                if (original) setReplyTarget(original);
             });
         });
+        container.scrollTop = container.scrollHeight;
+    }
 
-        // scroll to bottom
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-
-        // render reply preview
-        const replyPreviewDiv = document.getElementById('replyPreviewContainer');
+    function renderReplyPreview() {
+        const container = document.getElementById('replyPreviewWidget');
+        if (!container) return;
         if (replyToMessage) {
-            replyPreviewDiv.innerHTML = `
+            container.innerHTML = `
                 <div class="reply-preview">
                     <span>↩️ Replying to ${replyToMessage.fromStaffName}: "${replyToMessage.text.substring(0, 45)}"</span>
-                    <button id="cancelReplyBtn" style="background: none; border: none; cursor:pointer;">✖</button>
+                    <button id="cancelReplyWidgetBtn" style="background:none; border:none; cursor:pointer;">✖</button>
                 </div>
             `;
-            document.getElementById('cancelReplyBtn')?.addEventListener('click', cancelReply);
+            document.getElementById('cancelReplyWidgetBtn')?.addEventListener('click', cancelReply);
         } else {
-            replyPreviewDiv.innerHTML = '';
+            container.innerHTML = '';
         }
+    }
+
+    function handleSendWidget() {
+        const input = document.getElementById('messageInputWidget');
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text || !activeChatPartnerId) {
+            if (!activeChatPartnerId) showToast("Please select a staff member first", 1500);
+            return;
+        }
+        sendMessage(text, activeChatPartnerId, replyToMessage);
+        input.value = '';
+        cancelReply();
+        renderChatMessages();
+        renderStaffChips();
     }
 
     function escapeHtml(str) {
@@ -697,79 +752,47 @@
             return m;
         });
     }
-    function escapeAttr(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
 
-    // render full UI after login
-    function renderMainUI() {
-        const appDiv = document.getElementById('app');
-        appDiv.innerHTML = `
-            <div class="app-container">
-                <div class="chat-layout">
-                    <div class="staff-sidebar">
-                        <div class="staff-header">
-                            <h3>👥 Staff Directory</h3>
-                            <div class="staff-badge">Logged as: <strong>${escapeHtml(currentLoggedStaff.name)}</strong></div>
-                        </div>
-                        <div id="staffListContainer" class="staff-list"></div>
-                    </div>
-                    <div class="chat-area">
-                        <div class="chat-header">
-                            <span class="chat-with" id="chatWithName">Select a staff</span>
-                            <span style="font-size:12px; background:#eef2ff; padding:4px 10px; border-radius:20px;">Live chat</span>
-                        </div>
-                        <div id="messagesContainer" class="messages-container"></div>
-                        <div id="replyPreviewContainer" style="padding: 0 1.2rem;"></div>
-                        <div class="message-input-area">
-                            <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
-                            <button id="sendMsgBtn" class="send-btn">Send ➤</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        renderStaffList();
-        renderChatArea();
-        const sendBtn = document.getElementById('sendMsgBtn');
-        const inputField = document.getElementById('messageInput');
-        sendBtn.addEventListener('click', () => handleSendMessage(inputField));
-        inputField.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') handleSendMessage(inputField);
+    // UI Toggle chat window
+    function initChatWidget() {
+        const toggleBtn = document.getElementById('chatToggleBtn');
+        const closeBtn = document.getElementById('closeChatBtn');
+        const chatWin = document.getElementById('chatWindow');
+        const sendBtn = document.getElementById('sendMsgWidgetBtn');
+        const msgInput = document.getElementById('messageInputWidget');
+
+        toggleBtn.addEventListener('click', () => {
+            chatWin.classList.toggle('closed');
+        });
+        closeBtn.addEventListener('click', () => {
+            chatWin.classList.add('closed');
+        });
+        sendBtn.addEventListener('click', handleSendWidget);
+        msgInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendWidget();
         });
     }
 
-    // login
-    function showLogin() {
-        const appDiv = document.getElementById('app');
-        appDiv.innerHTML = `
-            <div class="login-overlay" id="loginOverlay">
-                <div class="login-card">
-                    <h2>🔐 Staff Chat Login</h2>
-                    <select id="staffSelect">
-                        ${staffMembers.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-                    </select>
-                    <button id="loginBtn">Enter Live Chat</button>
-                </div>
-            </div>
-        `;
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            const select = document.getElementById('staffSelect');
-            const staffId = select.value;
-            const staff = staffMembers.find(s => s.id === staffId);
-            if (staff) {
-                currentLoggedStaff = { id: staff.id, name: staff.name };
-                activeChatPartnerId = null;
-                replyToMessage = null;
-                seedMockMessages();
-                renderMainUI();
-            }
-        });
+    // set current user badge
+    function setUserBadge() {
+        const badge = document.getElementById('currentUserDisplay');
+        if (badge) badge.innerHTML = `👤 ${CURRENT_STAFF.name} (You)`;
     }
 
-    // initial bootstrap
-    seedMockMessages();
-    showLogin();
+    // start application
+    function bootstrap() {
+        setUserBadge();
+        seedMockMessages();
+        initChatWidget();
+        renderStaffChips();
+        renderChatMessages();
+        // start incoming demo after 5 seconds (to show live popup)
+        setTimeout(() => {
+            startDemoIncomingMessages();
+        }, 5000);
+    }
+
+    bootstrap();
 </script>
 </body>
 </html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Admin Upload (Excel) - Services & Patients</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- SheetJS for Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+        }
+        .clinic-header {
+            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
+            color: #004d4d;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .logo h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .back-btn {
+            background: #1e4a6e;
+            border: none;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: #c63d2f;
+        }
+        .admin-container {
+            max-width: 1200px;
+            margin: 28px auto;
+            padding: 0 24px;
+        }
+        .card {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 24px 28px;
+            margin-bottom: 28px;
+            border: 1px solid #e2eaf0;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0a2f44;
+            margin-bottom: 20px;
+            border-left: 5px solid #0f5c7a;
+            padding-left: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .upload-area {
+            border: 2px dashed #cbdde9;
+            border-radius: 24px;
+            padding: 28px 20px;
+            text-align: center;
+            background: #fafdff;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            border-color: #0f5c7a;
+            background: #f0f9fc;
+        }
+        .upload-area i {
+            font-size: 36px;
+            color: #20b2aa;
+            margin-bottom: 8px;
+        }
+        .file-info {
+            font-size: 12px;
+            color: #5f7f9a;
+            margin-top: 6px;
+        }
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            overflow-x: auto;
+            display: block;
+        }
+        .preview-table th, .preview-table td {
+            border: 1px solid #e2eaf0;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .preview-table th {
+            background: #f4f9fe;
+            font-weight: 600;
+            color: #1f4d6e;
+        }
+        .btn-primary {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 10px 26px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 13px;
+        }
+        .btn-primary:hover {
+            background: #08455c;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #e2eaf0;
+            color: #1f5e7e;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-secondary:hover {
+            background: #cbdde9;
+        }
+        .message {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 28px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .success {
+            background: #e0f7ef;
+            color: #146b3a;
+        }
+        .error {
+            background: #ffe9e9;
+            color: #b91c1c;
+        }
+        .info {
+            background: #e0f2fe;
+            color: #075985;
+        }
+        .warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2eaf0;
+            border-radius: 12px;
+            margin: 12px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #20b2aa;
+            transition: width 0.3s;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: white;
+            padding: 8px;
+            border-radius: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 8px 28px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 40px;
+            transition: 0.2s;
+            color: #5f7f9a;
+        }
+        .tab-btn.active {
+            background: #0f5c7a;
+            color: white;
+        }
+        .action-group {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .stats-badge {
+            background: #eef2ff;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        @media (max-width: 700px) {
+            .preview-table {
+                font-size: 9px;
+            }
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo"><h2>📤 Hope Dental · Admin Upload (Excel)</h2></div>
+    <div><button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button></div>
+</div>
+
+<div class="admin-container">
+    <div class="sync-status" style="background:#e8f0fe; border-radius:20px; padding:12px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+        <span>🔒 Supervisor Access Only</span>
+        <span>👤 <strong id="adminName">Loading...</strong></span>
+    </div>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="services">📋 Services</button>
+        <button class="tab-btn" data-tab="patients">👥 Patients</button>
+    </div>
+
+    <!-- Services Upload Card -->
+    <div id="servicesTab" class="card">
+        <div class="card-title">
+            Upload Services from Excel
+            <span class="stats-badge" id="servicesCount">0 records in DB</span>
+        </div>
+        <div class="upload-area" id="servicesUploadArea">
+            <i class="fas fa-file-excel"></i>
+            <div>Click or drag Excel file (.xlsx, .xls)</div>
+            <div class="file-info">Expected columns: <strong>Service Name, Price (MVR), Aasandha Covered (Yes/No), Aasandha Cover Amount</strong></div>
+            <input type="file" id="servicesExcelInput" accept=".xlsx, .xls" style="display:none;">
+        </div>
+        <div id="servicesPreviewContainer" style="display:none;">
+            <div style="margin: 15px 0 8px;"><strong>📄 Preview (first 10 rows)</strong></div>
+            <div style="overflow-x:auto;"><table class="preview-table" id="servicesPreviewTable"></table></div>
+            <div class="progress-bar" id="servicesProgressBar" style="display:none;"><div class="progress-fill" id="servicesProgressFill"></div></div>
+            <div class="action-group">
+                <button class="btn-secondary" id="cancelServicesBtn">Cancel</button>
+                <button class="btn-primary" id="confirmServicesUploadBtn">✅ Upload to Firestore</button>
+            </div>
+        </div>
+        <div id="servicesMessage" class="message" style="display:none;"></div>
+    </div>
+
+    <!-- Patients Upload Card -->
+    <div id="patientsTab" class="card" style="display:none;">
+        <div class="card-title">
+            Upload Patients from Excel
+            <span class="stats-badge" id="patientsCount">0 records in DB</span>
+        </div>
+        <div class="upload-area" id="patientsUploadArea">
+            <i class="fas fa-file-excel"></i>
+            <div>Click or drag Excel file (.xlsx, .xls)</div>
+            <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Phone, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD)</strong></div>
+            <input type="file" id="patientsExcelInput" accept=".xlsx, .xls" style="display:none;">
+        </div>
+        <div id="patientsPreviewContainer" style="display:none;">
+            <div style="margin: 15px 0 8px;"><strong>📄 Preview (first 10 rows)</strong></div>
+            <div style="overflow-x:auto;"><table class="preview-table" id="patientsPreviewTable"></table></div>
+            <div class="progress-bar" id="patientsProgressBar" style="display:none;"><div class="progress-fill" id="patientsProgressFill"></div></div>
+            <div class="action-group">
+                <button class="btn-secondary" id="cancelPatientsBtn">Cancel</button>
+                <button class="btn-primary" id="confirmPatientsUploadBtn">✅ Upload to Firestore</button>
+            </div>
+        </div>
+        <div id="patientsMessage" class="message" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+    // ========== AUTH & SUPERVISOR CHECK ==========
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) { window.location.href = 'login.html'; return; }
+    let currentUser = null;
+    try {
+        currentUser = JSON.parse(loggedInUser);
+        if (currentUser.level !== 'Supervisor') {
+            alert('Access Denied. Only Supervisors can use this page.');
+            window.location.href = 'clinicdash.html';
+            return;
+        }
+        document.getElementById('adminName').textContent = `${currentUser.name || currentUser.username} (Supervisor)`;
+    } catch(e) { window.location.href = 'login.html'; return; }
+
+    // ========== FIREBASE & DOM REFERENCES ==========
+    let db = null;
+    let servicesData = [], patientsData = []; // raw parsed data for preview
+    let servicesPreviewRows = [], patientsPreviewRows = [];
+
+    const servicesUploadArea = document.getElementById('servicesUploadArea');
+    const servicesFileInput = document.getElementById('servicesExcelInput');
+    const patientsUploadArea = document.getElementById('patientsUploadArea');
+    const patientsFileInput = document.getElementById('patientsExcelInput');
+
+    // ========== HELPER FUNCTIONS ==========
+    function showMessage(containerId, msg, type) {
+        const el = document.getElementById(containerId);
+        if (el) { el.innerText = msg; el.className = `message ${type}`; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 4000); }
+    }
+
+    function updateCounters() {
+        if (!db) return;
+        db.collection("services").get().then(snap => { document.getElementById('servicesCount').innerText = `${snap.size} records`; }).catch(()=>{});
+        db.collection("patients").get().then(snap => { document.getElementById('patientsCount').innerText = `${snap.size} records`; }).catch(()=>{});
+    }
+
+    // ========== PARSE EXCEL ==========
+    function parseExcelToJson(file, callback) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+            callback(json);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Services mapping: Expected headers: "Service Name", "Price (MVR)", "Aasandha Covered", "Aasandha Cover Amount"
+    function mapServicesRow(row) {
+        let name = row['Service Name'] || row['Service'] || row['name'] || '';
+        let price = parseFloat(row['Price (MVR)'] || row['Price'] || row['price'] || 0);
+        let aasandhaCoveredRaw = (row['Aasandha Covered'] || row['AasandhaCovered'] || row['covered'] || '').toString().toLowerCase();
+        let covered = (aasandhaCoveredRaw === 'yes' || aasandhaCoveredRaw === 'true' || aasandhaCoveredRaw === '1');
+        let coverAmount = parseFloat(row['Aasandha Cover Amount'] || row['CoverAmount'] || row['aasandhaAmount'] || 0);
+        if (!name || isNaN(price) || price <= 0) return null;
+        return { name: name.trim(), price, aasandhaCovered: covered, aasandhaCoverAmount: isNaN(coverAmount) ? 0 : coverAmount };
+    }
+
+    // Patients mapping: "Patient ID", "Full Name", "Phone", "Nationality", "Is Citizen", "ID Card No", "Date of Birth"
+    function mapPatientsRow(row) {
+        let id = (row['Patient ID'] || row['patientId'] || row['id'] || '').toString().trim();
+        let name = (row['Full Name'] || row['name'] || '').toString().trim();
+        let phone = (row['Phone'] || row['contactNo'] || row['phone'] || '').toString().trim();
+        let nationality = (row['Nationality'] || row['nationality'] || '').toString().trim();
+        let isCitizenRaw = (row['Is Citizen'] || row['isCitizen'] || row['citizen'] || '').toString().toLowerCase();
+        let isCitizen = (isCitizenRaw === 'yes' || isCitizenRaw === 'true' || isCitizenRaw === '1' || isCitizenRaw === 'maldivian');
+        let idNumber = (row['ID Card No'] || row['idNumber'] || row['nic'] || '').toString().trim();
+        let dob = (row['Date of Birth'] || row['dob'] || '').toString().trim();
+        if (!id || !name) return null;
+        return { id, name, phone, nationality, isCitizen, idNumber, dob };
+    }
+
+    // Render preview table
+    function renderPreviewTable(containerId, dataRows, headers) {
+        const table = document.getElementById(containerId);
+        if (!table) return;
+        if (!dataRows.length) { table.innerHTML = '<tr><td colspan="10">No valid rows found in Excel.</td></tr>'; return; }
+        let html = '<thead><tr>';
+        headers.forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+        dataRows.slice(0, 10).forEach(row => {
+            html += '<tr>';
+            headers.forEach(h => html += `<td>${escapeHtml(row[h] !== undefined ? String(row[h]) : '—')}</td>`);
+            html += '</tr>';
+        });
+        if (dataRows.length > 10) html += '<tr><td colspan="'+headers.length+'" style="background:#fef9e3;">+ '+(dataRows.length-10)+' more rows not shown</td></tr>';
+        html += '</tbody>';
+        table.innerHTML = html;
+    }
+
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+    // ========== UPLOAD LOGIC ==========
+    async function uploadServicesToFirestore(servicesArray, progressCallback) {
+        if (!db) throw new Error("Firestore not ready");
+        let success = 0, failed = 0;
+        for (let i = 0; i < servicesArray.length; i++) {
+            const s = servicesArray[i];
+            try {
+                const docId = `SVC_${Date.now()}_${i}`;
+                const docRef = db.collection("services").doc(docId);
+                await docRef.set({
+                    id: docId,
+                    name: s.name,
+                    price: s.price,
+                    aasandhaCovered: s.aasandhaCovered,
+                    aasandhaCoverAmount: s.aasandhaCoverAmount,
+                    createdAt: new Date().toISOString()
+                });
+                success++;
+            } catch (err) { failed++; console.error(err); }
+            if (progressCallback) progressCallback((i+1)/servicesArray.length * 100);
+        }
+        return { success, failed };
+    }
+
+    async function uploadPatientsToFirestore(patientsArray, progressCallback) {
+        if (!db) throw new Error("Firestore not ready");
+        let success = 0, failed = 0;
+        for (let i = 0; i < patientsArray.length; i++) {
+            const p = patientsArray[i];
+            try {
+                // Use custom ID from Excel if not exists, else generate
+                let docId = p.id;
+                if (!docId || docId === '') docId = `PAT_${Date.now()}_${i}`;
+                const docRef = db.collection("patients").doc(docId);
+                await docRef.set({
+                    id: docId,
+                    name: p.name,
+                    phone: p.phone || '',
+                    nationality: p.nationality || '',
+                    isCitizen: p.isCitizen || false,
+                    idNumber: p.idNumber || '',
+                    dob: p.dob || '',
+                    createdAt: new Date().toISOString()
+                });
+                success++;
+            } catch (err) { failed++; console.error(err); }
+            if (progressCallback) progressCallback((i+1)/patientsArray.length * 100);
+        }
+        return { success, failed };
+    }
+
+    // ========== HANDLE SERVICES FILE ==========
+    servicesUploadArea.addEventListener('click', () => servicesFileInput.click());
+    servicesFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        parseExcelToJson(file, (jsonData) => {
+            const mapped = jsonData.map(row => mapServicesRow(row)).filter(r => r !== null);
+            if (mapped.length === 0) {
+                showMessage('servicesMessage', 'No valid service rows found. Check column names: Service Name, Price (MVR), Aasandha Covered, Aasandha Cover Amount', 'error');
+                return;
+            }
+            servicesData = mapped;
+            // Prepare preview rows
+            servicesPreviewRows = servicesData.map(s => ({
+                'Service Name': s.name,
+                'Price (MVR)': s.price,
+                'Aasandha Covered': s.aasandhaCovered ? 'Yes' : 'No',
+                'Aasandha Cover Amount': s.aasandhaCoverAmount
+            }));
+            renderPreviewTable('servicesPreviewTable', servicesPreviewRows, ['Service Name', 'Price (MVR)', 'Aasandha Covered', 'Aasandha Cover Amount']);
+            document.getElementById('servicesPreviewContainer').style.display = 'block';
+            showMessage('servicesMessage', `Loaded ${servicesData.length} services. Click Upload to save.`, 'info');
+        });
+    });
+
+    document.getElementById('confirmServicesUploadBtn').onclick = async () => {
+        if (!servicesData.length) { showMessage('servicesMessage', 'No data to upload', 'warning'); return; }
+        const progressBar = document.getElementById('servicesProgressBar');
+        const progressFill = document.getElementById('servicesProgressFill');
+        progressBar.style.display = 'block';
+        progressFill.style.width = '0%';
+        const result = await uploadServicesToFirestore(servicesData, (percent) => { progressFill.style.width = `${percent}%`; });
+        progressBar.style.display = 'none';
+        if (result.success > 0) {
+            showMessage('servicesMessage', `✅ Uploaded ${result.success} services. Failed: ${result.failed}`, 'success');
+            servicesData = [];
+            servicesPreviewRows = [];
+            document.getElementById('servicesPreviewContainer').style.display = 'none';
+            servicesFileInput.value = '';
+            updateCounters();
+        } else {
+            showMessage('servicesMessage', 'Upload failed. Check console.', 'error');
+        }
+    };
+
+    document.getElementById('cancelServicesBtn').onclick = () => {
+        servicesData = [];
+        servicesPreviewRows = [];
+        document.getElementById('servicesPreviewContainer').style.display = 'none';
+        servicesFileInput.value = '';
+        showMessage('servicesMessage', 'Cancelled', 'info');
+    };
+
+    // ========== HANDLE PATIENTS FILE ==========
+    patientsUploadArea.addEventListener('click', () => patientsFileInput.click());
+    patientsFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        parseExcelToJson(file, (jsonData) => {
+            const mapped = jsonData.map(row => mapPatientsRow(row)).filter(r => r !== null);
+            if (mapped.length === 0) {
+                showMessage('patientsMessage', 'No valid patient rows found. Check column names: Patient ID, Full Name, Phone, Nationality, Is Citizen, ID Card No, Date of Birth', 'error');
+                return;
+            }
+            patientsData = mapped;
+            patientsPreviewRows = patientsData.map(p => ({
+                'Patient ID': p.id,
+                'Full Name': p.name,
+                'Phone': p.phone,
+                'Nationality': p.nationality,
+                'Is Citizen': p.isCitizen ? 'Yes' : 'No',
+                'ID Card No': p.idNumber,
+                'Date of Birth': p.dob
+            }));
+            renderPreviewTable('patientsPreviewTable', patientsPreviewRows, ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth']);
+            document.getElementById('patientsPreviewContainer').style.display = 'block';
+            showMessage('patientsMessage', `Loaded ${patientsData.length} patients. Click Upload to save.`, 'info');
+        });
+    });
+
+    document.getElementById('confirmPatientsUploadBtn').onclick = async () => {
+        if (!patientsData.length) { showMessage('patientsMessage', 'No data to upload', 'warning'); return; }
+        const progressBar = document.getElementById('patientsProgressBar');
+        const progressFill = document.getElementById('patientsProgressFill');
+        progressBar.style.display = 'block';
+        progressFill.style.width = '0%';
+        const result = await uploadPatientsToFirestore(patientsData, (percent) => { progressFill.style.width = `${percent}%`; });
+        progressBar.style.display = 'none';
+        if (result.success > 0) {
+            showMessage('patientsMessage', `✅ Uploaded ${result.success} patients. Failed: ${result.failed}`, 'success');
+            patientsData = [];
+            patientsPreviewRows = [];
+            document.getElementById('patientsPreviewContainer').style.display = 'none';
+            patientsFileInput.value = '';
+            updateCounters();
+        } else {
+            showMessage('patientsMessage', 'Upload failed. Check console.', 'error');
+        }
+    };
+
+    document.getElementById('cancelPatientsBtn').onclick = () => {
+        patientsData = [];
+        patientsPreviewRows = [];
+        document.getElementById('patientsPreviewContainer').style.display = 'none';
+        patientsFileInput.value = '';
+        showMessage('patientsMessage', 'Cancelled', 'info');
+    };
+
+    // ========== TAB SWITCHING ==========
+    function switchTab(tabName) {
+        document.getElementById('servicesTab').style.display = tabName === 'services' ? 'block' : 'none';
+        document.getElementById('patientsTab').style.display = tabName === 'patients' ? 'block' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+        // reset previews when switching?
+    }
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // ========== INIT FIREBASE ==========
+    function waitForFirebase() {
+        if (window.db) {
+            db = window.db;
+            updateCounters();
+        } else {
+            setTimeout(waitForFirebase, 500);
+        }
+    }
+    waitForFirebase();
+</script>
+</body>
+</html>

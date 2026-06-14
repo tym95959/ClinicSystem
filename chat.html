@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Staff Live Chat · Direct Messages · Like & Reply</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* main app card */
+        .app-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* login overlay */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: 0.2s;
+        }
+
+        .login-card {
+            background: white;
+            padding: 2rem 2rem 2rem 2rem;
+            border-radius: 2rem;
+            width: 340px;
+            text-align: center;
+            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-card h2 {
+            margin-bottom: 1rem;
+            color: #1e2a3e;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 40px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .login-card button {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .login-card button:hover {
+            background: #0f2b44;
+        }
+
+        /* main chat layout */
+        .chat-layout {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            background: white;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* staff sidebar */
+        .staff-sidebar {
+            width: 280px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            padding: 1.2rem 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .staff-header {
+            padding: 0 1rem 1rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 1rem;
+        }
+
+        .staff-header h3 {
+            font-size: 1.2rem;
+            color: #0f172a;
+        }
+
+        .staff-badge {
+            background: #e2e8f0;
+            border-radius: 40px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            color: #1e293b;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .staff-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+
+        .staff-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin: 4px 8px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            border: 1px solid transparent;
+        }
+
+        .staff-item.active {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .staff-item:hover:not(.active) {
+            background: #f1f5f9;
+        }
+
+        .staff-avatar {
+            width: 42px;
+            height: 42px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+
+        .staff-info {
+            flex: 1;
+        }
+
+        .staff-name {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .staff-status {
+            font-size: 0.7rem;
+            color: #16a34a;
+        }
+
+        /* chat area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            min-height: 600px;
+        }
+
+        .chat-header {
+            padding: 1rem 1.5rem;
+            background: #f9fafb;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-with {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #fefefe;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 22px;
+            position: relative;
+            word-wrap: break-word;
+            background: #f1f5f9;
+            align-self: flex-start;
+            transition: 0.1s;
+        }
+
+        .message-bubble.own {
+            background: #d9f0ff;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message-meta {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #475569;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 30px;
+            transition: 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #334155;
+        }
+
+        .action-btn.liked {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .reply-indicator {
+            font-size: 0.7rem;
+            background: #e6edf5;
+            border-radius: 16px;
+            padding: 4px 10px;
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+
+        .message-input-area {
+            padding: 1rem 1.5rem;
+            background: white;
+            border-top: 1px solid #eef2f6;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .message-input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 40px;
+            border: 1px solid #cbd5e1;
+            outline: none;
+        }
+
+        .send-btn {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .reply-preview {
+            background: #f1f5f9;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* popup alert */
+        .live-popup {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e293b;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 60px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(8px);
+            animation: slideIn 0.2s ease-out;
+            max-width: 320px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .popup-close {
+            background: none;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 680px) {
+            .staff-sidebar {
+                width: 100%;
+                max-height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .message-bubble {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+    // ---------- DATA LAYER ----------
+    // each message: { id, fromStaff, toStaff, text, timestamp, likes: [], replyToId (optional) }
+    let messages = [];          // global messages
+    let staffMembers = [
+        { id: "staff_alice", name: "Alice Chen", avatar: "AC" },
+        { id: "staff_bob", name: "Bob Miller", avatar: "BM" },
+        { id: "staff_clara", name: "Clara Vega", avatar: "CV" },
+        { id: "staff_david", name: "David Kim", avatar: "DK" }
+    ];
+
+    let currentLoggedStaff = null;      // { id, name }
+    let activeChatPartnerId = null;      // staff id we're chatting with
+    let replyToMessage = null;            // { id, text, fromStaffName }
+
+    // Helper: generate unique id
+    function generateId() {
+        return Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    }
+
+    // load dummy messages
+    function seedMockMessages() {
+        if (messages.length > 0) return;
+        const now = Date.now();
+        messages.push({
+            id: generateId(),
+            fromStaff: "staff_alice",
+            toStaff: "staff_bob",
+            text: "Hey Bob, ready for the meeting?",
+            timestamp: now - 3600000,
+            likes: [],
+            replyToId: null
+        });
+        messages.push({
+            id: generateId(),
+            fromStaff: "staff_bob",
+            toStaff: "staff_alice",
+            text: "Sure Alice, I'll join in 5 mins.",
+            timestamp: now - 3500000,
+            likes: ["staff_alice"],
+            replyToId: null
+        });
+        messages.push({
+            id: generateId(),
+            fromStaff: "staff_clara",
+            toStaff: "staff_alice",
+            text: "Alice, could you review the proposal?",
+            timestamp: now - 1800000,
+            likes: [],
+            replyToId: null
+        });
+        messages.push({
+            id: generateId(),
+            fromStaff: "staff_alice",
+            toStaff: "staff_clara",
+            text: "Sure Clara, sending feedback soon.",
+            timestamp: now - 1700000,
+            likes: [],
+            replyToId: null
+        });
+    }
+
+    // get staff name by id
+    function getStaffName(staffId) {
+        const s = staffMembers.find(m => m.id === staffId);
+        return s ? s.name : "Unknown";
+    }
+
+    function getStaffAvatar(staffId) {
+        const s = staffMembers.find(m => m.id === staffId);
+        return s ? s.avatar : "??";
+    }
+
+    // get conversation between current logged staff & partner
+    function getConversation(staffA, staffB) {
+        return messages.filter(m => 
+            (m.fromStaff === staffA && m.toStaff === staffB) ||
+            (m.fromStaff === staffB && m.toStaff === staffA)
+        ).sort((a,b) => a.timestamp - b.timestamp);
+    }
+
+    // send message
+    function sendMessage(text, toStaffId, replyTo = null) {
+        if (!text.trim()) return false;
+        const newMsg = {
+            id: generateId(),
+            fromStaff: currentLoggedStaff.id,
+            toStaff: toStaffId,
+            text: text.trim(),
+            timestamp: Date.now(),
+            likes: [],
+            replyToId: replyTo ? replyTo.id : null
+        };
+        messages.push(newMsg);
+        // after sending, trigger popup for recipient if recipient is not the current sender AND recipient might be active elsewhere
+        // but we also trigger popup for any new message to that staff if they are logged (this is global system)
+        triggerPopupForNewMessage(newMsg);
+        return true;
+    }
+
+    // like / unlike message
+    function toggleLike(messageId) {
+        const msg = messages.find(m => m.id === messageId);
+        if (!msg) return;
+        const userId = currentLoggedStaff.id;
+        if (msg.likes.includes(userId)) {
+            msg.likes = msg.likes.filter(id => id !== userId);
+        } else {
+            msg.likes.push(userId);
+        }
+        // re-render UI
+        renderChatArea();
+    }
+
+    // delete message (only if message belongs to current logged staff)
+    function deleteMessage(messageId) {
+        const idx = messages.findIndex(m => m.id === messageId);
+        if (idx !== -1 && messages[idx].fromStaff === currentLoggedStaff.id) {
+            messages.splice(idx, 1);
+            renderChatArea();
+        } else {
+            showFloatingPopup("You can only delete your own messages!", "warning");
+        }
+    }
+
+    // reply to message
+    function setReplyTarget(message) {
+        replyToMessage = {
+            id: message.id,
+            text: message.text,
+            fromStaffName: getStaffName(message.fromStaff)
+        };
+        renderChatArea(); // to show reply preview
+    }
+
+    function cancelReply() {
+        replyToMessage = null;
+        renderChatArea();
+    }
+
+    // live popup alert
+    let activePopupTimeout = null;
+    function showFloatingPopup(message, type = "info") {
+        const existingPopup = document.querySelector('.live-popup');
+        if(existingPopup) existingPopup.remove();
+        const popupDiv = document.createElement('div');
+        popupDiv.className = 'live-popup';
+        popupDiv.innerHTML = `
+            <span>🔔 ${message}</span>
+            <button class="popup-close">✕</button>
+        `;
+        document.body.appendChild(popupDiv);
+        const closeBtn = popupDiv.querySelector('.popup-close');
+        const removePopup = () => {
+            if(popupDiv) popupDiv.remove();
+            if(activePopupTimeout) clearTimeout(activePopupTimeout);
+        };
+        closeBtn.addEventListener('click', removePopup);
+        activePopupTimeout = setTimeout(removePopup, 4000);
+    }
+
+    // trigger popup for recipient when new message arrives (if recipient is current logged user & message not from self)
+    function triggerPopupForNewMessage(message) {
+        // if recipient is currently logged user and message sender is not logged user
+        if (currentLoggedStaff && message.toStaff === currentLoggedStaff.id && message.fromStaff !== currentLoggedStaff.id) {
+            const senderName = getStaffName(message.fromStaff);
+            const shortText = message.text.length > 40 ? message.text.slice(0,37)+'...' : message.text;
+            showFloatingPopup(`💬 New from ${senderName}: "${shortText}"`);
+        }
+        // also if any staff online maybe but we simulate the logged one only
+        // plus if active chat partner changes, we will re-render anyway
+        if (currentLoggedStaff && activeChatPartnerId === message.fromStaff && message.toStaff === currentLoggedStaff.id) {
+            renderChatArea(); // update messages if same chat open
+        } else if (currentLoggedStaff && message.toStaff === currentLoggedStaff.id) {
+            // if message for current logged user but chat with different partner, we just update sidebar unread style
+            renderStaffList();  // update to show maybe unread indicator (we don't store unread but show last message)
+        }
+    }
+
+    // send message from input
+    function handleSendMessage(inputElem) {
+        const text = inputElem.value.trim();
+        if (!text) return;
+        if (!activeChatPartnerId) {
+            showFloatingPopup("Select a staff member to start chatting", "info");
+            return;
+        }
+        sendMessage(text, activeChatPartnerId, replyToMessage);
+        inputElem.value = '';
+        cancelReply();
+        renderChatArea();
+        renderStaffList();
+    }
+
+    // Render staff list sidebar
+    function renderStaffList() {
+        const container = document.getElementById('staffListContainer');
+        if (!container) return;
+        const otherStaff = staffMembers.filter(s => s.id !== currentLoggedStaff.id);
+        container.innerHTML = otherStaff.map(staff => {
+            const isActive = (activeChatPartnerId === staff.id);
+            // find last message between them
+            const conv = getConversation(currentLoggedStaff.id, staff.id);
+            const lastMsg = conv.length ? conv[conv.length-1] : null;
+            const lastPreview = lastMsg ? (lastMsg.fromStaff === currentLoggedStaff.id ? "You: " : "") + lastMsg.text.substring(0, 25) : "No messages";
+            return `
+                <div class="staff-item ${isActive ? 'active' : ''}" data-staffid="${staff.id}">
+                    <div class="staff-avatar">${staff.avatar}</div>
+                    <div class="staff-info">
+                        <div class="staff-name">${staff.name}</div>
+                        <div class="staff-status">${lastPreview.length>22?lastPreview.slice(0,20)+'..':lastPreview}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        // attach click events
+        document.querySelectorAll('.staff-item').forEach(el => {
+            const sid = el.getAttribute('data-staffid');
+            el.addEventListener('click', () => {
+                if (sid) {
+                    activeChatPartnerId = sid;
+                    cancelReply();
+                    renderStaffList();
+                    renderChatArea();
+                }
+            });
+        });
+    }
+
+    // render message area
+    function renderChatArea() {
+        const chatContainer = document.getElementById('messagesContainer');
+        const chatHeaderSpan = document.getElementById('chatWithName');
+        if (!chatContainer) return;
+        if (!activeChatPartnerId) {
+            chatHeaderSpan.innerText = "No conversation selected";
+            chatContainer.innerHTML = `<div style="text-align:center; padding:2rem;">👈 Select a staff member to start chatting</div>`;
+            document.getElementById('replyPreviewContainer').innerHTML = '';
+            return;
+        }
+        const partner = staffMembers.find(s => s.id === activeChatPartnerId);
+        chatHeaderSpan.innerText = partner ? partner.name : "Staff";
+        const conversation = getConversation(currentLoggedStaff.id, activeChatPartnerId);
+        if (conversation.length === 0) {
+            chatContainer.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:2rem;">✨ No messages yet. Send a friendly hello! ✨</div>`;
+        } else {
+            chatContainer.innerHTML = conversation.map(msg => {
+                const isOwn = msg.fromStaff === currentLoggedStaff.id;
+                const likedByMe = msg.likes.includes(currentLoggedStaff.id);
+                const likeCount = msg.likes.length;
+                const replyToMsg = msg.replyToId ? messages.find(m => m.id === msg.replyToId) : null;
+                const replyPreviewHtml = replyToMsg ? `<div class="reply-indicator">↩️ replied to "${replyToMsg.text.substring(0, 60)}"</div>` : '';
+                return `
+                    <div class="message-bubble ${isOwn ? 'own' : ''}" data-msgid="${msg.id}">
+                        ${replyPreviewHtml}
+                        <div><strong>${isOwn ? 'You' : getStaffName(msg.fromStaff)}</strong>: ${escapeHtml(msg.text)}</div>
+                        <div class="message-meta">
+                            <span>${new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <span>❤️ ${likeCount}</span>
+                        </div>
+                        <div class="message-actions">
+                            <button class="action-btn like-btn ${likedByMe ? 'liked' : ''}" data-msgid="${msg.id}">${likedByMe ? '❤️ Liked' : '🤍 Like'}</button>
+                            <button class="action-btn reply-btn" data-msgid="${msg.id}" data-msgtext="${escapeAttr(msg.text)}" data-msgfrom="${getStaffName(msg.fromStaff)}">💬 Reply</button>
+                            ${isOwn ? `<button class="action-btn delete-btn" data-msgid="${msg.id}">🗑️ Delete</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        // attach dynamic actions
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const msgId = btn.getAttribute('data-msgid');
+                if(msgId) toggleLike(msgId);
+            });
+        });
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const msgId = btn.getAttribute('data-msgid');
+                if(msgId) deleteMessage(msgId);
+            });
+        });
+        document.querySelectorAll('.reply-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const msgId = btn.getAttribute('data-msgid');
+                const originalMsg = messages.find(m => m.id === msgId);
+                if(originalMsg) setReplyTarget(originalMsg);
+            });
+        });
+
+        // scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // render reply preview
+        const replyPreviewDiv = document.getElementById('replyPreviewContainer');
+        if (replyToMessage) {
+            replyPreviewDiv.innerHTML = `
+                <div class="reply-preview">
+                    <span>↩️ Replying to ${replyToMessage.fromStaffName}: "${replyToMessage.text.substring(0, 45)}"</span>
+                    <button id="cancelReplyBtn" style="background: none; border: none; cursor:pointer;">✖</button>
+                </div>
+            `;
+            document.getElementById('cancelReplyBtn')?.addEventListener('click', cancelReply);
+        } else {
+            replyPreviewDiv.innerHTML = '';
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    function escapeAttr(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // render full UI after login
+    function renderMainUI() {
+        const appDiv = document.getElementById('app');
+        appDiv.innerHTML = `
+            <div class="app-container">
+                <div class="chat-layout">
+                    <div class="staff-sidebar">
+                        <div class="staff-header">
+                            <h3>👥 Staff Directory</h3>
+                            <div class="staff-badge">Logged as: <strong>${escapeHtml(currentLoggedStaff.name)}</strong></div>
+                        </div>
+                        <div id="staffListContainer" class="staff-list"></div>
+                    </div>
+                    <div class="chat-area">
+                        <div class="chat-header">
+                            <span class="chat-with" id="chatWithName">Select a staff</span>
+                            <span style="font-size:12px; background:#eef2ff; padding:4px 10px; border-radius:20px;">Live chat</span>
+                        </div>
+                        <div id="messagesContainer" class="messages-container"></div>
+                        <div id="replyPreviewContainer" style="padding: 0 1.2rem;"></div>
+                        <div class="message-input-area">
+                            <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
+                            <button id="sendMsgBtn" class="send-btn">Send ➤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        renderStaffList();
+        renderChatArea();
+        const sendBtn = document.getElementById('sendMsgBtn');
+        const inputField = document.getElementById('messageInput');
+        sendBtn.addEventListener('click', () => handleSendMessage(inputField));
+        inputField.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') handleSendMessage(inputField);
+        });
+    }
+
+    // login
+    function showLogin() {
+        const appDiv = document.getElementById('app');
+        appDiv.innerHTML = `
+            <div class="login-overlay" id="loginOverlay">
+                <div class="login-card">
+                    <h2>🔐 Staff Chat Login</h2>
+                    <select id="staffSelect">
+                        ${staffMembers.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                    </select>
+                    <button id="loginBtn">Enter Live Chat</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const select = document.getElementById('staffSelect');
+            const staffId = select.value;
+            const staff = staffMembers.find(s => s.id === staffId);
+            if (staff) {
+                currentLoggedStaff = { id: staff.id, name: staff.name };
+                activeChatPartnerId = null;
+                replyToMessage = null;
+                seedMockMessages();
+                renderMainUI();
+            }
+        });
+    }
+
+    // initial bootstrap
+    seedMockMessages();
+    showLogin();
+</script>
+</body>
+</html>

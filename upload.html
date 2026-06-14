@@ -303,281 +303,303 @@
 </div>
 
 <script>
-    // ========== AUTH & SUPERVISOR CHECK ==========
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) { window.location.href = 'login.html'; return; }
-    let currentUser = null;
-    try {
-        currentUser = JSON.parse(loggedInUser);
-        if (currentUser.level !== 'Supervisor') {
-            alert('Access Denied. Only Supervisors can use this page.');
-            window.location.href = 'clinicdash.html';
+    (function() {
+        // ========== AUTH & SUPERVISOR CHECK ==========
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (!loggedInUser) {
+            window.location.href = 'login.html';
             return;
         }
-        document.getElementById('adminName').textContent = `${currentUser.name || currentUser.username} (Supervisor)`;
-    } catch(e) { window.location.href = 'login.html'; return; }
-
-    // ========== FIREBASE & DOM REFERENCES ==========
-    let db = null;
-    let servicesData = [], patientsData = []; // raw parsed data for preview
-    let servicesPreviewRows = [], patientsPreviewRows = [];
-
-    const servicesUploadArea = document.getElementById('servicesUploadArea');
-    const servicesFileInput = document.getElementById('servicesExcelInput');
-    const patientsUploadArea = document.getElementById('patientsUploadArea');
-    const patientsFileInput = document.getElementById('patientsExcelInput');
-
-    // ========== HELPER FUNCTIONS ==========
-    function showMessage(containerId, msg, type) {
-        const el = document.getElementById(containerId);
-        if (el) { el.innerText = msg; el.className = `message ${type}`; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 4000); }
-    }
-
-    function updateCounters() {
-        if (!db) return;
-        db.collection("services").get().then(snap => { document.getElementById('servicesCount').innerText = `${snap.size} records`; }).catch(()=>{});
-        db.collection("patients").get().then(snap => { document.getElementById('patientsCount').innerText = `${snap.size} records`; }).catch(()=>{});
-    }
-
-    // ========== PARSE EXCEL ==========
-    function parseExcelToJson(file, callback) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-            callback(json);
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    // Services mapping: Expected headers: "Service Name", "Price (MVR)", "Aasandha Covered", "Aasandha Cover Amount"
-    function mapServicesRow(row) {
-        let name = row['Service Name'] || row['Service'] || row['name'] || '';
-        let price = parseFloat(row['Price (MVR)'] || row['Price'] || row['price'] || 0);
-        let aasandhaCoveredRaw = (row['Aasandha Covered'] || row['AasandhaCovered'] || row['covered'] || '').toString().toLowerCase();
-        let covered = (aasandhaCoveredRaw === 'yes' || aasandhaCoveredRaw === 'true' || aasandhaCoveredRaw === '1');
-        let coverAmount = parseFloat(row['Aasandha Cover Amount'] || row['CoverAmount'] || row['aasandhaAmount'] || 0);
-        if (!name || isNaN(price) || price <= 0) return null;
-        return { name: name.trim(), price, aasandhaCovered: covered, aasandhaCoverAmount: isNaN(coverAmount) ? 0 : coverAmount };
-    }
-
-    // Patients mapping: "Patient ID", "Full Name", "Phone", "Nationality", "Is Citizen", "ID Card No", "Date of Birth"
-    function mapPatientsRow(row) {
-        let id = (row['Patient ID'] || row['patientId'] || row['id'] || '').toString().trim();
-        let name = (row['Full Name'] || row['name'] || '').toString().trim();
-        let phone = (row['Phone'] || row['contactNo'] || row['phone'] || '').toString().trim();
-        let nationality = (row['Nationality'] || row['nationality'] || '').toString().trim();
-        let isCitizenRaw = (row['Is Citizen'] || row['isCitizen'] || row['citizen'] || '').toString().toLowerCase();
-        let isCitizen = (isCitizenRaw === 'yes' || isCitizenRaw === 'true' || isCitizenRaw === '1' || isCitizenRaw === 'maldivian');
-        let idNumber = (row['ID Card No'] || row['idNumber'] || row['nic'] || '').toString().trim();
-        let dob = (row['Date of Birth'] || row['dob'] || '').toString().trim();
-        if (!id || !name) return null;
-        return { id, name, phone, nationality, isCitizen, idNumber, dob };
-    }
-
-    // Render preview table
-    function renderPreviewTable(containerId, dataRows, headers) {
-        const table = document.getElementById(containerId);
-        if (!table) return;
-        if (!dataRows.length) { table.innerHTML = '<tr><td colspan="10">No valid rows found in Excel.</td></tr>'; return; }
-        let html = '<thead><tr>';
-        headers.forEach(h => html += `<th>${h}</th>`);
-        html += '</tr></thead><tbody>';
-        dataRows.slice(0, 10).forEach(row => {
-            html += '<tr>';
-            headers.forEach(h => html += `<td>${escapeHtml(row[h] !== undefined ? String(row[h]) : '—')}</td>`);
-            html += '</tr>';
-        });
-        if (dataRows.length > 10) html += '<tr><td colspan="'+headers.length+'" style="background:#fef9e3;">+ '+(dataRows.length-10)+' more rows not shown</td></tr>';
-        html += '</tbody>';
-        table.innerHTML = html;
-    }
-
-    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
-
-    // ========== UPLOAD LOGIC ==========
-    async function uploadServicesToFirestore(servicesArray, progressCallback) {
-        if (!db) throw new Error("Firestore not ready");
-        let success = 0, failed = 0;
-        for (let i = 0; i < servicesArray.length; i++) {
-            const s = servicesArray[i];
-            try {
-                const docId = `SVC_${Date.now()}_${i}`;
-                const docRef = db.collection("services").doc(docId);
-                await docRef.set({
-                    id: docId,
-                    name: s.name,
-                    price: s.price,
-                    aasandhaCovered: s.aasandhaCovered,
-                    aasandhaCoverAmount: s.aasandhaCoverAmount,
-                    createdAt: new Date().toISOString()
-                });
-                success++;
-            } catch (err) { failed++; console.error(err); }
-            if (progressCallback) progressCallback((i+1)/servicesArray.length * 100);
-        }
-        return { success, failed };
-    }
-
-    async function uploadPatientsToFirestore(patientsArray, progressCallback) {
-        if (!db) throw new Error("Firestore not ready");
-        let success = 0, failed = 0;
-        for (let i = 0; i < patientsArray.length; i++) {
-            const p = patientsArray[i];
-            try {
-                // Use custom ID from Excel if not exists, else generate
-                let docId = p.id;
-                if (!docId || docId === '') docId = `PAT_${Date.now()}_${i}`;
-                const docRef = db.collection("patients").doc(docId);
-                await docRef.set({
-                    id: docId,
-                    name: p.name,
-                    phone: p.phone || '',
-                    nationality: p.nationality || '',
-                    isCitizen: p.isCitizen || false,
-                    idNumber: p.idNumber || '',
-                    dob: p.dob || '',
-                    createdAt: new Date().toISOString()
-                });
-                success++;
-            } catch (err) { failed++; console.error(err); }
-            if (progressCallback) progressCallback((i+1)/patientsArray.length * 100);
-        }
-        return { success, failed };
-    }
-
-    // ========== HANDLE SERVICES FILE ==========
-    servicesUploadArea.addEventListener('click', () => servicesFileInput.click());
-    servicesFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        parseExcelToJson(file, (jsonData) => {
-            const mapped = jsonData.map(row => mapServicesRow(row)).filter(r => r !== null);
-            if (mapped.length === 0) {
-                showMessage('servicesMessage', 'No valid service rows found. Check column names: Service Name, Price (MVR), Aasandha Covered, Aasandha Cover Amount', 'error');
+        let currentUser = null;
+        try {
+            currentUser = JSON.parse(loggedInUser);
+            if (currentUser.level !== 'Supervisor') {
+                alert('Access Denied. Only Supervisors can use this page.');
+                window.location.href = 'clinicdash.html';
                 return;
             }
-            servicesData = mapped;
-            // Prepare preview rows
-            servicesPreviewRows = servicesData.map(s => ({
-                'Service Name': s.name,
-                'Price (MVR)': s.price,
-                'Aasandha Covered': s.aasandhaCovered ? 'Yes' : 'No',
-                'Aasandha Cover Amount': s.aasandhaCoverAmount
-            }));
-            renderPreviewTable('servicesPreviewTable', servicesPreviewRows, ['Service Name', 'Price (MVR)', 'Aasandha Covered', 'Aasandha Cover Amount']);
-            document.getElementById('servicesPreviewContainer').style.display = 'block';
-            showMessage('servicesMessage', `Loaded ${servicesData.length} services. Click Upload to save.`, 'info');
-        });
-    });
+            document.getElementById('adminName').textContent = `${currentUser.name || currentUser.username} (Supervisor)`;
+        } catch(e) {
+            window.location.href = 'login.html';
+            return;
+        }
 
-    document.getElementById('confirmServicesUploadBtn').onclick = async () => {
-        if (!servicesData.length) { showMessage('servicesMessage', 'No data to upload', 'warning'); return; }
-        const progressBar = document.getElementById('servicesProgressBar');
-        const progressFill = document.getElementById('servicesProgressFill');
-        progressBar.style.display = 'block';
-        progressFill.style.width = '0%';
-        const result = await uploadServicesToFirestore(servicesData, (percent) => { progressFill.style.width = `${percent}%`; });
-        progressBar.style.display = 'none';
-        if (result.success > 0) {
-            showMessage('servicesMessage', `✅ Uploaded ${result.success} services. Failed: ${result.failed}`, 'success');
+        // ========== FIREBASE & DOM REFERENCES ==========
+        let db = null;
+        let servicesData = [], patientsData = [];
+        let servicesPreviewRows = [], patientsPreviewRows = [];
+
+        const servicesUploadArea = document.getElementById('servicesUploadArea');
+        const servicesFileInput = document.getElementById('servicesExcelInput');
+        const patientsUploadArea = document.getElementById('patientsUploadArea');
+        const patientsFileInput = document.getElementById('patientsExcelInput');
+
+        // Helper functions
+        function showMessage(containerId, msg, type) {
+            const el = document.getElementById(containerId);
+            if (el) {
+                el.innerText = msg;
+                el.className = `message ${type}`;
+                el.style.display = 'block';
+                setTimeout(() => el.style.display = 'none', 4000);
+            }
+        }
+
+        function updateCounters() {
+            if (!db) return;
+            db.collection("services").get().then(snap => {
+                document.getElementById('servicesCount').innerText = `${snap.size} records`;
+            }).catch(() => {});
+            db.collection("patients").get().then(snap => {
+                document.getElementById('patientsCount').innerText = `${snap.size} records`;
+            }).catch(() => {});
+        }
+
+        function parseExcelToJson(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+                callback(json);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function mapServicesRow(row) {
+            let name = row['Service Name'] || row['Service'] || row['name'] || '';
+            let price = parseFloat(row['Price (MVR)'] || row['Price'] || row['price'] || 0);
+            let aasandhaCoveredRaw = (row['Aasandha Covered'] || row['AasandhaCovered'] || row['covered'] || '').toString().toLowerCase();
+            let covered = (aasandhaCoveredRaw === 'yes' || aasandhaCoveredRaw === 'true' || aasandhaCoveredRaw === '1');
+            let coverAmount = parseFloat(row['Aasandha Cover Amount'] || row['CoverAmount'] || row['aasandhaAmount'] || 0);
+            if (!name || isNaN(price) || price <= 0) return null;
+            return { name: name.trim(), price, aasandhaCovered: covered, aasandhaCoverAmount: isNaN(coverAmount) ? 0 : coverAmount };
+        }
+
+        function mapPatientsRow(row) {
+            let id = (row['Patient ID'] || row['patientId'] || row['id'] || '').toString().trim();
+            let name = (row['Full Name'] || row['name'] || '').toString().trim();
+            let phone = (row['Phone'] || row['contactNo'] || row['phone'] || '').toString().trim();
+            let nationality = (row['Nationality'] || row['nationality'] || '').toString().trim();
+            let isCitizenRaw = (row['Is Citizen'] || row['isCitizen'] || row['citizen'] || '').toString().toLowerCase();
+            let isCitizen = (isCitizenRaw === 'yes' || isCitizenRaw === 'true' || isCitizenRaw === '1' || isCitizenRaw === 'maldivian');
+            let idNumber = (row['ID Card No'] || row['idNumber'] || row['nic'] || '').toString().trim();
+            let dob = (row['Date of Birth'] || row['dob'] || '').toString().trim();
+            if (!id || !name) return null;
+            return { id, name, phone, nationality, isCitizen, idNumber, dob };
+        }
+
+        function renderPreviewTable(containerId, dataRows, headers) {
+            const table = document.getElementById(containerId);
+            if (!table) return;
+            if (!dataRows.length) {
+                table.innerHTML = '<tr><td colspan="10">No valid rows found in Excel.</td></tr>';
+                return;
+            }
+            let html = '<thead><tr>';
+            headers.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
+            html += '</tr></thead><tbody>';
+            dataRows.slice(0, 10).forEach(row => {
+                html += '<tr>';
+                headers.forEach(h => html += `<td>${escapeHtml(row[h] !== undefined ? String(row[h]) : '—')}</td>`);
+                html += '</tr>';
+            });
+            if (dataRows.length > 10) html += '<tr><td colspan="'+headers.length+'" style="background:#fef9e3;">+ '+(dataRows.length-10)+' more rows not shown</td></tr>';
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+        }
+
+        async function uploadServicesToFirestore(servicesArray, progressCallback) {
+            if (!db) throw new Error("Firestore not ready");
+            let success = 0, failed = 0;
+            for (let i = 0; i < servicesArray.length; i++) {
+                const s = servicesArray[i];
+                try {
+                    const docId = `SVC_${Date.now()}_${i}`;
+                    const docRef = db.collection("services").doc(docId);
+                    await docRef.set({
+                        id: docId,
+                        name: s.name,
+                        price: s.price,
+                        aasandhaCovered: s.aasandhaCovered,
+                        aasandhaCoverAmount: s.aasandhaCoverAmount,
+                        createdAt: new Date().toISOString()
+                    });
+                    success++;
+                } catch (err) {
+                    failed++;
+                    console.error(err);
+                }
+                if (progressCallback) progressCallback((i+1)/servicesArray.length * 100);
+            }
+            return { success, failed };
+        }
+
+        async function uploadPatientsToFirestore(patientsArray, progressCallback) {
+            if (!db) throw new Error("Firestore not ready");
+            let success = 0, failed = 0;
+            for (let i = 0; i < patientsArray.length; i++) {
+                const p = patientsArray[i];
+                try {
+                    let docId = p.id;
+                    if (!docId || docId === '') docId = `PAT_${Date.now()}_${i}`;
+                    const docRef = db.collection("patients").doc(docId);
+                    await docRef.set({
+                        id: docId,
+                        name: p.name,
+                        phone: p.phone || '',
+                        nationality: p.nationality || '',
+                        isCitizen: p.isCitizen || false,
+                        idNumber: p.idNumber || '',
+                        dob: p.dob || '',
+                        createdAt: new Date().toISOString()
+                    });
+                    success++;
+                } catch (err) {
+                    failed++;
+                    console.error(err);
+                }
+                if (progressCallback) progressCallback((i+1)/patientsArray.length * 100);
+            }
+            return { success, failed };
+        }
+
+        // ========== SERVICES EVENT HANDLERS ==========
+        servicesUploadArea.addEventListener('click', () => servicesFileInput.click());
+        servicesFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            parseExcelToJson(file, (jsonData) => {
+                const mapped = jsonData.map(row => mapServicesRow(row)).filter(r => r !== null);
+                if (mapped.length === 0) {
+                    showMessage('servicesMessage', 'No valid service rows found. Check column names: Service Name, Price (MVR), Aasandha Covered, Aasandha Cover Amount', 'error');
+                    return;
+                }
+                servicesData = mapped;
+                servicesPreviewRows = servicesData.map(s => ({
+                    'Service Name': s.name,
+                    'Price (MVR)': s.price,
+                    'Aasandha Covered': s.aasandhaCovered ? 'Yes' : 'No',
+                    'Aasandha Cover Amount': s.aasandhaCoverAmount
+                }));
+                renderPreviewTable('servicesPreviewTable', servicesPreviewRows, ['Service Name', 'Price (MVR)', 'Aasandha Covered', 'Aasandha Cover Amount']);
+                document.getElementById('servicesPreviewContainer').style.display = 'block';
+                showMessage('servicesMessage', `Loaded ${servicesData.length} services. Click Upload to save.`, 'info');
+            });
+        });
+
+        document.getElementById('confirmServicesUploadBtn').onclick = async () => {
+            if (!servicesData.length) { showMessage('servicesMessage', 'No data to upload', 'warning'); return; }
+            const progressBar = document.getElementById('servicesProgressBar');
+            const progressFill = document.getElementById('servicesProgressFill');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            const result = await uploadServicesToFirestore(servicesData, (percent) => { progressFill.style.width = `${percent}%`; });
+            progressBar.style.display = 'none';
+            if (result.success > 0) {
+                showMessage('servicesMessage', `✅ Uploaded ${result.success} services. Failed: ${result.failed}`, 'success');
+                servicesData = [];
+                servicesPreviewRows = [];
+                document.getElementById('servicesPreviewContainer').style.display = 'none';
+                servicesFileInput.value = '';
+                updateCounters();
+            } else {
+                showMessage('servicesMessage', 'Upload failed. Check console.', 'error');
+            }
+        };
+
+        document.getElementById('cancelServicesBtn').onclick = () => {
             servicesData = [];
             servicesPreviewRows = [];
             document.getElementById('servicesPreviewContainer').style.display = 'none';
             servicesFileInput.value = '';
-            updateCounters();
-        } else {
-            showMessage('servicesMessage', 'Upload failed. Check console.', 'error');
-        }
-    };
+            showMessage('servicesMessage', 'Cancelled', 'info');
+        };
 
-    document.getElementById('cancelServicesBtn').onclick = () => {
-        servicesData = [];
-        servicesPreviewRows = [];
-        document.getElementById('servicesPreviewContainer').style.display = 'none';
-        servicesFileInput.value = '';
-        showMessage('servicesMessage', 'Cancelled', 'info');
-    };
-
-    // ========== HANDLE PATIENTS FILE ==========
-    patientsUploadArea.addEventListener('click', () => patientsFileInput.click());
-    patientsFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        parseExcelToJson(file, (jsonData) => {
-            const mapped = jsonData.map(row => mapPatientsRow(row)).filter(r => r !== null);
-            if (mapped.length === 0) {
-                showMessage('patientsMessage', 'No valid patient rows found. Check column names: Patient ID, Full Name, Phone, Nationality, Is Citizen, ID Card No, Date of Birth', 'error');
-                return;
-            }
-            patientsData = mapped;
-            patientsPreviewRows = patientsData.map(p => ({
-                'Patient ID': p.id,
-                'Full Name': p.name,
-                'Phone': p.phone,
-                'Nationality': p.nationality,
-                'Is Citizen': p.isCitizen ? 'Yes' : 'No',
-                'ID Card No': p.idNumber,
-                'Date of Birth': p.dob
-            }));
-            renderPreviewTable('patientsPreviewTable', patientsPreviewRows, ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth']);
-            document.getElementById('patientsPreviewContainer').style.display = 'block';
-            showMessage('patientsMessage', `Loaded ${patientsData.length} patients. Click Upload to save.`, 'info');
+        // ========== PATIENTS EVENT HANDLERS ==========
+        patientsUploadArea.addEventListener('click', () => patientsFileInput.click());
+        patientsFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            parseExcelToJson(file, (jsonData) => {
+                const mapped = jsonData.map(row => mapPatientsRow(row)).filter(r => r !== null);
+                if (mapped.length === 0) {
+                    showMessage('patientsMessage', 'No valid patient rows found. Check column names: Patient ID, Full Name, Phone, Nationality, Is Citizen, ID Card No, Date of Birth', 'error');
+                    return;
+                }
+                patientsData = mapped;
+                patientsPreviewRows = patientsData.map(p => ({
+                    'Patient ID': p.id,
+                    'Full Name': p.name,
+                    'Phone': p.phone,
+                    'Nationality': p.nationality,
+                    'Is Citizen': p.isCitizen ? 'Yes' : 'No',
+                    'ID Card No': p.idNumber,
+                    'Date of Birth': p.dob
+                }));
+                renderPreviewTable('patientsPreviewTable', patientsPreviewRows, ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth']);
+                document.getElementById('patientsPreviewContainer').style.display = 'block';
+                showMessage('patientsMessage', `Loaded ${patientsData.length} patients. Click Upload to save.`, 'info');
+            });
         });
-    });
 
-    document.getElementById('confirmPatientsUploadBtn').onclick = async () => {
-        if (!patientsData.length) { showMessage('patientsMessage', 'No data to upload', 'warning'); return; }
-        const progressBar = document.getElementById('patientsProgressBar');
-        const progressFill = document.getElementById('patientsProgressFill');
-        progressBar.style.display = 'block';
-        progressFill.style.width = '0%';
-        const result = await uploadPatientsToFirestore(patientsData, (percent) => { progressFill.style.width = `${percent}%`; });
-        progressBar.style.display = 'none';
-        if (result.success > 0) {
-            showMessage('patientsMessage', `✅ Uploaded ${result.success} patients. Failed: ${result.failed}`, 'success');
+        document.getElementById('confirmPatientsUploadBtn').onclick = async () => {
+            if (!patientsData.length) { showMessage('patientsMessage', 'No data to upload', 'warning'); return; }
+            const progressBar = document.getElementById('patientsProgressBar');
+            const progressFill = document.getElementById('patientsProgressFill');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            const result = await uploadPatientsToFirestore(patientsData, (percent) => { progressFill.style.width = `${percent}%`; });
+            progressBar.style.display = 'none';
+            if (result.success > 0) {
+                showMessage('patientsMessage', `✅ Uploaded ${result.success} patients. Failed: ${result.failed}`, 'success');
+                patientsData = [];
+                patientsPreviewRows = [];
+                document.getElementById('patientsPreviewContainer').style.display = 'none';
+                patientsFileInput.value = '';
+                updateCounters();
+            } else {
+                showMessage('patientsMessage', 'Upload failed. Check console.', 'error');
+            }
+        };
+
+        document.getElementById('cancelPatientsBtn').onclick = () => {
             patientsData = [];
             patientsPreviewRows = [];
             document.getElementById('patientsPreviewContainer').style.display = 'none';
             patientsFileInput.value = '';
-            updateCounters();
-        } else {
-            showMessage('patientsMessage', 'Upload failed. Check console.', 'error');
+            showMessage('patientsMessage', 'Cancelled', 'info');
+        };
+
+        // ========== TAB SWITCHING ==========
+        function switchTab(tabName) {
+            document.getElementById('servicesTab').style.display = tabName === 'services' ? 'block' : 'none';
+            document.getElementById('patientsTab').style.display = tabName === 'patients' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
         }
-    };
 
-    document.getElementById('cancelPatientsBtn').onclick = () => {
-        patientsData = [];
-        patientsPreviewRows = [];
-        document.getElementById('patientsPreviewContainer').style.display = 'none';
-        patientsFileInput.value = '';
-        showMessage('patientsMessage', 'Cancelled', 'info');
-    };
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
 
-    // ========== TAB SWITCHING ==========
-    function switchTab(tabName) {
-        document.getElementById('servicesTab').style.display = tabName === 'services' ? 'block' : 'none';
-        document.getElementById('patientsTab').style.display = tabName === 'patients' ? 'block' : 'none';
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
-        // reset previews when switching?
-    }
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    // ========== INIT FIREBASE ==========
-    function waitForFirebase() {
-        if (window.db) {
-            db = window.db;
-            updateCounters();
-        } else {
-            setTimeout(waitForFirebase, 500);
+        // ========== FIREBASE INIT ==========
+        function waitForFirebase() {
+            if (window.db) {
+                db = window.db;
+                updateCounters();
+            } else {
+                setTimeout(waitForFirebase, 500);
+            }
         }
-    }
-    waitForFirebase();
+        waitForFirebase();
+    })();
 </script>
 </body>
 </html>

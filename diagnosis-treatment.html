@@ -49,4 +49,193 @@
         .form-group textarea, .form-group input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 14px; font-size: 13px; resize: vertical; }
         .form-group textarea { min-height: 80px; }
         
-        .btn-primary { background: #0
+        .btn-primary { background: #0f5c7a; color: white; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn-primary:hover { background: #1a6f8f; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 10px; }
+        .btn-danger:hover { background: #c0392b; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: #8ba0b0; }
+        .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+        
+        @media (max-width: 768px) {
+            .patient-badge { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo"><h2>💊 Diagnosis & Treatment</h2></div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='doctor-portal.html'">← Back to Portal</button>
+        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-title">💊 Diagnosis & Treatment History</div>
+        
+        <div id="patientBadge" class="patient-badge">
+            <div><span class="name" id="patientName">Loading...</span> <span class="id" id="patientId"></span></div>
+            <div><span id="patientPhone"></span></div>
+        </div>
+        
+        <div id="diagnosisList"><div class="empty-state"><i class="fas fa-stethoscope"></i><p>No diagnosis records found</p></div></div>
+    </div>
+    
+    <div class="card">
+        <div class="card-title">➕ Add New Diagnosis & Treatment</div>
+        <div class="form-group">
+            <label>Diagnosis *</label>
+            <textarea id="diagnosisNote" placeholder="Enter diagnosis, symptoms, observations, clinical findings..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Treatment Plan</label>
+            <textarea id="treatmentPlan" placeholder="Enter treatment plan, procedures, follow-up instructions..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Prescribed Medicines</label>
+            <textarea id="prescribedMeds" placeholder="List medicines with dosage and frequency..."></textarea>
+        </div>
+        <button class="btn-primary" id="saveDiagnosisBtn"><i class="fas fa-save"></i> Save Diagnosis & Treatment</button>
+    </div>
+</div>
+
+<script>
+    // ========== AUTH & SESSION ==========
+    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+    if (!doctorSession) { window.location.href = 'login.html'; return; }
+    let currentDoctor = null;
+    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
+    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
+
+    let firestoreDB = null;
+    let selectedPatient = null;
+    let diagnosisList = [];
+
+    // ========== HELPER FUNCTIONS ==========
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+    // ========== LOAD SELECTED PATIENT ==========
+    function loadSelectedPatient() {
+        const patientData = sessionStorage.getItem('selectedPatient');
+        if (patientData) {
+            try {
+                selectedPatient = JSON.parse(patientData);
+                document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
+                document.getElementById('patientId').textContent = `(${selectedPatient.id || 'N/A'})`;
+                document.getElementById('patientPhone').textContent = `📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}`;
+                loadDiagnosisHistory();
+            } catch(e) { console.error(e); }
+        }
+    }
+
+    // ========== LOAD DIAGNOSIS HISTORY ==========
+    async function loadDiagnosisHistory() {
+        if (!selectedPatient || !firestoreDB) return;
+        try {
+            const snapshot = await firestoreDB.collection("diagnosis")
+                .where("patientId", "==", selectedPatient.id)
+                .orderBy("createdAt", "desc")
+                .get();
+            
+            diagnosisList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderDiagnosisList();
+        } catch (error) {
+            console.error(error);
+            try {
+                const snapshot = await firestoreDB.collection("diagnosis")
+                    .where("patientId", "==", selectedPatient.id)
+                    .get();
+                diagnosisList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                diagnosisList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                renderDiagnosisList();
+            } catch(e2) { console.error(e2); }
+        }
+    }
+
+    function renderDiagnosisList() {
+        const container = document.getElementById('diagnosisList');
+        if (!diagnosisList.length) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-stethoscope"></i><p>No diagnosis records found</p></div>`;
+            return;
+        }
+        container.innerHTML = diagnosisList.map(d => `
+            <div class="diagnosis-item">
+                <div class="diagnosis-date">📅 ${new Date(d.createdAt).toLocaleString()}</div>
+                <div class="diagnosis-text"><strong>Diagnosis:</strong> ${escapeHtml(d.diagnosis)}</div>
+                ${d.treatment ? `<div class="diagnosis-treatment"><strong>Treatment:</strong> ${escapeHtml(d.treatment)}</div>` : ''}
+                ${d.medicines ? `<div class="diagnosis-medicines"><strong>Medicines:</strong> ${escapeHtml(d.medicines)}</div>` : ''}
+                <div class="diagnosis-doctor">👨‍⚕️ Dr. ${escapeHtml(d.doctorName || 'Unknown')}</div>
+                <button class="btn-danger" onclick="deleteDiagnosis('${d.id}')" style="margin-top:8px;">🗑️ Delete</button>
+            </div>
+        `).join('');
+    }
+
+    // ========== DELETE DIAGNOSIS ==========
+    async function deleteDiagnosis(id) {
+        if (!confirm('Delete this diagnosis record?')) return;
+        if (!firestoreDB) return;
+        try {
+            await firestoreDB.collection("diagnosis").doc(id).delete();
+            await loadDiagnosisHistory();
+            alert('Record deleted.');
+        } catch (error) {
+            console.error(error);
+            alert('Error deleting record: ' + error.message);
+        }
+    }
+
+    // ========== SAVE DIAGNOSIS ==========
+    async function saveDiagnosis() {
+        if (!selectedPatient) { alert("No patient selected."); return; }
+        if (!firestoreDB) { alert("Firebase not ready."); return; }
+        
+        const diagnosis = document.getElementById('diagnosisNote').value.trim();
+        if (!diagnosis) { alert("Please enter a diagnosis."); return; }
+        
+        try {
+            await firestoreDB.collection("diagnosis").add({
+                patientId: selectedPatient.id,
+                patientName: selectedPatient.name,
+                doctorId: currentDoctor.id,
+                doctorName: currentDoctor.name,
+                diagnosis: diagnosis,
+                treatment: document.getElementById('treatmentPlan').value.trim(),
+                medicines: document.getElementById('prescribedMeds').value.trim(),
+                createdAt: new Date().toISOString()
+            });
+            document.getElementById('diagnosisNote').value = '';
+            document.getElementById('treatmentPlan').value = '';
+            document.getElementById('prescribedMeds').value = '';
+            await loadDiagnosisHistory();
+            alert('Diagnosis saved successfully!');
+        } catch (error) {
+            console.error(error);
+            alert('Error saving: ' + error.message);
+        }
+    }
+
+    // ========== LOGOUT ==========
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        sessionStorage.removeItem('doctorSession');
+        localStorage.removeItem('currentDoctor');
+        window.location.href = 'login.html';
+    });
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('saveDiagnosisBtn').addEventListener('click', saveDiagnosis);
+
+    // ========== INIT ==========
+    function init() {
+        if (window.db) {
+            firestoreDB = window.db;
+            loadSelectedPatient();
+        } else {
+            setTimeout(init, 500);
+        }
+    }
+    init();
+</script>
+</body>
+</html>

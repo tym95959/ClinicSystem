@@ -168,7 +168,28 @@
             var email = selectedPatient.email || 'N/A';
             var address = selectedPatient.address || 'N/A';
 
-            container.innerHTML = '<div class="patient-info-card"><div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div><div class="patient-meta"><div class="patient-meta-item"><label>Patient ID</label><div class="value">' + escapeHtml(selectedPatient.id || 'N/A') + '</div></div><div class="patient-meta-item"><label>Date of Birth</label><div class="value">' + escapeHtml(dob) + ' (' + age + ' yrs)</div></div><div class="patient-meta-item"><label>Phone</label><div class="value">' + escapeHtml(phone) + '</div></div><div class="patient-meta-item"><label>Email</label><div class="value">' + escapeHtml(email) + '</div></div><div class="patient-meta-item"><label>Nationality</label><div class="value">' + escapeHtml(nationality) + '</div></div><div class="patient-meta-item"><label>Aasandha Eligible</label><div class="value">' + (selectedPatient.isCitizen ? '✅ Yes' : '❌ No') + '</div></div><div class="patient-meta-item"><label>Primary Insurance</label><div class="value">' + escapeHtml(primaryIns) + '</div></div><div class="patient-meta-item"><label>Address</label><div class="value">' + escapeHtml(address) + '</div></div><div class="patient-meta-item"><label>ID/Passport</label><div class="value">' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || 'N/A') + '</div></div></div><div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;"><button class="btn-edit" onclick="window.openEditModal()"><i class="fas fa-edit"></i> Edit Patient</button><button class="btn-primary" onclick="window.location.href='medical-history.html'"><i class="fas fa-notes-medical"></i> Medical History</button><button class="btn-primary" onclick="window.location.href='diagnosis-treatment.html'"><i class="fas fa-stethoscope"></i> Diagnosis & Treatment</button><button class="btn-primary" onclick="window.location.href='prescriptions.html'"><i class="fas fa-prescription"></i> Prescriptions</button><button class="btn-primary" onclick="window.location.href='medical-certificate.html'"><i class="fas fa-file-medical-alt"></i> Medical Certificate</button></div></div>';
+            container.innerHTML = 
+                '<div class="patient-info-card">' +
+                    '<div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div>' +
+                    '<div class="patient-meta">' +
+                        '<div class="patient-meta-item"><label>Patient ID</label><div class="value">' + escapeHtml(selectedPatient.id || 'N/A') + '</div></div>' +
+                        '<div class="patient-meta-item"><label>Date of Birth</label><div class="value">' + escapeHtml(dob) + ' (' + age + ' yrs)</div></div>' +
+                        '<div class="patient-meta-item"><label>Phone</label><div class="value">' + escapeHtml(phone) + '</div></div>' +
+                        '<div class="patient-meta-item"><label>Email</label><div class="value">' + escapeHtml(email) + '</div></div>' +
+                        '<div class="patient-meta-item"><label>Nationality</label><div class="value">' + escapeHtml(nationality) + '</div></div>' +
+                        '<div class="patient-meta-item"><label>Aasandha Eligible</label><div class="value">' + (selectedPatient.isCitizen ? '✅ Yes' : '❌ No') + '</div></div>' +
+                        '<div class="patient-meta-item"><label>Primary Insurance</label><div class="value">' + escapeHtml(primaryIns) + '</div></div>' +
+                        '<div class="patient-meta-item"><label>Address</label><div class="value">' + escapeHtml(address) + '</div></div>' +
+                        '<div class="patient-meta-item"><label>ID/Passport</label><div class="value">' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || 'N/A') + '</div></div>' +
+                    '</div>' +
+                    '<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
+                        '<button class="btn-edit" onclick="window.openEditModal()"><i class="fas fa-edit"></i> Edit Patient</button>' +
+                        '<button class="btn-primary" onclick="window.location.href=\'medical-history.html\'"><i class="fas fa-notes-medical"></i> Medical History</button>' +
+                        '<button class="btn-primary" onclick="window.location.href=\'diagnosis-treatment.html\'"><i class="fas fa-stethoscope"></i> Diagnosis & Treatment</button>' +
+                        '<button class="btn-primary" onclick="window.location.href=\'prescriptions.html\'"><i class="fas fa-prescription"></i> Prescriptions</button>' +
+                        '<button class="btn-primary" onclick="window.location.href=\'medical-certificate.html\'"><i class="fas fa-file-medical-alt"></i> Medical Certificate</button>' +
+                    '</div>' +
+                '</div>';
         }
 
         // ========== EDIT MODAL ==========
@@ -179,7 +200,16 @@
             var fieldsDiv = document.getElementById('editModalFields');
             
             title.innerText = 'Edit Patient Information';
-            fieldsDiv.innerHTML = '<div class="form-group"><label>Full Name *</label><input id="editName" value="' + escapeHtml(selectedPatient.name) + '"></div><div class="form-group"><label>Phone</label><input id="editPhone" value="' + escapeHtml(selectedPatient.phone || selectedPatient.contactNo || '') + '"></div><div class="form-group"><label>Email</label><input id="editEmail" type="email" value="' + escapeHtml(selectedPatient.email || '') + '"></div><div class="form-group"><label>Date of Birth</label><input id="editDob" type="date" value="' + escapeHtml(selectedPatient.dob || '') + '"></div><div class="form-group"><label>Nationality</label><input id="editNationality" value="' + escapeHtml(selectedPatient.nationality || '') + '"></div><div class="form-group"><label>ID/Passport Number</label><input id="editIdNumber" value="' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || '') + '"></div><div class="form-group"><label>Address</label><input id="editAddress" value="' + escapeHtml(selectedPatient.address || '') + '"></div><div class="form-group"><label>Aasandha Eligible (Citizen)</label><select id="editIsCitizen"><option value="true"' + (selectedPatient.isCitizen ? ' selected' : '') + '>Yes</option><option value="false"' + (!selectedPatient.isCitizen ? ' selected' : '') + '>No</option></select></div><div class="form-group"><label>Primary Insurance</label><input id="editInsurance" value="' + escapeHtml(selectedPatient.insurance?.primaryName || '') + '"></div>';
+            fieldsDiv.innerHTML = 
+                '<div class="form-group"><label>Full Name *</label><input id="editName" value="' + escapeHtml(selectedPatient.name) + '"></div>' +
+                '<div class="form-group"><label>Phone</label><input id="editPhone" value="' + escapeHtml(selectedPatient.phone || selectedPatient.contactNo || '') + '"></div>' +
+                '<div class="form-group"><label>Email</label><input id="editEmail" type="email" value="' + escapeHtml(selectedPatient.email || '') + '"></div>' +
+                '<div class="form-group"><label>Date of Birth</label><input id="editDob" type="date" value="' + escapeHtml(selectedPatient.dob || '') + '"></div>' +
+                '<div class="form-group"><label>Nationality</label><input id="editNationality" value="' + escapeHtml(selectedPatient.nationality || '') + '"></div>' +
+                '<div class="form-group"><label>ID/Passport Number</label><input id="editIdNumber" value="' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || '') + '"></div>' +
+                '<div class="form-group"><label>Address</label><input id="editAddress" value="' + escapeHtml(selectedPatient.address || '') + '"></div>' +
+                '<div class="form-group"><label>Aasandha Eligible (Citizen)</label><select id="editIsCitizen"><option value="true"' + (selectedPatient.isCitizen ? ' selected' : '') + '>Yes</option><option value="false"' + (!selectedPatient.isCitizen ? ' selected' : '') + '>No</option></select></div>' +
+                '<div class="form-group"><label>Primary Insurance</label><input id="editInsurance" value="' + escapeHtml(selectedPatient.insurance?.primaryName || '') + '"></div>';
             modal.style.display = 'flex';
         };
 

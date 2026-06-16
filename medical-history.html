@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Medical History - Hope Dental</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #eef2f7; min-height: 100vh; }
+        
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .back-btn { background: #1e4a6e; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; }
+        .back-btn:hover { background: #2a5f89; }
+        .logout-btn { background: #c63d2f; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; }
+        .logout-btn:hover { background: #a52a1f; }
+        
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 20px; border: 1px solid #e2eaf0; padding: 24px; margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #0a2f44; margin-bottom: 20px; border-left: 4px solid #0f5c7a; padding-left: 12px; }
+        
+        .patient-badge { background: #f0f6fc; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .patient-badge .name { font-weight: 700; font-size: 16px; color: #0a2f44; }
+        .patient-badge .id { font-size: 12px; color: #5f7f9a; }
+        
+        .history-item { background: #f8fbfe; border-radius: 12px; padding: 14px; margin-bottom: 12px; border-left: 3px solid #0f5c7a; }
+        .history-date { font-size: 11px; color: #8ba0b0; margin-bottom: 6px; }
+        .history-note { font-size: 14px; color: #1f5e7e; }
+        .history-doctor { font-size: 11px; color: #5f7f9a; margin-top: 6px; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #1f5e7e; margin-bottom: 5px; }
+        .form-group textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 14px; font-size: 13px; resize: vertical; min-height: 80px; }
+        
+        .btn-primary { background: #0f5c7a; color: white; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn-primary:hover { background: #1a6f8f; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 6px 14px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 11px; }
+        .btn-danger:hover { background: #c0392b; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: #8ba0b0; }
+        .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+        
+        .delete-btn { background: #e74c3c; color: white; border: none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 10px; }
+        .delete-btn:hover { background: #c0392b; }
+        
+        @media (max-width: 768px) {
+            .patient-badge { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo"><h2>📋 Medical History</h2></div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='doctor-portal.html'">← Back to Portal</button>
+        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-title">📋 Medical History</div>
+        
+        <div id="patientBadge" class="patient-badge">
+            <div><span class="name" id="patientName">Loading...</span> <span class="id" id="patientId"></span></div>
+            <div><span id="patientPhone"></span></div>
+        </div>
+        
+        <div id="historyList"><div class="empty-state"><i class="fas fa-notes-medical"></i><p>No medical history records found</p></div></div>
+    </div>
+    
+    <div class="card">
+        <div class="card-title">➕ Add Medical History Note</div>
+        <div class="form-group">
+            <label>Medical History Note</label>
+            <textarea id="medicalNote" placeholder="Enter past medical history, allergies, chronic conditions, surgeries, medications..."></textarea>
+        </div>
+        <button class="btn-primary" id="saveMedicalBtn"><i class="fas fa-save"></i> Save Medical History</button>
+    </div>
+</div>
+
+<script>
+    // ========== AUTH & SESSION ==========
+    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+    if (!doctorSession) { window.location.href = 'login.html'; return; }
+    let currentDoctor = null;
+    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
+    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
+
+    let firestoreDB = null;
+    let selectedPatient = null;
+    let medicalHistoryList = [];
+
+    // ========== HELPER FUNCTIONS ==========
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+    // ========== LOAD SELECTED PATIENT ==========
+    function loadSelectedPatient() {
+        const patientData = sessionStorage.getItem('selectedPatient');
+        if (patientData) {
+            try {
+                selectedPatient = JSON.parse(patientData);
+                document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
+                document.getElementById('patientId').textContent = `(${selectedPatient.id || 'N/A'})`;
+                document.getElementById('patientPhone').textContent = `📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}`;
+                loadMedicalHistory();
+            } catch(e) { console.error(e); }
+        }
+    }
+
+    // ========== LOAD MEDICAL HISTORY ==========
+    async function loadMedicalHistory() {
+        if (!selectedPatient || !firestoreDB) return;
+        try {
+            const snapshot = await firestoreDB.collection("medicalHistory")
+                .where("patientId", "==", selectedPatient.id)
+                .orderBy("createdAt", "desc")
+                .get();
+            
+            medicalHistoryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderHistoryList();
+        } catch (error) {
+            console.error(error);
+            // Fallback without orderBy if index not created
+            try {
+                const snapshot = await firestoreDB.collection("medicalHistory")
+                    .where("patientId", "==", selectedPatient.id)
+                    .get();
+                medicalHistoryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                medicalHistoryList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                renderHistoryList();
+            } catch(e2) { console.error(e2); }
+        }
+    }
+
+    function renderHistoryList() {
+        const container = document.getElementById('historyList');
+        if (!medicalHistoryList.length) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-notes-medical"></i><p>No medical history records found</p></div>`;
+            return;
+        }
+        container.innerHTML = medicalHistoryList.map(h => `
+            <div class="history-item">
+                <div class="history-date">📅 ${new Date(h.createdAt).toLocaleString()}</div>
+                <div class="history-note">📝 ${escapeHtml(h.note)}</div>
+                <div class="history-doctor">👨‍⚕️ Dr. ${escapeHtml(h.doctorName || 'Unknown')}</div>
+                <button class="delete-btn" onclick="deleteHistory('${h.id}')" style="margin-top:8px;">🗑️ Delete</button>
+            </div>
+        `).join('');
+    }
+
+    // ========== DELETE HISTORY ==========
+    async function deleteHistory(id) {
+        if (!confirm('Delete this medical history record?')) return;
+        if (!firestoreDB) return;
+        try {
+            await firestoreDB.collection("medicalHistory").doc(id).delete();
+            await loadMedicalHistory();
+            alert('Record deleted.');
+        } catch (error) {
+            console.error(error);
+            alert('Error deleting record: ' + error.message);
+        }
+    }
+
+    // ========== SAVE MEDICAL HISTORY ==========
+    async function saveMedicalHistory() {
+        if (!selectedPatient) { alert("No patient selected."); return; }
+        if (!firestoreDB) { alert("Firebase not ready."); return; }
+        
+        const note = document.getElementById('medicalNote').value.trim();
+        if (!note) { alert("Please enter a medical note."); return; }
+        
+        try {
+            await firestoreDB.collection("medicalHistory").add({
+                patientId: selectedPatient.id,
+                patientName: selectedPatient.name,
+                doctorId: currentDoctor.id,
+                doctorName: currentDoctor.name,
+                note: note,
+                createdAt: new Date().toISOString()
+            });
+            document.getElementById('medicalNote').value = '';
+            await loadMedicalHistory();
+            alert('Medical history saved successfully!');
+        } catch (error) {
+            console.error(error);
+            alert('Error saving: ' + error.message);
+        }
+    }
+
+    // ========== LOGOUT ==========
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        sessionStorage.removeItem('doctorSession');
+        localStorage.removeItem('currentDoctor');
+        window.location.href = 'login.html';
+    });
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('saveMedicalBtn').addEventListener('click', saveMedicalHistory);
+
+    // ========== INIT ==========
+    function init() {
+        if (window.db) {
+            firestoreDB = window.db;
+            loadSelectedPatient();
+        } else {
+            setTimeout(init, 500);
+        }
+    }
+    init();
+</script>
+</body>
+</html>

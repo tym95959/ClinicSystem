@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <meta name="theme-color" content="#20b2aa">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hope Dental">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2320b2aa'/%3E%3Ctext x='50' y='67' font-size='50' text-anchor='middle' fill='white'%3E🦷%3C/text%3E%3C/svg%3E">
     <title>Hope Dental Clinic | Secure Login</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <!-- Device Config (separate file for master password) -->
+    <!-- Device Config -->
     <script src="device-config.js"></script>
     <style>
         * {
@@ -255,7 +261,7 @@
         }
 
         .hidden-panel {
-            display: none;
+            display: none !important;
         }
 
         .secure-badge {
@@ -265,6 +271,7 @@
             margin-top: 28px;
             padding-top: 20px;
             border-top: 1px solid #d4efeb;
+            flex-wrap: wrap;
         }
 
         .secure-badge span {
@@ -333,6 +340,53 @@
             border: 1px solid #c0e0da;
         }
 
+        /* PWA Install Button */
+        .install-container {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #d4efeb;
+        }
+        .big-install-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        .big-install-btn:active {
+            transform: scale(0.98);
+        }
+        .install-instructions {
+            background: #e7f3ff;
+            padding: 12px;
+            border-radius: 16px;
+            margin-top: 12px;
+            font-size: 12px;
+            text-align: center;
+            color: #004085;
+            display: none;
+        }
+        .install-instructions.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes pulse-install {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+        }
+
         /* Responsive adjustments */
         @media (max-width: 550px) {
             .brand {
@@ -363,6 +417,14 @@
             .device-panel, .login-form-container {
                 padding: 24px 20px;
             }
+            
+            .secure-badge {
+                gap: 12px;
+            }
+            
+            .secure-badge span {
+                font-size: 10px;
+            }
         }
 
         @media (max-width: 450px) {
@@ -376,6 +438,11 @@
             
             .brand-content h1 {
                 font-size: 18px;
+            }
+            
+            .big-install-btn {
+                padding: 12px;
+                font-size: 14px;
             }
         }
     </style>
@@ -406,6 +473,19 @@
             💡 <strong>Cache-Safe Authorization</strong><br>
             This device needs to be authorized once per year.<br>
             Survives cache clearing, browser updates, and system reboots.
+        </div>
+        
+        <!-- PWA Install Button on Device Panel -->
+        <div class="install-container" id="deviceInstallContainer">
+            <button class="big-install-btn" id="deviceInstallBtn">
+                📲 Install App (Free)
+            </button>
+            <div class="install-instructions" id="deviceInstallInstructions">
+                <strong>📱 How to install on your device:</strong><br>
+                • <strong>Android/Chrome:</strong> Click the button above<br>
+                • <strong>iPhone/iPad:</strong> Tap Share → "Add to Home Screen"<br>
+                • <strong>After install:</strong> App opens in its own window!
+            </div>
         </div>
     </div>
     <div class="footer-note">
@@ -453,6 +533,19 @@
             <button type="button" id="resetDeviceBtn">⟳ Reset Device Authorization</button>
         </div>
         <div id="deviceInfoDisplay" class="device-info-display" style="display: none;"></div>
+        
+        <!-- PWA Install Button on Login Panel -->
+        <div class="install-container" id="loginInstallContainer">
+            <button class="big-install-btn" id="loginInstallBtn">
+                📲 Install App (Free)
+            </button>
+            <div class="install-instructions" id="loginInstallInstructions">
+                <strong>📱 How to install on your device:</strong><br>
+                • <strong>Android/Chrome:</strong> Click the button above<br>
+                • <strong>iPhone/iPad:</strong> Tap Share → "Add to Home Screen"<br>
+                • <strong>After install:</strong> App opens in its own window!
+            </div>
+        </div>
     </div>
     <div class="footer-note">
         © 2025 Hope Dental Clinic · All rights reserved
@@ -462,6 +555,99 @@
 <script src="firebase-config.js"></script>
 
 <script>
+    // ===================================================================
+    // PWA INSTALLATION - Same for both panels
+    // ===================================================================
+    let deferredPrompt;
+    
+    // Handle install on device panel
+    const deviceInstallBtn = document.getElementById('deviceInstallBtn');
+    const deviceInstallInstructions = document.getElementById('deviceInstallInstructions');
+    
+    if (deviceInstallBtn) {
+        deviceInstallBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    deviceInstallBtn.textContent = '✅ App Installed!';
+                    deviceInstallBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    setTimeout(() => {
+                        deviceInstallBtn.textContent = '📲 App Installed ✓';
+                    }, 3000);
+                }
+                deferredPrompt = null;
+            } else {
+                deviceInstallInstructions.classList.toggle('show');
+                const originalText = deviceInstallBtn.innerHTML;
+                deviceInstallBtn.innerHTML = '📖 Check instructions ↑';
+                setTimeout(() => {
+                    deviceInstallBtn.innerHTML = originalText;
+                }, 3000);
+            }
+        });
+    }
+    
+    // Handle install on login panel
+    const loginInstallBtn = document.getElementById('loginInstallBtn');
+    const loginInstallInstructions = document.getElementById('loginInstallInstructions');
+    
+    if (loginInstallBtn) {
+        loginInstallBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    loginInstallBtn.textContent = '✅ App Installed!';
+                    loginInstallBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    setTimeout(() => {
+                        loginInstallBtn.textContent = '📲 App Installed ✓';
+                    }, 3000);
+                }
+                deferredPrompt = null;
+            } else {
+                loginInstallInstructions.classList.toggle('show');
+                const originalText = loginInstallBtn.innerHTML;
+                loginInstallBtn.innerHTML = '📖 Check instructions ↑';
+                setTimeout(() => {
+                    loginInstallBtn.innerHTML = originalText;
+                }, 3000);
+            }
+        });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('Install prompt available');
+        
+        // Update both install buttons
+        [deviceInstallBtn, loginInstallBtn].forEach(btn => {
+            if (btn) {
+                btn.innerHTML = '📲 Install Now (Click to Install)';
+                btn.style.background = 'linear-gradient(135deg, #e67e22 0%, #f39c12 100%)';
+                btn.style.animation = 'pulse-install 1s infinite';
+            }
+        });
+    });
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered:', reg))
+                .catch(err => console.log('Service Worker error:', err));
+        });
+    }
+
+    // Check if already installed - hide install buttons
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        document.querySelectorAll('.install-container').forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        console.log('Running as installed app');
+    }
+
     // ===================================================================
     // DEVICE AUTHORIZATION MODULE
     // ===================================================================
@@ -567,7 +753,7 @@
     }
     
     // ===================================================================
-    // ORIGINAL LOGIN FUNCTIONS (from your code)
+    // ORIGINAL LOGIN FUNCTIONS
     // ===================================================================
     let firestoreDB = null;
     let realtimeDB = null;
@@ -640,7 +826,7 @@
         }
     }
 
-    // Handle login (original)
+    // Handle login
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {

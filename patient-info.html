@@ -57,6 +57,16 @@
         .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 14px; font-size: 13px; }
         .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
         
+        .id-badge { 
+            background: #0f5c7a; 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: 600;
+            display: inline-block;
+        }
+        
         @media (max-width: 768px) {
             .patient-meta { grid-template-columns: 1fr; }
         }
@@ -140,6 +150,20 @@
             return age; 
         }
 
+        // ========== GET ID/PASSPORT DISPLAY ==========
+        function getDisplayId(patient) {
+            if (patient.idNumber && patient.idNumber.trim() !== '') {
+                return patient.idNumber;
+            }
+            if (patient.passportNumber && patient.passportNumber.trim() !== '') {
+                return patient.passportNumber;
+            }
+            if (patient.nationalId && patient.nationalId.trim() !== '') {
+                return patient.nationalId;
+            }
+            return 'N/A';
+        }
+
         // ========== LOAD SELECTED PATIENT ==========
         function loadSelectedPatient() {
             var patientData = sessionStorage.getItem('selectedPatient');
@@ -169,12 +193,13 @@
             var phone = selectedPatient.phone || selectedPatient.contactNo || 'N/A';
             var email = selectedPatient.email || 'N/A';
             var address = selectedPatient.address || 'N/A';
+            var displayId = getDisplayId(selectedPatient);
 
             container.innerHTML = 
                 '<div class="patient-info-card">' +
-                    '<div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div>' +
+                    '<div class="patient-name">' + escapeHtml(selectedPatient.name) + ' <span class="id-badge">🪪 ' + escapeHtml(displayId) + '</span></div>' +
                     '<div class="patient-meta">' +
-                        '<div class="patient-meta-item"><label>Patient ID</label><div class="value">' + escapeHtml(selectedPatient.id || 'N/A') + '</div></div>' +
+                        '<div class="patient-meta-item"><label>ID / Passport</label><div class="value">' + escapeHtml(displayId) + '</div></div>' +
                         '<div class="patient-meta-item"><label>Date of Birth</label><div class="value">' + escapeHtml(dob) + ' (' + age + ' yrs)</div></div>' +
                         '<div class="patient-meta-item"><label>Phone</label><div class="value">' + escapeHtml(phone) + '</div></div>' +
                         '<div class="patient-meta-item"><label>Email</label><div class="value">' + escapeHtml(email) + '</div></div>' +
@@ -182,7 +207,6 @@
                         '<div class="patient-meta-item"><label>Aasandha Eligible</label><div class="value">' + (selectedPatient.isCitizen ? '✅ Yes' : '❌ No') + '</div></div>' +
                         '<div class="patient-meta-item"><label>Primary Insurance</label><div class="value">' + escapeHtml(primaryIns) + '</div></div>' +
                         '<div class="patient-meta-item"><label>Address</label><div class="value">' + escapeHtml(address) + '</div></div>' +
-                        '<div class="patient-meta-item"><label>ID/Passport</label><div class="value">' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || 'N/A') + '</div></div>' +
                     '</div>' +
                     '<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
                         '<button class="btn-edit" onclick="openEditModal()"><i class="fas fa-edit"></i> Edit Patient</button>' +
@@ -205,6 +229,8 @@
             var title = document.getElementById('editModalTitle');
             var fieldsDiv = document.getElementById('editModalFields');
             
+            var displayId = getDisplayId(selectedPatient);
+            
             title.innerText = 'Edit Patient Information';
             fieldsDiv.innerHTML = 
                 '<div class="form-group"><label>Full Name *</label><input id="editName" value="' + escapeHtml(selectedPatient.name) + '"></div>' +
@@ -212,7 +238,7 @@
                 '<div class="form-group"><label>Email</label><input id="editEmail" type="email" value="' + escapeHtml(selectedPatient.email || '') + '"></div>' +
                 '<div class="form-group"><label>Date of Birth</label><input id="editDob" type="date" value="' + escapeHtml(selectedPatient.dob || '') + '"></div>' +
                 '<div class="form-group"><label>Nationality</label><input id="editNationality" value="' + escapeHtml(selectedPatient.nationality || '') + '"></div>' +
-                '<div class="form-group"><label>ID/Passport Number</label><input id="editIdNumber" value="' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || '') + '"></div>' +
+                '<div class="form-group"><label>ID / Passport Number</label><input id="editIdNumber" value="' + escapeHtml(displayId) + '" placeholder="Enter ID or Passport number"></div>' +
                 '<div class="form-group"><label>Address</label><input id="editAddress" value="' + escapeHtml(selectedPatient.address || '') + '"></div>' +
                 '<div class="form-group"><label>Aasandha Eligible (Citizen)</label><select id="editIsCitizen"><option value="true"' + (selectedPatient.isCitizen ? ' selected' : '') + '>Yes</option><option value="false"' + (!selectedPatient.isCitizen ? ' selected' : '') + '>No</option></select></div>' +
                 '<div class="form-group"><label>Primary Insurance</label><input id="editInsurance" value="' + escapeHtml((selectedPatient.insurance && selectedPatient.insurance.primaryName) || '') + '"></div>';
@@ -226,13 +252,15 @@
                 return;
             }
             
+            var idNumber = document.getElementById('editIdNumber').value.trim();
+            
             var updatedData = {
                 name: document.getElementById('editName').value.trim(),
                 phone: document.getElementById('editPhone').value.trim(),
                 email: document.getElementById('editEmail').value.trim(),
                 dob: document.getElementById('editDob').value,
                 nationality: document.getElementById('editNationality').value.trim(),
-                idNumber: document.getElementById('editIdNumber').value.trim(),
+                idNumber: idNumber,
                 address: document.getElementById('editAddress').value.trim(),
                 isCitizen: document.getElementById('editIsCitizen').value === 'true',
                 updatedAt: new Date().toISOString()

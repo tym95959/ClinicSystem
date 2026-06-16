@@ -224,6 +224,25 @@
             setTimeout(() => { div.innerText = ''; div.className = 'message'; }, 4000);
         }
 
+        // ========== HELPER: Get Patient ID/Passport Value ==========
+        function getPatientDisplayId(patient) {
+            if (!patient) return 'N/A';
+            // Check each field in priority order
+            if (patient.idNumber && patient.idNumber.trim() !== '') {
+                return patient.idNumber;
+            }
+            if (patient.passportNumber && patient.passportNumber.trim() !== '') {
+                return patient.passportNumber;
+            }
+            if (patient.nationalId && patient.nationalId.trim() !== '') {
+                return patient.nationalId;
+            }
+            if (patient.id && patient.id.trim() !== '') {
+                return patient.id;
+            }
+            return 'N/A';
+        }
+
         // ========== LOAD DOCTORS ==========
         async function loadDoctors() {
             if (!window.db) return;
@@ -270,6 +289,7 @@
             if (!window.db) return;
             const snap = await window.db.collection("patients").get();
             patientsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log(`✅ Loaded ${patientsList.length} patients`);
         }
         async function loadServices() {
             if (!window.db) return;
@@ -440,11 +460,16 @@
             const doctor = doctorsList.find(d => d.id === doctorId);
             const service = servicesList.find(s => s.id === serviceId);
             try {
+                // Find the patient to get their ID/Passport value
+                const patient = patientsList.find(p => p.id === patientId || p.idNumber === patientId || p.passportNumber === patientId);
+                const displayId = patient ? getPatientDisplayId(patient) : patientId;
+                
                 await window.db.collection("appointments").add({
                     doctorId, doctorName: doctor.name || doctor.username || 'Doctor', doctorSpeciality: doctor.speciality || '',
                     date, startTime, durationMinutes: duration,
                     time: formatTimeForDisplay(startTime),
-                    patientId, patientName, contact: contact,
+                    patientId: displayId, // Store the ID/Passport value
+                    patientName, contact: contact,
                     serviceId: serviceId || null, serviceName: service?.name || null,
                     status: 'Scheduled', notes, createdBy: currentUser.username,
                     createdAt: new Date().toISOString()
@@ -512,6 +537,7 @@
                 else statusClass = 'status-completed';
                 const timeDisplay = apt.startTime ? `${formatTimeForDisplay(apt.startTime)} (${apt.durationMinutes} min)` : apt.time;
                 const isCancelled = apt.status === 'Cancelled';
+                // Use the stored patientId (which is the ID/Passport value)
                 const displayPatientId = apt.patientId || 'N/A';
                 return `<tr>
                     <td>${apt.date}</td>
@@ -535,7 +561,6 @@
             const q = query.toLowerCase();
             return patientsList.filter(p => 
                 (p.name && p.name.toLowerCase().includes(q)) ||
-                (p.id && p.id.toLowerCase().includes(q)) ||
                 (p.idNumber && p.idNumber.toLowerCase().includes(q)) ||
                 (p.passportNumber && p.passportNumber.toLowerCase().includes(q)) ||
                 (p.nationalId && p.nationalId.toLowerCase().includes(q)) ||
@@ -551,7 +576,7 @@
             }
             div.innerHTML = results.map(p => {
                 const displayContact = p.contactNo || p.phone || 'N/A';
-                const displayId = p.idNumber || p.passportNumber || p.nationalId || p.id || 'N/A';
+                const displayId = getPatientDisplayId(p);
                 return `<div class="patient-search-result" onclick="selectPatient('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${displayContact}')">
                     <strong>${p.name}</strong> <span class="id-badge">🪪 ${displayId}</span><br>
                     <small>📞 ${displayContact}</small>
@@ -559,25 +584,30 @@
             }).join('');
         }
         window.selectPatient = function(id, name, phone) {
-            document.getElementById('patientId').value = id;
+            // Find the patient to get their actual ID/Passport value
+            const patient = patientsList.find(p => p.id === id);
+            const displayId = patient ? getPatientDisplayId(patient) : id;
+            
+            document.getElementById('patientId').value = displayId;
             document.getElementById('patientName').value = name;
             document.getElementById('contactNo').value = phone;
-            document.getElementById('patientSearch').value = `${name} (ID: ${id})`;
+            document.getElementById('patientSearch').value = `${name} (🪪 ${displayId})`;
             document.getElementById('patientSearchResults').innerHTML = '';
         };
 
-        // ========== ADD PATIENT / SERVICE ==========
+        // ========== ADD PATIENT ==========
         async function addPatient() {
             const name = document.getElementById('newPatientName').value.trim();
             const idNumber = document.getElementById('newPatientId').value.trim();
             const phone = document.getElementById('newPatientPhone').value.trim();
             if (!name || !idNumber || !phone) { alert("Name, ID/Passport, and phone required"); return; }
-            const newId = idNumber; // Use the ID/Passport as the patient ID
+            
             const patientData = { 
-                id: newId, 
+                id: idNumber, // Use the ID/Passport as the patient ID
                 name: name, 
                 idNumber: idNumber,
                 passportNumber: idNumber,
+                nationalId: idNumber,
                 contactNo: phone, 
                 phone: phone, 
                 createdAt: new Date().toISOString() 
@@ -585,8 +615,14 @@
             await window.db.collection("patients").add(patientData);
             await loadPatients();
             closeModal('patientModal');
-            selectPatient(newId, name, phone);
-            showToast("Patient added", false);
+            
+            // Auto-select the new patient with their ID/Passport
+            document.getElementById('patientId').value = idNumber;
+            document.getElementById('patientName').value = name;
+            document.getElementById('contactNo').value = phone;
+            document.getElementById('patientSearch').value = `${name} (🪪 ${idNumber})`;
+            
+            showToast("Patient added successfully", false);
         }
         async function addService() {
             const name = document.getElementById('newServiceName').value.trim();

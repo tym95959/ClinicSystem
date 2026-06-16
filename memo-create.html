@@ -699,7 +699,9 @@
             else {
                 patientSelect.innerHTML = '<option value="">-- Select Patient --</option>';
                 patientsList.forEach(p => {
-                    patientSelect.innerHTML += `<option value="${p.id}">${p.id} - ${p.name} (${p.nationality || 'N/A'})</option>`;
+                    // Display ID/Passport instead of Patient ID
+                    const displayId = p.idNumber || p.passportNumber || p.id || 'N/A';
+                    patientSelect.innerHTML += `<option value="${p.id}">${displayId} - ${p.name} (${p.nationality || 'N/A'})</option>`;
                 });
             }
         } catch (error) { console.error(error); }
@@ -990,6 +992,7 @@
                 nationality: selectedPatient.nationality || "",
                 isCitizen: selectedPatient.isCitizen || false,
                 idNumber: selectedPatient.idNumber || "",
+                passportNumber: selectedPatient.passportNumber || "",
                 dob: selectedPatient.dob || ""
             },
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
@@ -1051,7 +1054,9 @@
             selectedPatient = patient;
             const card = document.getElementById('selectedPatientCard');
             card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong> (${patient.id})<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
+            // Display ID/Passport in the selected card
+            const displayId = patient.idNumber || patient.passportNumber || patient.id || 'N/A';
+            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong> (${displayId})<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
             if (selectedServices.length > 0) applyAutoCalculation();
             calculateBilling();
         } else { selectedPatient = null; document.getElementById('selectedPatientCard').style.display = 'none'; calculateBilling(); }

@@ -404,7 +404,10 @@
             let html = `<strong>📌 Existing appointments on this day:</strong><ul style="margin: 6px 0 0 18px;">`;
             existing.forEach(apt => {
                 let timeDisplay = apt.startTime ? `${formatTimeForDisplay(apt.startTime)} (${apt.durationMinutes} min)` : apt.time;
-                html += `<li><strong>${apt.time || apt.startTime}</strong> – ${apt.patientName} (${apt.doctorName})</li>`;
+                // Get the actual ID/Passport from the patient record
+                const patient = patientsList.find(p => p.id === apt.patientId || p.idNumber === apt.patientId || p.passportNumber === apt.patientId);
+                const displayId = patient ? getPatientDisplayId(patient) : apt.patientId || 'N/A';
+                html += `<li><strong>${apt.time || apt.startTime}</strong> – ${apt.patientName} (🪪 ${displayId})</li>`;
             });
             html += `</ul>`;
             container.innerHTML = html;
@@ -537,8 +540,11 @@
                 else statusClass = 'status-completed';
                 const timeDisplay = apt.startTime ? `${formatTimeForDisplay(apt.startTime)} (${apt.durationMinutes} min)` : apt.time;
                 const isCancelled = apt.status === 'Cancelled';
-                // Use the stored patientId (which is the ID/Passport value)
-                const displayPatientId = apt.patientId || 'N/A';
+                
+                // Get the actual ID/Passport from the patient record
+                const patient = patientsList.find(p => p.id === apt.patientId || p.idNumber === apt.patientId || p.passportNumber === apt.patientId);
+                const displayPatientId = patient ? getPatientDisplayId(patient) : apt.patientId || 'N/A';
+                
                 return `<tr>
                     <td>${apt.date}</td>
                     <td><strong>${timeDisplay}</strong></td>

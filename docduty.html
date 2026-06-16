@@ -215,6 +215,12 @@
             color: #2c6e2c;
             margin-top: 4px;
         }
+        .doctor-count {
+            font-size: 12px;
+            color: #5f7f9a;
+            margin-left: 10px;
+            font-weight: normal;
+        }
     </style>
 </head>
 <body>
@@ -233,7 +239,10 @@
 <div class="container">
     <!-- Add / Edit Duty Form with Custom Timings -->
     <div class="card">
-        <h3><i class="fas fa-calendar-plus"></i> Assign Doctor Duty (Custom Timing)</h3>
+        <h3>
+            <i class="fas fa-calendar-plus"></i> Assign Doctor Duty (Custom Timing)
+            <span class="doctor-count" id="doctorCount"></span>
+        </h3>
         <div class="form-row">
             <div class="form-group">
                 <label>📅 Date</label>
@@ -335,23 +344,44 @@
         document.getElementById('startTime').addEventListener('input', updateTimingPreview);
         document.getElementById('endTime').addEventListener('input', updateTimingPreview);
         
-        // ========== LOAD DOCTORS FROM USERS COLLECTION ==========
+        // ========== LOAD DOCTORS FROM DOCTORS COLLECTION ==========
         async function loadDoctors() {
             if (!firestoreDB) return;
             try {
-                const snapshot = await firestoreDB.collection("users").where("Level", "==", "Doctor").get();
+                // Try loading from "doctors" collection first
+                const snapshot = await firestoreDB.collection("doctors").get();
                 doctorsList = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
                         id: doc.id,
-                        name: data.name || doc.id,
-                        speciality: data.speciality || "General Physician"
+                        name: data.name || data.username || doc.id,
+                        speciality: data.speciality || data.Speciality || "General Physician"
                     };
                 });
+                
+                // If no doctors found in "doctors" collection, try "users" as fallback
+                if (doctorsList.length === 0) {
+                    console.log("No doctors found in 'doctors' collection, trying 'users'...");
+                    const userSnapshot = await firestoreDB.collection("users").where("Level", "==", "Doctor").get();
+                    doctorsList = userSnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            name: data.name || data.username || doc.id,
+                            speciality: data.speciality || data.Speciality || "General Physician"
+                        };
+                    });
+                }
+                
                 populateDoctorSelect();
+                document.getElementById('doctorCount').textContent = `(${doctorsList.length} doctors)`;
+                
+                if (doctorsList.length === 0) {
+                    showToast("No doctors found. Please add doctors first.", true);
+                }
             } catch (error) {
                 console.error("Error loading doctors:", error);
-                showToast("Failed to load doctors list", true);
+                showToast("Failed to load doctors list: " + error.message, true);
             }
         }
         
@@ -361,9 +391,14 @@
             doctorsList.forEach(doc => {
                 select.innerHTML += `<option value="${doc.id}" data-speciality="${doc.speciality}">${doc.name} (${doc.speciality})</option>`;
             });
+            
+            // If only one doctor, auto-select them for convenience
+            if (doctorsList.length === 1) {
+                select.value = doctorsList[0].id;
+            }
         }
         
-        // ========== LOAD DUTY ALLOCATIONS (support both old shift and new timings) ==========
+        // ========== LOAD DUTY ALLOCATIONS ==========
         async function loadAllocations() {
             if (!firestoreDB) return;
             try {
@@ -477,8 +512,7 @@
                     await firestoreDB.collection("dutyAllocations").doc(editId).update(allocationData);
                     showToast("Allocation updated successfully");
                 } else {
-                    // Check for duplicate: same date, same doctor, overlapping timings?
-                    // Simple check: same doctor on same date (custom logic can be extended)
+                    // Check for duplicate: same date, same doctor
                     const existing = allocationsList.find(a => a.date === date && a.doctorId === doctorId);
                     if (existing) {
                         showToast("This doctor already has a duty on this date. Please edit existing or choose different date/doctor.", true);

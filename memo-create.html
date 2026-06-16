@@ -26,15 +26,14 @@
         }
 
         .clinic-header {
-            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
-            color: #004d4d;
+            background: #0a2f44;
+            color: white;
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            
         }
 
         .logo h2 {
@@ -492,10 +491,18 @@
                 <div id="selectedPatientCard" class="selected-card" style="display: none;"></div>
             </div>
             
-            <!-- Hidden fields for patient data transfer -->
+            <!-- Patient Details - Hidden fields for data transfer -->
             <input type="hidden" id="patientId" value="">
             <input type="hidden" id="patientName" value="">
             <input type="hidden" id="contactNo" value="">
+            
+            <!-- Patient Details Display (read-only) -->
+            <div class="input-group" style="grid-column: span 2;">
+                <label>👤 Patient Details (Auto-filled from appointment)</label>
+                <div id="patientDetailsDisplay" style="background: #f8fbfe; padding: 10px 14px; border-radius: 14px; font-size: 12px; color: #5f7f9a; min-height: 40px; border: 1.5px solid #e2eaf0;">
+                    No patient selected yet
+                </div>
+            </div>
             
             <!-- Doctor Dropdown -->
             <div class="input-group">
@@ -676,6 +683,21 @@
         return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); 
     }
     
+    function updatePatientDisplay(patient) {
+        const display = document.getElementById('patientDetailsDisplay');
+        if (!patient) {
+            display.innerHTML = 'No patient selected yet';
+            return;
+        }
+        const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+        display.innerHTML = `
+            <strong>${escapeHtml(patient.name)}</strong><br>
+            🪪 ID/Passport: ${escapeHtml(displayId)}<br>
+            📞 ${escapeHtml(patient.phone || patient.contactNo || 'N/A')}
+            ${patient.isCitizen ? ' | ✅ Aasandha Eligible' : ''}
+        `;
+    }
+    
     // ========== SEQUENTIAL MEMO NUMBER GENERATOR ==========
     async function getNextMemoNumber() {
         if (!window.db) throw new Error("Firestore not ready");
@@ -787,7 +809,7 @@
         }
     }
     
-    // ========== AUTO-FILL FROM APPOINTMENT (FIXED - TRANSFERS ALL PATIENT DATA) ==========
+    // ========== AUTO-FILL FROM APPOINTMENT WITH AUTO-CREATE PATIENT ==========
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
         if (!apt) {
@@ -799,7 +821,7 @@
         console.log("Selected appointment:", apt);
         
         // ============================================================
-        // 1. FETCH AND TRANSFER ALL PATIENT DETAILS FROM PATIENTS COLLECTION
+        // 1. FETCH OR CREATE PATIENT
         // ============================================================
         if (apt.patientId) {
             try {
@@ -809,17 +831,55 @@
                 let patient = patientsList.find(p => p.id === apt.patientId);
                 console.log("Patient found in list:", patient);
                 
-                // If not found, fetch directly from Firestore
+                // If not found, try searching by other fields
+                if (!patient) {
+                    // Try to find by idNumber, passportNumber, or nationalId
+                    const lowerId = apt.patientId.toLowerCase();
+                    patient = patientsList.find(p => 
+                        (p.idNumber && p.idNumber.toLowerCase() === lowerId) ||
+                        (p.passportNumber && p.passportNumber.toLowerCase() === lowerId) ||
+                        (p.nationalId && p.nationalId.toLowerCase() === lowerId)
+                    );
+                }
+                
+                // If still not found, fetch directly from Firestore
                 if (!patient) {
                     console.log("Patient not in list, fetching from Firestore...");
                     const patientDoc = await window.db.collection("patients").doc(apt.patientId).get();
                     if (patientDoc.exists) {
                         patient = { id: patientDoc.id, ...patientDoc.data() };
                         console.log("Patient fetched from Firestore:", patient);
-                        // Add to patientsList for future use
                         patientsList.push(patient);
-                    } else {
-                        console.warn("Patient document does not exist in Firestore:", apt.patientId);
+                    }
+                }
+                
+                // If patient still not found, CREATE a new one!
+                if (!patient) {
+                    console.log("Patient not found, creating new patient...");
+                    const newPatient = {
+                        id: apt.patientId,
+                        name: apt.patientName || 'Unknown Patient',
+                        phone: apt.contact || '',
+                        idNumber: apt.patientId,
+                        isCitizen: false,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    try {
+                        await window.db.collection("patients").doc(apt.patientId).set(newPatient);
+                        patient = newPatient;
+                        patientsList.push(patient);
+                        console.log("New patient created:", patient);
+                        showMessage(`✅ New patient created: ${patient.name}`, "success");
+                    } catch (err) {
+                        console.error("Error creating patient:", err);
+                        // Use fallback from appointment
+                        patient = {
+                            id: apt.patientId,
+                            name: apt.patientName || 'Unknown',
+                            phone: apt.contact || '',
+                            isCitizen: false
+                        };
                     }
                 }
                 
@@ -830,11 +890,14 @@
                     
                     // Update hidden fields
                     const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
-                    document.getElementById('patientId').value = displayId;
+                    document.getElementById('patientId').value = patient.id || displayId;
                     document.getElementById('patientName').value = patient.name;
-                    document.getElementById('contactNo').value = patient.contactNo || patient.phone || apt.contact || '';
+                    document.getElementById('contactNo').value = patient.phone || patient.contactNo || apt.contact || '';
                     
-                    // Update patient dropdown - find or add the patient
+                    // Update patient details display
+                    updatePatientDisplay(patient);
+                    
+                    // Update patient dropdown
                     const patientSelect = document.getElementById('patientDropdown');
                     let found = false;
                     for (let i = 0; i < patientSelect.options.length; i++) {
@@ -845,7 +908,6 @@
                         }
                     }
                     if (!found) {
-                        // Add patient to dropdown if not found
                         const option = document.createElement('option');
                         option.value = patient.id;
                         option.text = `${patient.name} (ID/Passport: ${displayId})`;
@@ -853,12 +915,11 @@
                         patientSelect.value = patient.id;
                     }
                     
-                    // Display patient card with ALL details
+                    // Display patient card
                     const card = document.getElementById('selectedPatientCard');
                     card.style.display = 'flex';
-                    const phone = patient.contactNo || patient.phone || apt.contact || '';
+                    const phone = patient.phone || patient.contactNo || apt.contact || '';
                     const nationality = patient.nationality || '';
-                    
                     card.innerHTML = `
                         <div>
                             <strong>${escapeHtml(patient.name)}</strong><br>
@@ -877,7 +938,7 @@
                     
                     console.log("Patient data transferred successfully");
                 } else {
-                    // If patient not found, create a basic patient from appointment data
+                    // Ultimate fallback
                     console.warn("Creating fallback patient from appointment data");
                     selectedPatient = {
                         id: apt.patientId,
@@ -888,9 +949,10 @@
                     document.getElementById('patientId').value = apt.patientId || '';
                     document.getElementById('patientName').value = apt.patientName || '';
                     document.getElementById('contactNo').value = apt.contact || '';
+                    updatePatientDisplay(selectedPatient);
                 }
             } catch (error) {
-                console.error("Error fetching patient data:", error);
+                console.error("Error in patient handling:", error);
                 // Fallback: use appointment data
                 selectedPatient = {
                     id: apt.patientId,
@@ -901,6 +963,7 @@
                 document.getElementById('patientId').value = apt.patientId || '';
                 document.getElementById('patientName').value = apt.patientName || '';
                 document.getElementById('contactNo').value = apt.contact || '';
+                updatePatientDisplay(selectedPatient);
             }
         } else {
             console.warn("No patientId in appointment data");
@@ -1311,7 +1374,7 @@
         const patientName = document.getElementById('patientName').value.trim();
         const contactNo = document.getElementById('contactNo').value.trim();
         
-        // If no patient selected via dropdown but we have data from appointment
+        // If no patient selected but we have data from appointment
         if (!selectedPatient && patientId && patientName) {
             selectedPatient = {
                 id: patientId,
@@ -1495,6 +1558,7 @@
             document.getElementById('patientId').value = displayId;
             document.getElementById('patientName').value = patient.name;
             document.getElementById('contactNo').value = patient.contactNo || patient.phone || '';
+            updatePatientDisplay(patient);
             if (selectedServices.length > 0) applyAutoCalculation();
             calculateBilling();
         } else { 
@@ -1503,6 +1567,7 @@
             document.getElementById('patientId').value = '';
             document.getElementById('patientName').value = '';
             document.getElementById('contactNo').value = '';
+            updatePatientDisplay(null);
             calculateBilling(); 
         }
     });

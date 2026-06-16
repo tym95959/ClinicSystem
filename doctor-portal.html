@@ -235,250 +235,284 @@
 
 <script>
     // ========== DOCTOR SESSION & AUTH ==========
-    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-    if (!doctorSession) { window.location.href = 'login.html'; return; }
-    let currentDoctor = null;
-    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
-    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
-
-    const currentUser = {
-        id: currentDoctor.id,
-        name: currentDoctor.name,
-        role: "Doctor",
-        speciality: currentDoctor.speciality || "Dental Surgeon",
-        type: "doctor"
-    };
-    document.getElementById('doctorName').textContent = currentUser.name;
-    document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
-
-    let firestoreDB = null, realtimeDB = null;
-    let appointments = [], memosList = [], patientsList = [];
-    let selectedAppointment = null, selectedMemo = null, selectedPatient = null;
-
-    // ========== HELPER FUNCTIONS ==========
-    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-    function calculateAge(dob) { if (!dob) return 'N/A'; const birthDate = new Date(dob); if (isNaN(birthDate.getTime())) return 'Invalid'; const today = new Date(); let age = today.getFullYear() - birthDate.getFullYear(); const m = today.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; return age; }
-    
-    function isTodayOrFuture(dateStr) {
-        if (!dateStr) return false;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const aptDate = new Date(dateStr);
-        if (isNaN(aptDate.getTime())) return false;
-        aptDate.setHours(0, 0, 0, 0);
-        return aptDate >= today;
-    }
-
-    // ========== ENABLE QUICK ACTION BUTTONS ==========
-    function enableQuickActions() {
-        document.querySelectorAll('.quick-action-card').forEach(btn => {
-            btn.style.pointerEvents = 'auto';
-            btn.style.opacity = '1';
-        });
-    }
-
-    function disableQuickActions() {
-        document.querySelectorAll('.quick-action-card').forEach(btn => {
-            btn.style.pointerEvents = 'none';
-            btn.style.opacity = '0.5';
-        });
-    }
-
-    // ========== LOAD DATA ==========
-    async function loadMemos() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); memosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); memosList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); renderMemosList(); }
-    function renderMemosList() { const container = document.getElementById('memosList'); if (!memosList.length) { container.innerHTML = '<div class="empty-list">No consultation history found.</div>'; return; } container.innerHTML = memosList.map(memo => `<div class="memo-card" data-id="${memo.id}"><div class="memo-date">📅 ${memo.date || new Date(memo.timestamp).toLocaleDateString()}</div><div class="memo-patient">${escapeHtml(memo.patient?.name || 'Unknown')}</div><div class="memo-details">🆔 ${memo.patient?.id || 'N/A'} | 🎂 ${memo.patient?.dob || 'N/A'} (${calculateAge(memo.patient?.dob)} yrs)</div></div>`).join(''); document.querySelectorAll('.memo-card').forEach(card => card.addEventListener('click', () => { document.querySelectorAll('.memo-card, .appointment-card').forEach(c => c.classList.remove('selected')); card.classList.add('selected'); const memo = memosList.find(m => m.id === card.dataset.id); if (memo) selectMemo(memo); })); }
-    async function selectMemo(memo) { selectedMemo = memo; selectedAppointment = null; let patient = patientsList.find(p => p.id === memo.patient?.id) || memo.patient; selectedPatient = patient; if (selectedPatient) { savePatientSession(); displayPatientInfo(); enableQuickActions(); } }
-
-    async function loadPatients() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("patients").get(); patientsList = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); }
-    const searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
-    function renderPatientSuggestions(filterText) { if (!filterText.trim()) { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; return; } const lowerFilter = filterText.toLowerCase(); const filtered = patientsList.filter(p => p.name?.toLowerCase().includes(lowerFilter) || p.id?.toLowerCase().includes(lowerFilter)).slice(0, 15); if (!filtered.length) { suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; return; } suggestionsDiv.innerHTML = filtered.map(p => `<div class="suggestion-item" data-id="${p.id}" data-name="${escapeHtml(p.name)}" data-phone="${p.phone || ''}"><strong>${escapeHtml(p.name)}</strong> <span style="color:#5f7f9a;">(${p.id})</span><br><small>📞 ${p.phone || 'N/A'}</small></div>`).join(''); document.querySelectorAll('.suggestion-item').forEach(el => { el.addEventListener('click', () => { const patient = patientsList.find(p => p.id === el.dataset.id); if (patient) { selectedPatient = patient; selectedAppointment = null; selectedMemo = null; savePatientSession(); displayPatientInfo(); enableQuickActions(); searchInput.value = `${patient.name} (${patient.id})`; suggestionsDiv.innerHTML = ''; } }); }); }
-    searchInput.addEventListener('input', (e) => renderPatientSuggestions(e.target.value));
-    
-    async function loadAppointments() { 
-        if (!firestoreDB) return; 
-        const snapshot = await firestoreDB.collection("appointments").where("doctorId", "==", currentUser.id).get(); 
-        const allAppointments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        appointments = allAppointments.filter(apt => !apt.completed && isTodayOrFuture(apt.date));
-        appointments.sort((a, b) => new Date(a.date) - new Date(b.date));
-        renderAppointments(); 
-    }
-    
-    function renderAppointments() { 
-        const container = document.getElementById('appointmentsList'); 
-        if (!appointments.length) { 
-            container.innerHTML = '<div class="empty-list">✨ No upcoming appointments. All caught up!</div>'; 
-            return; 
-        } 
-        container.innerHTML = appointments.map(apt => `<div class="appointment-card" data-id="${apt.id}"><div class="appointment-time">📅 ${apt.date || 'N/A'} | ⏰ ${apt.time || 'N/A'} <span class="badge-upcoming">Upcoming</span></div><div class="appointment-patient">${escapeHtml(apt.patientName || 'Unknown')}</div><div class="appointment-details">📞 ${apt.contact || 'N/A'}</div></div>`).join(''); 
-        document.querySelectorAll('.appointment-card').forEach(card => { 
-            card.addEventListener('click', () => { 
-                document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); 
-                card.classList.add('selected'); 
-                const apt = appointments.find(a => a.id === card.dataset.id); 
-                if (apt) selectAppointment(apt); 
-            }); 
-        }); 
-    }
-
-    // ========== MARK APPOINTMENT ATTENDED ==========
-    async function markAppointmentAttended() { 
-        if (!selectedAppointment) { alert("No appointment selected."); return; } 
-        if (!firestoreDB) return; 
-        const patient = selectedPatient; 
-        if (!patient) { alert("Patient data not loaded."); return; } 
-        const memoData = { 
-            memoId: `MEM-${Date.now()}`, 
-            patient: { id: patient.id, name: patient.name, phone: patient.phone, dob: patient.dob, insurance: patient.insurance }, 
-            doctor: { id: currentUser.id, name: currentUser.name }, 
-            date: new Date().toLocaleDateString(), 
-            timestamp: Date.now(), 
-            services: [], 
-            billing: { afterDiscount: 0, paid: 0, discount: { amount: 0 } }, 
-            insurance: patient.insurance || {}, 
-            createdAt: new Date().toISOString() 
-        }; 
-        await firestoreDB.collection("memos").add(memoData); 
-        await firestoreDB.collection("appointments").doc(selectedAppointment.id).update({ completed: true }); 
-        await loadAppointments(); 
-        await loadMemos(); 
-        selectedAppointment = null; 
-        selectedPatient = null; 
-        document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); 
-        document.getElementById('patientInfoContainer').innerHTML = '<div class="patient-info-card" style="margin:12px 20px;"><div style="text-align:center; padding:20px; color:#27ae60;"><i class="fas fa-check-circle" style="font-size:48px;"></i><p style="margin-top:10px;">Patient attended and moved to history.</p></div></div>'; 
-        disableQuickActions();
-        alert("Patient marked as attended. Appointment moved to history."); 
-    }
-
-    async function selectAppointment(apt) { 
-        selectedAppointment = apt; 
-        selectedMemo = null; 
-        let patient = patientsList.find(p => p.id === apt.patientId); 
-        if (!patient && apt.patientId) patient = { id: apt.patientId, name: apt.patientName, phone: apt.contact }; 
-        selectedPatient = patient; 
-        if (selectedPatient) { 
-            savePatientSession(); 
-            displayPatientInfo(); 
-            enableQuickActions();
-        } 
-    }
-
-    // ========== SAVE PATIENT SESSION ==========
-    function savePatientSession() {
-        if (selectedPatient) {
-            sessionStorage.setItem('selectedPatient', JSON.stringify(selectedPatient));
-            sessionStorage.setItem('selectedPatientId', selectedPatient.id);
-        }
-    }
-
-    // ========== DISPLAY PATIENT INFO ==========
-    function displayPatientInfo() {
-        const container = document.getElementById('patientInfoContainer');
-        if (!selectedPatient) {
-            container.innerHTML = `
-                <div class="patient-info-card" style="margin: 12px 20px;">
-                    <div style="text-align: center; padding: 20px; color: #8ba0b0;">
-                        <i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i>
-                        <p style="margin-top: 10px;">Select a patient from the left panel</p>
-                    </div>
-                </div>
-            `;
+    (function() {
+        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+        if (!doctorSession) { 
+            window.location.href = 'login.html'; 
             return;
         }
-        
-        const dob = selectedPatient.dob || 'N/A';
-        const age = calculateAge(dob);
-        const insurance = selectedPatient.insurance || {};
-        const primaryIns = insurance.primaryName || 'None';
-        
-        let extraHtml = selectedAppointment ? `
-            <div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">
-                <p><strong>📋 Current Visit:</strong> ${selectedAppointment.date || 'N/A'} at ${selectedAppointment.time || 'N/A'}</p>
-                <button class="btn-complete" id="completeConsultationBtn"><i class="fas fa-check-circle"></i> Mark as Attended</button>
-            </div>
-        ` : (selectedMemo ? `
-            <div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">
-                <p><strong>📋 Previous Consultation:</strong> ${selectedMemo.date || new Date(selectedMemo.timestamp).toLocaleString()}</p>
-            </div>
-        ` : '');
-        
-        container.innerHTML = `
-            <div class="patient-info-card" style="margin: 12px 20px;">
-                <div class="patient-name">${escapeHtml(selectedPatient.name)}</div>
-                <div class="patient-meta">
-                    <span>🆔 ${selectedPatient.id || 'N/A'}</span>
-                    <span>📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}</span>
-                    <span>🎂 ${dob} (${age} yrs)</span>
-                    <span>🏥 ${escapeHtml(primaryIns)}</span>
-                </div>
-                ${extraHtml}
-            </div>
-        `;
-        
-        if (selectedAppointment) {
-            document.getElementById('completeConsultationBtn')?.addEventListener('click', markAppointmentAttended);
-        }
-    }
-
-    // ========== LOGOUT ==========
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        try { if (realtimeDB) await realtimeDB.ref(`online_users/${currentUser.id}`).remove(); } catch(e) { console.warn(e); }
-        sessionStorage.removeItem('doctorSession');
-        localStorage.removeItem('currentDoctor');
-        window.location.href = 'login.html';
-    });
-
-    // ========== EVENT LISTENERS ==========
-    document.querySelectorAll('.list-tab').forEach(btn => { 
-        btn.addEventListener('click', () => { 
-            document.querySelectorAll('.list-tab').forEach(b => b.classList.remove('active-list')); 
-            document.querySelectorAll('.appointments-list, .memos-list, .patients-list').forEach(div => div.classList.remove('active-list')); 
-            btn.classList.add('active-list'); 
-            document.getElementById(`${btn.dataset.list}List`).classList.add('active-list'); 
-            if (btn.dataset.list === 'patients') { 
-                suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; 
-                searchInput.value = ''; 
-            } 
-        }); 
-    });
-
-    // ========== INIT ==========
-    async function init() {
-        if (window.db) firestoreDB = window.db;
-        if (window.rtdb) realtimeDB = window.rtdb;
-        if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
-        
-        // Set doctor online
+        var currentDoctor = null;
         try { 
-            await realtimeDB.ref(`online_users/${currentUser.id}`).set({ 
-                username: currentUser.id, 
-                name: currentUser.name, 
-                Level: "Doctor", 
-                status: "online", 
-                type: "doctor", 
-                loginTime: firebase.database.ServerValue.TIMESTAMP, 
-                lastSeen: firebase.database.ServerValue.TIMESTAMP 
-            }); 
-        } catch(e) {}
-        document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
+            currentDoctor = JSON.parse(doctorSession); 
+        } catch(e) { 
+            window.location.href = 'login.html'; 
+            return;
+        }
+        if (!currentDoctor || !currentDoctor.id) { 
+            window.location.href = 'login.html'; 
+            return;
+        }
+
+        var currentUser = {
+            id: currentDoctor.id,
+            name: currentDoctor.name,
+            role: "Doctor",
+            speciality: currentDoctor.speciality || "Dental Surgeon",
+            type: "doctor"
+        };
+        document.getElementById('doctorName').textContent = currentUser.name;
+        document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
+
+        var firestoreDB = null, realtimeDB = null;
+        var appointments = [], memosList = [], patientsList = [];
+        var selectedAppointment = null, selectedMemo = null, selectedPatient = null;
+
+        // ========== HELPER FUNCTIONS ==========
+        function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, function(m) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' })[m]; }); }
+        function calculateAge(dob) { if (!dob) return 'N/A'; var birthDate = new Date(dob); if (isNaN(birthDate.getTime())) return 'Invalid'; var today = new Date(); var age = today.getFullYear() - birthDate.getFullYear(); var m = today.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; return age; }
         
-        await loadPatients();
-        await loadAppointments();
-        await loadMemos();
-        
-        // Check if there's a selected patient from session
-        const savedPatientId = sessionStorage.getItem('selectedPatientId');
-        if (savedPatientId) {
-            const patient = patientsList.find(p => p.id === savedPatientId);
-            if (patient) {
-                selectedPatient = patient;
-                displayPatientInfo();
-                enableQuickActions();
+        function isTodayOrFuture(dateStr) {
+            if (!dateStr) return false;
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            var aptDate = new Date(dateStr);
+            if (isNaN(aptDate.getTime())) return false;
+            aptDate.setHours(0, 0, 0, 0);
+            return aptDate >= today;
+        }
+
+        // ========== ENABLE QUICK ACTION BUTTONS ==========
+        function enableQuickActions() {
+            var buttons = document.querySelectorAll('.quick-action-card');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].style.pointerEvents = 'auto';
+                buttons[i].style.opacity = '1';
             }
         }
+
+        function disableQuickActions() {
+            var buttons = document.querySelectorAll('.quick-action-card');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].style.pointerEvents = 'none';
+                buttons[i].style.opacity = '0.5';
+            }
+        }
+
+        // ========== LOAD DATA ==========
+        async function loadMemos() { if (!firestoreDB) return; var snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); memosList = []; snapshot.forEach(function(doc) { memosList.push({ id: doc.id, ...doc.data() }); }); memosList.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }); renderMemosList(); }
+        function renderMemosList() { var container = document.getElementById('memosList'); if (!memosList.length) { container.innerHTML = '<div class="empty-list">No consultation history found.</div>'; return; } var html = ''; for (var i = 0; i < memosList.length; i++) { var memo = memosList[i]; html += '<div class="memo-card" data-id="' + memo.id + '"><div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) + '</div><div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div><div class="memo-details">🆔 ' + (memo.patient?.id || 'N/A') + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs)</div></div>'; } container.innerHTML = html; var cards = document.querySelectorAll('.memo-card'); for (var j = 0; j < cards.length; j++) { cards[j].addEventListener('click', function() { var allCards = document.querySelectorAll('.memo-card, .appointment-card'); for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); } this.classList.add('selected'); var memoId = this.dataset.id; var memo = null; for (var l = 0; l < memosList.length; l++) { if (memosList[l].id === memoId) { memo = memosList[l]; break; } } if (memo) selectMemo(memo); }); } }
+        async function selectMemo(memo) { selectedMemo = memo; selectedAppointment = null; var patient = null; for (var i = 0; i < patientsList.length; i++) { if (patientsList[i].id === memo.patient?.id) { patient = patientsList[i]; break; } } if (!patient) patient = memo.patient; selectedPatient = patient; if (selectedPatient) { savePatientSession(); displayPatientInfo(); enableQuickActions(); } }
+
+        async function loadPatients() { if (!firestoreDB) return; var snapshot = await firestoreDB.collection("patients").get(); patientsList = []; snapshot.forEach(function(doc) { patientsList.push({ id: doc.id, ...doc.data() }); }); }
+        var searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
+        function renderPatientSuggestions(filterText) { if (!filterText.trim()) { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; return; } var lowerFilter = filterText.toLowerCase(); var filtered = []; for (var i = 0; i < patientsList.length; i++) { var p = patientsList[i]; if (p.name && p.name.toLowerCase().includes(lowerFilter) || p.id && p.id.toLowerCase().includes(lowerFilter)) { filtered.push(p); } } filtered = filtered.slice(0, 15); if (!filtered.length) { suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; return; } var html = ''; for (var j = 0; j < filtered.length; j++) { var p = filtered[j]; html += '<div class="suggestion-item" data-id="' + p.id + '" data-name="' + escapeHtml(p.name) + '" data-phone="' + (p.phone || '') + '"><strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">(' + p.id + ')</span><br><small>📞 ' + (p.phone || 'N/A') + '</small></div>'; } suggestionsDiv.innerHTML = html; var items = document.querySelectorAll('.suggestion-item'); for (var k = 0; k < items.length; k++) { items[k].addEventListener('click', function() { var patientId = this.dataset.id; var patient = null; for (var l = 0; l < patientsList.length; l++) { if (patientsList[l].id === patientId) { patient = patientsList[l]; break; } } if (patient) { selectedPatient = patient; selectedAppointment = null; selectedMemo = null; savePatientSession(); displayPatientInfo(); enableQuickActions(); searchInput.value = patient.name + ' (' + patient.id + ')'; suggestionsDiv.innerHTML = ''; } }); } }
+        searchInput.addEventListener('input', function(e) { renderPatientSuggestions(e.target.value); });
         
-        if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
-    }
-    init();
+        async function loadAppointments() { 
+            if (!firestoreDB) return; 
+            var snapshot = await firestoreDB.collection("appointments").where("doctorId", "==", currentUser.id).get(); 
+            var allAppointments = []; 
+            snapshot.forEach(function(doc) { allAppointments.push({ id: doc.id, ...doc.data() }); });
+            appointments = []; 
+            for (var i = 0; i < allAppointments.length; i++) { 
+                var apt = allAppointments[i]; 
+                if (!apt.completed && isTodayOrFuture(apt.date)) { 
+                    appointments.push(apt); 
+                } 
+            }
+            appointments.sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+            renderAppointments(); 
+        }
+        
+        function renderAppointments() { 
+            var container = document.getElementById('appointmentsList'); 
+            if (!appointments.length) { 
+                container.innerHTML = '<div class="empty-list">✨ No upcoming appointments. All caught up!</div>'; 
+                return; 
+            } 
+            var html = ''; 
+            for (var i = 0; i < appointments.length; i++) { 
+                var apt = appointments[i]; 
+                html += '<div class="appointment-card" data-id="' + apt.id + '"><div class="appointment-time">📅 ' + (apt.date || 'N/A') + ' | ⏰ ' + (apt.time || 'N/A') + ' <span class="badge-upcoming">Upcoming</span></div><div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div><div class="appointment-details">📞 ' + (apt.contact || 'N/A') + '</div></div>'; 
+            } 
+            container.innerHTML = html; 
+            var cards = document.querySelectorAll('.appointment-card'); 
+            for (var j = 0; j < cards.length; j++) { 
+                cards[j].addEventListener('click', function() { 
+                    var allCards = document.querySelectorAll('.appointment-card, .memo-card'); 
+                    for (var k = 0; k < allCards.length; k++) { 
+                        allCards[k].classList.remove('selected'); 
+                    } 
+                    this.classList.add('selected'); 
+                    var aptId = this.dataset.id; 
+                    var apt = null; 
+                    for (var l = 0; l < appointments.length; l++) { 
+                        if (appointments[l].id === aptId) { 
+                            apt = appointments[l]; 
+                            break; 
+                        } 
+                    } 
+                    if (apt) selectAppointment(apt); 
+                }); 
+            } 
+        }
+
+        // ========== MARK APPOINTMENT ATTENDED ==========
+        async function markAppointmentAttended() { 
+            if (!selectedAppointment) { alert("No appointment selected."); return; } 
+            if (!firestoreDB) return; 
+            var patient = selectedPatient; 
+            if (!patient) { alert("Patient data not loaded."); return; } 
+            var memoData = { 
+                memoId: 'MEM-' + Date.now(), 
+                patient: { id: patient.id, name: patient.name, phone: patient.phone, dob: patient.dob, insurance: patient.insurance }, 
+                doctor: { id: currentUser.id, name: currentUser.name }, 
+                date: new Date().toLocaleDateString(), 
+                timestamp: Date.now(), 
+                services: [], 
+                billing: { afterDiscount: 0, paid: 0, discount: { amount: 0 } }, 
+                insurance: patient.insurance || {}, 
+                createdAt: new Date().toISOString() 
+            }; 
+            await firestoreDB.collection("memos").add(memoData); 
+            await firestoreDB.collection("appointments").doc(selectedAppointment.id).update({ completed: true }); 
+            await loadAppointments(); 
+            await loadMemos(); 
+            selectedAppointment = null; 
+            selectedPatient = null; 
+            var cards = document.querySelectorAll('.appointment-card, .memo-card'); 
+            for (var i = 0; i < cards.length; i++) { cards[i].classList.remove('selected'); } 
+            document.getElementById('patientInfoContainer').innerHTML = '<div class="patient-info-card" style="margin:12px 20px;"><div style="text-align:center; padding:20px; color:#27ae60;"><i class="fas fa-check-circle" style="font-size:48px;"></i><p style="margin-top:10px;">Patient attended and moved to history.</p></div></div>'; 
+            disableQuickActions();
+            alert("Patient marked as attended. Appointment moved to history."); 
+        }
+
+        async function selectAppointment(apt) { 
+            selectedAppointment = apt; 
+            selectedMemo = null; 
+            var patient = null; 
+            for (var i = 0; i < patientsList.length; i++) { 
+                if (patientsList[i].id === apt.patientId) { 
+                    patient = patientsList[i]; 
+                    break; 
+                } 
+            } 
+            if (!patient && apt.patientId) patient = { id: apt.patientId, name: apt.patientName, phone: apt.contact }; 
+            selectedPatient = patient; 
+            if (selectedPatient) { 
+                savePatientSession(); 
+                displayPatientInfo(); 
+                enableQuickActions();
+            } 
+        }
+
+        // ========== SAVE PATIENT SESSION ==========
+        function savePatientSession() {
+            if (selectedPatient) {
+                sessionStorage.setItem('selectedPatient', JSON.stringify(selectedPatient));
+                sessionStorage.setItem('selectedPatientId', selectedPatient.id);
+            }
+        }
+
+        // ========== DISPLAY PATIENT INFO ==========
+        function displayPatientInfo() {
+            var container = document.getElementById('patientInfoContainer');
+            if (!selectedPatient) {
+                container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div style="text-align: center; padding: 20px; color: #8ba0b0;"><i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i><p style="margin-top: 10px;">Select a patient from the left panel</p></div></div>';
+                return;
+            }
+            
+            var dob = selectedPatient.dob || 'N/A';
+            var age = calculateAge(dob);
+            var insurance = selectedPatient.insurance || {};
+            var primaryIns = insurance.primaryName || 'None';
+            
+            var extraHtml = '';
+            if (selectedAppointment) {
+                extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;"><p><strong>📋 Current Visit:</strong> ' + (selectedAppointment.date || 'N/A') + ' at ' + (selectedAppointment.time || 'N/A') + '</p><button class="btn-complete" id="completeConsultationBtn"><i class="fas fa-check-circle"></i> Mark as Attended</button></div>';
+            } else if (selectedMemo) {
+                extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;"><p><strong>📋 Previous Consultation:</strong> ' + (selectedMemo.date || new Date(selectedMemo.timestamp).toLocaleString()) + '</p></div>';
+            }
+            
+            container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div><div class="patient-meta"><span>🆔 ' + (selectedPatient.id || 'N/A') + '</span><span>📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A') + '</span><span>🎂 ' + dob + ' (' + age + ' yrs)</span><span>🏥 ' + escapeHtml(primaryIns) + '</span></div>' + extraHtml + '</div>';
+            
+            if (selectedAppointment) {
+                var completeBtn = document.getElementById('completeConsultationBtn');
+                if (completeBtn) {
+                    completeBtn.addEventListener('click', markAppointmentAttended);
+                }
+            }
+        }
+
+        // ========== LOGOUT ==========
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            try { if (realtimeDB) await realtimeDB.ref('online_users/' + currentUser.id).remove(); } catch(e) { console.warn(e); }
+            sessionStorage.removeItem('doctorSession');
+            localStorage.removeItem('currentDoctor');
+            window.location.href = 'login.html';
+        });
+
+        // ========== EVENT LISTENERS ==========
+        var tabs = document.querySelectorAll('.list-tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].addEventListener('click', function() {
+                var allTabs = document.querySelectorAll('.list-tab');
+                for (var j = 0; j < allTabs.length; j++) {
+                    allTabs[j].classList.remove('active-list');
+                }
+                var allLists = document.querySelectorAll('.appointments-list, .memos-list, .patients-list');
+                for (var k = 0; k < allLists.length; k++) {
+                    allLists[k].classList.remove('active-list');
+                }
+                this.classList.add('active-list');
+                var listId = this.dataset.list + 'List';
+                document.getElementById(listId).classList.add('active-list');
+                if (this.dataset.list === 'patients') {
+                    suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>';
+                    searchInput.value = '';
+                }
+            });
+        }
+
+        // ========== INIT ==========
+        async function init() {
+            if (window.db) firestoreDB = window.db;
+            if (window.rtdb) realtimeDB = window.rtdb;
+            if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
+            
+            try { 
+                await realtimeDB.ref('online_users/' + currentUser.id).set({ 
+                    username: currentUser.id, 
+                    name: currentUser.name, 
+                    Level: "Doctor", 
+                    status: "online", 
+                    type: "doctor", 
+                    loginTime: firebase.database.ServerValue.TIMESTAMP, 
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP 
+                }); 
+            } catch(e) {}
+            document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
+            
+            await loadPatients();
+            await loadAppointments();
+            await loadMemos();
+            
+            var savedPatientId = sessionStorage.getItem('selectedPatientId');
+            if (savedPatientId) {
+                for (var i = 0; i < patientsList.length; i++) {
+                    if (patientsList[i].id === savedPatientId) {
+                        selectedPatient = patientsList[i];
+                        displayPatientInfo();
+                        enableQuickActions();
+                        break;
+                    }
+                }
+            }
+            
+            if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+        }
+        init();
+    })();
 </script>
 </body>
 </html>

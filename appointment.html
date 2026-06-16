@@ -63,6 +63,16 @@
         .add-new-btn { background: none; border: none; color: #0f5c7a; cursor: pointer; font-size: 12px; margin-top: 8px; font-weight: 500; text-decoration: underline; }
         .patient-search-result { padding: 10px 12px; border-bottom: 1px solid #e2eaf0; cursor: pointer; transition: 0.1s; }
         .patient-search-result:hover { background: #e0f2fe; border-radius: 12px; }
+        .id-badge { 
+            background: #0f5c7a; 
+            color: white; 
+            padding: 2px 10px; 
+            border-radius: 12px; 
+            font-size: 10px; 
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -119,8 +129,8 @@
         <!-- Patient Selection: Search + Auto-fill -->
         <div class="search-section">
             <div class="input-group">
-                <label>🔍 Search Existing Patient (Name, ID, ID Number, or Contact)</label>
-                <input type="text" id="patientSearch" placeholder="Type name, patient ID, ID card, or phone...">
+                <label>🔍 Search Existing Patient (Name, ID/Passport, or Contact)</label>
+                <input type="text" id="patientSearch" placeholder="Type name, ID/Passport number, or phone...">
                 <div id="patientSearchResults"></div>
                 <button type="button" class="add-new-btn" id="addPatientBtn">+ Add New Patient (Modal)</button>
                 <div class="info" style="font-size: 11px; margin-top: 8px; color: #5f7f9a;">💡 Select a patient from search results → fields auto‑fill. Or type manually.</div>
@@ -130,7 +140,7 @@
         <!-- Editable Patient Fields -->
         <div class="form-row">
             <div class="input-group"><label>👤 Patient Name *</label><input type="text" id="patientName" placeholder="Enter full name"></div>
-            <div class="input-group"><label>🆔 Patient ID *</label><input type="text" id="patientId" placeholder="e.g., P001 or manual ID"></div>
+            <div class="input-group"><label>🪪 ID / Passport *</label><input type="text" id="patientId" placeholder="e.g., A123456 or passport number"></div>
             <div class="input-group"><label>📞 Contact Number *</label><input type="text" id="contactNo" placeholder="Phone number"></div>
         </div>
 
@@ -168,6 +178,7 @@
     <div class="modal-content">
         <h3>Add New Patient</h3>
         <div class="input-group"><label>Full Name *</label><input type="text" id="newPatientName"></div>
+        <div class="input-group"><label>ID / Passport *</label><input type="text" id="newPatientId" placeholder="ID or Passport number"></div>
         <div class="input-group"><label>Phone Number *</label><input type="text" id="newPatientPhone"></div>
         <div class="modal-buttons"><button class="btn-primary" id="savePatientBtn">Save</button><button class="btn-danger" id="cancelPatientBtn">Cancel</button></div>
     </div>
@@ -213,11 +224,10 @@
             setTimeout(() => { div.innerText = ''; div.className = 'message'; }, 4000);
         }
 
-        // ========== LOAD DOCTORS FROM DOCTORS COLLECTION ==========
+        // ========== LOAD DOCTORS ==========
         async function loadDoctors() {
             if (!window.db) return;
             try {
-                // Load from "doctors" collection instead of "users"
                 const snap = await window.db.collection("doctors").get();
                 doctorsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
@@ -225,8 +235,6 @@
                 select.innerHTML = '<option value="">-- Select Doctor --</option>';
                 
                 if (doctorsList.length === 0) {
-                    // Fallback: try loading from users collection
-                    console.log("No doctors found in 'doctors' collection, trying 'users'...");
                     const userSnap = await window.db.collection("users").where("Level", "==", "Doctor").get();
                     doctorsList = userSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 }
@@ -279,7 +287,6 @@
                 renderAppointments();
                 if (currentDoctorId && currentDate) displayExistingAppointments();
             } catch(e) {
-                // Fallback without orderBy if index doesn't exist
                 const snap = await window.db.collection("appointments").get();
                 appointments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 appointments.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -317,13 +324,11 @@
         async function isTimeSlotAvailable(doctorId, date, startTime, durationMinutes) {
             const startMinutes = timeToMinutes(startTime);
             const endMinutes = startMinutes + durationMinutes;
-            // Check within duty hours
             const duty = getDutyForDoctor(doctorId, date);
             if (!duty) return false;
             const dutyStart = timeToMinutes(duty.startTime);
             const dutyEnd = timeToMinutes(duty.endTime);
             if (startMinutes < dutyStart || endMinutes > dutyEnd) return false;
-            // Check conflicts with existing appointments
             for (let apt of appointments) {
                 if (apt.doctorId === doctorId && apt.date === date && apt.status !== 'Cancelled' && apt.startTime && apt.durationMinutes) {
                     const aptStart = timeToMinutes(apt.startTime);
@@ -409,7 +414,7 @@
                 return;
             }
             if (!patientId || !patientName || !contact) {
-                resultDiv.innerHTML = '⚠️ Please provide Patient ID, Name, and Contact Number.';
+                resultDiv.innerHTML = '⚠️ Please provide Patient Name, ID/Passport, and Contact Number.';
                 return;
             }
 
@@ -432,7 +437,6 @@
                 return;
             }
 
-            // Proceed to book
             const doctor = doctorsList.find(d => d.id === doctorId);
             const service = servicesList.find(s => s.id === serviceId);
             try {
@@ -446,7 +450,6 @@
                     createdAt: new Date().toISOString()
                 });
                 await loadAppointments();
-                // Reset form
                 document.getElementById('customStartTime').value = '';
                 document.getElementById('customDuration').value = '30';
                 document.getElementById('patientName').value = '';
@@ -509,12 +512,13 @@
                 else statusClass = 'status-completed';
                 const timeDisplay = apt.startTime ? `${formatTimeForDisplay(apt.startTime)} (${apt.durationMinutes} min)` : apt.time;
                 const isCancelled = apt.status === 'Cancelled';
+                const displayPatientId = apt.patientId || 'N/A';
                 return `<tr>
                     <td>${apt.date}</td>
                     <td><strong>${timeDisplay}</strong></td>
                     <td>${apt.durationMinutes ? apt.durationMinutes+' min' : '30 min'}</td>
                     <td>${apt.doctorName}<br><small>${apt.doctorSpeciality || ''}</small></td>
-                    <td>${apt.patientName}<br><small>${apt.patientId}</small></td>
+                    <td>${apt.patientName}<br><small><span class="id-badge">🪪 ${displayPatientId}</span></small></td>
                     <td>${apt.serviceName || '—'}</td>
                     <td><span class="status-badge ${statusClass}">${apt.status}</span></td>
                     <td class="actions">
@@ -533,6 +537,8 @@
                 (p.name && p.name.toLowerCase().includes(q)) ||
                 (p.id && p.id.toLowerCase().includes(q)) ||
                 (p.idNumber && p.idNumber.toLowerCase().includes(q)) ||
+                (p.passportNumber && p.passportNumber.toLowerCase().includes(q)) ||
+                (p.nationalId && p.nationalId.toLowerCase().includes(q)) ||
                 (p.contactNo && p.contactNo.toLowerCase().includes(q)) ||
                 (p.phone && p.phone.toLowerCase().includes(q))
             );
@@ -545,9 +551,9 @@
             }
             div.innerHTML = results.map(p => {
                 const displayContact = p.contactNo || p.phone || 'N/A';
-                const displayId = p.idNumber || p.id || 'N/A';
+                const displayId = p.idNumber || p.passportNumber || p.nationalId || p.id || 'N/A';
                 return `<div class="patient-search-result" onclick="selectPatient('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${displayContact}')">
-                    <strong>${p.name}</strong> (${displayId})<br>
+                    <strong>${p.name}</strong> <span class="id-badge">🪪 ${displayId}</span><br>
                     <small>📞 ${displayContact}</small>
                 </div>`;
             }).join('');
@@ -556,17 +562,26 @@
             document.getElementById('patientId').value = id;
             document.getElementById('patientName').value = name;
             document.getElementById('contactNo').value = phone;
-            document.getElementById('patientSearch').value = `${name} (${id})`;
+            document.getElementById('patientSearch').value = `${name} (ID: ${id})`;
             document.getElementById('patientSearchResults').innerHTML = '';
         };
 
         // ========== ADD PATIENT / SERVICE ==========
         async function addPatient() {
             const name = document.getElementById('newPatientName').value.trim();
+            const idNumber = document.getElementById('newPatientId').value.trim();
             const phone = document.getElementById('newPatientPhone').value.trim();
-            if (!name || !phone) { alert("Name and phone required"); return; }
-            const newId = `P${Date.now()}`;
-            const patientData = { id: newId, name: name, contactNo: phone, phone: phone, createdAt: new Date().toISOString() };
+            if (!name || !idNumber || !phone) { alert("Name, ID/Passport, and phone required"); return; }
+            const newId = idNumber; // Use the ID/Passport as the patient ID
+            const patientData = { 
+                id: newId, 
+                name: name, 
+                idNumber: idNumber,
+                passportNumber: idNumber,
+                contactNo: phone, 
+                phone: phone, 
+                createdAt: new Date().toISOString() 
+            };
             await window.db.collection("patients").add(patientData);
             await loadPatients();
             closeModal('patientModal');

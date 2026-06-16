@@ -3,120 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Doctor's Portal - Appointments & Consultations</title>
+    <title>Hope Dental | Doctor's Portal</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Firebase Config (ensure this file exists with your Firebase configuration) -->
     <script src="firebase-config.js"></script>
     <style>
-        /* ========== Complete Styles ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
         body { background: #eef2f7; min-height: 100vh; }
-        .notification-toast { position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2000; display: flex; align-items: center; gap: 12px; animation: slideInRight 0.3s ease; cursor: pointer; max-width: 350px; }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .online-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #4caf50; display: inline-block; margin-right: 5px; animation: pulseOnline 1.5s infinite; }
-        @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
-        .clinic-header { background: #0a2f44; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
         .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
-        .doctor-info { background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; display: flex; align-items: center; gap: 15px; }
+        .doctor-info { background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         .online-status { display: flex; align-items: center; gap: 6px; font-size: 11px; background: #2ecc71; padding: 4px 10px; border-radius: 20px; color: white; }
         .logout-btn { background: #c63d2f; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; transition: 0.2s; }
         .logout-btn:hover { background: #a52a1f; transform: translateY(-1px); }
-        .dashboard-container { max-width: 1600px; margin: 20px auto; padding: 0 20px; display: flex; gap: 20px; flex-wrap: wrap; }
-        .appointments-panel { flex: 1.2; min-width: 350px; background: white; border-radius: 20px; border: 1px solid #e2eaf0; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 100px); }
+        
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .appointments-panel {
+            flex: 1.2;
+            min-width: 350px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+        }
+        
         .panel-header { background: #f4f9fe; padding: 15px 20px; border-bottom: 1px solid #e2eaf0; }
         .panel-header h3 { font-size: 16px; color: #0a2f44; display: flex; align-items: center; gap: 8px; }
-        .list-tabs { display: flex; gap: 5px; background: #f4f9fe; padding: 0 12px; border-bottom: 1px solid #e2eaf0; }
-        .list-tab { background: none; border: none; padding: 10px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: #5f7f9a; transition: 0.2s; }
+        
+        .list-tabs { display: flex; gap: 5px; background: #f4f9fe; padding: 0 12px; border-bottom: 1px solid #e2eaf0; overflow-x: auto; }
+        .list-tab { background: none; border: none; padding: 10px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: #5f7f9a; transition: 0.2s; white-space: nowrap; }
         .list-tab.active-list { color: #0f5c7a; border-bottom: 2px solid #0f5c7a; background: white; margin-bottom: -1px; }
-        .appointments-list, .memos-list, .patients-list { flex: 1; overflow-y: auto; padding: 12px; display: none; }
+        
+        .appointments-list, .memos-list, .patients-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: none;
+        }
         .appointments-list.active-list, .memos-list.active-list, .patients-list.active-list { display: block; }
-        .appointment-card, .memo-card { background: #f8fbfe; border-radius: 16px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; border-left: 3px solid #cbdde9; }
+        
+        .appointment-card, .memo-card {
+            background: #f8fbfe;
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            border-left: 3px solid #cbdde9;
+        }
         .appointment-card:hover, .memo-card:hover { background: #e8f0fe; transform: translateX(3px); }
         .appointment-card.selected, .memo-card.selected { background: #e0f2fe; border-left-color: #0f5c7a; }
+        
         .appointment-time, .memo-date { font-size: 12px; font-weight: 700; color: #0f5c7a; margin-bottom: 6px; }
         .appointment-patient, .memo-patient { font-size: 14px; font-weight: 600; color: #0a2f44; }
         .appointment-details, .memo-details { font-size: 11px; color: #5f7f9a; margin-top: 5px; }
-        .btn-complete { background: #27ae60; color: white; border: none; padding: 6px 14px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 11px; margin-top: 10px; transition: 0.2s; }
+        
+        .btn-complete {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 11px;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
         .btn-complete:hover { background: #219a52; }
+        
         .patient-search-area { padding: 12px; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
         .patient-search-input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 30px; font-size: 13px; outline: none; }
         .patient-search-input:focus { border-color: #0f5c7a; }
         .patient-suggestions { max-height: 300px; overflow-y: auto; margin-top: 8px; }
         .suggestion-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: 0.1s; border-bottom: 1px solid #e2eaf0; }
         .suggestion-item:hover { background: #e0f2fe; }
-        .detail-panel { flex: 2; min-width: 550px; background: white; border-radius: 20px; border: 1px solid #e2eaf0; display: flex; flex-direction: column; height: calc(100vh - 100px); }
-        .tabs { display: flex; border-bottom: 1px solid #e2eaf0; background: #f8fbfe; flex-wrap: wrap; }
-        .tab-btn { flex: 0 0 auto; background: none; border: none; padding: 12px 18px; font-size: 12px; font-weight: 600; cursor: pointer; color: #5f7f9a; transition: 0.2s; white-space: nowrap; }
-        .tab-btn.active { color: #0f5c7a; border-bottom: 2px solid #0f5c7a; background: white; }
-        .tab-content { flex: 1; overflow-y: auto; padding: 20px; }
-        .tab-pane { display: none; }
-        .tab-pane.active-pane { display: block; }
-        .patient-info-card { background: #f0f6fc; border-radius: 16px; padding: 16px; margin-bottom: 20px; }
+        
+        .detail-panel {
+            flex: 2;
+            min-width: 550px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            padding: 20px;
+        }
+        .quick-action-card {
+            background: #f8fbfe;
+            border: 1px solid #e2eaf0;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: #0a2f44;
+        }
+        .quick-action-card:hover {
+            background: #e0f2fe;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .quick-action-card i { font-size: 32px; color: #0f5c7a; margin-bottom: 10px; display: block; }
+        .quick-action-card h4 { font-size: 14px; margin-bottom: 5px; }
+        .quick-action-card p { font-size: 11px; color: #5f7f9a; }
+        
+        .badge-upcoming { background: #27ae60; color: white; border-radius: 20px; padding: 2px 8px; font-size: 9px; margin-left: 8px; }
+        .empty-list { text-align: center; color: #8ba0b0; padding: 40px; font-size: 12px; }
+        
+        .patient-info-card { background: #f0f6fc; border-radius: 16px; padding: 16px; margin: 0 20px 20px 20px; }
         .patient-name { font-size: 18px; font-weight: 700; color: #0a2f44; }
         .patient-meta { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px; font-size: 12px; color: #5f7f9a; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #1f5e7e; margin-bottom: 5px; }
-        .form-group textarea, .form-group input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 14px; font-size: 13px; resize: vertical; }
-        .btn-primary { background: #0f5c7a; color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; }
-        .btn-primary:hover { background: #1a6f8f; }
-        .btn-print { background: #2c3e50; color: white; border: none; padding: 6px 14px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 11px; margin-left: 10px; }
-        .btn-edit { background: #f39c12; color: white; border: none; padding: 6px 14px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 11px; margin-left: 5px; }
-        .btn-delete { background: #e74c3c; color: white; border: none; padding: 6px 14px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 11px; margin-left: 5px; }
-        .btn-print-green { background: #27ae60; }
-        .btn-refresh { background: #f39c12; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin-left: 10px; }
-        .history-item { background: #f8fbfe; border-radius: 12px; padding: 12px; margin-bottom: 12px; border-left: 3px solid #0f5c7a; }
-        .history-date { font-size: 10px; color: #8ba0b0; margin-bottom: 6px; }
-        .history-note { font-size: 13px; color: #1f5e7e; }
-        .prescription-item, .certificate-item { background: #f8fbfe; border-radius: 12px; padding: 12px; margin-bottom: 12px; border-left: 3px solid #27ae60; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .prescription-actions, .certificate-actions { display: flex; gap: 5px; }
-        .button-group { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 24px; border-radius: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
-        .chat-panel { position: fixed; bottom: 24px; right: 24px; width: 380px; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; transition: all 0.3s; z-index: 1000; border: 1px solid rgba(15,92,122,0.2); overflow: hidden; }
-        .chat-panel.minimized { width: auto; cursor: pointer; }
-        .chat-panel.minimized .chat-header { border-radius: 20px; }
-        .chat-panel.minimized .staff-list, .chat-panel.minimized .chat-messages, .chat-panel.minimized .chat-input-area, .chat-panel.minimized .staff-list-title, .chat-panel.minimized .typing-indicator, .chat-panel.minimized .delete-all-btn { display: none; }
-        .chat-header { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 18px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
-        .chat-header i { font-size: 1.2rem; }
-        .chat-header h3 { font-size: 0.95rem; font-weight: 600; flex: 1; }
-        .chat-badge { background: #ff4757; color: white; border-radius: 40px; padding: 3px 10px; font-size: 10px; font-weight: bold; }
-        .minimize-icon { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 8px; font-size: 11px; }
-        .staff-list-title { font-size: 10px; color: #0f5c7a; padding: 10px 14px 4px; font-weight: 600; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
-        .staff-list { background: #f8fbfe; padding: 8px 12px; max-height: 200px; overflow-y: auto; border-bottom: 1px solid #e2eaf0; }
-        .staff-tab { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 5px 0; border-radius: 14px; cursor: pointer; background: white; border: 1px solid #e2eaf0; transition: all 0.2s; }
-        .staff-tab.active-staff { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; }
-        .staff-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0f5c7a; font-weight: bold; font-size: 16px; }
-        .active-staff .staff-avatar { background: rgba(255,255,255,0.25); color: white; }
-        .staff-info { flex: 1; }
-        .staff-name { font-weight: 700; font-size: 13px; color: #0a2f44; }
-        .staff-role { font-size: 10px; color: #5f7f9a; margin-top: 2px; }
-        .online-indicator { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #4caf50; background: #e8f5e9; padding: 3px 8px; border-radius: 20px; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #fefefe; display: flex; flex-direction: column; gap: 12px; max-height: 350px; min-height: 300px; }
-        .message { display: flex; flex-direction: column; max-width: 88%; animation: slideIn 0.2s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .message.doctor { align-self: flex-end; }
-        .message.reception { align-self: flex-start; }
-        .message-bubble { padding: 8px 14px; border-radius: 18px; font-size: 12px; line-height: 1.4; word-break: break-word; }
-        .message.doctor .message-bubble { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; border-bottom-right-radius: 4px; }
-        .message.reception .message-bubble { background: #eef2f7; color: #1a2c3e; border-bottom-left-radius: 4px; }
-        .message-meta { font-size: 9px; margin-top: 4px; padding: 0 6px; color: #8ba0b0; display: flex; justify-content: space-between; align-items: center; }
-        .delete-msg { font-size: 9px; color: #ff4757; cursor: pointer; margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
-        .message:hover .delete-msg { opacity: 1; }
-        .typing-indicator { font-size: 10px; color: #0f5c7a; padding: 8px 16px; font-style: italic; background: #f8fbfe; border-top: 1px solid #e2eaf0; }
-        .chat-input-area { padding: 12px; background: white; border-top: 1px solid #e2eaf0; display: flex; gap: 10px; }
-        .chat-input-area input { flex: 1; border: 1.5px solid #e2eaf0; border-radius: 30px; padding: 10px 16px; font-size: 12px; outline: none; }
-        .chat-input-area input:focus { border-color: #0f5c7a; }
-        .chat-input-area button { background: #0f5c7a; border: none; color: white; padding: 0 20px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 12px; }
-        .delete-all-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin: 8px 12px; }
-        .empty-chat, .empty-list { text-align: center; color: #8ba0b0; padding: 40px; font-size: 12px; }
-        @media (max-width: 700px) { .chat-panel { width: 320px; right: 16px; bottom: 16px; } .tab-btn { padding: 8px 12px; font-size: 11px; } }
-        .badge-upcoming { background: #27ae60; color: white; border-radius: 20px; padding: 2px 8px; font-size: 9px; margin-left: 8px; }
+        
+        .section-title { font-size: 14px; font-weight: 600; color: #0a2f44; padding: 0 20px; margin-bottom: 10px; }
+        
+        @media (max-width: 768px) {
+            .appointments-panel { min-width: 280px; height: auto; max-height: 400px; }
+            .detail-panel { min-width: 300px; height: auto; max-height: 600px; }
+            .quick-actions { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .quick-actions { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -149,197 +191,294 @@
     </div>
 
     <div class="detail-panel">
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="patient">👤 Patient Info</button>
-            <button class="tab-btn" data-tab="medical">📋 Medical History</button>
-            <button class="tab-btn" data-tab="diagnosis">💊 Diagnosis & Treatment</button>
-            <button class="tab-btn" data-tab="prescriptions">📝 Prescriptions</button>
-            <button class="tab-btn" data-tab="certificate">📄 Medical Certificate</button>
+        <div style="padding: 20px 20px 0 20px;">
+            <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Quick Actions</h3>
         </div>
-        <div class="tab-content">
-            <div class="tab-pane active-pane" id="patientTab"><div id="patientInfoContainer"><div class="empty-list">Select a patient to view details</div></div></div>
-            <div class="tab-pane" id="medicalTab"><div id="medicalHistoryContainer"><div class="empty-list">Select a patient to view medical history</div></div><div class="form-group" style="margin-top:20px;"><label>Add Medical History Note</label><textarea id="medicalNote" rows="3" placeholder="Enter past medical history, allergies, chronic conditions..."></textarea><button class="btn-primary" id="saveMedicalBtn" style="margin-top:10px;">💾 Save Medical History</button></div></div>
-            <div class="tab-pane" id="diagnosisTab"><div id="diagnosisContainer"><div class="empty-list">Select a patient to add diagnosis</div></div><div class="form-group" style="margin-top:20px;"><label>Current Diagnosis</label><textarea id="diagnosisNote" rows="3" placeholder="Enter diagnosis, symptoms, observations..."></textarea></div><div class="form-group"><label>Treatment Plan</label><textarea id="treatmentPlan" rows="3" placeholder="Enter treatment plan, medications, follow-up instructions..."></textarea></div><div class="form-group"><label>Prescribed Medicines</label><textarea id="prescribedMeds" rows="2" placeholder="List medicines with dosage..."></textarea></div><button class="btn-primary" id="saveDiagnosisBtn">💾 Save Diagnosis & Treatment</button></div>
-            <div class="tab-pane" id="prescriptionsTab"><div class="section-header"><h4>📋 Previous Prescriptions</h4><button class="btn-refresh" id="refreshPrescriptionsBtn"><i class="fas fa-sync-alt"></i> Refresh</button></div><div id="prescriptionsListContainer"><div class="empty-list">Select a patient to view prescriptions</div></div><div style="margin-top:25px; border-top:1px solid #e2eaf0; padding-top:20px;"><h4>➕ New Prescription</h4><div class="form-group"><label>Medication</label><input type="text" id="prescMedName" placeholder="e.g., Amoxicillin 500mg"></div><div class="form-group"><label>Dosage & Frequency</label><input type="text" id="prescDosage" placeholder="e.g., 1 tablet twice daily after meals"></div><div class="form-group"><label>Duration</label><input type="text" id="prescDuration" placeholder="e.g., 7 days"></div><div class="form-group"><label>Instructions / Notes</label><textarea id="prescInstructions" rows="2" placeholder="Additional notes for patient"></textarea></div><div class="button-group"><button class="btn-primary" id="savePrescriptionBtn">💾 Issue Prescription</button><button class="btn-print btn-print-green" id="printPrescriptionFormBtn">🖨️ Print Prescription</button></div></div></div>
-            <div class="tab-pane" id="certificateTab"><div class="section-header"><h4>📜 Issued Certificates</h4><button class="btn-refresh" id="refreshCertificatesBtn"><i class="fas fa-sync-alt"></i> Refresh</button></div><div id="certificateListContainer"><div class="empty-list">Select a patient to view certificates</div></div><div style="margin-top:25px; border-top:1px solid #e2eaf0; padding-top:20px;"><h4>📜 Issue Medical Certificate</h4><div class="form-group"><label>Diagnosis Summary</label><textarea id="certDiagnosis" rows="2" placeholder="Brief diagnosis summary"></textarea></div><div class="form-group"><label>Recommended Rest (days)</label><input type="text" id="certRestDays" placeholder="e.g., 3 days"></div><div class="form-group"><label>Additional Remarks</label><textarea id="certRemarks" rows="2" placeholder="Any extra instructions"></textarea></div><div class="button-group"><button class="btn-primary" id="saveCertificateBtn">📄 Issue Certificate</button><button class="btn-print btn-print-green" id="printCertificateFormBtn">🖨️ Print Certificate</button></div></div></div>
+        <div id="patientInfoContainer">
+            <div class="patient-info-card" style="margin: 12px 20px;">
+                <div style="text-align: center; padding: 20px; color: #8ba0b0;">
+                    <i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i>
+                    <p style="margin-top: 10px;">Select a patient from the left panel</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="quick-actions" id="quickActions">
+            <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-user"></i>
+                <h4>Patient Info</h4>
+                <p>View and edit patient details</p>
+            </a>
+            <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-notes-medical"></i>
+                <h4>Medical History</h4>
+                <p>View and add medical records</p>
+            </a>
+            <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-stethoscope"></i>
+                <h4>Diagnosis & Treatment</h4>
+                <p>Add diagnosis and treatment plans</p>
+            </a>
+            <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-prescription"></i>
+                <h4>Prescriptions</h4>
+                <p>Issue and manage prescriptions</p>
+            </a>
+            <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-file-medical-alt"></i>
+                <h4>Medical Certificate</h4>
+                <p>Issue medical certificates</p>
+            </a>
         </div>
     </div>
 </div>
 
-<div id="editModal" class="modal"><div class="modal-content"><h3 id="editModalTitle">Edit Item</h3><div id="editModalFields"></div><div class="button-group" style="margin-top:20px;"><button id="saveEditBtn" class="btn-primary">Save Changes</button><button id="closeModalBtn" class="btn-print">Cancel</button></div></div></div>
-
-<div class="chat-panel minimized" id="chatPanel">
-    <div class="chat-header" id="chatHeader"><i class="fas fa-comment-dots"></i><h3>Chat with Reception <span id="minimizedOnlineCount"></span></h3><div class="chat-badge" id="onlineCountBadge">0</div><div class="minimize-icon" id="minimizeBtn"><i class="fas fa-plus"></i></div></div>
-    <div class="staff-list-title"><i class="fas fa-users"></i> Reception Staff Online</div>
-    <div class="staff-list" id="staffList"><div class="empty-list">Loading...</div></div>
-    <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select reception to chat</div></div>
-    <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Reception is typing...</div>
-    <button class="delete-all-btn" id="deleteAllBtn" style="display:none;">🗑️ Delete All Messages</button>
-    <div class="chat-input-area"><input type="text" id="chatInput" placeholder="Select reception..." disabled><button id="sendChatBtn" disabled><i class="fas fa-paper-plane"></i> Send</button></div>
-</div>
-
 <script>
-    (function() {
-        // ========== DOCTOR SESSION & AUTH ==========
-        let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-        if (!doctorSession) { window.location.href = 'login.html'; return; }
-        let currentDoctor = null;
-        try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
-        if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
+    // ========== DOCTOR SESSION & AUTH ==========
+    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+    if (!doctorSession) { window.location.href = 'login.html'; return; }
+    let currentDoctor = null;
+    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
+    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
 
-        const currentUser = {
-            id: currentDoctor.id,
-            name: currentDoctor.name,
-            role: "Doctor",
-            speciality: currentDoctor.speciality || "Dental Surgeon",
-            type: "doctor"
-        };
-        document.getElementById('doctorName').textContent = currentUser.name;
-        document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
+    const currentUser = {
+        id: currentDoctor.id,
+        name: currentDoctor.name,
+        role: "Doctor",
+        speciality: currentDoctor.speciality || "Dental Surgeon",
+        type: "doctor"
+    };
+    document.getElementById('doctorName').textContent = currentUser.name;
+    document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
 
-        let firestoreDB = null, realtimeDB = null;
-        let appointments = [], memosList = [], patientsList = [];
-        let selectedAppointment = null, selectedMemo = null, selectedPatient = null;
-        let selectedStaff = null, onlineListener = null, currentChatListener = null, onlineStaffData = [], heartbeatInterval = null;
-        let currentEditItem = null, currentEditType = null;
+    let firestoreDB = null, realtimeDB = null;
+    let appointments = [], memosList = [], patientsList = [];
+    let selectedAppointment = null, selectedMemo = null, selectedPatient = null;
 
-        function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-        function calculateAge(dob) { if (!dob) return 'N/A'; const birthDate = new Date(dob); if (isNaN(birthDate.getTime())) return 'Invalid'; const today = new Date(); let age = today.getFullYear() - birthDate.getFullYear(); const m = today.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; return age; }
-        
-        // Helper: Check if appointment date is today or future (not past)
-        function isTodayOrFuture(dateStr) {
-            if (!dateStr) return false;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const aptDate = new Date(dateStr);
-            if (isNaN(aptDate.getTime())) return false;
-            aptDate.setHours(0, 0, 0, 0);
-            return aptDate >= today;
-        }
+    // ========== HELPER FUNCTIONS ==========
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    function calculateAge(dob) { if (!dob) return 'N/A'; const birthDate = new Date(dob); if (isNaN(birthDate.getTime())) return 'Invalid'; const today = new Date(); let age = today.getFullYear() - birthDate.getFullYear(); const m = today.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; return age; }
+    
+    function isTodayOrFuture(dateStr) {
+        if (!dateStr) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const aptDate = new Date(dateStr);
+        if (isNaN(aptDate.getTime())) return false;
+        aptDate.setHours(0, 0, 0, 0);
+        return aptDate >= today;
+    }
 
-        // ========== LOAD DATA ==========
-        async function loadMemos() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); memosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); memosList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); renderMemosList(); }
-        function renderMemosList() { const container = document.getElementById('memosList'); if (!memosList.length) { container.innerHTML = '<div class="empty-list">No consultation history found.</div>'; return; } container.innerHTML = memosList.map(memo => `<div class="memo-card" data-id="${memo.id}"><div class="memo-date">📅 ${memo.date || new Date(memo.timestamp).toLocaleDateString()}</div><div class="memo-patient">${escapeHtml(memo.patient?.name || 'Unknown')}</div><div class="memo-details">🆔 ${memo.patient?.id || 'N/A'} | 🎂 ${memo.patient?.dob || 'N/A'} (${calculateAge(memo.patient?.dob)} yrs)</div></div>`).join(''); document.querySelectorAll('.memo-card').forEach(card => card.addEventListener('click', () => { document.querySelectorAll('.memo-card, .appointment-card').forEach(c => c.classList.remove('selected')); card.classList.add('selected'); const memo = memosList.find(m => m.id === card.dataset.id); if (memo) selectMemo(memo); })); }
-        async function selectMemo(memo) { selectedMemo = memo; selectedAppointment = null; let patient = patientsList.find(p => p.id === memo.patient?.id) || memo.patient; selectedPatient = patient; if (selectedPatient) await loadAllPatientData(); }
-
-        async function loadPatients() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("patients").get(); patientsList = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); }
-        const searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
-        function renderPatientSuggestions(filterText) { if (!filterText.trim()) { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; return; } const lowerFilter = filterText.toLowerCase(); const filtered = patientsList.filter(p => p.name?.toLowerCase().includes(lowerFilter) || p.id?.toLowerCase().includes(lowerFilter)).slice(0, 15); if (!filtered.length) { suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; return; } suggestionsDiv.innerHTML = filtered.map(p => `<div class="suggestion-item" data-id="${p.id}" data-name="${escapeHtml(p.name)}" data-phone="${p.phone || ''}"><strong>${escapeHtml(p.name)}</strong> <span style="color:#5f7f9a;">(${p.id})</span><br><small>📞 ${p.phone || 'N/A'}</small></div>`).join(''); document.querySelectorAll('.suggestion-item').forEach(el => { el.addEventListener('click', () => { const patient = patientsList.find(p => p.id === el.dataset.id); if (patient) { selectedPatient = patient; selectedAppointment = null; selectedMemo = null; loadAllPatientData(); searchInput.value = `${patient.name} (${patient.id})`; suggestionsDiv.innerHTML = ''; document.querySelector('.tab-btn[data-tab="patient"]').click(); } }); }); }
-        searchInput.addEventListener('input', (e) => renderPatientSuggestions(e.target.value));
-        
-        // IMPORTANT: Load only upcoming/future appointments (today or future)
-        async function loadAppointments() { 
-            if (!firestoreDB) return; 
-            const snapshot = await firestoreDB.collection("appointments").where("doctorId", "==", currentUser.id).get(); 
-            const allAppointments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            // Filter: not completed AND date is today or future (no past appointments)
-            appointments = allAppointments.filter(apt => !apt.completed && isTodayOrFuture(apt.date));
-            // Sort by date ascending (soonest first)
-            appointments.sort((a, b) => new Date(a.date) - new Date(b.date));
-            renderAppointments(); 
-        }
-        
-        function renderAppointments() { 
-            const container = document.getElementById('appointmentsList'); 
-            if (!appointments.length) { 
-                container.innerHTML = '<div class="empty-list">✨ No upcoming appointments. All caught up!</div>'; 
-                return; 
-            } 
-            container.innerHTML = appointments.map(apt => `<div class="appointment-card" data-id="${apt.id}"><div class="appointment-time">📅 ${apt.date || 'N/A'} | ⏰ ${apt.time || 'N/A'} <span class="badge-upcoming">Upcoming</span></div><div class="appointment-patient">${escapeHtml(apt.patientName || 'Unknown')}</div><div class="appointment-details">📞 ${apt.contact || 'N/A'}</div></div>`).join(''); 
-            document.querySelectorAll('.appointment-card').forEach(card => { 
-                card.addEventListener('click', () => { 
-                    document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); 
-                    card.classList.add('selected'); 
-                    const apt = appointments.find(a => a.id === card.dataset.id); 
-                    if (apt) selectAppointment(apt); 
-                }); 
-            }); 
-        }
-
-        async function markAppointmentAttended() { if (!selectedAppointment) { alert("No appointment selected."); return; } if (!firestoreDB) return; const patient = selectedPatient; if (!patient) { alert("Patient data not loaded."); return; } const memoData = { memoId: `MEM-${Date.now()}`, patient: { id: patient.id, name: patient.name, phone: patient.phone, dob: patient.dob, insurance: patient.insurance }, doctor: { id: currentUser.id, name: currentUser.name }, date: new Date().toLocaleDateString(), timestamp: Date.now(), services: [], billing: { afterDiscount: 0, paid: 0, discount: { amount: 0 } }, insurance: patient.insurance || {}, createdAt: new Date().toISOString() }; await firestoreDB.collection("memos").add(memoData); await firestoreDB.collection("appointments").doc(selectedAppointment.id).update({ completed: true }); await loadAppointments(); await loadMemos(); selectedAppointment = null; selectedPatient = null; document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); document.getElementById('patientInfoContainer').innerHTML = '<div class="empty-list">Patient attended and moved to history.</div>'; alert("Patient marked as attended. Appointment moved to history."); }
-
-        async function selectAppointment(apt) { selectedAppointment = apt; selectedMemo = null; let patient = patientsList.find(p => p.id === apt.patientId); if (!patient && apt.patientId) patient = { id: apt.patientId, name: apt.patientName, phone: apt.contact }; selectedPatient = patient; if (selectedPatient) await loadAllPatientData(); renderPatientInfoWithButton(); }
-        function renderPatientInfoWithButton() { const container = document.getElementById('patientInfoContainer'); if (!selectedPatient) { container.innerHTML = '<div class="empty-list">Select a patient to view details</div>'; return; } const dob = selectedPatient.dob || 'N/A'; const age = calculateAge(dob); const insurance = selectedPatient.insurance || {}; const primaryIns = insurance.primaryName || 'None'; let extraHtml = selectedAppointment ? `<div class="patient-info-card"><h4>📋 Current Visit</h4><p><strong>Date:</strong> ${selectedAppointment.date || 'N/A'}</p><p><strong>Time:</strong> ${selectedAppointment.time || 'N/A'}</p><button class="btn-complete" id="completeConsultationBtn"><i class="fas fa-check-circle"></i> Mark as Attended (Move to History)</button></div>` : (selectedMemo ? `<div class="patient-info-card"><h4>📋 Previous Consultation</h4><p><strong>Memo ID:</strong> ${selectedMemo.memoId || selectedMemo.id}</p><p><strong>Date:</strong> ${selectedMemo.date || new Date(selectedMemo.timestamp).toLocaleString()}</p></div>` : ''); container.innerHTML = `<div class="patient-info-card"><div class="patient-name">${escapeHtml(selectedPatient.name)}</div><div class="patient-meta"><span>🆔 ${selectedPatient.id || 'N/A'}</span><span>📞 ${selectedPatient.phone || 'N/A'}</span><span>🎂 ${dob} (${age} yrs)</span><span>🏥 Insurance: ${escapeHtml(primaryIns)}</span></div></div>${extraHtml}`; if (selectedAppointment) document.getElementById('completeConsultationBtn')?.addEventListener('click', markAppointmentAttended); }
-
-        async function loadAllPatientData() { if (!selectedPatient) return; renderPatientInfoWithButton(); await loadMedicalHistory(); await loadDiagnosisHistory(); await loadPrescriptions(); await loadCertificates(); }
-        
-        let medicalHistoryList = [], diagnosisList = [], prescriptionsArray = [], certificatesArray = [];
-        async function loadMedicalHistory() { if (!selectedPatient || !firestoreDB) { medicalHistoryList = []; renderMedicalHistory(); return; } const snapshot = await firestoreDB.collection("medicalHistory").where("patientId", "==", selectedPatient.id).get(); medicalHistoryList = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); renderMedicalHistory(); }
-        function renderMedicalHistory() { const container = document.getElementById('medicalHistoryContainer'); if (!selectedPatient) { container.innerHTML = '<div class="empty-list">Select a patient</div>'; return; } if (!medicalHistoryList.length) { container.innerHTML = '<div class="empty-list">No medical history</div>'; return; } container.innerHTML = medicalHistoryList.map(h => `<div class="history-item"><div class="history-date">📅 ${new Date(h.createdAt).toLocaleString()}</div><div class="history-note">📝 ${escapeHtml(h.note)}</div></div>`).join(''); }
-        async function loadDiagnosisHistory() { if (!selectedPatient || !firestoreDB) { diagnosisList = []; renderDiagnosisHistory(); return; } const snapshot = await firestoreDB.collection("diagnosis").where("patientId", "==", selectedPatient.id).get(); diagnosisList = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); renderDiagnosisHistory(); }
-        function renderDiagnosisHistory() { const container = document.getElementById('diagnosisContainer'); if (!selectedPatient) { container.innerHTML = '<div class="empty-list">Select a patient</div>'; return; } if (!diagnosisList.length) { container.innerHTML = '<div class="empty-list">No diagnosis</div>'; return; } container.innerHTML = diagnosisList.map(d => `<div class="history-item"><div class="history-date">📅 ${new Date(d.createdAt).toLocaleString()}</div><div class="history-note"><strong>Diagnosis:</strong> ${escapeHtml(d.diagnosis)}</div>${d.treatment ? `<div class="history-note"><strong>Treatment:</strong> ${escapeHtml(d.treatment)}</div>` : ''}</div>`).join(''); }
-        async function loadPrescriptions() { if (!selectedPatient || !firestoreDB) { prescriptionsArray = []; renderPrescriptionsList(); return; } const snapshot = await firestoreDB.collection("prescriptions").where("patientId", "==", selectedPatient.id).get(); prescriptionsArray = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); renderPrescriptionsList(); }
-        function renderPrescriptionsList() { const container = document.getElementById('prescriptionsListContainer'); if (!selectedPatient) { container.innerHTML = '<div class="empty-list">Select a patient to view prescriptions</div>'; return; } if (!prescriptionsArray.length) { container.innerHTML = '<div class="empty-list">No prescriptions yet.</div>'; return; } let html = ''; prescriptionsArray.forEach(p => { html += `<div class="prescription-item"><div><strong>💊 ${escapeHtml(p.medication)}</strong><br><small>${escapeHtml(p.dosage)} | ${escapeHtml(p.duration)}</small><br><span>📝 ${escapeHtml(p.instructions)}</span><br><span style="font-size:10px;">${new Date(p.createdAt).toLocaleString()}</span></div><div><button class="btn-edit edit-presc" data-id="${p.id}">Edit</button><button class="btn-delete delete-presc" data-id="${p.id}">Delete</button><button class="btn-print print-presc" data-id="${p.id}">Print</button></div></div>`; }); container.innerHTML = html; attachPrescriptionEvents(); }
-        function attachPrescriptionEvents() { document.querySelectorAll('.print-presc').forEach(btn => btn.addEventListener('click', () => { const p = prescriptionsArray.find(x => x.id === btn.dataset.id); if(p) printPrescription(p); })); document.querySelectorAll('.edit-presc').forEach(btn => btn.addEventListener('click', () => { const item = prescriptionsArray.find(p => p.id === btn.dataset.id); if(item) openEditModal('prescription', item); })); document.querySelectorAll('.delete-presc').forEach(btn => btn.addEventListener('click', async () => { if(confirm("Delete this prescription?")){ await firestoreDB.collection("prescriptions").doc(btn.dataset.id).delete(); await loadPrescriptions(); alert("Deleted."); } })); }
-        async function loadCertificates() { if (!selectedPatient || !firestoreDB) { certificatesArray = []; renderCertificatesList(); return; } const snapshot = await firestoreDB.collection("medicalCertificates").where("patientId", "==", selectedPatient.id).get(); certificatesArray = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); renderCertificatesList(); }
-        function renderCertificatesList() { const container = document.getElementById('certificateListContainer'); if (!selectedPatient) { container.innerHTML = '<div class="empty-list">Select a patient</div>'; return; } if (!certificatesArray.length) { container.innerHTML = '<div class="empty-list">No certificates yet.</div>'; return; } let html = ''; certificatesArray.forEach(cert => { html += `<div class="prescription-item"><div><strong>📅 ${new Date(cert.issuedAt).toLocaleDateString()}</strong><br><strong>Diagnosis:</strong> ${escapeHtml(cert.diagnosisSummary)}<br><strong>Rest:</strong> ${escapeHtml(cert.recommendedRest)}<br><span>${escapeHtml(cert.remarks)}</span></div><div><button class="btn-edit edit-cert" data-id="${cert.id}">Edit</button><button class="btn-delete delete-cert" data-id="${cert.id}">Delete</button><button class="btn-print print-cert" data-id="${cert.id}">Print</button></div></div>`; }); container.innerHTML = html; document.querySelectorAll('.print-cert').forEach(btn => btn.addEventListener('click', () => { const c = certificatesArray.find(c => c.id === btn.dataset.id); if(c) printCertificate(c); })); document.querySelectorAll('.edit-cert').forEach(btn => btn.addEventListener('click', () => { const item = certificatesArray.find(c => c.id === btn.dataset.id); if(item) openEditModal('certificate', item); })); document.querySelectorAll('.delete-cert').forEach(btn => btn.addEventListener('click', async () => { if(confirm("Delete this certificate?")){ await firestoreDB.collection("medicalCertificates").doc(btn.dataset.id).delete(); await loadCertificates(); alert("Deleted."); } })); }
-        
-        function openEditModal(type, item) { currentEditType = type; currentEditItem = item; const modal = document.getElementById('editModal'), title = document.getElementById('editModalTitle'), fieldsDiv = document.getElementById('editModalFields'); if (type === 'prescription') { title.innerText = 'Edit Prescription'; fieldsDiv.innerHTML = `<div class="form-group"><label>Medication</label><input id="editMedication" value="${escapeHtml(item.medication)}"></div><div class="form-group"><label>Dosage</label><input id="editDosage" value="${escapeHtml(item.dosage)}"></div><div class="form-group"><label>Duration</label><input id="editDuration" value="${escapeHtml(item.duration)}"></div><div class="form-group"><label>Instructions</label><textarea id="editInstructions">${escapeHtml(item.instructions)}</textarea></div>`; } else { title.innerText = 'Edit Certificate'; fieldsDiv.innerHTML = `<div class="form-group"><label>Diagnosis</label><textarea id="editDiagnosis">${escapeHtml(item.diagnosisSummary)}</textarea></div><div class="form-group"><label>Rest Days</label><input id="editRest" value="${escapeHtml(item.recommendedRest)}"></div><div class="form-group"><label>Remarks</label><textarea id="editRemarks">${escapeHtml(item.remarks)}</textarea></div>`; } modal.style.display = 'flex'; }
-        async function saveEdit() { if (!currentEditItem) return; if (currentEditType === 'prescription') { await firestoreDB.collection("prescriptions").doc(currentEditItem.id).update({ medication: document.getElementById('editMedication').value, dosage: document.getElementById('editDosage').value, duration: document.getElementById('editDuration').value, instructions: document.getElementById('editInstructions').value }); await loadPrescriptions(); } else { await firestoreDB.collection("medicalCertificates").doc(currentEditItem.id).update({ diagnosisSummary: document.getElementById('editDiagnosis').value, recommendedRest: document.getElementById('editRest').value, remarks: document.getElementById('editRemarks').value }); await loadCertificates(); } alert("Updated successfully."); document.getElementById('editModal').style.display = 'none'; currentEditItem = null; }
-        
-        async function saveMedicalHistory() { if (!selectedPatient) { alert("Select a patient first."); return; } const note = document.getElementById('medicalNote').value.trim(); if (!note) { alert("Enter a medical note."); return; } await firestoreDB.collection("medicalHistory").add({ patientId: selectedPatient.id, patientName: selectedPatient.name, doctorId: currentUser.id, doctorName: currentUser.name, note, createdAt: new Date().toISOString() }); document.getElementById('medicalNote').value = ''; await loadMedicalHistory(); alert("Medical history saved."); }
-        async function saveDiagnosis() { if (!selectedPatient) { alert("Select a patient first."); return; } const diagnosis = document.getElementById('diagnosisNote').value.trim(); if (!diagnosis) { alert("Enter diagnosis."); return; } await firestoreDB.collection("diagnosis").add({ patientId: selectedPatient.id, patientName: selectedPatient.name, doctorId: currentUser.id, doctorName: currentUser.name, diagnosis, treatment: document.getElementById('treatmentPlan').value.trim(), medicines: document.getElementById('prescribedMeds').value.trim(), createdAt: new Date().toISOString() }); document.getElementById('diagnosisNote').value = ''; document.getElementById('treatmentPlan').value = ''; document.getElementById('prescribedMeds').value = ''; await loadDiagnosisHistory(); alert("Diagnosis saved."); }
-        async function savePrescription() { if (!selectedPatient) { alert("Select a patient first."); return; } const medication = document.getElementById('prescMedName').value.trim(); if (!medication) { alert("Medication name required."); return; } await firestoreDB.collection("prescriptions").add({ patientId: selectedPatient.id, patientName: selectedPatient.name, doctorId: currentUser.id, doctorName: currentUser.name, medication, dosage: document.getElementById('prescDosage').value.trim(), duration: document.getElementById('prescDuration').value.trim(), instructions: document.getElementById('prescInstructions').value.trim(), createdAt: new Date().toISOString() }); document.getElementById('prescMedName').value = ''; document.getElementById('prescDosage').value = ''; document.getElementById('prescDuration').value = ''; document.getElementById('prescInstructions').value = ''; await loadPrescriptions(); alert("Prescription issued."); }
-        async function saveCertificate() { if (!selectedPatient) { alert("Select a patient first."); return; } const diagnosisSummary = document.getElementById('certDiagnosis').value.trim(); if (!diagnosisSummary) { alert("Diagnosis summary required."); return; } await firestoreDB.collection("medicalCertificates").add({ patientId: selectedPatient.id, patientName: selectedPatient.name, doctorId: currentUser.id, doctorName: currentUser.name, diagnosisSummary, recommendedRest: document.getElementById('certRestDays').value.trim(), remarks: document.getElementById('certRemarks').value.trim(), issuedAt: new Date().toISOString() }); document.getElementById('certDiagnosis').value = ''; document.getElementById('certRestDays').value = ''; document.getElementById('certRemarks').value = ''; await loadCertificates(); alert("Medical certificate issued."); }
-        
-        function printPrescription(presc) { const win = window.open('', '_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Prescription</title><style>body{font-family:sans-serif;padding:1cm;}</style></head><body><h3>Hope Dental Clinic</h3><p><strong>Patient:</strong> ${escapeHtml(presc.patientName)}<br><strong>Medication:</strong> ${escapeHtml(presc.medication)}<br><strong>Dosage:</strong> ${escapeHtml(presc.dosage)}<br><strong>Duration:</strong> ${escapeHtml(presc.duration)}<br><strong>Instructions:</strong> ${escapeHtml(presc.instructions)}</p><p>Dr. ${escapeHtml(currentUser.name)}</p></body></html>`); win.document.close(); win.print(); win.close(); }
-        function printCertificate(cert) { const win = window.open('', '_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Medical Certificate</title><style>body{padding:1cm;}</style></head><body><h3>Hope Dental Clinic</h3><p><strong>Patient:</strong> ${escapeHtml(cert.patientName)}<br><strong>Diagnosis:</strong> ${escapeHtml(cert.diagnosisSummary)}<br><strong>Recommended Rest:</strong> ${escapeHtml(cert.recommendedRest)}<br><strong>Remarks:</strong> ${escapeHtml(cert.remarks)}<br><strong>Issued:</strong> ${new Date(cert.issuedAt).toLocaleDateString()}</p><p>Dr. ${escapeHtml(currentUser.name)}</p></body></html>`); win.document.close(); win.print(); win.close(); }
-        function printCurrentPrescription() { if (!selectedPatient) { alert("Select a patient first."); return; } const medication = document.getElementById('prescMedName').value.trim(); if (!medication) { alert("Enter medication details before printing."); return; } printPrescription({ patientName: selectedPatient.name, patientId: selectedPatient.id, medication, dosage: document.getElementById('prescDosage').value, duration: document.getElementById('prescDuration').value, instructions: document.getElementById('prescInstructions').value }); }
-        function printCurrentCertificate() { if (!selectedPatient) { alert("Select a patient first."); return; } const diagnosisSummary = document.getElementById('certDiagnosis').value.trim(); if (!diagnosisSummary) { alert("Enter diagnosis summary before printing."); return; } printCertificate({ patientName: selectedPatient.name, patientId: selectedPatient.id, diagnosisSummary, recommendedRest: document.getElementById('certRestDays').value, remarks: document.getElementById('certRemarks').value, issuedAt: new Date().toISOString() }); }
-
-        // ========== CHAT SYSTEM (simplified but functional) ==========
-        function getChatId(u1, u2) { return `chat_${[u1, u2].sort().join('_')}`; }
-        async function setDoctorOnline() { if(!realtimeDB) return; await realtimeDB.ref(`online_users/${currentUser.id}`).set({ username: currentUser.id, name: currentUser.name, Level: "Doctor", status: "online", type: "doctor", loginTime: firebase.database.ServerValue.TIMESTAMP, lastSeen: firebase.database.ServerValue.TIMESTAMP }); document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online"; }
-        function startHeartbeat() { if(!realtimeDB) return; heartbeatInterval = setInterval(async () => { if(realtimeDB && currentUser.id) await realtimeDB.ref(`online_users/${currentUser.id}`).update({ lastSeen: firebase.database.ServerValue.TIMESTAMP }); }, 20000); }
-        function stopHeartbeat() { if(heartbeatInterval) clearInterval(heartbeatInterval); }
-        function listenOnlineReception() { if(!realtimeDB) return; if(onlineListener) onlineListener.off(); onlineListener = realtimeDB.ref('online_users').on('value', (snapshot) => { onlineStaffData = []; const users = snapshot.val(); if(users) { Object.keys(users).forEach(username => { const data = users[username]; const isReception = data.Level && (data.Level.toLowerCase() === 'supervisor' || data.Level.toLowerCase() === 'receptionist'); if(isReception && data.status==='online' && username !== currentUser.id) { onlineStaffData.push({ userId: username, name: data.name || username, role: data.Level, department: 'Reception Desk' }); } }); } document.getElementById('onlineCountBadge').textContent = onlineStaffData.length; document.getElementById('minimizedOnlineCount').innerHTML = onlineStaffData.length>0 ? `(${onlineStaffData.length})` : ''; renderOnlineStaffList(); }); }
-        function renderOnlineStaffList() { const container = document.getElementById('staffList'); if(!onlineStaffData.length){ container.innerHTML='<div class="empty-list">No reception staff online</div>'; return; } container.innerHTML = onlineStaffData.map(staff => `<div class="staff-tab" data-id="${staff.userId}" data-name="${escapeHtml(staff.name)}"><div class="staff-avatar">${staff.name.charAt(0).toUpperCase()}</div><div class="staff-info"><div class="staff-name">${escapeHtml(staff.name)}</div><div class="staff-role">${escapeHtml(staff.role)}</div></div><div class="online-indicator"><span class="online-dot"></span> Online</div></div>`).join(''); document.querySelectorAll('.staff-tab').forEach(el => { el.addEventListener('click', () => { document.querySelectorAll('.staff-tab').forEach(t => t.classList.remove('active-staff')); el.classList.add('active-staff'); const staff = onlineStaffData.find(s => s.userId === el.dataset.id); if (staff) selectStaffForChat(staff); }); }); }
-        function selectStaffForChat(staff) { selectedStaff = staff; document.getElementById('chatInput').disabled = false; document.getElementById('sendChatBtn').disabled = false; document.getElementById('chatInput').placeholder = `Message ${staff.name}...`; document.getElementById('deleteAllBtn').style.display = 'block'; startChatListener(staff.userId); }
-        function startChatListener(staffId) { if (currentChatListener) currentChatListener.off(); if (!realtimeDB || !staffId) return; const chatId = getChatId(currentUser.id, staffId); const messagesRef = realtimeDB.ref(`chats/${chatId}/messages`); currentChatListener = messagesRef.on('value', (snapshot) => { const messages = []; snapshot.forEach(child => messages.push({ id: child.key, ...child.val() })); messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)); renderChatMessages(messages); }); }
-        function renderChatMessages(messages) { const container = document.getElementById('chatMessages'); if (!messages.length) { container.innerHTML = '<div class="empty-chat">No messages yet</div>'; return; } let html = ''; messages.forEach(msg => { const isDoctor = (msg.sender === currentUser.id); const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''; html += `<div class="message ${isDoctor ? 'doctor' : 'reception'}"><div class="message-bubble">${escapeHtml(msg.text)}</div><div class="message-meta"><span>${isDoctor ? 'You' : (selectedStaff?.name || 'Reception')} • ${time}</span><span class="delete-msg" onclick="window.deleteChatMessage('${msg.id}')">🗑️</span></div></div>`; }); container.innerHTML = html; container.scrollTop = container.scrollHeight; }
-        window.deleteChatMessage = async function(msgId) { if (!selectedStaff || !realtimeDB) return; const chatId = getChatId(currentUser.id, selectedStaff.userId); await realtimeDB.ref(`chats/${chatId}/messages/${msgId}`).remove(); };
-        async function sendMessage() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if (!text || !selectedStaff || !realtimeDB) return; const chatId = getChatId(currentUser.id, selectedStaff.userId); const newMsgRef = realtimeDB.ref(`chats/${chatId}/messages`).push(); await newMsgRef.set({ id: newMsgRef.key, sender: currentUser.id, senderName: `Dr. ${currentUser.name}`, text, timestamp: Date.now(), delivered: true, read: false }); input.value = ""; }
-        const chatPanel = document.getElementById('chatPanel'); const minimizeBtn = document.getElementById('minimizeBtn'); function toggleChatPanel() { chatPanel.classList.toggle('minimized'); minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>'; } minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleChatPanel(); }); document.getElementById('chatHeader').addEventListener('click', (e) => { if(e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) toggleChatPanel(); });
-        
-        // LOGOUT: Remove from RTDB and redirect
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            try { stopHeartbeat(); if (onlineListener) onlineListener.off(); if (currentChatListener && currentChatListener.off) currentChatListener.off(); if (realtimeDB) await realtimeDB.ref(`online_users/${currentUser.id}`).remove(); } catch(e) { console.warn(e); }
-            sessionStorage.removeItem('doctorSession'); localStorage.removeItem('currentDoctor'); window.location.href = 'login.html';
+    // ========== ENABLE QUICK ACTION BUTTONS ==========
+    function enableQuickActions() {
+        document.querySelectorAll('.quick-action-card').forEach(btn => {
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
         });
+    }
 
-        // EVENT LISTENERS FOR UI
-        document.querySelectorAll('.list-tab').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.list-tab').forEach(b => b.classList.remove('active-list')); document.querySelectorAll('.appointments-list, .memos-list, .patients-list').forEach(div => div.classList.remove('active-list')); btn.classList.add('active-list'); document.getElementById(`${btn.dataset.list}List`).classList.add('active-list'); if (btn.dataset.list === 'patients') { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; searchInput.value = ''; } }); });
-        document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active-pane')); btn.classList.add('active'); document.getElementById(`${btn.dataset.tab}Tab`).classList.add('active-pane'); }); });
-        document.getElementById('saveMedicalBtn').addEventListener('click', saveMedicalHistory);
-        document.getElementById('saveDiagnosisBtn').addEventListener('click', saveDiagnosis);
-        document.getElementById('savePrescriptionBtn').addEventListener('click', savePrescription);
-        document.getElementById('saveCertificateBtn').addEventListener('click', saveCertificate);
-        document.getElementById('printPrescriptionFormBtn').addEventListener('click', printCurrentPrescription);
-        document.getElementById('printCertificateFormBtn').addEventListener('click', printCurrentCertificate);
-        document.getElementById('refreshPrescriptionsBtn').addEventListener('click', () => loadPrescriptions());
-        document.getElementById('refreshCertificatesBtn').addEventListener('click', () => loadCertificates());
-        document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
-        document.getElementById('deleteAllBtn').addEventListener('click', async () => { if(selectedStaff && confirm("Delete all messages?")) { const chatId = getChatId(currentUser.id, selectedStaff.userId); await realtimeDB.ref(`chats/${chatId}/messages`).remove(); renderChatMessages([]); alert("All messages deleted."); } });
-        document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
-        document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
-        document.getElementById('closeModalBtn').addEventListener('click', () => { document.getElementById('editModal').style.display = 'none'; });
-        window.addEventListener('click', (e) => { if (e.target === document.getElementById('editModal')) document.getElementById('editModal').style.display = 'none'; });
+    function disableQuickActions() {
+        document.querySelectorAll('.quick-action-card').forEach(btn => {
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.5';
+        });
+    }
 
-        // INIT
-        async function init() {
-            if (window.db) firestoreDB = window.db;
-            if (window.rtdb) realtimeDB = window.rtdb;
-            if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
-            await setDoctorOnline();
-            startHeartbeat();
-            await loadPatients();
-            await loadAppointments();
-            await loadMemos();
-            listenOnlineReception();
-            if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+    // ========== LOAD DATA ==========
+    async function loadMemos() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); memosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); memosList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); renderMemosList(); }
+    function renderMemosList() { const container = document.getElementById('memosList'); if (!memosList.length) { container.innerHTML = '<div class="empty-list">No consultation history found.</div>'; return; } container.innerHTML = memosList.map(memo => `<div class="memo-card" data-id="${memo.id}"><div class="memo-date">📅 ${memo.date || new Date(memo.timestamp).toLocaleDateString()}</div><div class="memo-patient">${escapeHtml(memo.patient?.name || 'Unknown')}</div><div class="memo-details">🆔 ${memo.patient?.id || 'N/A'} | 🎂 ${memo.patient?.dob || 'N/A'} (${calculateAge(memo.patient?.dob)} yrs)</div></div>`).join(''); document.querySelectorAll('.memo-card').forEach(card => card.addEventListener('click', () => { document.querySelectorAll('.memo-card, .appointment-card').forEach(c => c.classList.remove('selected')); card.classList.add('selected'); const memo = memosList.find(m => m.id === card.dataset.id); if (memo) selectMemo(memo); })); }
+    async function selectMemo(memo) { selectedMemo = memo; selectedAppointment = null; let patient = patientsList.find(p => p.id === memo.patient?.id) || memo.patient; selectedPatient = patient; if (selectedPatient) { savePatientSession(); displayPatientInfo(); enableQuickActions(); } }
+
+    async function loadPatients() { if (!firestoreDB) return; const snapshot = await firestoreDB.collection("patients").get(); patientsList = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); }
+    const searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
+    function renderPatientSuggestions(filterText) { if (!filterText.trim()) { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; return; } const lowerFilter = filterText.toLowerCase(); const filtered = patientsList.filter(p => p.name?.toLowerCase().includes(lowerFilter) || p.id?.toLowerCase().includes(lowerFilter)).slice(0, 15); if (!filtered.length) { suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; return; } suggestionsDiv.innerHTML = filtered.map(p => `<div class="suggestion-item" data-id="${p.id}" data-name="${escapeHtml(p.name)}" data-phone="${p.phone || ''}"><strong>${escapeHtml(p.name)}</strong> <span style="color:#5f7f9a;">(${p.id})</span><br><small>📞 ${p.phone || 'N/A'}</small></div>`).join(''); document.querySelectorAll('.suggestion-item').forEach(el => { el.addEventListener('click', () => { const patient = patientsList.find(p => p.id === el.dataset.id); if (patient) { selectedPatient = patient; selectedAppointment = null; selectedMemo = null; savePatientSession(); displayPatientInfo(); enableQuickActions(); searchInput.value = `${patient.name} (${patient.id})`; suggestionsDiv.innerHTML = ''; } }); }); }
+    searchInput.addEventListener('input', (e) => renderPatientSuggestions(e.target.value));
+    
+    async function loadAppointments() { 
+        if (!firestoreDB) return; 
+        const snapshot = await firestoreDB.collection("appointments").where("doctorId", "==", currentUser.id).get(); 
+        const allAppointments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        appointments = allAppointments.filter(apt => !apt.completed && isTodayOrFuture(apt.date));
+        appointments.sort((a, b) => new Date(a.date) - new Date(b.date));
+        renderAppointments(); 
+    }
+    
+    function renderAppointments() { 
+        const container = document.getElementById('appointmentsList'); 
+        if (!appointments.length) { 
+            container.innerHTML = '<div class="empty-list">✨ No upcoming appointments. All caught up!</div>'; 
+            return; 
+        } 
+        container.innerHTML = appointments.map(apt => `<div class="appointment-card" data-id="${apt.id}"><div class="appointment-time">📅 ${apt.date || 'N/A'} | ⏰ ${apt.time || 'N/A'} <span class="badge-upcoming">Upcoming</span></div><div class="appointment-patient">${escapeHtml(apt.patientName || 'Unknown')}</div><div class="appointment-details">📞 ${apt.contact || 'N/A'}</div></div>`).join(''); 
+        document.querySelectorAll('.appointment-card').forEach(card => { 
+            card.addEventListener('click', () => { 
+                document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); 
+                card.classList.add('selected'); 
+                const apt = appointments.find(a => a.id === card.dataset.id); 
+                if (apt) selectAppointment(apt); 
+            }); 
+        }); 
+    }
+
+    // ========== MARK APPOINTMENT ATTENDED ==========
+    async function markAppointmentAttended() { 
+        if (!selectedAppointment) { alert("No appointment selected."); return; } 
+        if (!firestoreDB) return; 
+        const patient = selectedPatient; 
+        if (!patient) { alert("Patient data not loaded."); return; } 
+        const memoData = { 
+            memoId: `MEM-${Date.now()}`, 
+            patient: { id: patient.id, name: patient.name, phone: patient.phone, dob: patient.dob, insurance: patient.insurance }, 
+            doctor: { id: currentUser.id, name: currentUser.name }, 
+            date: new Date().toLocaleDateString(), 
+            timestamp: Date.now(), 
+            services: [], 
+            billing: { afterDiscount: 0, paid: 0, discount: { amount: 0 } }, 
+            insurance: patient.insurance || {}, 
+            createdAt: new Date().toISOString() 
+        }; 
+        await firestoreDB.collection("memos").add(memoData); 
+        await firestoreDB.collection("appointments").doc(selectedAppointment.id).update({ completed: true }); 
+        await loadAppointments(); 
+        await loadMemos(); 
+        selectedAppointment = null; 
+        selectedPatient = null; 
+        document.querySelectorAll('.appointment-card, .memo-card').forEach(c => c.classList.remove('selected')); 
+        document.getElementById('patientInfoContainer').innerHTML = '<div class="patient-info-card" style="margin:12px 20px;"><div style="text-align:center; padding:20px; color:#27ae60;"><i class="fas fa-check-circle" style="font-size:48px;"></i><p style="margin-top:10px;">Patient attended and moved to history.</p></div></div>'; 
+        disableQuickActions();
+        alert("Patient marked as attended. Appointment moved to history."); 
+    }
+
+    async function selectAppointment(apt) { 
+        selectedAppointment = apt; 
+        selectedMemo = null; 
+        let patient = patientsList.find(p => p.id === apt.patientId); 
+        if (!patient && apt.patientId) patient = { id: apt.patientId, name: apt.patientName, phone: apt.contact }; 
+        selectedPatient = patient; 
+        if (selectedPatient) { 
+            savePatientSession(); 
+            displayPatientInfo(); 
+            enableQuickActions();
+        } 
+    }
+
+    // ========== SAVE PATIENT SESSION ==========
+    function savePatientSession() {
+        if (selectedPatient) {
+            sessionStorage.setItem('selectedPatient', JSON.stringify(selectedPatient));
+            sessionStorage.setItem('selectedPatientId', selectedPatient.id);
         }
-        init();
-    })();
+    }
+
+    // ========== DISPLAY PATIENT INFO ==========
+    function displayPatientInfo() {
+        const container = document.getElementById('patientInfoContainer');
+        if (!selectedPatient) {
+            container.innerHTML = `
+                <div class="patient-info-card" style="margin: 12px 20px;">
+                    <div style="text-align: center; padding: 20px; color: #8ba0b0;">
+                        <i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i>
+                        <p style="margin-top: 10px;">Select a patient from the left panel</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        const dob = selectedPatient.dob || 'N/A';
+        const age = calculateAge(dob);
+        const insurance = selectedPatient.insurance || {};
+        const primaryIns = insurance.primaryName || 'None';
+        
+        let extraHtml = selectedAppointment ? `
+            <div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">
+                <p><strong>📋 Current Visit:</strong> ${selectedAppointment.date || 'N/A'} at ${selectedAppointment.time || 'N/A'}</p>
+                <button class="btn-complete" id="completeConsultationBtn"><i class="fas fa-check-circle"></i> Mark as Attended</button>
+            </div>
+        ` : (selectedMemo ? `
+            <div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">
+                <p><strong>📋 Previous Consultation:</strong> ${selectedMemo.date || new Date(selectedMemo.timestamp).toLocaleString()}</p>
+            </div>
+        ` : '');
+        
+        container.innerHTML = `
+            <div class="patient-info-card" style="margin: 12px 20px;">
+                <div class="patient-name">${escapeHtml(selectedPatient.name)}</div>
+                <div class="patient-meta">
+                    <span>🆔 ${selectedPatient.id || 'N/A'}</span>
+                    <span>📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}</span>
+                    <span>🎂 ${dob} (${age} yrs)</span>
+                    <span>🏥 ${escapeHtml(primaryIns)}</span>
+                </div>
+                ${extraHtml}
+            </div>
+        `;
+        
+        if (selectedAppointment) {
+            document.getElementById('completeConsultationBtn')?.addEventListener('click', markAppointmentAttended);
+        }
+    }
+
+    // ========== LOGOUT ==========
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try { if (realtimeDB) await realtimeDB.ref(`online_users/${currentUser.id}`).remove(); } catch(e) { console.warn(e); }
+        sessionStorage.removeItem('doctorSession');
+        localStorage.removeItem('currentDoctor');
+        window.location.href = 'login.html';
+    });
+
+    // ========== EVENT LISTENERS ==========
+    document.querySelectorAll('.list-tab').forEach(btn => { 
+        btn.addEventListener('click', () => { 
+            document.querySelectorAll('.list-tab').forEach(b => b.classList.remove('active-list')); 
+            document.querySelectorAll('.appointments-list, .memos-list, .patients-list').forEach(div => div.classList.remove('active-list')); 
+            btn.classList.add('active-list'); 
+            document.getElementById(`${btn.dataset.list}List`).classList.add('active-list'); 
+            if (btn.dataset.list === 'patients') { 
+                suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; 
+                searchInput.value = ''; 
+            } 
+        }); 
+    });
+
+    // ========== INIT ==========
+    async function init() {
+        if (window.db) firestoreDB = window.db;
+        if (window.rtdb) realtimeDB = window.rtdb;
+        if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
+        
+        // Set doctor online
+        try { 
+            await realtimeDB.ref(`online_users/${currentUser.id}`).set({ 
+                username: currentUser.id, 
+                name: currentUser.name, 
+                Level: "Doctor", 
+                status: "online", 
+                type: "doctor", 
+                loginTime: firebase.database.ServerValue.TIMESTAMP, 
+                lastSeen: firebase.database.ServerValue.TIMESTAMP 
+            }); 
+        } catch(e) {}
+        document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
+        
+        await loadPatients();
+        await loadAppointments();
+        await loadMemos();
+        
+        // Check if there's a selected patient from session
+        const savedPatientId = sessionStorage.getItem('selectedPatientId');
+        if (savedPatientId) {
+            const patient = patientsList.find(p => p.id === savedPatientId);
+            if (patient) {
+                selectedPatient = patient;
+                displayPatientInfo();
+                enableQuickActions();
+            }
+        }
+        
+        if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+    }
+    init();
 </script>
 </body>
 </html>

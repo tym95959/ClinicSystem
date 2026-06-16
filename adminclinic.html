@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <!-- Firebase Config (must exist) -->
+    <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
@@ -82,6 +82,10 @@
         @media (max-width:600px){ .toast-msg { white-space: normal; max-width: 90%; } }
         .speciality-field { display: none; }
         .speciality-field.show { display: block; }
+        .doctor-select-field { display: none; }
+        .doctor-select-field.show { display: block; }
+        .auto-fill-info { background: #e8f0fe; padding: 10px 14px; border-radius: 12px; font-size: 12px; color: #0f5c7a; margin-bottom: 12px; display: none; }
+        .auto-fill-info.show { display: block; }
     </style>
 </head>
 <body>
@@ -135,19 +139,34 @@
         <div id="discountsMessage" class="message" style="display:none;"></div>
     </div>
 
-    <!-- System Users Tab (Firebase) -->
+    <!-- System Users Tab (Firebase) - Updated with Doctor Selection -->
     <div id="usersTab" class="card" style="display:none;">
         <div class="card-title">👥 System Users (Firebase) <span style="font-size:12px; font-weight:normal;">🔐 SHA-256 hashed passwords stored in Firestore</span></div>
         <div class="users-grid">
             <div style="background:#fafdff; border-radius:24px; padding:8px 4px;">
                 <div style="font-weight:600; margin-bottom:16px;">➕ Register New User</div>
-                <div class="input-group"><label>👤 Username *</label><input type="text" id="regUsername" placeholder="e.g., Ali"></div>
+                
+                <!-- Auto-fill info message -->
+                <div class="auto-fill-info" id="autoFillInfo">
+                    <i class="fas fa-info-circle"></i> <span id="autoFillMessage">Select a doctor from the dropdown below to auto-fill details</span>
+                </div>
+                
+                <!-- Doctor Selection (for existing doctors) -->
+                <div class="input-group doctor-select-field" id="doctorSelectGroup">
+                    <label>👨‍⚕️ Select Existing Doctor</label>
+                    <select id="existingDoctorSelect">
+                        <option value="">-- Select a doctor to create login --</option>
+                    </select>
+                    <small style="font-size: 9px; color: #6c757d;">Select a doctor from the list to auto-fill username, name, and speciality. This will create a login user for the existing doctor.</small>
+                </div>
+                
+                <div class="input-group"><label>👤 Username *</label><input type="text" id="regUsername" placeholder="e.g., dr_ali"></div>
                 <div class="input-group"><label>📛 Full Name *</label><input type="text" id="regFullName" placeholder="Full name"></div>
                 <div class="input-group"><label>🔒 Password *</label><input type="password" id="regPassword"><div class="password-strength"><div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div><span class="strength-text" id="strengthLabel">Weak</span></div></div>
                 <div class="input-group"><label>✅ Confirm Password</label><input type="password" id="regConfirmPwd"></div>
                 <div class="role-selector"><label>⚙️ Access Level</label><div class="radio-group">
-                    <label><input type="radio" name="accessLevel" value="Supervisor" checked> Supervisor</label>
-                    <label><input type="radio" name="accessLevel" value="Doctor" id="doctorRoleRadio"> Doctor</label>
+                    <label><input type="radio" name="accessLevel" value="Supervisor"> Supervisor</label>
+                    <label><input type="radio" name="accessLevel" value="Doctor" id="doctorRoleRadio" checked> Doctor</label>
                     <label><input type="radio" name="accessLevel" value="Receptionist"> Receptionist</label>
                 </div></div>
                 <!-- Speciality field - only visible when Doctor role is selected -->
@@ -191,6 +210,7 @@
         // ----- Data stores for services, doctors, insurance, discounts -----
         let services = [], doctors = [], insuranceList = [], discountsList = [];
         let currentEditId = null;
+        let existingDoctorsList = [];
 
         // Helper functions
         function showMessage(elId, msg, type) {
@@ -204,10 +224,17 @@
         function toggleSpecialityField() {
             const doctorRadio = document.getElementById('doctorRoleRadio');
             const specialityGroup = document.getElementById('specialityGroup');
+            const doctorSelectGroup = document.getElementById('doctorSelectGroup');
+            const autoFillInfo = document.getElementById('autoFillInfo');
+            
             if (doctorRadio && doctorRadio.checked) {
                 specialityGroup.classList.add('show');
+                doctorSelectGroup.classList.add('show');
+                autoFillInfo.classList.add('show');
             } else {
                 specialityGroup.classList.remove('show');
+                doctorSelectGroup.classList.remove('show');
+                autoFillInfo.classList.remove('show');
             }
         }
 
@@ -215,6 +242,68 @@
         document.querySelectorAll('input[name="accessLevel"]').forEach(radio => {
             radio.addEventListener('change', toggleSpecialityField);
         });
+
+        // ========== LOAD EXISTING DOCTORS FOR SELECTION ==========
+        async function loadExistingDoctors() {
+            if (!window.db) return;
+            try {
+                const snapshot = await window.db.collection("doctors").get();
+                existingDoctorsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                populateDoctorSelect();
+            } catch (error) {
+                console.error("Error loading existing doctors:", error);
+            }
+        }
+
+        function populateDoctorSelect() {
+            const select = document.getElementById('existingDoctorSelect');
+            select.innerHTML = '<option value="">-- Select a doctor to create login --</option>';
+            existingDoctorsList.forEach(doc => {
+                select.innerHTML += `<option value="${doc.id}" data-name="${escapeHtml(doc.name)}" data-speciality="${escapeHtml(doc.speciality || '')}">${escapeHtml(doc.name)} (${escapeHtml(doc.speciality || 'General')})</option>`;
+            });
+        }
+
+        // ========== AUTO-FILL FROM SELECTED DOCTOR ==========
+        document.getElementById('existingDoctorSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regFullName').value = '';
+                document.getElementById('regSpeciality').value = '';
+                document.getElementById('autoFillMessage').textContent = 'Select a doctor from the dropdown below to auto-fill details';
+                return;
+            }
+            
+            const doctorId = selectedOption.value;
+            const doctorName = selectedOption.dataset.name || '';
+            const speciality = selectedOption.dataset.speciality || '';
+            
+            // Auto-fill fields
+            const username = doctorId; // Use doctor ID as username
+            document.getElementById('regUsername').value = username;
+            document.getElementById('regFullName').value = doctorName;
+            document.getElementById('regSpeciality').value = speciality;
+            
+            document.getElementById('autoFillMessage').innerHTML = `<i class="fas fa-check-circle" style="color:#28a745;"></i> Auto-filled from: <strong>${escapeHtml(doctorName)}</strong> (${escapeHtml(speciality || 'General')})`;
+            
+            // Check if this doctor already has a login
+            checkIfDoctorHasLogin(doctorId);
+        });
+
+        // ========== CHECK IF DOCTOR ALREADY HAS LOGIN ==========
+        async function checkIfDoctorHasLogin(doctorId) {
+            if (!window.db) return;
+            try {
+                const userDoc = await window.db.collection("users").doc(doctorId).get();
+                if (userDoc.exists) {
+                    document.getElementById('autoFillMessage').innerHTML += ` <span style="color:#ff6b6b;">⚠️ This doctor already has a login! Creating will overwrite.</span>`;
+                } else {
+                    document.getElementById('autoFillMessage').innerHTML += ` <span style="color:#28a745;">✅ Ready to create login for this doctor.</span>`;
+                }
+            } catch (error) {
+                console.error("Error checking user:", error);
+            }
+        }
 
         // ========== Firebase Load for services, doctors, etc. ==========
         async function loadAllData() {
@@ -230,8 +319,10 @@
                 const discountsSnap = await window.db.collection("discounts").get();
                 discountsList = discountsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderAll();
+                await loadExistingDoctors();
             } catch (error) { console.error(error); document.getElementById('firebaseStatus').innerHTML = 'Error'; }
         }
+        
         async function saveAllToFirebase() {
             try {
                 for (let s of services) await window.db.collection("services").doc(s.id).set(s);
@@ -268,7 +359,7 @@
         }
         function renderAll() { renderServices(); renderDoctors(); renderInsurance(); renderDiscounts(); }
 
-        // CRUD for services, doctors, insurance, discounts (similar to original, but using global arrays)
+        // CRUD for services, doctors, insurance, discounts
         window.editService = (id) => { const s = services.find(x => x.id === id); if(s){ currentEditId=id; document.getElementById('serviceModalTitle').innerText='Edit Service'; document.getElementById('serviceName').value=s.name; document.getElementById('servicePrice').value=s.price; document.getElementById('serviceAasandhaCovered').checked=s.aasandhaCovered||false; document.getElementById('serviceAasandhaAmount').value=s.aasandhaCoverAmount||0; document.getElementById('serviceModal').style.display='flex'; } };
         window.deleteService = async (id) => { if(confirm('Delete?')){ services = services.filter(s=>s.id!==id); await window.db.collection("services").doc(id).delete(); renderServices(); showMessage('servicesMessage','Service deleted','info'); } };
         window.editDoctor = (id) => { const d = doctors.find(x=>x.id===id); if(d){ currentEditId=id; document.getElementById('doctorModalTitle').innerText='Edit Doctor'; document.getElementById('doctorName').value=d.name; document.getElementById('doctorSpeciality').value=d.speciality; document.getElementById('doctorCommission').value=d.baseCommission||0; document.getElementById('doctorModal').style.display='flex'; } };
@@ -423,7 +514,7 @@
             if (password !== confirm) { showUserMsg('Passwords do not match', 'error'); return; }
             if (password.length < 4) { showUserMsg('Password min 4 characters', 'error'); return; }
             
-            // ----- FIX: Use username as document ID -----
+            // Check if username already exists
             const userRef = window.db.collection("users").doc(username);
             const docSnap = await userRef.get();
             if (docSnap.exists) {
@@ -443,11 +534,11 @@
                 Level: role,
                 Right: role,
                 RCNo: rcNo,
-                speciality: speciality, // Add speciality for doctors
+                speciality: speciality,
                 createdAt: new Date().toISOString()
             };
             
-            // Also add to doctors collection if role is Doctor
+            // Also add to doctors collection if role is Doctor and doctor doesn't already exist
             if (role === 'Doctor') {
                 try {
                     // Check if doctor already exists in doctors collection
@@ -461,6 +552,12 @@
                             baseCommission: 0,
                             status: 'active',
                             createdAt: new Date().toISOString()
+                        });
+                    } else {
+                        // Update existing doctor with any new info
+                        await doctorRef.update({
+                            name: fullName,
+                            speciality: speciality
                         });
                     }
                 } catch(err) {
@@ -477,9 +574,12 @@
                 document.getElementById('regConfirmPwd').value = '';
                 document.getElementById('regRCNo').value = '';
                 document.getElementById('regSpeciality').value = '';
+                document.getElementById('existingDoctorSelect').value = '';
+                document.getElementById('autoFillMessage').textContent = 'Select a doctor from the dropdown below to auto-fill details';
                 updateStrength('');
                 toggleSpecialityField();
                 loadUsersFromFirebase(); // refresh list
+                await loadExistingDoctors(); // refresh doctor list
                 showUserToast(`Registered ${username}`, false);
             } catch (err) {
                 showUserMsg('Firestore error: '+err.message, 'error');
@@ -581,6 +681,8 @@
             document.getElementById('regConfirmPwd').value = ''; 
             document.getElementById('regRCNo').value = ''; 
             document.getElementById('regSpeciality').value = ''; 
+            document.getElementById('existingDoctorSelect').value = '';
+            document.getElementById('autoFillMessage').textContent = 'Select a doctor from the dropdown below to auto-fill details';
             updateStrength(''); 
             toggleSpecialityField();
             showUserMsg('Form cleared','info'); 

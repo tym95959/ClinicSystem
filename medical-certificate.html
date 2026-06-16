@@ -139,386 +139,267 @@
 </div>
 
 <script>
-    // ========== AUTH & SESSION ==========
-    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-    if (!doctorSession) { window.location.href = 'login.html'; return; }
-    let currentDoctor = null;
-    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
-    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
-
-    let firestoreDB = null;
-    let selectedPatient = null;
-    let certificatesArray = [];
-    let currentEditItem = null;
-
-    // ========== HELPER FUNCTIONS ==========
-    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-
-    // ========== LOAD SELECTED PATIENT ==========
-    function loadSelectedPatient() {
-        const patientData = sessionStorage.getItem('selectedPatient');
-        if (patientData) {
-            try {
-                selectedPatient = JSON.parse(patientData);
-                document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
-                document.getElementById('patientId').textContent = `(${selectedPatient.id || 'N/A'})`;
-                document.getElementById('patientPhone').textContent = `📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}`;
-                loadCertificates();
-            } catch(e) { console.error(e); }
-        }
-    }
-
-    // ========== LOAD CERTIFICATES ==========
-    async function loadCertificates() {
-        if (!selectedPatient || !firestoreDB) return;
-        try {
-            const snapshot = await firestoreDB.collection("medicalCertificates")
-                .where("patientId", "==", selectedPatient.id)
-                .orderBy("issuedAt", "desc")
-                .get();
-            
-            certificatesArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderCertificatesList();
-        } catch (error) {
-            console.error(error);
-            try {
-                const snapshot = await firestoreDB.collection("medicalCertificates")
-                    .where("patientId", "==", selectedPatient.id)
-                    .get();
-                certificatesArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                certificatesArray.sort((a, b) => (b.issuedAt || 0) - (a.issuedAt || 0));
-                renderCertificatesList();
-            } catch(e2) { console.error(e2); }
-        }
-    }
-
-    function renderCertificatesList() {
-        const container = document.getElementById('certificateList');
-        if (!certificatesArray.length) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-file-medical-alt"></i><p>No medical certificates found</p></div>`;
+    (function() {
+        // ========== AUTH & SESSION ==========
+        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+        if (!doctorSession) { 
+            window.location.href = 'login.html'; 
             return;
         }
-        container.innerHTML = certificatesArray.map(c => `
-            <div class="certificate-item">
-                <div class="certificate-info">
-                    <div class="date">📅 ${new Date(c.issuedAt).toLocaleDateString()}</div>
-                    <div class="diagnosis">${escapeHtml(c.diagnosisSummary)}</div>
-                    <div class="details">⏱️ Rest: ${escapeHtml(c.recommendedRest || 'Not specified')}</div>
-                    ${c.remarks ? `<div class="details">📝 ${escapeHtml(c.remarks)}</div>` : ''}
-                    <div class="date" style="margin-top: 4px;">Dr. ${escapeHtml(c.doctorName || 'Unknown')}</div>
-                </div>
-                <div class="certificate-actions">
-                    <button class="btn-edit" onclick="openEditModal('${c.id}')"><i class="fas fa-edit"></i> Edit</button>
-                    <button class="btn-delete" onclick="deleteCertificate('${c.id}')"><i class="fas fa-trash"></i> Delete</button>
-                    <button class="btn-print" onclick="printCertificate('${c.id}')"><i class="fas fa-print"></i> Print</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // ========== DELETE CERTIFICATE ==========
-    async function deleteCertificate(id) {
-        if (!confirm('Delete this medical certificate?')) return;
-        if (!firestoreDB) return;
-        try {
-            await firestoreDB.collection("medicalCertificates").doc(id).delete();
-            await loadCertificates();
-            alert('Certificate deleted.');
-        } catch (error) {
-            console.error(error);
-            alert('Error deleting: ' + error.message);
+        var currentDoctor = null;
+        try { 
+            currentDoctor = JSON.parse(doctorSession); 
+        } catch(e) { 
+            window.location.href = 'login.html'; 
+            return;
         }
-    }
-
-    // ========== EDIT MODAL ==========
-    function openEditModal(id) {
-        const item = certificatesArray.find(c => c.id === id);
-        if (!item) return;
-        currentEditItem = item;
-        const modal = document.getElementById('editModal');
-        const title = document.getElementById('editModalTitle');
-        const fieldsDiv = document.getElementById('editModalFields');
-        
-        title.innerText = 'Edit Medical Certificate';
-        fieldsDiv.innerHTML = `
-            <div class="form-group">
-                <label>Diagnosis Summary</label>
-                <textarea id="editDiagnosis" rows="2">${escapeHtml(item.diagnosisSummary)}</textarea>
-            </div>
-            <div class="form-group">
-                <label>Recommended Rest</label>
-                <input id="editRest" value="${escapeHtml(item.recommendedRest || '')}">
-            </div>
-            <div class="form-group">
-                <label>Remarks</label>
-                <textarea id="editRemarks" rows="2">${escapeHtml(item.remarks || '')}</textarea>
-            </div>
-        `;
-        modal.style.display = 'flex';
-    }
-
-    async function saveEdit() {
-        if (!currentEditItem || !firestoreDB) return;
-        try {
-            await firestoreDB.collection("medicalCertificates").doc(currentEditItem.id).update({
-                diagnosisSummary: document.getElementById('editDiagnosis').value.trim(),
-                recommendedRest: document.getElementById('editRest').value.trim(),
-                remarks: document.getElementById('editRemarks').value.trim()
-            });
-            document.getElementById('editModal').style.display = 'none';
-            await loadCertificates();
-            alert('Certificate updated successfully!');
-        } catch (error) {
-            console.error(error);
-            alert('Error updating: ' + error.message);
+        if (!currentDoctor || !currentDoctor.id) { 
+            window.location.href = 'login.html'; 
+            return;
         }
-    }
 
-    // ========== PRINT CERTIFICATE ==========
-    function printCertificate(id) {
-        const cert = certificatesArray.find(c => c.id === id);
-        if (!cert) return;
-        
-        const win = window.open('', '_blank');
-        win.document.write(`<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Medical Certificate - Hope Dental Clinic</title>
-            <style>
-                body { font-family: 'Times New Roman', serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; }
-                .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; }
-                .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; }
-                .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; }
-                .header img { height: 70px; margin-bottom: 10px; }
-                .certificate-title { text-align: center; font-size: 24px; font-weight: bold; color: #0a2f44; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px; }
-                .certificate-box { border: 2px solid #0a2f44; padding: 25px; margin: 20px 0; border-radius: 8px; min-height: 200px; }
-                .info-row { display: flex; margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #eee; }
-                .info-label { font-weight: bold; width: 150px; color: #0a2f44; }
-                .info-value { flex: 1; }
-                .diagnosis-text { font-size: 16px; line-height: 1.6; margin: 15px 0; padding: 10px; background: #f8fbfe; border-radius: 8px; }
-                .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
-                .doctor-signature { text-align: right; }
-                .doctor-signature .name { font-weight: bold; font-size: 16px; }
-                .doctor-signature .title { color: #666; font-size: 12px; }
-                .stamp-area { text-align: center; margin: 20px 0; }
-                .stamp-area .stamp { font-size: 14px; color: #0a2f44; border: 2px solid #0a2f44; padding: 8px 20px; border-radius: 50px; display: inline-block; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <img src="hope1.png" alt="Hope Dental Clinic">
-                <h1>Hope Dental Clinic</h1>
-                <p>📞 +960 123-4567 | 📧 info@hopedental.mv</p>
-                <p>🏥 Malé, Republic of Maldives</p>
-            </div>
-            <div class="certificate-title">Medical Certificate</div>
-            <div class="certificate-box">
-                <div class="info-row">
-                    <div class="info-label">Patient Name:</div>
-                    <div class="info-value">${escapeHtml(selectedPatient.name)}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Date of Issue:</div>
-                    <div class="info-value">${new Date(cert.issuedAt).toLocaleDateString()}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Attending Doctor:</div>
-                    <div class="info-value">Dr. ${escapeHtml(currentDoctor.name)}</div>
-                </div>
-                <div class="diagnosis-text">
-                    <strong>Diagnosis:</strong><br>
-                    ${escapeHtml(cert.diagnosisSummary)}
-                </div>
-                ${cert.recommendedRest ? `
-                <div class="info-row">
-                    <div class="info-label">Recommended Rest:</div>
-                    <div class="info-value"><strong>${escapeHtml(cert.recommendedRest)}</strong></div>
-                </div>` : ''}
-                ${cert.remarks ? `
-                <div class="info-row">
-                    <div class="info-label">Remarks:</div>
-                    <div class="info-value">${escapeHtml(cert.remarks)}</div>
-                </div>` : ''}
-            </div>
-            <div class="stamp-area">
-                <div class="stamp">🔄 This certificate is valid for the period specified</div>
-            </div>
-            <div class="footer">
-                <div style="font-size: 12px; color: #666;">
-                    <p>📋 This certificate is issued for medical purposes</p>
-                    <p>⚠️ Please present this certificate to your employer/insurance provider</p>
-                </div>
-                <div class="doctor-signature">
-                    <div class="name">Dr. ${escapeHtml(currentDoctor.name)}</div>
-                    <div class="title">${escapeHtml(currentDoctor.speciality)}</div>
-                    <div style="margin-top: 15px;">_________________________</div>
-                    <div style="font-size: 12px; color: #666;">Signature &amp; Clinic Stamp</div>
-                </div>
-            </div>
-            <script>
-                window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };
-            <\/script>
-        </body>
-        </html>`);
-        win.document.close();
-    }
+        var firestoreDB = null;
+        var selectedPatient = null;
+        var certificatesArray = [];
+        var currentEditItem = null;
 
-    function printCurrentCertificate() {
-        if (!selectedPatient) { alert("Select a patient first."); return; }
-        const diagnosisSummary = document.getElementById('certDiagnosis').value.trim();
-        if (!diagnosisSummary) { alert("Enter diagnosis summary before printing."); return; }
-        
-        const cert = {
-            diagnosisSummary: diagnosisSummary,
-            recommendedRest: document.getElementById('certRestDays').value,
-            remarks: document.getElementById('certRemarks').value,
-            issuedAt: new Date().toISOString()
+        // ========== HELPER FUNCTIONS ==========
+        function escapeHtml(str) { 
+            if (!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m) { 
+                if (m === '&') return '&amp;'; 
+                if (m === '<') return '&lt;'; 
+                if (m === '>') return '&gt;'; 
+                return m; 
+            }); 
+        }
+
+        // ========== LOAD SELECTED PATIENT ==========
+        function loadSelectedPatient() {
+            var patientData = sessionStorage.getItem('selectedPatient');
+            if (patientData) {
+                try {
+                    selectedPatient = JSON.parse(patientData);
+                    document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
+                    document.getElementById('patientId').textContent = '(' + (selectedPatient.id || 'N/A') + ')';
+                    document.getElementById('patientPhone').textContent = '📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A');
+                    loadCertificates();
+                } catch(e) { console.error(e); }
+            }
+        }
+
+        // ========== LOAD CERTIFICATES ==========
+        async function loadCertificates() {
+            if (!selectedPatient || !firestoreDB) return;
+            try {
+                var snapshot = await firestoreDB.collection("medicalCertificates")
+                    .where("patientId", "==", selectedPatient.id)
+                    .get();
+                
+                certificatesArray = [];
+                snapshot.forEach(function(doc) {
+                    certificatesArray.push({ id: doc.id, ...doc.data() });
+                });
+                certificatesArray.sort(function(a, b) {
+                    return (b.issuedAt || 0) - (a.issuedAt || 0);
+                });
+                renderCertificatesList();
+            } catch(error) {
+                console.error(error);
+            }
+        }
+
+        function renderCertificatesList() {
+            var container = document.getElementById('certificateList');
+            if (!certificatesArray.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-file-medical-alt"></i><p>No medical certificates found</p></div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < certificatesArray.length; i++) {
+                var c = certificatesArray[i];
+                html += '<div class="certificate-item"><div class="certificate-info"><div class="date">📅 ' + new Date(c.issuedAt).toLocaleDateString() + '</div><div class="diagnosis">' + escapeHtml(c.diagnosisSummary) + '</div><div class="details">⏱️ Rest: ' + escapeHtml(c.recommendedRest || 'Not specified') + '</div>' + (c.remarks ? '<div class="details">📝 ' + escapeHtml(c.remarks) + '</div>' : '') + '<div class="date" style="margin-top: 4px;">Dr. ' + escapeHtml(c.doctorName || 'Unknown') + '</div></div><div class="certificate-actions"><button class="btn-edit" onclick="window.editCertificate(\'' + c.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="btn-delete" onclick="window.deleteCertificate(\'' + c.id + '\')"><i class="fas fa-trash"></i> Delete</button><button class="btn-print" onclick="window.printCertificate(\'' + c.id + '\')"><i class="fas fa-print"></i> Print</button></div></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== DELETE CERTIFICATE ==========
+        window.deleteCertificate = async function(id) {
+            if (!confirm('Delete this medical certificate?')) return;
+            if (!firestoreDB) return;
+            try {
+                await firestoreDB.collection("medicalCertificates").doc(id).delete();
+                await loadCertificates();
+                alert('Certificate deleted.');
+            } catch(error) {
+                console.error(error);
+                alert('Error deleting: ' + error.message);
+            }
         };
-        
-        const win = window.open('', '_blank');
-        win.document.write(`<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Medical Certificate - Hope Dental Clinic</title>
-            <style>
-                body { font-family: 'Times New Roman', serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; }
-                .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; }
-                .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; }
-                .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; }
-                .header img { height: 70px; margin-bottom: 10px; }
-                .certificate-title { text-align: center; font-size: 24px; font-weight: bold; color: #0a2f44; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px; }
-                .certificate-box { border: 2px solid #0a2f44; padding: 25px; margin: 20px 0; border-radius: 8px; min-height: 200px; }
-                .info-row { display: flex; margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #eee; }
-                .info-label { font-weight: bold; width: 150px; color: #0a2f44; }
-                .info-value { flex: 1; }
-                .diagnosis-text { font-size: 16px; line-height: 1.6; margin: 15px 0; padding: 10px; background: #f8fbfe; border-radius: 8px; }
-                .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
-                .doctor-signature { text-align: right; }
-                .doctor-signature .name { font-weight: bold; font-size: 16px; }
-                .doctor-signature .title { color: #666; font-size: 12px; }
-                .stamp-area { text-align: center; margin: 20px 0; }
-                .stamp-area .stamp { font-size: 14px; color: #0a2f44; border: 2px solid #0a2f44; padding: 8px 20px; border-radius: 50px; display: inline-block; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <img src="hope1.png" alt="Hope Dental Clinic">
-                <h1>Hope Dental Clinic</h1>
-                <p>📞 +960 123-4567 | 📧 info@hopedental.mv</p>
-                <p>🏥 Malé, Republic of Maldives</p>
-            </div>
-            <div class="certificate-title">Medical Certificate</div>
-            <div class="certificate-box">
-                <div class="info-row">
-                    <div class="info-label">Patient Name:</div>
-                    <div class="info-value">${escapeHtml(selectedPatient.name)}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Date of Issue:</div>
-                    <div class="info-value">${new Date().toLocaleDateString()}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Attending Doctor:</div>
-                    <div class="info-value">Dr. ${escapeHtml(currentDoctor.name)}</div>
-                </div>
-                <div class="diagnosis-text">
-                    <strong>Diagnosis:</strong><br>
-                    ${escapeHtml(cert.diagnosisSummary)}
-                </div>
-                ${cert.recommendedRest ? `
-                <div class="info-row">
-                    <div class="info-label">Recommended Rest:</div>
-                    <div class="info-value"><strong>${escapeHtml(cert.recommendedRest)}</strong></div>
-                </div>` : ''}
-                ${cert.remarks ? `
-                <div class="info-row">
-                    <div class="info-label">Remarks:</div>
-                    <div class="info-value">${escapeHtml(cert.remarks)}</div>
-                </div>` : ''}
-            </div>
-            <div class="stamp-area">
-                <div class="stamp">🔄 This certificate is valid for the period specified</div>
-            </div>
-            <div class="footer">
-                <div style="font-size: 12px; color: #666;">
-                    <p>📋 This certificate is issued for medical purposes</p>
-                    <p>⚠️ Please present this certificate to your employer/insurance provider</p>
-                </div>
-                <div class="doctor-signature">
-                    <div class="name">Dr. ${escapeHtml(currentDoctor.name)}</div>
-                    <div class="title">${escapeHtml(currentDoctor.speciality)}</div>
-                    <div style="margin-top: 15px;">_________________________</div>
-                    <div style="font-size: 12px; color: #666;">Signature &amp; Clinic Stamp</div>
-                </div>
-            </div>
-            <script>
-                window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };
-            <\/script>
-        </body>
-        </html>`);
-        win.document.close();
-    }
 
-    // ========== SAVE CERTIFICATE ==========
-    async function saveCertificate() {
-        if (!selectedPatient) { alert("No patient selected."); return; }
-        if (!firestoreDB) { alert("Firebase not ready."); return; }
-        
-        const diagnosisSummary = document.getElementById('certDiagnosis').value.trim();
-        if (!diagnosisSummary) { alert("Please enter a diagnosis summary."); return; }
-        
-        try {
-            await firestoreDB.collection("medicalCertificates").add({
-                patientId: selectedPatient.id,
-                patientName: selectedPatient.name,
-                doctorId: currentDoctor.id,
-                doctorName: currentDoctor.name,
+        // ========== EDIT MODAL ==========
+        window.editCertificate = function(id) {
+            var item = null;
+            for (var i = 0; i < certificatesArray.length; i++) {
+                if (certificatesArray[i].id === id) {
+                    item = certificatesArray[i];
+                    break;
+                }
+            }
+            if (!item) return;
+            currentEditItem = item;
+            var modal = document.getElementById('editModal');
+            var title = document.getElementById('editModalTitle');
+            var fieldsDiv = document.getElementById('editModalFields');
+            
+            title.innerText = 'Edit Medical Certificate';
+            fieldsDiv.innerHTML = '<div class="form-group"><label>Diagnosis Summary</label><textarea id="editDiagnosis" rows="2">' + escapeHtml(item.diagnosisSummary) + '</textarea></div><div class="form-group"><label>Recommended Rest</label><input id="editRest" value="' + escapeHtml(item.recommendedRest || '') + '"></div><div class="form-group"><label>Remarks</label><textarea id="editRemarks" rows="2">' + escapeHtml(item.remarks || '') + '</textarea></div>';
+            modal.style.display = 'flex';
+        };
+
+        async function saveEdit() {
+            if (!currentEditItem || !firestoreDB) return;
+            try {
+                await firestoreDB.collection("medicalCertificates").doc(currentEditItem.id).update({
+                    diagnosisSummary: document.getElementById('editDiagnosis').value.trim(),
+                    recommendedRest: document.getElementById('editRest').value.trim(),
+                    remarks: document.getElementById('editRemarks').value.trim()
+                });
+                document.getElementById('editModal').style.display = 'none';
+                await loadCertificates();
+                alert('Certificate updated successfully!');
+            } catch(error) {
+                console.error(error);
+                alert('Error updating: ' + error.message);
+            }
+        }
+
+        // ========== PRINT CERTIFICATE ==========
+        window.printCertificate = function(id) {
+            var cert = null;
+            for (var i = 0; i < certificatesArray.length; i++) {
+                if (certificatesArray[i].id === id) {
+                    cert = certificatesArray[i];
+                    break;
+                }
+            }
+            if (!cert) return;
+            
+            var win = window.open('', '_blank');
+            win.document.write('<!DOCTYPE html><html><head><title>Medical Certificate - Hope Dental Clinic</title><style>body { font-family: "Times New Roman", serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; } .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; } .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; } .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; } .header img { height: 70px; margin-bottom: 10px; } .certificate-title { text-align: center; font-size: 24px; font-weight: bold; color: #0a2f44; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px; } .certificate-box { border: 2px solid #0a2f44; padding: 25px; margin: 20px 0; border-radius: 8px; min-height: 200px; } .info-row { display: flex; margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #eee; } .info-label { font-weight: bold; width: 150px; color: #0a2f44; } .info-value { flex: 1; } .diagnosis-text { font-size: 16px; line-height: 1.6; margin: 15px 0; padding: 10px; background: #f8fbfe; border-radius: 8px; } .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; } .doctor-signature { text-align: right; } .doctor-signature .name { font-weight: bold; font-size: 16px; } .doctor-signature .title { color: #666; font-size: 12px; } .stamp-area { text-align: center; margin: 20px 0; } .stamp-area .stamp { font-size: 14px; color: #0a2f44; border: 2px solid #0a2f44; padding: 8px 20px; border-radius: 50px; display: inline-block; }</style></head><body>');
+            win.document.write('<div class="header"><img src="hope1.png" alt="Hope Dental Clinic"><h1>Hope Dental Clinic</h1><p>📞 +960 123-4567 | 📧 info@hopedental.mv</p><p>🏥 Malé, Republic of Maldives</p></div>');
+            win.document.write('<div class="certificate-title">Medical Certificate</div>');
+            win.document.write('<div class="certificate-box"><div class="info-row"><div class="info-label">Patient Name:</div><div class="info-value">' + escapeHtml(selectedPatient.name) + '</div></div>');
+            win.document.write('<div class="info-row"><div class="info-label">Date of Issue:</div><div class="info-value">' + new Date(cert.issuedAt).toLocaleDateString() + '</div></div>');
+            win.document.write('<div class="info-row"><div class="info-label">Attending Doctor:</div><div class="info-value">Dr. ' + escapeHtml(currentDoctor.name) + '</div></div>');
+            win.document.write('<div class="diagnosis-text"><strong>Diagnosis:</strong><br>' + escapeHtml(cert.diagnosisSummary) + '</div>');
+            if (cert.recommendedRest) {
+                win.document.write('<div class="info-row"><div class="info-label">Recommended Rest:</div><div class="info-value"><strong>' + escapeHtml(cert.recommendedRest) + '</strong></div></div>');
+            }
+            if (cert.remarks) {
+                win.document.write('<div class="info-row"><div class="info-label">Remarks:</div><div class="info-value">' + escapeHtml(cert.remarks) + '</div></div>');
+            }
+            win.document.write('</div><div class="stamp-area"><div class="stamp">🔄 This certificate is valid for the period specified</div></div>');
+            win.document.write('<div class="footer"><div style="font-size: 12px; color: #666;"><p>📋 This certificate is issued for medical purposes</p><p>⚠️ Please present this certificate to your employer/insurance provider</p></div><div class="doctor-signature"><div class="name">Dr. ' + escapeHtml(currentDoctor.name) + '</div><div class="title">' + escapeHtml(currentDoctor.speciality) + '</div><div style="margin-top: 15px;">_________________________</div><div style="font-size: 12px; color: #666;">Signature &amp; Clinic Stamp</div></div></div>');
+            win.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };<\/script>');
+            win.document.write('</body></html>');
+            win.document.close();
+        };
+
+        function printCurrentCertificate() {
+            if (!selectedPatient) { alert("Select a patient first."); return; }
+            var diagnosisSummary = document.getElementById('certDiagnosis').value.trim();
+            if (!diagnosisSummary) { alert("Enter diagnosis summary before printing."); return; }
+            
+            var cert = {
                 diagnosisSummary: diagnosisSummary,
-                recommendedRest: document.getElementById('certRestDays').value.trim(),
-                remarks: document.getElementById('certRemarks').value.trim(),
+                recommendedRest: document.getElementById('certRestDays').value,
+                remarks: document.getElementById('certRemarks').value,
                 issuedAt: new Date().toISOString()
-            });
-            document.getElementById('certDiagnosis').value = '';
-            document.getElementById('certRestDays').value = '';
-            document.getElementById('certRemarks').value = '';
-            await loadCertificates();
-            alert('Medical certificate issued successfully!');
-        } catch (error) {
-            console.error(error);
-            alert('Error saving: ' + error.message);
+            };
+            
+            var win = window.open('', '_blank');
+            win.document.write('<!DOCTYPE html><html><head><title>Medical Certificate - Hope Dental Clinic</title><style>body { font-family: "Times New Roman", serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; } .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; } .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; } .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; } .header img { height: 70px; margin-bottom: 10px; } .certificate-title { text-align: center; font-size: 24px; font-weight: bold; color: #0a2f44; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px; } .certificate-box { border: 2px solid #0a2f44; padding: 25px; margin: 20px 0; border-radius: 8px; min-height: 200px; } .info-row { display: flex; margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #eee; } .info-label { font-weight: bold; width: 150px; color: #0a2f44; } .info-value { flex: 1; } .diagnosis-text { font-size: 16px; line-height: 1.6; margin: 15px 0; padding: 10px; background: #f8fbfe; border-radius: 8px; } .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; } .doctor-signature { text-align: right; } .doctor-signature .name { font-weight: bold; font-size: 16px; } .doctor-signature .title { color: #666; font-size: 12px; } .stamp-area { text-align: center; margin: 20px 0; } .stamp-area .stamp { font-size: 14px; color: #0a2f44; border: 2px solid #0a2f44; padding: 8px 20px; border-radius: 50px; display: inline-block; }</style></head><body>');
+            win.document.write('<div class="header"><img src="hope1.png" alt="Hope Dental Clinic"><h1>Hope Dental Clinic</h1><p>📞 +960 123-4567 | 📧 info@hopedental.mv</p><p>🏥 Malé, Republic of Maldives</p></div>');
+            win.document.write('<div class="certificate-title">Medical Certificate</div>');
+            win.document.write('<div class="certificate-box"><div class="info-row"><div class="info-label">Patient Name:</div><div class="info-value">' + escapeHtml(selectedPatient.name) + '</div></div>');
+            win.document.write('<div class="info-row"><div class="info-label">Date of Issue:</div><div class="info-value">' + new Date().toLocaleDateString() + '</div></div>');
+            win.document.write('<div class="info-row"><div class="info-label">Attending Doctor:</div><div class="info-value">Dr. ' + escapeHtml(currentDoctor.name) + '</div></div>');
+            win.document.write('<div class="diagnosis-text"><strong>Diagnosis:</strong><br>' + escapeHtml(cert.diagnosisSummary) + '</div>');
+            if (cert.recommendedRest) {
+                win.document.write('<div class="info-row"><div class="info-label">Recommended Rest:</div><div class="info-value"><strong>' + escapeHtml(cert.recommendedRest) + '</strong></div></div>');
+            }
+            if (cert.remarks) {
+                win.document.write('<div class="info-row"><div class="info-label">Remarks:</div><div class="info-value">' + escapeHtml(cert.remarks) + '</div></div>');
+            }
+            win.document.write('</div><div class="stamp-area"><div class="stamp">🔄 This certificate is valid for the period specified</div></div>');
+            win.document.write('<div class="footer"><div style="font-size: 12px; color: #666;"><p>📋 This certificate is issued for medical purposes</p><p>⚠️ Please present this certificate to your employer/insurance provider</p></div><div class="doctor-signature"><div class="name">Dr. ' + escapeHtml(currentDoctor.name) + '</div><div class="title">' + escapeHtml(currentDoctor.speciality) + '</div><div style="margin-top: 15px;">_________________________</div><div style="font-size: 12px; color: #666;">Signature &amp; Clinic Stamp</div></div></div>');
+            win.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };<\/script>');
+            win.document.write('</body></html>');
+            win.document.close();
         }
-    }
 
-    // ========== LOGOUT ==========
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        sessionStorage.removeItem('doctorSession');
-        localStorage.removeItem('currentDoctor');
-        window.location.href = 'login.html';
-    });
+        // ========== SAVE CERTIFICATE ==========
+        async function saveCertificate() {
+            if (!selectedPatient) { alert("No patient selected."); return; }
+            if (!firestoreDB) { alert("Firebase not ready."); return; }
+            
+            var diagnosisSummary = document.getElementById('certDiagnosis').value.trim();
+            if (!diagnosisSummary) { alert("Please enter a diagnosis summary."); return; }
+            
+            try {
+                await firestoreDB.collection("medicalCertificates").add({
+                    patientId: selectedPatient.id,
+                    patientName: selectedPatient.name,
+                    doctorId: currentDoctor.id,
+                    doctorName: currentDoctor.name,
+                    diagnosisSummary: diagnosisSummary,
+                    recommendedRest: document.getElementById('certRestDays').value.trim(),
+                    remarks: document.getElementById('certRemarks').value.trim(),
+                    issuedAt: new Date().toISOString()
+                });
+                document.getElementById('certDiagnosis').value = '';
+                document.getElementById('certRestDays').value = '';
+                document.getElementById('certRemarks').value = '';
+                await loadCertificates();
+                alert('Medical certificate issued successfully!');
+            } catch(error) {
+                console.error(error);
+                alert('Error saving: ' + error.message);
+            }
+        }
 
-    // ========== EVENT LISTENERS ==========
-    document.getElementById('saveCertificateBtn').addEventListener('click', saveCertificate);
-    document.getElementById('printCertificateFormBtn').addEventListener('click', printCurrentCertificate);
-    document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
-    document.getElementById('closeModalBtn').addEventListener('click', () => {
-        document.getElementById('editModal').style.display = 'none';
-    });
-    window.addEventListener('click', (e) => {
-        if (e.target === document.getElementById('editModal')) {
+        // ========== LOGOUT ==========
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('doctorSession');
+            localStorage.removeItem('currentDoctor');
+            window.location.href = 'login.html';
+        });
+
+        // ========== EVENT LISTENERS ==========
+        document.getElementById('saveCertificateBtn').addEventListener('click', saveCertificate);
+        document.getElementById('printCertificateFormBtn').addEventListener('click', printCurrentCertificate);
+        document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+        document.getElementById('closeModalBtn').addEventListener('click', function() {
             document.getElementById('editModal').style.display = 'none';
-        }
-    });
+        });
+        window.addEventListener('click', function(e) {
+            if (e.target === document.getElementById('editModal')) {
+                document.getElementById('editModal').style.display = 'none';
+            }
+        });
 
-    // ========== INIT ==========
-    function init() {
-        if (window.db) {
-            firestoreDB = window.db;
-            loadSelectedPatient();
-        } else {
-            setTimeout(init, 500);
+        // ========== INIT ==========
+        function init() {
+            if (window.db) {
+                firestoreDB = window.db;
+                loadSelectedPatient();
+            } else {
+                setTimeout(init, 500);
+            }
         }
-    }
-    init();
+        init();
+    })();
 </script>
 </body>
 </html>

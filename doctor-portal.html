@@ -158,42 +158,71 @@
             right: 20px;
             background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
             color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            z-index: 2000;
+            padding: 14px 20px;
+            border-radius: 14px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.35);
+            z-index: 9999;
             display: flex;
             align-items: center;
             gap: 12px;
-            animation: slideInRight 0.3s ease;
+            animation: slideInRight 0.4s ease;
             cursor: pointer;
-            max-width: 350px;
+            max-width: 380px;
+            border-left: 4px solid #ffc107;
         }
         @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
+            from { transform: translateX(120%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(120%); opacity: 0; }
         }
         .notification-toast .close-toast {
             margin-left: 10px;
             cursor: pointer;
             opacity: 0.7;
+            font-size: 16px;
         }
+        .notification-toast .close-toast:hover { opacity: 1; }
         .notification-toast .msg-preview {
-            font-size: 11px;
-            opacity: 0.85;
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 2px;
         }
+        .notification-toast .sender-name {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .notification-toast .time-stamp {
+            font-size: 9px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+        .notification-toast .toast-icon {
+            font-size: 24px;
+            background: rgba(255,255,255,0.15);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
         .unread-badge {
-            background: #ff6b6b;
+            background: #ff4757;
             color: white;
             border-radius: 20px;
             padding: 2px 8px;
-            font-size: 9px;
+            font-size: 10px;
             margin-left: 6px;
-            animation: pulse 1s infinite;
+            animation: pulse 1.5s infinite;
+            font-weight: 700;
         }
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
         /* ========== CHAT STYLES ========== */
@@ -259,13 +288,35 @@
         .online-dot-chat { width: 6px; height: 6px; border-radius: 50%; background-color: #4caf50; display: inline-block; animation: pulseOnline 1.5s infinite; }
         @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
         
+        /* Total Unread Floating Badge */
+        .total-unread-badge {
+            position: fixed;
+            bottom: 90px;
+            right: 24px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 999;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+            display: none;
+            animation: pulse 1.5s infinite;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        
         @media (max-width: 700px) { 
             .chat-panel { width: 320px; right: 16px; bottom: 16px; } 
-            .tab-btn { padding: 8px 12px; font-size: 11px; } 
+            .tab-btn { padding: 8px 12px; font-size: 11px; }
+            .notification-toast { max-width: 300px; right: 10px; top: 10px; padding: 12px 16px; }
+            .total-unread-badge { right: 16px; bottom: 80px; }
         }
         @media (max-width: 480px) {
             .chat-panel { width: 280px; right: 10px; bottom: 10px; }
-            .notification-toast { max-width: 280px; right: 10px; top: 10px; }
+            .notification-toast { max-width: 260px; right: 8px; top: 8px; padding: 10px 12px; }
+            .total-unread-badge { right: 10px; bottom: 70px; font-size: 10px; padding: 4px 10px; }
         }
     </style>
 </head>
@@ -278,6 +329,11 @@
         <span id="onlineStatusBadge" class="online-status">🟢 Online</span>
         <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
     </div>
+</div>
+
+<!-- ========== TOTAL UNREAD BADGE ========== -->
+<div class="total-unread-badge" id="totalUnreadBadge" onclick="openChatAndShowUnread()">
+    <i class="fas fa-comment-dots"></i> <span id="totalUnreadCount">0</span> new
 </div>
 
 <div class="dashboard-container">
@@ -403,6 +459,8 @@
         var unreadCounts = {};
         var shownNotifications = new Set();
         var chatMessagesCache = {};
+        var totalUnread = 0;
+        var notificationSound = null;
 
         // ========== HELPER FUNCTIONS ==========
         function escapeHtml(str) { 
@@ -454,72 +512,41 @@
         // ========== PLAY SOUND ==========
         function playNotificationSound() {
             try {
-                var audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-                audio.volume = 0.2;
-                audio.play().catch(function() {});
-            } catch(e) {}
-        }
-
-        // ========== SHOW NOTIFICATION TOAST ==========
-        function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
-            var notificationKey = senderId + '_' + messageId;
-            if (shownNotifications.has(notificationKey)) return;
-            
-            if (!selectedStaff || selectedStaff.userId !== senderId) {
-                unreadCounts[senderId] = (unreadCounts[senderId] || 0) + 1;
-                updateUnreadBadges();
-                shownNotifications.add(notificationKey);
-                
-                // Show toast notification
-                var toast = document.createElement('div');
-                toast.className = 'notification-toast';
-                var timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                
-                toast.innerHTML = '<div><i class="fas fa-comment-dots"></i></div>' +
-                    '<div style="flex:1;"><strong>' + escapeHtml(senderName) + '</strong><br>' +
-                    '<div class="msg-preview">' + escapeHtml(message.substring(0, 60)) + (message.length > 60 ? '...' : '') + '</div>' +
-                    '<div style="font-size: 8px; opacity: 0.7;">' + timeStr + '</div></div>' +
-                    '<span class="close-toast">×</span>';
-                
-                toast.addEventListener('click', function(e) {
-                    if (!e.target.classList.contains('close-toast')) {
-                        var staff = null;
-                        for (var i = 0; i < onlineStaffData.length; i++) {
-                            if (onlineStaffData[i].userId === senderId) {
-                                staff = onlineStaffData[i];
-                                break;
-                            }
-                        }
-                        if (staff) {
-                            selectStaffForChat(staff);
-                            if (chatPanel.classList.contains('minimized')) toggleChatPanel();
-                        }
-                        toast.remove();
+                if (!notificationSound) {
+                    notificationSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                    notificationSound.volume = 0.3;
+                }
+                notificationSound.currentTime = 0;
+                notificationSound.play().catch(function(e) { 
+                    // If sound fails, try with a different source
+                    if (e && e.name === 'NotAllowedError') {
+                        var altAudio = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAABFQ0pBAAAAABIARAAgAHkAbwB1AHIAIABiAHIAbwB3AHMAZQByACAAZABvAGUAcwAgAG4AbwB0ACAAcwB1AHAAcABvAHIAdAAgAGEAdQBkAGkAbwA=');
+                        altAudio.play().catch(function() {});
                     }
                 });
-                toast.querySelector('.close-toast').addEventListener('click', function() { toast.remove(); });
-                document.body.appendChild(toast);
-                
-                // Play sound
-                playNotificationSound();
-                
-                // Update page title
-                var originalTitle = document.title;
-                document.title = '📩 New message from ' + senderName;
-                setTimeout(function() { document.title = originalTitle; }, 4000);
-                
-                // Auto-remove toast after 5 seconds
-                setTimeout(function() { if (toast.parentElement) toast.remove(); }, 5000);
+            } catch(e) {
+                // Silent fallback
             }
         }
 
         // ========== UPDATE UNREAD BADGES ==========
-        function updateUnreadBadges() {
-            var totalUnread = 0;
+        function updateAllBadges() {
+            totalUnread = 0;
             for (var key in unreadCounts) {
                 if (unreadCounts.hasOwnProperty(key)) {
                     totalUnread += unreadCounts[key];
                 }
+            }
+            
+            // Update floating badge
+            var floatingBadge = document.getElementById('totalUnreadBadge');
+            var countSpan = document.getElementById('totalUnreadCount');
+            if (totalUnread > 0) {
+                floatingBadge.style.display = 'block';
+                if (countSpan) countSpan.textContent = totalUnread;
+                floatingBadge.style.animation = 'pulse 1.5s infinite';
+            } else {
+                floatingBadge.style.display = 'none';
             }
             
             // Update chat badge
@@ -555,6 +582,98 @@
                     }
                 }
             }
+        }
+
+        // ========== OPEN CHAT WITH UNREAD ==========
+        window.openChatAndShowUnread = function() {
+            if (chatPanel.classList.contains('minimized')) {
+                toggleChatPanel();
+            }
+            // If there's only one staff with unread, open that chat
+            var unreadStaffIds = [];
+            for (var key in unreadCounts) {
+                if (unreadCounts.hasOwnProperty(key) && unreadCounts[key] > 0) {
+                    unreadStaffIds.push(key);
+                }
+            }
+            if (unreadStaffIds.length === 1) {
+                var staffId = unreadStaffIds[0];
+                var staff = null;
+                for (var i = 0; i < onlineStaffData.length; i++) {
+                    if (onlineStaffData[i].userId === staffId) {
+                        staff = onlineStaffData[i];
+                        break;
+                    }
+                }
+                if (staff) {
+                    selectStaffForChat(staff);
+                }
+            }
+        };
+
+        // ========== SHOW NOTIFICATION TOAST ==========
+        function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
+            var notificationKey = senderId + '_' + messageId;
+            if (shownNotifications.has(notificationKey)) return;
+            
+            // Update unread counts
+            unreadCounts[senderId] = (unreadCounts[senderId] || 0) + 1;
+            updateAllBadges();
+            shownNotifications.add(notificationKey);
+            
+            // Play sound
+            playNotificationSound();
+            
+            // Update page title
+            var originalTitle = document.title;
+            document.title = '📩 New message from ' + senderName;
+            setTimeout(function() { document.title = originalTitle; }, 5000);
+            
+            // Show toast notification
+            var toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            var timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            
+            var messagePreview = message.substring(0, 80);
+            if (message.length > 80) messagePreview += '...';
+            
+            toast.innerHTML = 
+                '<div class="toast-icon"><i class="fas fa-comment-dots"></i></div>' +
+                '<div style="flex:1;">' +
+                    '<div class="sender-name">' + escapeHtml(senderName) + '</div>' +
+                    '<div class="msg-preview">' + escapeHtml(messagePreview) + '</div>' +
+                    '<div class="time-stamp">' + timeStr + '</div>' +
+                '</div>' +
+                '<span class="close-toast">×</span>';
+            
+            toast.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('close-toast')) {
+                    var staff = null;
+                    for (var i = 0; i < onlineStaffData.length; i++) {
+                        if (onlineStaffData[i].userId === senderId) {
+                            staff = onlineStaffData[i];
+                            break;
+                        }
+                    }
+                    if (staff) {
+                        selectStaffForChat(staff);
+                        if (chatPanel.classList.contains('minimized')) toggleChatPanel();
+                    }
+                    toast.remove();
+                }
+            });
+            toast.querySelector('.close-toast').addEventListener('click', function() { 
+                toast.remove(); 
+            });
+            document.body.appendChild(toast);
+            
+            // Auto-remove toast after 6 seconds
+            setTimeout(function() { 
+                if (toast.parentElement) {
+                    toast.style.animation = 'slideOutRight 0.4s ease';
+                    setTimeout(function() { if (toast.parentElement) toast.remove(); }, 400);
+                }
+            }, 6000);
         }
 
         // ========== CHAT FUNCTIONS ==========
@@ -604,6 +723,7 @@
             if(heartbeatInterval) clearInterval(heartbeatInterval);
         }
 
+        // ========== LISTEN FOR ONLINE RECEPTION ==========
         function listenOnlineReception() {
             if(!realtimeDB) return;
             if(onlineListener) {
@@ -633,7 +753,7 @@
                 document.getElementById('onlineCountBadge').textContent = onlineStaffData.length;
                 document.getElementById('minimizedOnlineCount').innerHTML = onlineStaffData.length > 0 ? '(' + onlineStaffData.length + ')' : '';
                 renderOnlineStaffList();
-                updateUnreadBadges();
+                updateAllBadges();
             });
         }
 
@@ -680,6 +800,7 @@
             }
         }
 
+        // ========== SELECT STAFF FOR CHAT ==========
         function selectStaffForChat(staff) {
             selectedStaff = staff;
             document.getElementById('chatInput').disabled = false;
@@ -690,7 +811,7 @@
             // Clear unread count for this staff
             if (unreadCounts[staff.userId]) {
                 delete unreadCounts[staff.userId];
-                updateUnreadBadges();
+                updateAllBadges();
             }
             
             // Remove any existing listener
@@ -712,7 +833,6 @@
             var chatId = getChatId(currentUser.id, staff.userId);
             var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
             
-            // Store the listener reference properly
             currentChatListener = messagesRef;
             currentChatListener.on('value', function(snapshot) {
                 var messages = [];
@@ -723,7 +843,7 @@
                 chatMessagesCache[staff.userId] = messages;
                 renderChatMessages(messages);
                 
-                // Mark messages as read and clear unread
+                // Mark unread messages as read
                 var unreadMessages = [];
                 for (var i = 0; i < messages.length; i++) {
                     if (messages[i].sender === staff.userId && !messages[i].read) {
@@ -738,7 +858,7 @@
                 }
                 if (unreadMessages.length > 0) {
                     if (unreadCounts[staff.userId]) delete unreadCounts[staff.userId];
-                    updateUnreadBadges();
+                    updateAllBadges();
                 }
             });
             
@@ -804,6 +924,28 @@
             input.value = "";
         }
 
+        // ========== LISTEN FOR NEW MESSAGES FROM ALL RECEPTION STAFF ==========
+        function listenForAllMessages() {
+            if (!realtimeDB) return;
+            
+            // Listen for messages from all reception staff
+            onlineStaffData.forEach(function(staff) {
+                var chatId = getChatId(currentUser.id, staff.userId);
+                var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
+                
+                messagesRef.on('child_added', function(snapshot) {
+                    var msg = snapshot.val();
+                    if (msg && msg.sender !== currentUser.id && !msg.read) {
+                        // Check if this message was already notified
+                        var notificationKey = staff.userId + '_' + snapshot.key;
+                        if (!shownNotifications.has(notificationKey)) {
+                            showMessageNotification(staff.name, msg.text, staff.userId, msg.timestamp, snapshot.key);
+                        }
+                    }
+                });
+            });
+        }
+
         // ========== CHAT UI CONTROLS ==========
         var chatPanel = document.getElementById('chatPanel');
         var minimizeBtn = document.getElementById('minimizeBtn');
@@ -811,9 +953,13 @@
         function toggleChatPanel() {
             chatPanel.classList.toggle('minimized');
             minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
-            // Update badge when opening
             if (!chatPanel.classList.contains('minimized')) {
-                updateUnreadBadges();
+                updateAllBadges();
+                // Remove floating badge when chat is open
+                document.getElementById('totalUnreadBadge').style.display = 'none';
+            } else {
+                // Show floating badge if there are unread messages
+                updateAllBadges();
             }
         }
         
@@ -1195,6 +1341,11 @@
             await loadAppointments();
             await loadMemos();
             listenOnlineReception();
+            
+            // Start listening for new messages from all staff
+            setTimeout(function() {
+                listenForAllMessages();
+            }, 2000);
             
             var savedPatientId = sessionStorage.getItem('selectedPatientId');
             if (savedPatientId) {

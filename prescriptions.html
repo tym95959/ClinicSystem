@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Prescriptions - Hope Dental</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #eef2f7; min-height: 100vh; }
+        
+        .clinic-header {
+            background: #0a2f44;
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .back-btn { background: #1e4a6e; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; }
+        .back-btn:hover { background: #2a5f89; }
+        .logout-btn { background: #c63d2f; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; }
+        .logout-btn:hover { background: #a52a1f; }
+        
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 20px; border: 1px solid #e2eaf0; padding: 24px; margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #0a2f44; margin-bottom: 20px; border-left: 4px solid #0f5c7a; padding-left: 12px; }
+        
+        .patient-badge { background: #f0f6fc; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .patient-badge .name { font-weight: 700; font-size: 16px; color: #0a2f44; }
+        .patient-badge .id { font-size: 12px; color: #5f7f9a; }
+        
+        .prescription-item {
+            background: #f8fbfe;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-left: 3px solid #27ae60;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .prescription-info { flex: 1; }
+        .prescription-info .medication { font-weight: 700; font-size: 15px; color: #0a2f44; }
+        .prescription-info .details { font-size: 13px; color: #5f7f9a; margin-top: 4px; }
+        .prescription-info .instructions { font-size: 12px; color: #1f5e7e; margin-top: 4px; }
+        .prescription-info .date { font-size: 10px; color: #8ba0b0; margin-top: 4px; }
+        
+        .prescription-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+        .btn-edit { background: #f39c12; color: white; border: none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 10px; }
+        .btn-edit:hover { background: #d68910; }
+        .btn-delete { background: #e74c3c; color: white; border: none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 10px; }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-print { background: #2c3e50; color: white; border: none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 10px; }
+        .btn-print:hover { background: #1a252f; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #1f5e7e; margin-bottom: 5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 14px; font-size: 13px; resize: vertical; }
+        .form-group textarea { min-height: 60px; }
+        
+        .btn-primary { background: #0f5c7a; color: white; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn-primary:hover { background: #1a6f8f; }
+        .btn-success { background: #27ae60; color: white; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn-success:hover { background: #219a52; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: #8ba0b0; }
+        .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 24px; border-radius: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        
+        @media (max-width: 768px) {
+            .patient-badge { flex-direction: column; text-align: center; }
+            .prescription-item { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-header">
+    <div class="logo"><h2>📝 Prescriptions</h2></div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='doctor-portal.html'">← Back to Portal</button>
+        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-title">📋 Previous Prescriptions</div>
+        
+        <div id="patientBadge" class="patient-badge">
+            <div><span class="name" id="patientName">Loading...</span> <span class="id" id="patientId"></span></div>
+            <div><span id="patientPhone"></span></div>
+        </div>
+        
+        <div id="prescriptionsList"><div class="empty-state"><i class="fas fa-prescription"></i><p>No prescriptions found</p></div></div>
+    </div>
+    
+    <div class="card">
+        <div class="card-title">➕ Issue New Prescription</div>
+        <div class="form-group">
+            <label>Medication *</label>
+            <input type="text" id="prescMedName" placeholder="e.g., Amoxicillin 500mg">
+        </div>
+        <div class="form-group">
+            <label>Dosage & Frequency</label>
+            <input type="text" id="prescDosage" placeholder="e.g., 1 tablet twice daily after meals">
+        </div>
+        <div class="form-group">
+            <label>Duration</label>
+            <input type="text" id="prescDuration" placeholder="e.g., 7 days">
+        </div>
+        <div class="form-group">
+            <label>Instructions / Notes</label>
+            <textarea id="prescInstructions" rows="2" placeholder="Additional notes for patient"></textarea>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-primary" id="savePrescriptionBtn"><i class="fas fa-save"></i> Issue Prescription</button>
+            <button class="btn-success" id="printPrescriptionFormBtn"><i class="fas fa-print"></i> Print Prescription</button>
+        </div>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 id="editModalTitle">Edit Prescription</h3>
+        <div id="editModalFields"></div>
+        <div class="btn-group">
+            <button id="saveEditBtn" class="btn-primary">Save Changes</button>
+            <button id="closeModalBtn" class="btn-delete">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== AUTH & SESSION ==========
+    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+    if (!doctorSession) { window.location.href = 'login.html'; return; }
+    let currentDoctor = null;
+    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
+    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
+
+    let firestoreDB = null;
+    let selectedPatient = null;
+    let prescriptionsArray = [];
+    let currentEditItem = null;
+
+    // ========== HELPER FUNCTIONS ==========
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+    // ========== LOAD SELECTED PATIENT ==========
+    function loadSelectedPatient() {
+        const patientData = sessionStorage.getItem('selectedPatient');
+        if (patientData) {
+            try {
+                selectedPatient = JSON.parse(patientData);
+                document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
+                document.getElementById('patientId').textContent = `(${selectedPatient.id || 'N/A'})`;
+                document.getElementById('patientPhone').textContent = `📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}`;
+                loadPrescriptions();
+            } catch(e) { console.error(e); }
+        }
+    }
+
+    // ========== LOAD PRESCRIPTIONS ==========
+    async function loadPrescriptions() {
+        if (!selectedPatient || !firestoreDB) return;
+        try {
+            const snapshot = await firestoreDB.collection("prescriptions")
+                .where("patientId", "==", selectedPatient.id)
+                .orderBy("createdAt", "desc")
+                .get();
+            
+            prescriptionsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderPrescriptionsList();
+        } catch (error) {
+            console.error(error);
+            try {
+                const snapshot = await firestoreDB.collection("prescriptions")
+                    .where("patientId", "==", selectedPatient.id)
+                    .get();
+                prescriptionsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                prescriptionsArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                renderPrescriptionsList();
+            } catch(e2) { console.error(e2); }
+        }
+    }
+
+    function renderPrescriptionsList() {
+        const container = document.getElementById('prescriptionsList');
+        if (!prescriptionsArray.length) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-prescription"></i><p>No prescriptions found</p></div>`;
+            return;
+        }
+        container.innerHTML = prescriptionsArray.map(p => `
+            <div class="prescription-item">
+                <div class="prescription-info">
+                    <div class="medication">💊 ${escapeHtml(p.medication)}</div>
+                    <div class="details">${escapeHtml(p.dosage)} | ${escapeHtml(p.duration)}</div>
+                    ${p.instructions ? `<div class="instructions">📝 ${escapeHtml(p.instructions)}</div>` : ''}
+                    <div class="date">${new Date(p.createdAt).toLocaleString()} | Dr. ${escapeHtml(p.doctorName || 'Unknown')}</div>
+                </div>
+                <div class="prescription-actions">
+                    <button class="btn-edit" onclick="openEditModal('prescription', '${p.id}')"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn-delete" onclick="deletePrescription('${p.id}')"><i class="fas fa-trash"></i> Delete</button>
+                    <button class="btn-print" onclick="printPrescription('${p.id}')"><i class="fas fa-print"></i> Print</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ========== DELETE PRESCRIPTION ==========
+    async function deletePrescription(id) {
+        if (!confirm('Delete this prescription?')) return;
+        if (!firestoreDB) return;
+        try {
+            await firestoreDB.collection("prescriptions").doc(id).delete();
+            await loadPrescriptions();
+            alert('Prescription deleted.');
+        } catch (error) {
+            console.error(error);
+            alert('Error deleting: ' + error.message);
+        }
+    }
+
+    // ========== EDIT MODAL ==========
+    function openEditModal(type, id) {
+        const item = prescriptionsArray.find(p => p.id === id);
+        if (!item) return;
+        currentEditItem = item;
+        const modal = document.getElementById('editModal');
+        const title = document.getElementById('editModalTitle');
+        const fieldsDiv = document.getElementById('editModalFields');
+        
+        title.innerText = 'Edit Prescription';
+        fieldsDiv.innerHTML = `
+            <div class="form-group">
+                <label>Medication</label>
+                <input id="editMedication" value="${escapeHtml(item.medication)}">
+            </div>
+            <div class="form-group">
+                <label>Dosage</label>
+                <input id="editDosage" value="${escapeHtml(item.dosage)}">
+            </div>
+            <div class="form-group">
+                <label>Duration</label>
+                <input id="editDuration" value="${escapeHtml(item.duration)}">
+            </div>
+            <div class="form-group">
+                <label>Instructions</label>
+                <textarea id="editInstructions" rows="2">${escapeHtml(item.instructions)}</textarea>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    async function saveEdit() {
+        if (!currentEditItem || !firestoreDB) return;
+        try {
+            await firestoreDB.collection("prescriptions").doc(currentEditItem.id).update({
+                medication: document.getElementById('editMedication').value.trim(),
+                dosage: document.getElementById('editDosage').value.trim(),
+                duration: document.getElementById('editDuration').value.trim(),
+                instructions: document.getElementById('editInstructions').value.trim()
+            });
+            document.getElementById('editModal').style.display = 'none';
+            await loadPrescriptions();
+            alert('Prescription updated successfully!');
+        } catch (error) {
+            console.error(error);
+            alert('Error updating: ' + error.message);
+        }
+    }
+
+    // ========== PRINT PRESCRIPTION ==========
+    function printPrescription(id) {
+        const presc = prescriptionsArray.find(p => p.id === id);
+        if (!presc) return;
+        
+        const win = window.open('', '_blank');
+        win.document.write(`<!DOCTYPE html>
+        <html>
+        <head>
+            <title>Prescription - Hope Dental Clinic</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; }
+                .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; }
+                .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; }
+                .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; }
+                .header img { height: 70px; margin-bottom: 10px; }
+                .prescription-box { border: 2px solid #0a2f44; padding: 20px; margin: 20px 0; border-radius: 8px; }
+                .rx-symbol { font-size: 40px; font-weight: bold; color: #0a2f44; }
+                .medication-item { padding: 8px 0; border-bottom: 1px dashed #ddd; }
+                .medication-name { font-weight: bold; font-size: 16px; }
+                .medication-details { color: #555; margin-left: 20px; font-size: 14px; }
+                .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
+                .doctor-signature { text-align: right; }
+                .doctor-signature .name { font-weight: bold; font-size: 16px; }
+                .doctor-signature .title { color: #666; font-size: 12px; }
+                .patient-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: #f8fbfe; border-radius: 8px; }
+                .label { font-weight: bold; color: #0a2f44; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <img src="hope1.png" alt="Hope Dental Clinic">
+                <h1>Hope Dental Clinic</h1>
+                <p>📞 +960 123-4567 | 📧 info@hopedental.mv</p>
+                <p>🏥 Malé, Republic of Maldives</p>
+            </div>
+            <div class="patient-info">
+                <div><span class="label">Patient:</span> ${escapeHtml(selectedPatient.name)}</div>
+                <div><span class="label">Date:</span> ${new Date().toLocaleDateString()}</div>
+                <div><span class="label">Doctor:</span> Dr. ${escapeHtml(currentDoctor.name)}</div>
+            </div>
+            <div class="prescription-box">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <span class="rx-symbol">℞</span>
+                    <h2 style="color: #0a2f44; margin: 0;">Prescription</h2>
+                </div>
+                <div class="medication-item">
+                    <div class="medication-name">${escapeHtml(presc.medication)}</div>
+                    <div class="medication-details">💊 ${escapeHtml(presc.dosage)}</div>
+                    <div class="medication-details">⏱️ ${escapeHtml(presc.duration)}</div>
+                    ${presc.instructions ? `<div class="medication-details">📝 ${escapeHtml(presc.instructions)}</div>` : ''}
+                </div>
+            </div>
+            <div class="footer">
+                <div style="font-size: 12px; color: #666;">
+                    <p>💊 Take as directed</p>
+                    <p>⚠️ Please consult your pharmacist for any questions</p>
+                </div>
+                <div class="doctor-signature">
+                    <div class="name">Dr. ${escapeHtml(currentDoctor.name)}</div>
+                    <div class="title">${escapeHtml(currentDoctor.speciality)}</div>
+                    <div style="margin-top: 15px;">_________________________</div>
+                    <div style="font-size: 12px; color: #666;">Signature</div>
+                </div>
+            </div>
+            <script>
+                window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };
+            <\/script>
+        </body>
+        </html>`);
+        win.document.close();
+    }
+
+    function printCurrentPrescription() {
+        if (!selectedPatient) { alert("Select a patient first."); return; }
+        const medication = document.getElementById('prescMedName').value.trim();
+        if (!medication) { alert("Enter medication details before printing."); return; }
+        
+        const presc = {
+            medication: medication,
+            dosage: document.getElementById('prescDosage').value,
+            duration: document.getElementById('prescDuration').value,
+            instructions: document.getElementById('prescInstructions').value
+        };
+        
+        const win = window.open('', '_blank');
+        win.document.write(`<!DOCTYPE html>
+        <html>
+        <head>
+            <title>Prescription - Hope Dental Clinic</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; }
+                .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; }
+                .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; }
+                .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; }
+                .header img { height: 70px; margin-bottom: 10px; }
+                .prescription-box { border: 2px solid #0a2f44; padding: 20px; margin: 20px 0; border-radius: 8px; }
+                .rx-symbol { font-size: 40px; font-weight: bold; color: #0a2f44; }
+                .medication-item { padding: 8px 0; border-bottom: 1px dashed #ddd; }
+                .medication-name { font-weight: bold; font-size: 16px; }
+                .medication-details { color: #555; margin-left: 20px; font-size: 14px; }
+                .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
+                .doctor-signature { text-align: right; }
+                .doctor-signature .name { font-weight: bold; font-size: 16px; }
+                .doctor-signature .title { color: #666; font-size: 12px; }
+                .patient-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: #f8fbfe; border-radius: 8px; }
+                .label { font-weight: bold; color: #0a2f44; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <img src="hope1.png" alt="Hope Dental Clinic">
+                <h1>Hope Dental Clinic</h1>
+                <p>📞 +960 123-4567 | 📧 info@hopedental.mv</p>
+                <p>🏥 Malé, Republic of Maldives</p>
+            </div>
+            <div class="patient-info">
+                <div><span class="label">Patient:</span> ${escapeHtml(selectedPatient.name)}</div>
+                <div><span class="label">Date:</span> ${new Date().toLocaleDateString()}</div>
+                <div><span class="label">Doctor:</span> Dr. ${escapeHtml(currentDoctor.name)}</div>
+            </div>
+            <div class="prescription-box">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <span class="rx-symbol">℞</span>
+                    <h2 style="color: #0a2f44; margin: 0;">Prescription</h2>
+                </div>
+                <div class="medication-item">
+                    <div class="medication-name">${escapeHtml(presc.medication)}</div>
+                    <div class="medication-details">💊 ${escapeHtml(presc.dosage)}</div>
+                    <div class="medication-details">⏱️ ${escapeHtml(presc.duration)}</div>
+                    ${presc.instructions ? `<div class="medication-details">📝 ${escapeHtml(presc.instructions)}</div>` : ''}
+                </div>
+            </div>
+            <div class="footer">
+                <div style="font-size: 12px; color: #666;">
+                    <p>💊 Take as directed</p>
+                    <p>⚠️ Please consult your pharmacist for any questions</p>
+                </div>
+                <div class="doctor-signature">
+                    <div class="name">Dr. ${escapeHtml(currentDoctor.name)}</div>
+                    <div class="title">${escapeHtml(currentDoctor.speciality)}</div>
+                    <div style="margin-top: 15px;">_________________________</div>
+                    <div style="font-size: 12px; color: #666;">Signature</div>
+                </div>
+            </div>
+            <script>
+                window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };
+            <\/script>
+        </body>
+        </html>`);
+        win.document.close();
+    }
+
+    // ========== SAVE PRESCRIPTION ==========
+    async function savePrescription() {
+        if (!selectedPatient) { alert("No patient selected."); return; }
+        if (!firestoreDB) { alert("Firebase not ready."); return; }
+        
+        const medication = document.getElementById('prescMedName').value.trim();
+        if (!medication) { alert("Please enter a medication name."); return; }
+        
+        try {
+            await firestoreDB.collection("prescriptions").add({
+                patientId: selectedPatient.id,
+                patientName: selectedPatient.name,
+                doctorId: currentDoctor.id,
+                doctorName: currentDoctor.name,
+                medication: medication,
+                dosage: document.getElementById('prescDosage').value.trim(),
+                duration: document.getElementById('prescDuration').value.trim(),
+                instructions: document.getElementById('prescInstructions').value.trim(),
+                createdAt: new Date().toISOString()
+            });
+            document.getElementById('prescMedName').value = '';
+            document.getElementById('prescDosage').value = '';
+            document.getElementById('prescDuration').value = '';
+            document.getElementById('prescInstructions').value = '';
+            await loadPrescriptions();
+            alert('Prescription issued successfully!');
+        } catch (error) {
+            console.error(error);
+            alert('Error saving: ' + error.message);
+        }
+    }
+
+    // ========== LOGOUT ==========
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        sessionStorage.removeItem('doctorSession');
+        localStorage.removeItem('currentDoctor');
+        window.location.href = 'login.html';
+    });
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('savePrescriptionBtn').addEventListener('click', savePrescription);
+    document.getElementById('printPrescriptionFormBtn').addEventListener('click', printCurrentPrescription);
+    document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+        document.getElementById('editModal').style.display = 'none';
+    });
+    window.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('editModal')) {
+            document.getElementById('editModal').style.display = 'none';
+        }
+    });
+
+    // ========== INIT ==========
+    function init() {
+        if (window.db) {
+            firestoreDB = window.db;
+            loadSelectedPatient();
+        } else {
+            setTimeout(init, 500);
+        }
+    }
+    init();
+</script>
+</body>
+</html>

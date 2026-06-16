@@ -1,6 +1,7 @@
-// DEVICE CONFIGURATION FILE
-// Store this file on your server - this is where the master password lives
+// Device Configuration - MASTER PASSWORD
+// Change this password to your desired device master password
 window.DEVICE_CONFIG = {
-    deviceMasterPassword: "HopeDental2025!",  // Change this to your secure password
-    authExpiryDays: 365
+    deviceMasterPassword: 'H0peD3nt@l2025!',
+    appName: 'Hope Dental Clinic',
+    version: '2.0.0'
 };

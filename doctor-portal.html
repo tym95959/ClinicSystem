@@ -150,6 +150,13 @@
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 12px;
             padding: 20px;
+            opacity: 0.4;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        .quick-actions.active {
+            opacity: 1;
+            pointer-events: auto;
         }
         .quick-action-card {
             background: #f8fbfe;
@@ -296,27 +303,27 @@
         </div>
         
         <div class="quick-actions" id="quickActions">
-            <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo" style="pointer-events: none; opacity: 0.5;">
+            <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo">
                 <i class="fas fa-user"></i>
                 <h4>Patient Info</h4>
                 <p>View and edit patient details</p>
             </a>
-            <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory" style="pointer-events: none; opacity: 0.5;">
+            <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory">
                 <i class="fas fa-notes-medical"></i>
                 <h4>Medical History</h4>
                 <p>View and add medical records</p>
             </a>
-            <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis" style="pointer-events: none; opacity: 0.5;">
+            <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis">
                 <i class="fas fa-stethoscope"></i>
                 <h4>Diagnosis & Treatment</h4>
                 <p>Add diagnosis and treatment plans</p>
             </a>
-            <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions" style="pointer-events: none; opacity: 0.5;">
+            <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions">
                 <i class="fas fa-prescription"></i>
                 <h4>Prescriptions</h4>
                 <p>Issue and manage prescriptions</p>
             </a>
-            <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate" style="pointer-events: none; opacity: 0.5;">
+            <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate">
                 <i class="fas fa-file-medical-alt"></i>
                 <h4>Medical Certificate</h4>
                 <p>Issue medical certificates</p>
@@ -364,9 +371,6 @@
             return;
         }
 
-        // ========== LINK: Get Doctor ID from Users collection ==========
-        // The currentDoctor.id is the user ID from the users collection
-        // We need to find the corresponding doctor in the doctors collection
         var doctorId = currentDoctor.id;
         
         var currentUser = {
@@ -376,9 +380,6 @@
             speciality: currentDoctor.speciality || "Dental Surgeon",
             type: "doctor"
         };
-        
-        // Also store the doctor's ID from the users collection
-        var userId = doctorId;
         
         document.getElementById('doctorName').textContent = currentUser.name;
         document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
@@ -570,7 +571,6 @@
             document.getElementById('chatInput').placeholder = 'Message ' + staff.name + '...';
             document.getElementById('deleteAllBtn').style.display = 'block';
             
-            // Remove any existing listener
             if (currentChatListener) {
                 try {
                     if (typeof currentChatListener === 'function') {
@@ -589,7 +589,6 @@
             var chatId = getChatId(currentUser.id, staff.userId);
             var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
             
-            // Store the listener reference properly
             currentChatListener = messagesRef;
             currentChatListener.on('value', function(snapshot) {
                 var messages = [];
@@ -599,7 +598,6 @@
                 messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
                 renderChatMessages(messages);
                 
-                // Mark messages as read
                 for (var i = 0; i < messages.length; i++) {
                     if (messages[i].sender === staff.userId && !messages[i].read) {
                         markMessageAsRead(chatId, messages[i].id);
@@ -607,7 +605,6 @@
                 }
             });
             
-            // Typing indicator
             var typingRef = realtimeDB.ref('chats/' + chatId + '/typing');
             typingRef.off();
             typingRef.on('value', function(snap) {
@@ -715,32 +712,37 @@
 
         // ========== ENABLE/DISABLE QUICK ACTIONS ==========
         function enableQuickActions() {
-            var buttons = document.querySelectorAll('.quick-action-card');
-            for (var i = 0; i < buttons.length; i++) {
-                buttons[i].style.pointerEvents = 'auto';
-                buttons[i].style.opacity = '1';
+            var container = document.getElementById('quickActions');
+            if (container) {
+                container.classList.add('active');
             }
         }
 
         function disableQuickActions() {
-            var buttons = document.querySelectorAll('.quick-action-card');
-            for (var i = 0; i < buttons.length; i++) {
-                buttons[i].style.pointerEvents = 'none';
-                buttons[i].style.opacity = '0.5';
+            var container = document.getElementById('quickActions');
+            if (container) {
+                container.classList.remove('active');
             }
         }
 
         // ========== LOAD DOCTOR'S APPOINTMENTS ==========
         async function loadAppointments() { 
             if (!firestoreDB) return; 
-            // Use the user ID from session (which is the users collection ID)
+            
+            // First, find the doctor's ID from the users collection
+            // Try to find doctor by username match
+            var doctorIdToUse = currentUser.id;
+            
+            // Query appointments with doctorId
             var snapshot = await firestoreDB.collection("appointments")
-                .where("doctorId", "==", currentUser.id)
+                .where("doctorId", "==", doctorIdToUse)
                 .get(); 
+            
             var allAppointments = []; 
             snapshot.forEach(function(doc) { 
                 allAppointments.push({ id: doc.id, ...doc.data() }); 
             });
+            
             appointments = []; 
             for (var i = 0; i < allAppointments.length; i++) { 
                 var apt = allAppointments[i]; 
@@ -807,7 +809,6 @@
         // ========== LOAD MEMOS ==========
         async function loadMemos() { 
             if (!firestoreDB) return; 
-            // Use the user ID from session
             var snapshot = await firestoreDB.collection("memos")
                 .where("doctor.id", "==", currentUser.id)
                 .get(); 
@@ -987,6 +988,7 @@
             var container = document.getElementById('patientInfoContainer');
             if (!selectedPatient) {
                 container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div style="text-align: center; padding: 20px; color: #8ba0b0;"><i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i><p style="margin-top: 10px;">Select a patient from the left panel</p></div></div>';
+                disableQuickActions();
                 return;
             }
             
@@ -1027,6 +1029,8 @@
                     });
                 }
             }
+            
+            enableQuickActions();
         }
 
         // ========== CREATE MEMO FROM APPOINTMENT ==========

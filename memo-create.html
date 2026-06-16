@@ -484,18 +484,26 @@
     <div class="top-card">
         <div class="section-title">📋 Patient & Service Details</div>
         <div class="form-grid">
+            <!-- Patient Dropdown -->
             <div class="input-group">
                 <label>🔍 Select Patient</label>
                 <select id="patientDropdown"><option value="">-- Loading patients... --</option></select>
                 <div id="selectedPatientCard" class="selected-card" style="display: none;"></div>
             </div>
             
+            <!-- Hidden fields for patient data transfer -->
+            <input type="hidden" id="patientId" value="">
+            <input type="hidden" id="patientName" value="">
+            <input type="hidden" id="contactNo" value="">
+            
+            <!-- Doctor Dropdown -->
             <div class="input-group">
                 <label>👨‍⚕️ Select Doctor</label>
                 <select id="doctorSelect"><option value="">-- Loading doctors... --</option></select>
                 <div id="selectedDoctorCard" class="selected-card" style="display: none;"></div>
             </div>
             
+            <!-- Insurance -->
             <div class="input-group">
                 <label>🏥 Primary Insurance (Optional)</label>
                 <select id="otherInsuranceSelect"><option value="">-- No Primary Insurance --</option></select>
@@ -819,6 +827,12 @@
                     selectedPatient = patient;
                     console.log("Selected patient set:", selectedPatient);
                     
+                    // Update hidden fields
+                    const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+                    document.getElementById('patientId').value = displayId;
+                    document.getElementById('patientName').value = patient.name;
+                    document.getElementById('contactNo').value = patient.contactNo || patient.phone || apt.contact || '';
+                    
                     // Update patient dropdown - find or add the patient
                     const patientSelect = document.getElementById('patientDropdown');
                     let found = false;
@@ -833,7 +847,6 @@
                         // Add patient to dropdown if not found
                         const option = document.createElement('option');
                         option.value = patient.id;
-                        const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
                         option.text = `${patient.name} (ID/Passport: ${displayId})`;
                         patientSelect.add(option);
                         patientSelect.value = patient.id;
@@ -842,7 +855,6 @@
                     // Display patient card with ALL details
                     const card = document.getElementById('selectedPatientCard');
                     card.style.display = 'flex';
-                    const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
                     const phone = patient.contactNo || patient.phone || apt.contact || '';
                     const nationality = patient.nationality || '';
                     
@@ -861,11 +873,6 @@
                     
                     // Trigger change event to update billing
                     patientSelect.dispatchEvent(new Event('change'));
-                    
-                    // Force the patient ID field to update
-                    document.getElementById('patientId').value = displayId;
-                    document.getElementById('patientName').value = patient.name;
-                    document.getElementById('contactNo').value = phone;
                     
                     console.log("Patient data transferred successfully");
                 } else {
@@ -1298,9 +1305,33 @@
     
     // ========== SAVE MEMO TO FIRESTORE ==========
     async function saveToFirebase() {
-        if (!selectedPatient) { showMessage("Please select a patient", "error"); return; }
-        if (!selectedDoctor) { showMessage("Please select a doctor", "error"); return; }
-        if (!selectedServices.length) { showMessage("Please add at least one service", "error"); return; }
+        // Get patient data from hidden fields
+        const patientId = document.getElementById('patientId').value.trim();
+        const patientName = document.getElementById('patientName').value.trim();
+        const contactNo = document.getElementById('contactNo').value.trim();
+        
+        // If no patient selected via dropdown but we have data from appointment
+        if (!selectedPatient && patientId && patientName) {
+            selectedPatient = {
+                id: patientId,
+                name: patientName,
+                phone: contactNo,
+                isCitizen: false
+            };
+        }
+        
+        if (!selectedPatient) { 
+            showMessage("Please select a patient", "error"); 
+            return; 
+        }
+        if (!selectedDoctor) { 
+            showMessage("Please select a doctor", "error"); 
+            return; 
+        }
+        if (!selectedServices.length) { 
+            showMessage("Please add at least one service", "error"); 
+            return; 
+        }
         
         const selectedPaymentOption = document.getElementById('paymentMethodSelect');
         const selectedPaymentId = selectedPaymentOption.value;
@@ -1368,12 +1399,12 @@
             date: new Date().toLocaleString(),
             timestamp: new Date().toISOString(),
             patient: {
-                id: selectedPatient.id || "",
-                name: selectedPatient.name || "",
-                phone: selectedPatient.contactNo || selectedPatient.phone || "",
+                id: selectedPatient.id || patientId || "",
+                name: selectedPatient.name || patientName || "",
+                phone: selectedPatient.phone || contactNo || "",
                 nationality: selectedPatient.nationality || "",
                 isCitizen: selectedPatient.isCitizen || false,
-                idNumber: selectedPatient.idNumber || "",
+                idNumber: selectedPatient.idNumber || patientId || "",
                 passportNumber: selectedPatient.passportNumber || "",
                 nationalId: selectedPatient.nationalId || "",
                 dob: selectedPatient.dob || ""
@@ -1459,9 +1490,20 @@
                     ${patient.nationality ? `<span class="selected-badge" style="background:#6c757d;">${escapeHtml(patient.nationality)}</span>` : ''}
                 </div>
             `;
+            // Update hidden fields
+            document.getElementById('patientId').value = displayId;
+            document.getElementById('patientName').value = patient.name;
+            document.getElementById('contactNo').value = patient.contactNo || patient.phone || '';
             if (selectedServices.length > 0) applyAutoCalculation();
             calculateBilling();
-        } else { selectedPatient = null; document.getElementById('selectedPatientCard').style.display = 'none'; calculateBilling(); }
+        } else { 
+            selectedPatient = null; 
+            document.getElementById('selectedPatientCard').style.display = 'none'; 
+            document.getElementById('patientId').value = '';
+            document.getElementById('patientName').value = '';
+            document.getElementById('contactNo').value = '';
+            calculateBilling(); 
+        }
     });
     
     document.getElementById('doctorSelect').addEventListener('change', (e) => {

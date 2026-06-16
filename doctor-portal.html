@@ -387,6 +387,21 @@
             return aptDate >= today;
         }
 
+        // ========== GET ID/PASSPORT DISPLAY ==========
+        function getDisplayId(patient) {
+            if (!patient) return 'N/A';
+            if (patient.idNumber && patient.idNumber.trim() !== '') {
+                return patient.idNumber;
+            }
+            if (patient.passportNumber && patient.passportNumber.trim() !== '') {
+                return patient.passportNumber;
+            }
+            if (patient.nationalId && patient.nationalId.trim() !== '') {
+                return patient.nationalId;
+            }
+            return 'N/A';
+        }
+
         // ========== CHAT FUNCTIONS ==========
         function getChatId(u1, u2) {
             var sorted = [u1, u2].sort();
@@ -636,10 +651,11 @@
             var html = ''; 
             for (var i = 0; i < memosList.length; i++) { 
                 var memo = memosList[i]; 
+                var displayId = getDisplayId(memo.patient);
                 html += '<div class="memo-card" data-id="' + memo.id + '">' +
                     '<div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) + '</div>' +
                     '<div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div>' +
-                    '<div class="memo-details">🆔 ' + (memo.patient?.id || 'N/A') + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs)</div>' +
+                    '<div class="memo-details">🪪 ' + escapeHtml(displayId) + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs)</div>' +
                 '</div>'; 
             } 
             container.innerHTML = html; 
@@ -695,7 +711,9 @@
             var filtered = []; 
             for (var i = 0; i < patientsList.length; i++) { 
                 var p = patientsList[i]; 
-                if ((p.name && p.name.toLowerCase().includes(lowerFilter)) || (p.id && p.id.toLowerCase().includes(lowerFilter))) { 
+                var displayId = getDisplayId(p);
+                if ((p.name && p.name.toLowerCase().includes(lowerFilter)) || 
+                    (displayId && displayId.toLowerCase().includes(lowerFilter))) { 
                     filtered.push(p); 
                 } 
             } 
@@ -707,8 +725,9 @@
             var html = ''; 
             for (var j = 0; j < filtered.length; j++) { 
                 var p = filtered[j]; 
+                var displayId = getDisplayId(p);
                 html += '<div class="suggestion-item" data-id="' + p.id + '" data-name="' + escapeHtml(p.name) + '" data-phone="' + (p.phone || '') + '">' +
-                    '<strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">(' + p.id + ')</span><br>' +
+                    '<strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">🪪 ' + escapeHtml(displayId) + '</span><br>' +
                     '<small>📞 ' + (p.phone || 'N/A') + '</small>' +
                 '</div>'; 
             } 
@@ -728,7 +747,8 @@
                         savePatientSession(); 
                         displayPatientInfo(); 
                         enableQuickActions(); 
-                        searchInput.value = patient.name + ' (' + patient.id + ')'; 
+                        var displayId = getDisplayId(patient);
+                        searchInput.value = patient.name + ' (🪪 ' + displayId + ')'; 
                         suggestionsDiv.innerHTML = ''; 
                     } 
                 }); 
@@ -762,10 +782,11 @@
             var html = ''; 
             for (var i = 0; i < appointments.length; i++) { 
                 var apt = appointments[i]; 
+                var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt.passportNumber, nationalId: apt.nationalId });
                 html += '<div class="appointment-card" data-id="' + apt.id + '">' +
                     '<div class="appointment-time">📅 ' + (apt.date || 'N/A') + ' | ⏰ ' + (apt.time || 'N/A') + ' <span class="badge-upcoming">Upcoming</span></div>' +
                     '<div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div>' +
-                    '<div class="appointment-details">📞 ' + (apt.contact || 'N/A') + '</div>' +
+                    '<div class="appointment-details">🪪 ' + escapeHtml(displayId) + ' | 📞 ' + (apt.contact || 'N/A') + '</div>' +
                 '</div>'; 
             } 
             container.innerHTML = html; 
@@ -793,7 +814,16 @@
             if (!patient) { alert("Patient data not loaded."); return; } 
             var memoData = { 
                 memoId: 'MEM-' + Date.now(), 
-                patient: { id: patient.id, name: patient.name, phone: patient.phone, dob: patient.dob, insurance: patient.insurance }, 
+                patient: { 
+                    id: patient.id, 
+                    name: patient.name, 
+                    phone: patient.phone, 
+                    dob: patient.dob, 
+                    insurance: patient.insurance,
+                    idNumber: patient.idNumber,
+                    passportNumber: patient.passportNumber,
+                    nationalId: patient.nationalId
+                }, 
                 doctor: { id: currentUser.id, name: currentUser.name }, 
                 date: new Date().toLocaleDateString(), 
                 timestamp: Date.now(), 
@@ -822,7 +852,14 @@
             for (var i = 0; i < patientsList.length; i++) { 
                 if (patientsList[i].id === apt.patientId) { patient = patientsList[i]; break; } 
             } 
-            if (!patient && apt.patientId) patient = { id: apt.patientId, name: apt.patientName, phone: apt.contact }; 
+            if (!patient && apt.patientId) patient = { 
+                id: apt.patientId, 
+                name: apt.patientName, 
+                phone: apt.contact,
+                idNumber: apt.idNumber,
+                passportNumber: apt.passportNumber,
+                nationalId: apt.nationalId
+            }; 
             selectedPatient = patient; 
             if (selectedPatient) { 
                 savePatientSession(); 
@@ -851,6 +888,7 @@
             var age = calculateAge(dob);
             var insurance = selectedPatient.insurance || {};
             var primaryIns = insurance.primaryName || 'None';
+            var displayId = getDisplayId(selectedPatient);
             
             var extraHtml = '';
             if (selectedAppointment) {
@@ -859,7 +897,7 @@
                 extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;"><p><strong>📋 Previous Consultation:</strong> ' + (selectedMemo.date || new Date(selectedMemo.timestamp).toLocaleString()) + '</p></div>';
             }
             
-            container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div><div class="patient-meta"><span>🆔 ' + (selectedPatient.id || 'N/A') + '</span><span>📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A') + '</span><span>🎂 ' + dob + ' (' + age + ' yrs)</span><span>🏥 ' + escapeHtml(primaryIns) + '</span></div>' + extraHtml + '</div>';
+            container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div><div class="patient-meta"><span>🪪 ' + escapeHtml(displayId) + '</span><span>📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A') + '</span><span>🎂 ' + dob + ' (' + age + ' yrs)</span><span>🏥 ' + escapeHtml(primaryIns) + '</span></div>' + extraHtml + '</div>';
             
             if (selectedAppointment) {
                 var completeBtn = document.getElementById('completeConsultationBtn');

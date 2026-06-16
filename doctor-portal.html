@@ -55,6 +55,8 @@
         
         .panel-header { background: #f4f9fe; padding: 15px 20px; border-bottom: 1px solid #e2eaf0; }
         .panel-header h3 { font-size: 16px; color: #0a2f44; display: flex; align-items: center; gap: 8px; }
+        .panel-header .next-patient-btn { background: #27ae60; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; }
+        .panel-header .next-patient-btn:hover { background: #219a52; }
         
         .list-tabs { display: flex; gap: 5px; background: #f4f9fe; padding: 0 12px; border-bottom: 1px solid #e2eaf0; overflow-x: auto; }
         .list-tab { background: none; border: none; padding: 10px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: #5f7f9a; transition: 0.2s; white-space: nowrap; }
@@ -94,6 +96,7 @@
         }
         .status-done { background: #d4edda; color: #155724; }
         .status-pending { background: #fff3cd; color: #856404; }
+        .status-upcoming { background: #cce5ff; color: #004085; }
         
         .next-badge {
             background: #28a745;
@@ -298,15 +301,16 @@
 <div class="dashboard-container">
     <div class="appointments-panel">
         <div class="panel-header">
-            <h3>📋 Today's Patients</h3>
+            <h3>📋 My Patients</h3>
+            <button class="next-patient-btn" id="nextPatientBtn"><i class="fas fa-forward"></i> Next Patient</button>
         </div>
         <div class="list-tabs">
-            <button class="list-tab active-list" data-list="appointments">📅 Today's Memos</button>
-            <button class="list-tab" data-list="memos">📜 All Memos</button>
+            <button class="list-tab active-list" data-list="appointments">📅 Today's Appointments</button>
+            <button class="list-tab" data-list="memos">📜 Memo History</button>
             <button class="list-tab" data-list="patients">🔍 Search</button>
         </div>
-        <div class="appointments-list active-list" id="appointmentsList"><div class="empty-list"><i class="fas fa-calendar-day"></i>Loading today's memos...</div></div>
-        <div class="memos-list" id="memosList"><div class="empty-list"><i class="fas fa-history"></i>Loading all memos...</div></div>
+        <div class="appointments-list active-list" id="appointmentsList"><div class="empty-list"><i class="fas fa-calendar-day"></i>Loading today's appointments...</div></div>
+        <div class="memos-list" id="memosList"><div class="empty-list"><i class="fas fa-history"></i>Loading memos...</div></div>
         <div class="patients-list" id="patientsList">
             <div class="patient-search-area">
                 <input type="text" id="patientSearchInput" class="patient-search-input" placeholder="Search by name or ID...">
@@ -318,14 +322,14 @@
     <div class="detail-panel">
         <div class="patient-detail-area">
             <div style="padding: 20px 20px 0 20px;">
-                <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Quick Actions</h3>
+                <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Details</h3>
             </div>
             <div id="patientInfoContainer">
                 <!-- Empty state - no patient selected -->
                 <div class="empty-state" id="emptyPatientState">
                     <i class="fas fa-user-circle"></i>
                     <p>No patient selected</p>
-                    <p style="font-size: 12px; margin-top: 8px;">Click a memo or search for a patient</p>
+                    <p style="font-size: 12px; margin-top: 8px;">Click an appointment or search for a patient</p>
                 </div>
             </div>
             
@@ -333,7 +337,7 @@
                 <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo">
                     <i class="fas fa-user"></i>
                     <h4>Patient Info</h4>
-                    <p>View and edit patient details</p>
+                    <p>View patient details</p>
                 </a>
                 <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory">
                     <i class="fas fa-notes-medical"></i>
@@ -413,8 +417,8 @@
         document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
 
         var firestoreDB = null, realtimeDB = null;
-        var todayMemos = [], allMemos = [], patientsList = [];
-        var selectedMemo = null, selectedPatient = null;
+        var todayAppointments = [], allMemos = [], patientsList = [];
+        var selectedAppointment = null, selectedMemo = null, selectedPatient = null;
 
         // ========== CHAT VARIABLES ==========
         var selectedStaff = null;
@@ -479,6 +483,18 @@
             var mm = String(today.getMonth() + 1).padStart(2, '0');
             var yyyy = today.getFullYear();
             return yyyy + '-' + mm + '-' + dd;
+        }
+
+        // ========== CHECK IF MEMO EXISTS ==========
+        function checkMemoExists(patientId, appointmentDate) {
+            if (!allMemos.length) return { exists: false, memoId: null };
+            for (var i = 0; i < allMemos.length; i++) {
+                var memo = allMemos[i];
+                if (memo.patient && memo.patient.id === patientId && memo.date === appointmentDate) {
+                    return { exists: true, memoId: memo.memoId || memo.id, memoNumber: memo.memoId || 'N/A' };
+                }
+            }
+            return { exists: false, memoId: null };
         }
 
         // ========== CHAT FUNCTIONS ==========
@@ -738,8 +754,9 @@
         });
 
         // ========== SHOW/HIDE PATIENT DETAILS ==========
-        function showPatientDetails(patient, memo) {
+        function showPatientDetails(patient, appointment, memo) {
             selectedPatient = patient;
+            selectedAppointment = appointment || null;
             selectedMemo = memo || null;
             
             var emptyState = document.getElementById('emptyPatientState');
@@ -759,54 +776,58 @@
             displayPatientInfo();
         }
 
-        // ========== LOAD TODAY'S MEMOS FOR DOCTOR ==========
-        async function loadTodayMemos() { 
+        // ========== LOAD TODAY'S APPOINTMENTS ==========
+        async function loadTodayAppointments() { 
             if (!firestoreDB) return; 
             
             var todayStr = getTodayDate();
             
-            var snapshot = await firestoreDB.collection("memos")
-                .where("doctor.id", "==", currentUser.id)
+            var snapshot = await firestoreDB.collection("appointments")
+                .where("doctorId", "==", currentUser.id)
                 .where("date", "==", todayStr)
                 .get(); 
             
-            todayMemos = []; 
+            todayAppointments = []; 
             snapshot.forEach(function(doc) { 
-                todayMemos.push({ id: doc.id, ...doc.data() }); 
+                todayAppointments.push({ id: doc.id, ...doc.data() }); 
             });
-            todayMemos.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
-            renderTodayMemos(); 
+            todayAppointments.sort(function(a, b) { 
+                var timeA = a.startTime || a.time || '00:00';
+                var timeB = b.startTime || b.time || '00:00';
+                return timeA.localeCompare(timeB);
+            });
+            renderTodayAppointments(); 
         }
         
-        function renderTodayMemos() { 
+        function renderTodayAppointments() { 
             var container = document.getElementById('appointmentsList'); 
-            if (!todayMemos.length) { 
-                container.innerHTML = '<div class="empty-list"><i class="fas fa-calendar-check"></i>No memos for today.</div>'; 
+            if (!todayAppointments.length) { 
+                container.innerHTML = '<div class="empty-list"><i class="fas fa-calendar-check"></i>No appointments for today.</div>'; 
                 return; 
             } 
             var html = ''; 
-            for (var i = 0; i < todayMemos.length; i++) { 
-                var memo = todayMemos[i]; 
-                var displayId = getDisplayId(memo.patient);
-                var memoNumber = memo.memoId || memo.id || 'N/A';
-                var insuranceNames = getInsuranceNames(memo.insurances);
-                var serviceNames = [];
-                if (memo.services && memo.services.length) {
-                    for (var s = 0; s < memo.services.length; s++) {
-                        if (memo.services[s].name) {
-                            serviceNames.push(memo.services[s].name);
-                        }
-                    }
-                }
-                var servicesText = serviceNames.length ? serviceNames.join(', ') : 'No services';
+            var nextPatientFound = false;
+            for (var i = 0; i < todayAppointments.length; i++) { 
+                var apt = todayAppointments[i]; 
+                var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt.passportNumber, nationalId: apt.nationalId });
+                var memoInfo = checkMemoExists(apt.patientId, apt.date);
+                var statusText = memoInfo.exists ? '📄 Memo #' + memoInfo.memoNumber : '⏳ No Memo';
+                var statusClass = memoInfo.exists ? 'status-done' : 'status-pending';
+                var isNext = false;
                 
-                html += '<div class="appointment-card" data-id="' + memo.id + '" data-patient-id="' + (memo.patient ? memo.patient.id : '') + '">' +
-                    '<div class="appointment-time">📅 ' + (memo.date || 'N/A') + ' | 📄 Memo #' + escapeHtml(memoNumber) + 
-                    ' <span class="status-badge status-done">✅ Completed</span>' +
+                if (i === 0 && !memoInfo.exists) {
+                    isNext = true;
+                    nextPatientFound = true;
+                }
+                var nextBadge = isNext ? '<span class="next-badge">▶ Next</span>' : '';
+                var timeDisplay = apt.startTime ? apt.startTime : (apt.time || 'N/A');
+                
+                html += '<div class="appointment-card" data-id="' + apt.id + '" data-patient-id="' + apt.patientId + '">' +
+                    '<div class="appointment-time">⏰ ' + escapeHtml(timeDisplay) + ' | 📅 ' + (apt.date || 'N/A') + 
+                    ' <span class="status-badge ' + statusClass + '">' + statusText + '</span>' + nextBadge +
                     '</div>' +
-                    '<div class="appointment-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div>' +
-                    '<div class="appointment-details">🪪 ' + escapeHtml(displayId) + ' | 🏥 ' + escapeHtml(insuranceNames) + '</div>' +
-                    '<div class="appointment-details" style="font-size:10px; color:#0f5c7a;">💊 ' + escapeHtml(servicesText) + '</div>' +
+                    '<div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div>' +
+                    '<div class="appointment-details">🪪 ' + escapeHtml(displayId) + ' | 📞 ' + (apt.contact || 'N/A') + '</div>' +
                 '</div>'; 
             } 
             container.innerHTML = html; 
@@ -818,15 +839,15 @@
                         allCards[k].classList.remove('selected'); 
                     } 
                     this.classList.add('selected'); 
-                    var memoId = this.dataset.id; 
-                    var memo = null; 
-                    for (var l = 0; l < todayMemos.length; l++) { 
-                        if (todayMemos[l].id === memoId) { 
-                            memo = todayMemos[l]; 
+                    var aptId = this.dataset.id; 
+                    var apt = null; 
+                    for (var l = 0; l < todayAppointments.length; l++) { 
+                        if (todayAppointments[l].id === aptId) { 
+                            apt = todayAppointments[l]; 
                             break; 
                         } 
                     } 
-                    if (memo) selectMemo(memo); 
+                    if (apt) selectAppointment(apt); 
                 }); 
             } 
         }
@@ -848,7 +869,7 @@
         function renderAllMemos() { 
             var container = document.getElementById('memosList'); 
             if (!allMemos.length) { 
-                container.innerHTML = '<div class="empty-list"><i class="fas fa-history"></i>No consultation history found.</div>'; 
+                container.innerHTML = '<div class="empty-list"><i class="fas fa-history"></i>No memos found.</div>'; 
                 return; 
             } 
             var html = ''; 
@@ -888,6 +909,7 @@
         
         async function selectMemo(memo) { 
             selectedMemo = memo; 
+            selectedAppointment = null; 
             var patient = null; 
             for (var i = 0; i < patientsList.length; i++) { 
                 if (patientsList[i].id === memo.patient?.id) { 
@@ -896,7 +918,30 @@
                 } 
             } 
             if (!patient) patient = memo.patient; 
-            showPatientDetails(patient, memo);
+            showPatientDetails(patient, null, memo);
+        }
+
+        // ========== SELECT APPOINTMENT ==========
+        async function selectAppointment(apt) { 
+            selectedAppointment = apt; 
+            selectedMemo = null; 
+            
+            var patient = null; 
+            for (var i = 0; i < patientsList.length; i++) { 
+                if (patientsList[i].id === apt.patientId) { 
+                    patient = patientsList[i]; 
+                    break; 
+                } 
+            } 
+            if (!patient && apt.patientId) patient = { 
+                id: apt.patientId, 
+                name: apt.patientName, 
+                phone: apt.contact,
+                idNumber: apt.idNumber,
+                passportNumber: apt.passportNumber,
+                nationalId: apt.nationalId
+            }; 
+            showPatientDetails(patient, apt, null);
         }
 
         // ========== LOAD PATIENTS ==========
@@ -953,7 +998,7 @@
                         } 
                     } 
                     if (patient) { 
-                        showPatientDetails(patient, null);
+                        showPatientDetails(patient, null, null);
                         var displayId = getDisplayId(patient);
                         searchInput.value = patient.name + ' (🪪 ' + displayId + ')'; 
                         suggestionsDiv.innerHTML = ''; 
@@ -986,6 +1031,20 @@
             var displayId = getDisplayId(selectedPatient);
             
             var extraHtml = '';
+            
+            // If there's a selected appointment
+            if (selectedAppointment) {
+                var memoInfo = checkMemoExists(selectedPatient.id, selectedAppointment.date);
+                var memoStatus = memoInfo.exists ? '✅ Memo Completed (# ' + memoInfo.memoNumber + ')' : '⏳ No Memo Yet';
+                var memoColor = memoInfo.exists ? '#27ae60' : '#ffc107';
+                
+                extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">' +
+                    '<p><strong>📋 Appointment:</strong> ' + (selectedAppointment.date || 'N/A') + ' at ' + (selectedAppointment.startTime || selectedAppointment.time || 'N/A') + '</p>' +
+                    '<p><strong>Memo Status:</strong> <span style="color:' + memoColor + '; font-weight:600;">' + memoStatus + '</span></p>' +
+                '</div>';
+            }
+            
+            // If there's a selected memo
             if (selectedMemo) {
                 var insuranceNames = getInsuranceNames(selectedMemo.insurances);
                 var memoNumber = selectedMemo.memoId || selectedMemo.id || 'N/A';
@@ -1016,6 +1075,39 @@
                 '</div>' +
                 extraHtml +
             '</div>';
+        }
+
+        // ========== NEXT PATIENT ==========
+        function selectNextPatient() {
+            if (!todayAppointments.length) {
+                alert('No appointments for today.');
+                return;
+            }
+            
+            var nextAppointment = null;
+            for (var i = 0; i < todayAppointments.length; i++) {
+                var apt = todayAppointments[i];
+                var memoInfo = checkMemoExists(apt.patientId, apt.date);
+                if (!memoInfo.exists) {
+                    nextAppointment = apt;
+                    break;
+                }
+            }
+            
+            if (!nextAppointment) {
+                alert('All patients have memos completed.');
+                return;
+            }
+            
+            selectAppointment(nextAppointment);
+            var cards = document.querySelectorAll('.appointment-card');
+            for (var j = 0; j < cards.length; j++) {
+                cards[j].classList.remove('selected');
+                if (cards[j].dataset.id === nextAppointment.id) {
+                    cards[j].classList.add('selected');
+                    cards[j].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
         }
 
         // ========== LOGOUT ==========
@@ -1064,6 +1156,8 @@
                 }
             });
         }
+        
+        document.getElementById('nextPatientBtn').addEventListener('click', selectNextPatient);
 
         // ========== INIT ==========
         async function init() {
@@ -1074,7 +1168,7 @@
             await setDoctorOnline();
             startHeartbeat();
             await loadPatients();
-            await loadTodayMemos();
+            await loadTodayAppointments();
             await loadAllMemos();
             listenOnlineReception();
             

@@ -151,13 +151,75 @@
         
         .section-title { font-size: 14px; font-weight: 600; color: #0a2f44; padding: 0 20px; margin-bottom: 10px; }
         
-        @media (max-width: 768px) {
-            .appointments-panel { min-width: 280px; height: auto; max-height: 400px; }
-            .detail-panel { min-width: 300px; height: auto; max-height: 600px; }
-            .quick-actions { grid-template-columns: 1fr 1fr; }
+        /* ========== CHAT STYLES ========== */
+        .chat-panel {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 380px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 1px solid rgba(15,92,122,0.2);
+            overflow: hidden;
+            max-height: 600px;
+        }
+        .chat-panel.minimized { width: auto; cursor: pointer; max-height: 60px; }
+        .chat-panel.minimized .chat-header { border-radius: 20px; }
+        .chat-panel.minimized .staff-list, .chat-panel.minimized .chat-messages, 
+        .chat-panel.minimized .chat-input-area, .chat-panel.minimized .staff-list-title, 
+        .chat-panel.minimized .typing-indicator, .chat-panel.minimized .delete-all-btn { display: none; }
+        
+        .chat-header { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 18px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+        .chat-header i { font-size: 1.2rem; }
+        .chat-header h3 { font-size: 0.95rem; font-weight: 600; flex: 1; }
+        .chat-badge { background: #ff4757; color: white; border-radius: 40px; padding: 3px 10px; font-size: 10px; font-weight: bold; }
+        .minimize-icon { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+        
+        .staff-list-title { font-size: 10px; color: #0f5c7a; padding: 10px 14px 4px; font-weight: 600; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
+        .staff-list { background: #f8fbfe; padding: 8px 12px; max-height: 200px; overflow-y: auto; border-bottom: 1px solid #e2eaf0; }
+        .staff-tab { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 5px 0; border-radius: 14px; cursor: pointer; background: white; border: 1px solid #e2eaf0; transition: all 0.2s; }
+        .staff-tab.active-staff { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; }
+        .staff-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0f5c7a; font-weight: bold; font-size: 16px; }
+        .active-staff .staff-avatar { background: rgba(255,255,255,0.25); color: white; }
+        .staff-info { flex: 1; }
+        .staff-name { font-weight: 700; font-size: 13px; color: #0a2f44; }
+        .staff-role { font-size: 10px; color: #5f7f9a; margin-top: 2px; }
+        .online-indicator { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #4caf50; background: #e8f5e9; padding: 3px 8px; border-radius: 20px; }
+        
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #fefefe; display: flex; flex-direction: column; gap: 12px; max-height: 350px; min-height: 300px; }
+        .message { display: flex; flex-direction: column; max-width: 88%; animation: slideIn 0.2s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .message.doctor { align-self: flex-end; }
+        .message.reception { align-self: flex-start; }
+        .message-bubble { padding: 8px 14px; border-radius: 18px; font-size: 12px; line-height: 1.4; word-break: break-word; }
+        .message.doctor .message-bubble { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; border-bottom-right-radius: 4px; }
+        .message.reception .message-bubble { background: #eef2f7; color: #1a2c3e; border-bottom-left-radius: 4px; }
+        .message-meta { font-size: 9px; margin-top: 4px; padding: 0 6px; color: #8ba0b0; display: flex; justify-content: space-between; align-items: center; }
+        .delete-msg { font-size: 9px; color: #ff4757; cursor: pointer; margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
+        .message:hover .delete-msg { opacity: 1; }
+        
+        .typing-indicator { font-size: 10px; color: #0f5c7a; padding: 8px 16px; font-style: italic; background: #f8fbfe; border-top: 1px solid #e2eaf0; }
+        .chat-input-area { padding: 12px; background: white; border-top: 1px solid #e2eaf0; display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; border: 1.5px solid #e2eaf0; border-radius: 30px; padding: 10px 16px; font-size: 12px; outline: none; }
+        .chat-input-area input:focus { border-color: #0f5c7a; }
+        .chat-input-area button { background: #0f5c7a; border: none; color: white; padding: 0 20px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 12px; }
+        .chat-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .delete-all-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin: 8px 12px; }
+        
+        .online-dot-chat { width: 6px; height: 6px; border-radius: 50%; background-color: #4caf50; display: inline-block; animation: pulseOnline 1.5s infinite; }
+        @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+        
+        @media (max-width: 700px) { 
+            .chat-panel { width: 320px; right: 16px; bottom: 16px; } 
+            .tab-btn { padding: 8px 12px; font-size: 11px; } 
         }
         @media (max-width: 480px) {
-            .quick-actions { grid-template-columns: 1fr; }
+            .chat-panel { width: 280px; right: 10px; bottom: 10px; }
         }
     </style>
 </head>
@@ -233,9 +295,28 @@
     </div>
 </div>
 
+<!-- ========== CHAT PANEL ========== -->
+<div class="chat-panel minimized" id="chatPanel">
+    <div class="chat-header" id="chatHeader">
+        <i class="fas fa-comment-dots"></i>
+        <h3>Chat with Reception <span id="minimizedOnlineCount"></span></h3>
+        <div class="chat-badge" id="onlineCountBadge">0</div>
+        <div class="minimize-icon" id="minimizeBtn"><i class="fas fa-plus"></i></div>
+    </div>
+    <div class="staff-list-title"><i class="fas fa-users"></i> Reception Staff Online</div>
+    <div class="staff-list" id="staffList"><div class="empty-list">Loading...</div></div>
+    <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select reception to chat</div></div>
+    <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Reception is typing...</div>
+    <button class="delete-all-btn" id="deleteAllBtn" style="display:none;">🗑️ Delete All Messages</button>
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Select reception..." disabled>
+        <button id="sendChatBtn" disabled><i class="fas fa-paper-plane"></i> Send</button>
+    </div>
+</div>
+
 <script>
-    // ========== DOCTOR SESSION & AUTH ==========
     (function() {
+        // ========== DOCTOR SESSION & AUTH ==========
         var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
         if (!doctorSession) { 
             window.location.href = 'login.html'; 
@@ -267,9 +348,34 @@
         var appointments = [], memosList = [], patientsList = [];
         var selectedAppointment = null, selectedMemo = null, selectedPatient = null;
 
+        // ========== CHAT VARIABLES ==========
+        var selectedStaff = null;
+        var onlineListener = null;
+        var currentChatListener = null;
+        var onlineStaffData = [];
+        var heartbeatInterval = null;
+
         // ========== HELPER FUNCTIONS ==========
-        function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, function(m) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' })[m]; }); }
-        function calculateAge(dob) { if (!dob) return 'N/A'; var birthDate = new Date(dob); if (isNaN(birthDate.getTime())) return 'Invalid'; var today = new Date(); var age = today.getFullYear() - birthDate.getFullYear(); var m = today.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; return age; }
+        function escapeHtml(str) { 
+            if (!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m) { 
+                if (m === '&') return '&amp;'; 
+                if (m === '<') return '&lt;'; 
+                if (m === '>') return '&gt;'; 
+                return m; 
+            }); 
+        }
+        
+        function calculateAge(dob) { 
+            if (!dob) return 'N/A'; 
+            var birthDate = new Date(dob); 
+            if (isNaN(birthDate.getTime())) return 'Invalid'; 
+            var today = new Date(); 
+            var age = today.getFullYear() - birthDate.getFullYear(); 
+            var m = today.getMonth() - birthDate.getMonth(); 
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; 
+            return age; 
+        }
         
         function isTodayOrFuture(dateStr) {
             if (!dateStr) return false;
@@ -281,7 +387,218 @@
             return aptDate >= today;
         }
 
-        // ========== ENABLE QUICK ACTION BUTTONS ==========
+        // ========== CHAT FUNCTIONS ==========
+        function getChatId(u1, u2) {
+            var sorted = [u1, u2].sort();
+            return 'chat_' + sorted[0] + '_' + sorted[1];
+        }
+
+        async function setDoctorOnline() {
+            if(!realtimeDB) return;
+            try {
+                await realtimeDB.ref('online_users/' + currentUser.id).set({
+                    username: currentUser.id,
+                    name: currentUser.name,
+                    Level: "Doctor",
+                    status: "online",
+                    type: "doctor",
+                    loginTime: firebase.database.ServerValue.TIMESTAMP,
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                });
+                document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
+            } catch(e) { console.warn(e); }
+        }
+
+        function startHeartbeat() {
+            if(!realtimeDB) return;
+            heartbeatInterval = setInterval(function() {
+                if(realtimeDB && currentUser.id) {
+                    realtimeDB.ref('online_users/' + currentUser.id).update({
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            }, 20000);
+        }
+
+        function stopHeartbeat() {
+            if(heartbeatInterval) clearInterval(heartbeatInterval);
+        }
+
+        function listenOnlineReception() {
+            if(!realtimeDB) return;
+            if(onlineListener) onlineListener.off();
+            onlineListener = realtimeDB.ref('online_users').on('value', function(snapshot) {
+                onlineStaffData = [];
+                var users = snapshot.val();
+                if(users) {
+                    var keys = Object.keys(users);
+                    for(var i = 0; i < keys.length; i++) {
+                        var username = keys[i];
+                        var data = users[username];
+                        var isReception = data.Level && (data.Level.toLowerCase() === 'supervisor' || data.Level.toLowerCase() === 'receptionist');
+                        if(isReception && data.status === 'online' && username !== currentUser.id) {
+                            onlineStaffData.push({
+                                userId: username,
+                                name: data.name || username,
+                                role: data.Level,
+                                department: 'Reception Desk'
+                            });
+                        }
+                    }
+                }
+                document.getElementById('onlineCountBadge').textContent = onlineStaffData.length;
+                document.getElementById('minimizedOnlineCount').innerHTML = onlineStaffData.length > 0 ? '(' + onlineStaffData.length + ')' : '';
+                renderOnlineStaffList();
+            });
+        }
+
+        function renderOnlineStaffList() {
+            var container = document.getElementById('staffList');
+            if(!onlineStaffData.length) {
+                container.innerHTML = '<div class="empty-list">No reception staff online</div>';
+                return;
+            }
+            var html = '';
+            for(var i = 0; i < onlineStaffData.length; i++) {
+                var staff = onlineStaffData[i];
+                html += '<div class="staff-tab" data-id="' + staff.userId + '" data-name="' + escapeHtml(staff.name) + '">' +
+                    '<div class="staff-avatar">' + staff.name.charAt(0).toUpperCase() + '</div>' +
+                    '<div class="staff-info">' +
+                        '<div class="staff-name">' + escapeHtml(staff.name) + '</div>' +
+                        '<div class="staff-role">' + escapeHtml(staff.role) + '</div>' +
+                    '</div>' +
+                    '<div class="online-indicator"><span class="online-dot-chat"></span> Online</div>' +
+                '</div>';
+            }
+            container.innerHTML = html;
+            
+            var tabs = container.querySelectorAll('.staff-tab');
+            for(var j = 0; j < tabs.length; j++) {
+                tabs[j].addEventListener('click', function() {
+                    var allTabs = document.querySelectorAll('.staff-tab');
+                    for(var k = 0; k < allTabs.length; k++) {
+                        allTabs[k].classList.remove('active-staff');
+                    }
+                    this.classList.add('active-staff');
+                    var staffId = this.dataset.id;
+                    var staff = null;
+                    for(var l = 0; l < onlineStaffData.length; l++) {
+                        if(onlineStaffData[l].userId === staffId) {
+                            staff = onlineStaffData[l];
+                            break;
+                        }
+                    }
+                    if(staff) selectStaffForChat(staff);
+                });
+            }
+        }
+
+        function selectStaffForChat(staff) {
+            selectedStaff = staff;
+            document.getElementById('chatInput').disabled = false;
+            document.getElementById('sendChatBtn').disabled = false;
+            document.getElementById('chatInput').placeholder = 'Message ' + staff.name + '...';
+            document.getElementById('deleteAllBtn').style.display = 'block';
+            startChatListener(staff.userId);
+        }
+
+        function startChatListener(staffId) {
+            if (currentChatListener) currentChatListener.off();
+            if (!realtimeDB || !staffId) return;
+            var chatId = getChatId(currentUser.id, staffId);
+            var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
+            currentChatListener = messagesRef.on('value', function(snapshot) {
+                var messages = [];
+                snapshot.forEach(function(child) {
+                    messages.push({ id: child.key, ...child.val() });
+                });
+                messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
+                renderChatMessages(messages);
+            });
+        }
+
+        function renderChatMessages(messages) {
+            var container = document.getElementById('chatMessages');
+            if (!messages.length) {
+                container.innerHTML = '<div class="empty-chat">No messages yet</div>';
+                return;
+            }
+            var html = '';
+            for(var i = 0; i < messages.length; i++) {
+                var msg = messages[i];
+                var isDoctor = (msg.sender === currentUser.id);
+                var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+                html += '<div class="message ' + (isDoctor ? 'doctor' : 'reception') + '">' +
+                    '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
+                    '<div class="message-meta">' +
+                        '<span>' + (isDoctor ? 'You' : (selectedStaff ? selectedStaff.name : 'Reception')) + ' • ' + time + '</span>' +
+                        '<span class="delete-msg" onclick="window.deleteChatMessage(\'' + msg.id + '\')">🗑️</span>' +
+                    '</div>' +
+                '</div>';
+            }
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        window.deleteChatMessage = async function(msgId) {
+            if (!selectedStaff || !realtimeDB) return;
+            var chatId = getChatId(currentUser.id, selectedStaff.userId);
+            await realtimeDB.ref('chats/' + chatId + '/messages/' + msgId).remove();
+        };
+
+        async function sendMessage() {
+            var input = document.getElementById('chatInput');
+            var text = input.value.trim();
+            if (!text || !selectedStaff || !realtimeDB) return;
+            var chatId = getChatId(currentUser.id, selectedStaff.userId);
+            var newMsgRef = realtimeDB.ref('chats/' + chatId + '/messages').push();
+            await newMsgRef.set({
+                id: newMsgRef.key,
+                sender: currentUser.id,
+                senderName: 'Dr. ' + currentUser.name,
+                text: text,
+                timestamp: Date.now(),
+                delivered: true,
+                read: false
+            });
+            input.value = "";
+        }
+
+        // ========== CHAT UI CONTROLS ==========
+        var chatPanel = document.getElementById('chatPanel');
+        var minimizeBtn = document.getElementById('minimizeBtn');
+        
+        function toggleChatPanel() {
+            chatPanel.classList.toggle('minimized');
+            minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
+        }
+        
+        minimizeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleChatPanel();
+        });
+        
+        document.getElementById('chatHeader').addEventListener('click', function(e) {
+            if(e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) {
+                toggleChatPanel();
+            }
+        });
+
+        document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') sendMessage();
+        });
+
+        document.getElementById('deleteAllBtn').addEventListener('click', async function() {
+            if(selectedStaff && confirm('Delete all messages?')) {
+                var chatId = getChatId(currentUser.id, selectedStaff.userId);
+                await realtimeDB.ref('chats/' + chatId + '/messages').remove();
+                document.getElementById('chatMessages').innerHTML = '<div class="empty-chat">No messages yet</div>';
+                alert('All messages deleted.');
+            }
+        });
+
+        // ========== ENABLE/DISABLE QUICK ACTIONS ==========
         function enableQuickActions() {
             var buttons = document.querySelectorAll('.quick-action-card');
             for (var i = 0; i < buttons.length; i++) {
@@ -299,13 +616,125 @@
         }
 
         // ========== LOAD DATA ==========
-        async function loadMemos() { if (!firestoreDB) return; var snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); memosList = []; snapshot.forEach(function(doc) { memosList.push({ id: doc.id, ...doc.data() }); }); memosList.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }); renderMemosList(); }
-        function renderMemosList() { var container = document.getElementById('memosList'); if (!memosList.length) { container.innerHTML = '<div class="empty-list">No consultation history found.</div>'; return; } var html = ''; for (var i = 0; i < memosList.length; i++) { var memo = memosList[i]; html += '<div class="memo-card" data-id="' + memo.id + '"><div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) + '</div><div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div><div class="memo-details">🆔 ' + (memo.patient?.id || 'N/A') + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs)</div></div>'; } container.innerHTML = html; var cards = document.querySelectorAll('.memo-card'); for (var j = 0; j < cards.length; j++) { cards[j].addEventListener('click', function() { var allCards = document.querySelectorAll('.memo-card, .appointment-card'); for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); } this.classList.add('selected'); var memoId = this.dataset.id; var memo = null; for (var l = 0; l < memosList.length; l++) { if (memosList[l].id === memoId) { memo = memosList[l]; break; } } if (memo) selectMemo(memo); }); } }
-        async function selectMemo(memo) { selectedMemo = memo; selectedAppointment = null; var patient = null; for (var i = 0; i < patientsList.length; i++) { if (patientsList[i].id === memo.patient?.id) { patient = patientsList[i]; break; } } if (!patient) patient = memo.patient; selectedPatient = patient; if (selectedPatient) { savePatientSession(); displayPatientInfo(); enableQuickActions(); } }
+        async function loadMemos() { 
+            if (!firestoreDB) return; 
+            var snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); 
+            memosList = []; 
+            snapshot.forEach(function(doc) { 
+                memosList.push({ id: doc.id, ...doc.data() }); 
+            }); 
+            memosList.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }); 
+            renderMemosList(); 
+        }
+        
+        function renderMemosList() { 
+            var container = document.getElementById('memosList'); 
+            if (!memosList.length) { 
+                container.innerHTML = '<div class="empty-list">No consultation history found.</div>'; 
+                return; 
+            } 
+            var html = ''; 
+            for (var i = 0; i < memosList.length; i++) { 
+                var memo = memosList[i]; 
+                html += '<div class="memo-card" data-id="' + memo.id + '">' +
+                    '<div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) + '</div>' +
+                    '<div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div>' +
+                    '<div class="memo-details">🆔 ' + (memo.patient?.id || 'N/A') + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs)</div>' +
+                '</div>'; 
+            } 
+            container.innerHTML = html; 
+            var cards = document.querySelectorAll('.memo-card'); 
+            for (var j = 0; j < cards.length; j++) { 
+                cards[j].addEventListener('click', function() { 
+                    var allCards = document.querySelectorAll('.memo-card, .appointment-card'); 
+                    for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); } 
+                    this.classList.add('selected'); 
+                    var memoId = this.dataset.id; 
+                    var memo = null; 
+                    for (var l = 0; l < memosList.length; l++) { 
+                        if (memosList[l].id === memoId) { memo = memosList[l]; break; } 
+                    } 
+                    if (memo) selectMemo(memo); 
+                }); 
+            } 
+        }
+        
+        async function selectMemo(memo) { 
+            selectedMemo = memo; 
+            selectedAppointment = null; 
+            var patient = null; 
+            for (var i = 0; i < patientsList.length; i++) { 
+                if (patientsList[i].id === memo.patient?.id) { patient = patientsList[i]; break; } 
+            } 
+            if (!patient) patient = memo.patient; 
+            selectedPatient = patient; 
+            if (selectedPatient) { 
+                savePatientSession(); 
+                displayPatientInfo(); 
+                enableQuickActions(); 
+            } 
+        }
 
-        async function loadPatients() { if (!firestoreDB) return; var snapshot = await firestoreDB.collection("patients").get(); patientsList = []; snapshot.forEach(function(doc) { patientsList.push({ id: doc.id, ...doc.data() }); }); }
+        async function loadPatients() { 
+            if (!firestoreDB) return; 
+            var snapshot = await firestoreDB.collection("patients").get(); 
+            patientsList = []; 
+            snapshot.forEach(function(doc) { 
+                patientsList.push({ id: doc.id, ...doc.data() }); 
+            }); 
+        }
+        
         var searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
-        function renderPatientSuggestions(filterText) { if (!filterText.trim()) { suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; return; } var lowerFilter = filterText.toLowerCase(); var filtered = []; for (var i = 0; i < patientsList.length; i++) { var p = patientsList[i]; if (p.name && p.name.toLowerCase().includes(lowerFilter) || p.id && p.id.toLowerCase().includes(lowerFilter)) { filtered.push(p); } } filtered = filtered.slice(0, 15); if (!filtered.length) { suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; return; } var html = ''; for (var j = 0; j < filtered.length; j++) { var p = filtered[j]; html += '<div class="suggestion-item" data-id="' + p.id + '" data-name="' + escapeHtml(p.name) + '" data-phone="' + (p.phone || '') + '"><strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">(' + p.id + ')</span><br><small>📞 ' + (p.phone || 'N/A') + '</small></div>'; } suggestionsDiv.innerHTML = html; var items = document.querySelectorAll('.suggestion-item'); for (var k = 0; k < items.length; k++) { items[k].addEventListener('click', function() { var patientId = this.dataset.id; var patient = null; for (var l = 0; l < patientsList.length; l++) { if (patientsList[l].id === patientId) { patient = patientsList[l]; break; } } if (patient) { selectedPatient = patient; selectedAppointment = null; selectedMemo = null; savePatientSession(); displayPatientInfo(); enableQuickActions(); searchInput.value = patient.name + ' (' + patient.id + ')'; suggestionsDiv.innerHTML = ''; } }); } }
+        
+        function renderPatientSuggestions(filterText) { 
+            if (!filterText.trim()) { 
+                suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; 
+                return; 
+            } 
+            var lowerFilter = filterText.toLowerCase(); 
+            var filtered = []; 
+            for (var i = 0; i < patientsList.length; i++) { 
+                var p = patientsList[i]; 
+                if ((p.name && p.name.toLowerCase().includes(lowerFilter)) || (p.id && p.id.toLowerCase().includes(lowerFilter))) { 
+                    filtered.push(p); 
+                } 
+            } 
+            filtered = filtered.slice(0, 15); 
+            if (!filtered.length) { 
+                suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; 
+                return; 
+            } 
+            var html = ''; 
+            for (var j = 0; j < filtered.length; j++) { 
+                var p = filtered[j]; 
+                html += '<div class="suggestion-item" data-id="' + p.id + '" data-name="' + escapeHtml(p.name) + '" data-phone="' + (p.phone || '') + '">' +
+                    '<strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">(' + p.id + ')</span><br>' +
+                    '<small>📞 ' + (p.phone || 'N/A') + '</small>' +
+                '</div>'; 
+            } 
+            suggestionsDiv.innerHTML = html; 
+            var items = document.querySelectorAll('.suggestion-item'); 
+            for (var k = 0; k < items.length; k++) { 
+                items[k].addEventListener('click', function() { 
+                    var patientId = this.dataset.id; 
+                    var patient = null; 
+                    for (var l = 0; l < patientsList.length; l++) { 
+                        if (patientsList[l].id === patientId) { patient = patientsList[l]; break; } 
+                    } 
+                    if (patient) { 
+                        selectedPatient = patient; 
+                        selectedAppointment = null; 
+                        selectedMemo = null; 
+                        savePatientSession(); 
+                        displayPatientInfo(); 
+                        enableQuickActions(); 
+                        searchInput.value = patient.name + ' (' + patient.id + ')'; 
+                        suggestionsDiv.innerHTML = ''; 
+                    } 
+                }); 
+            } 
+        }
+        
         searchInput.addEventListener('input', function(e) { renderPatientSuggestions(e.target.value); });
         
         async function loadAppointments() { 
@@ -333,24 +762,23 @@
             var html = ''; 
             for (var i = 0; i < appointments.length; i++) { 
                 var apt = appointments[i]; 
-                html += '<div class="appointment-card" data-id="' + apt.id + '"><div class="appointment-time">📅 ' + (apt.date || 'N/A') + ' | ⏰ ' + (apt.time || 'N/A') + ' <span class="badge-upcoming">Upcoming</span></div><div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div><div class="appointment-details">📞 ' + (apt.contact || 'N/A') + '</div></div>'; 
+                html += '<div class="appointment-card" data-id="' + apt.id + '">' +
+                    '<div class="appointment-time">📅 ' + (apt.date || 'N/A') + ' | ⏰ ' + (apt.time || 'N/A') + ' <span class="badge-upcoming">Upcoming</span></div>' +
+                    '<div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div>' +
+                    '<div class="appointment-details">📞 ' + (apt.contact || 'N/A') + '</div>' +
+                '</div>'; 
             } 
             container.innerHTML = html; 
             var cards = document.querySelectorAll('.appointment-card'); 
             for (var j = 0; j < cards.length; j++) { 
                 cards[j].addEventListener('click', function() { 
                     var allCards = document.querySelectorAll('.appointment-card, .memo-card'); 
-                    for (var k = 0; k < allCards.length; k++) { 
-                        allCards[k].classList.remove('selected'); 
-                    } 
+                    for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); } 
                     this.classList.add('selected'); 
                     var aptId = this.dataset.id; 
                     var apt = null; 
                     for (var l = 0; l < appointments.length; l++) { 
-                        if (appointments[l].id === aptId) { 
-                            apt = appointments[l]; 
-                            break; 
-                        } 
+                        if (appointments[l].id === aptId) { apt = appointments[l]; break; } 
                     } 
                     if (apt) selectAppointment(apt); 
                 }); 
@@ -392,10 +820,7 @@
             selectedMemo = null; 
             var patient = null; 
             for (var i = 0; i < patientsList.length; i++) { 
-                if (patientsList[i].id === apt.patientId) { 
-                    patient = patientsList[i]; 
-                    break; 
-                } 
+                if (patientsList[i].id === apt.patientId) { patient = patientsList[i]; break; } 
             } 
             if (!patient && apt.patientId) patient = { id: apt.patientId, name: apt.patientName, phone: apt.contact }; 
             selectedPatient = patient; 
@@ -446,7 +871,12 @@
 
         // ========== LOGOUT ==========
         document.getElementById('logoutBtn').addEventListener('click', async function() {
-            try { if (realtimeDB) await realtimeDB.ref('online_users/' + currentUser.id).remove(); } catch(e) { console.warn(e); }
+            try { 
+                stopHeartbeat(); 
+                if (onlineListener) onlineListener.off(); 
+                if (currentChatListener && currentChatListener.off) currentChatListener.off(); 
+                if (realtimeDB) await realtimeDB.ref('online_users/' + currentUser.id).remove(); 
+            } catch(e) { console.warn(e); }
             sessionStorage.removeItem('doctorSession');
             localStorage.removeItem('currentDoctor');
             window.location.href = 'login.html';
@@ -480,22 +910,12 @@
             if (window.rtdb) realtimeDB = window.rtdb;
             if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
             
-            try { 
-                await realtimeDB.ref('online_users/' + currentUser.id).set({ 
-                    username: currentUser.id, 
-                    name: currentUser.name, 
-                    Level: "Doctor", 
-                    status: "online", 
-                    type: "doctor", 
-                    loginTime: firebase.database.ServerValue.TIMESTAMP, 
-                    lastSeen: firebase.database.ServerValue.TIMESTAMP 
-                }); 
-            } catch(e) {}
-            document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
-            
+            await setDoctorOnline();
+            startHeartbeat();
             await loadPatients();
             await loadAppointments();
             await loadMemos();
+            listenOnlineReception();
             
             var savedPatientId = sessionStorage.getItem('selectedPatientId');
             if (savedPatientId) {

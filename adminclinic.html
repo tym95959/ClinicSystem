@@ -80,6 +80,8 @@
         .empty-message { text-align: center; color: #7799ac; padding: 1.5rem; font-style: italic; }
         .toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e2f3a; color: white; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 1200; transition: 0.2s; pointer-events: none; white-space: nowrap; }
         @media (max-width:600px){ .toast-msg { white-space: normal; max-width: 90%; } }
+        .speciality-field { display: none; }
+        .speciality-field.show { display: block; }
     </style>
 </head>
 <body>
@@ -143,7 +145,16 @@
                 <div class="input-group"><label>📛 Full Name *</label><input type="text" id="regFullName" placeholder="Full name"></div>
                 <div class="input-group"><label>🔒 Password *</label><input type="password" id="regPassword"><div class="password-strength"><div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div><span class="strength-text" id="strengthLabel">Weak</span></div></div>
                 <div class="input-group"><label>✅ Confirm Password</label><input type="password" id="regConfirmPwd"></div>
-                <div class="role-selector"><label>⚙️ Access Level</label><div class="radio-group"><label><input type="radio" name="accessLevel" value="Supervisor" checked> Supervisor</label><label><input type="radio" name="accessLevel" value="Doctor"> Doctor</label><label><input type="radio" name="accessLevel" value="Receptionist"> Receptionist</label></div></div>
+                <div class="role-selector"><label>⚙️ Access Level</label><div class="radio-group">
+                    <label><input type="radio" name="accessLevel" value="Supervisor" checked> Supervisor</label>
+                    <label><input type="radio" name="accessLevel" value="Doctor" id="doctorRoleRadio"> Doctor</label>
+                    <label><input type="radio" name="accessLevel" value="Receptionist"> Receptionist</label>
+                </div></div>
+                <!-- Speciality field - only visible when Doctor role is selected -->
+                <div class="input-group speciality-field" id="specialityGroup">
+                    <label>🩺 Speciality * (For Doctors)</label>
+                    <input type="text" id="regSpeciality" placeholder="e.g., Dental Surgeon, Cardiologist">
+                </div>
                 <div class="input-group"><label>🆔 RC Number (Unique) *</label><input type="text" id="regRCNo" placeholder="e.g., RC-1001"></div>
                 <div style="display:flex; gap:12px; margin-top:20px;"><button type="button" id="clearUserFormBtn" class="btn-sm">🗑️ Clear</button><button type="button" id="registerUserBtn" class="btn-primary" style="flex:1;">✨ Register User</button></div>
                 <div id="userMgmtMessage" class="message" style="display:none;"></div>
@@ -189,7 +200,23 @@
         function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; currentEditId = null; }
 
-        // ----- Firebase Load for services, doctors, etc. -----
+        // ========== TOGGLE SPECIALITY FIELD ==========
+        function toggleSpecialityField() {
+            const doctorRadio = document.getElementById('doctorRoleRadio');
+            const specialityGroup = document.getElementById('specialityGroup');
+            if (doctorRadio && doctorRadio.checked) {
+                specialityGroup.classList.add('show');
+            } else {
+                specialityGroup.classList.remove('show');
+            }
+        }
+
+        // Listen for role changes
+        document.querySelectorAll('input[name="accessLevel"]').forEach(radio => {
+            radio.addEventListener('change', toggleSpecialityField);
+        });
+
+        // ========== Firebase Load for services, doctors, etc. ==========
         async function loadAllData() {
             if (!window.db) { setTimeout(loadAllData, 500); return; }
             try {
@@ -381,6 +408,17 @@
             const confirm = document.getElementById('regConfirmPwd').value;
             const role = document.querySelector('input[name="accessLevel"]:checked').value;
             const rcNo = document.getElementById('regRCNo').value.trim();
+            
+            // Get speciality if role is Doctor
+            let speciality = '';
+            if (role === 'Doctor') {
+                speciality = document.getElementById('regSpeciality').value.trim();
+                if (!speciality) {
+                    showUserMsg('Please enter Speciality for Doctor role', 'error');
+                    return;
+                }
+            }
+            
             if (!username || !fullName || !password || !rcNo) { showUserMsg('All * fields required', 'error'); return; }
             if (password !== confirm) { showUserMsg('Passwords do not match', 'error'); return; }
             if (password.length < 4) { showUserMsg('Password min 4 characters', 'error'); return; }
@@ -405,8 +443,31 @@
                 Level: role,
                 Right: role,
                 RCNo: rcNo,
+                speciality: speciality, // Add speciality for doctors
                 createdAt: new Date().toISOString()
             };
+            
+            // Also add to doctors collection if role is Doctor
+            if (role === 'Doctor') {
+                try {
+                    // Check if doctor already exists in doctors collection
+                    const doctorRef = window.db.collection("doctors").doc(username);
+                    const doctorSnap = await doctorRef.get();
+                    if (!doctorSnap.exists) {
+                        await doctorRef.set({
+                            id: username,
+                            name: fullName,
+                            speciality: speciality,
+                            baseCommission: 0,
+                            status: 'active',
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                } catch(err) {
+                    console.warn('Error saving to doctors collection:', err);
+                }
+            }
+            
             try {
                 await userRef.set(newUser);
                 showUserMsg(`✅ User ${username} registered!`, 'success');
@@ -415,7 +476,9 @@
                 document.getElementById('regPassword').value = '';
                 document.getElementById('regConfirmPwd').value = '';
                 document.getElementById('regRCNo').value = '';
+                document.getElementById('regSpeciality').value = '';
                 updateStrength('');
+                toggleSpecialityField();
                 loadUsersFromFirebase(); // refresh list
                 showUserToast(`Registered ${username}`, false);
             } catch (err) {
@@ -426,6 +489,15 @@
         async function deleteUserFromFirebase(userId, username) {
             if (!confirm(`Delete user "${username}"?`)) return;
             try {
+                // Also delete from doctors collection if it exists
+                try {
+                    const doctorRef = window.db.collection("doctors").doc(userId);
+                    const doctorSnap = await doctorRef.get();
+                    if (doctorSnap.exists) {
+                        await doctorRef.delete();
+                    }
+                } catch(err) {}
+                
                 await window.db.collection("users").doc(userId).delete();
                 showUserMsg(`User ${username} deleted`, 'info');
                 loadUsersFromFirebase();
@@ -450,6 +522,7 @@
             users.forEach((u) => {
                 const fullHash = u.passwordHash || 'no-hash';
                 const shortHash = fullHash.length > 24 ? fullHash.slice(0,20)+'…'+fullHash.slice(-6) : fullHash;
+                const specialityDisplay = u.speciality ? ` | 🩺 ${escapeHtml(u.speciality)}` : '';
                 html += `<div class="user-card">
                             <div class="user-row">
                                 <div class="user-info">
@@ -457,6 +530,7 @@
                                     <span>${escapeHtml(u.name)}</span>
                                     <span class="user-badge">${u.Level}</span>
                                     <span>🆔 ${escapeHtml(u.RCNo)}</span>
+                                    ${specialityDisplay}
                                 </div>
                                 <button class="delete-user" data-id="${u.id}" data-name="${escapeHtml(u.username)}">✖️</button>
                             </div>
@@ -500,8 +574,21 @@
         document.getElementById('saveDiscountBtn').onclick = saveDiscount; document.getElementById('cancelDiscountBtn').onclick = () => closeModal('discountModal');
         document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => switchTab(btn.dataset.tab));
         document.getElementById('registerUserBtn').onclick = registerSystemUser;
-        document.getElementById('clearUserFormBtn').onclick = () => { document.getElementById('regUsername').value = ''; document.getElementById('regFullName').value = ''; document.getElementById('regPassword').value = ''; document.getElementById('regConfirmPwd').value = ''; document.getElementById('regRCNo').value = ''; updateStrength(''); showUserMsg('Form cleared','info'); };
+        document.getElementById('clearUserFormBtn').onclick = () => { 
+            document.getElementById('regUsername').value = ''; 
+            document.getElementById('regFullName').value = ''; 
+            document.getElementById('regPassword').value = ''; 
+            document.getElementById('regConfirmPwd').value = ''; 
+            document.getElementById('regRCNo').value = ''; 
+            document.getElementById('regSpeciality').value = ''; 
+            updateStrength(''); 
+            toggleSpecialityField();
+            showUserMsg('Form cleared','info'); 
+        };
         document.getElementById('regPassword').addEventListener('input', (e) => updateStrength(e.target.value));
+        
+        // Initialize speciality field visibility
+        toggleSpecialityField();
         
         // Initialize
         function waitForFirebase() { if (window.db) { loadAllData(); loadUsersFromFirebase(); } else setTimeout(waitForFirebase, 500); }

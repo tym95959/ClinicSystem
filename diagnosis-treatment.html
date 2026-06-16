@@ -102,140 +102,154 @@
 </div>
 
 <script>
-    // ========== AUTH & SESSION ==========
-    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-    if (!doctorSession) { window.location.href = 'login.html'; return; }
-    let currentDoctor = null;
-    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
-    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
-
-    let firestoreDB = null;
-    let selectedPatient = null;
-    let diagnosisList = [];
-
-    // ========== HELPER FUNCTIONS ==========
-    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-
-    // ========== LOAD SELECTED PATIENT ==========
-    function loadSelectedPatient() {
-        const patientData = sessionStorage.getItem('selectedPatient');
-        if (patientData) {
-            try {
-                selectedPatient = JSON.parse(patientData);
-                document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
-                document.getElementById('patientId').textContent = `(${selectedPatient.id || 'N/A'})`;
-                document.getElementById('patientPhone').textContent = `📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}`;
-                loadDiagnosisHistory();
-            } catch(e) { console.error(e); }
-        }
-    }
-
-    // ========== LOAD DIAGNOSIS HISTORY ==========
-    async function loadDiagnosisHistory() {
-        if (!selectedPatient || !firestoreDB) return;
-        try {
-            const snapshot = await firestoreDB.collection("diagnosis")
-                .where("patientId", "==", selectedPatient.id)
-                .orderBy("createdAt", "desc")
-                .get();
-            
-            diagnosisList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderDiagnosisList();
-        } catch (error) {
-            console.error(error);
-            try {
-                const snapshot = await firestoreDB.collection("diagnosis")
-                    .where("patientId", "==", selectedPatient.id)
-                    .get();
-                diagnosisList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                diagnosisList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                renderDiagnosisList();
-            } catch(e2) { console.error(e2); }
-        }
-    }
-
-    function renderDiagnosisList() {
-        const container = document.getElementById('diagnosisList');
-        if (!diagnosisList.length) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-stethoscope"></i><p>No diagnosis records found</p></div>`;
+    (function() {
+        // ========== AUTH & SESSION ==========
+        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+        if (!doctorSession) { 
+            window.location.href = 'login.html'; 
             return;
         }
-        container.innerHTML = diagnosisList.map(d => `
-            <div class="diagnosis-item">
-                <div class="diagnosis-date">📅 ${new Date(d.createdAt).toLocaleString()}</div>
-                <div class="diagnosis-text"><strong>Diagnosis:</strong> ${escapeHtml(d.diagnosis)}</div>
-                ${d.treatment ? `<div class="diagnosis-treatment"><strong>Treatment:</strong> ${escapeHtml(d.treatment)}</div>` : ''}
-                ${d.medicines ? `<div class="diagnosis-medicines"><strong>Medicines:</strong> ${escapeHtml(d.medicines)}</div>` : ''}
-                <div class="diagnosis-doctor">👨‍⚕️ Dr. ${escapeHtml(d.doctorName || 'Unknown')}</div>
-                <button class="btn-danger" onclick="deleteDiagnosis('${d.id}')" style="margin-top:8px;">🗑️ Delete</button>
-            </div>
-        `).join('');
-    }
-
-    // ========== DELETE DIAGNOSIS ==========
-    async function deleteDiagnosis(id) {
-        if (!confirm('Delete this diagnosis record?')) return;
-        if (!firestoreDB) return;
-        try {
-            await firestoreDB.collection("diagnosis").doc(id).delete();
-            await loadDiagnosisHistory();
-            alert('Record deleted.');
-        } catch (error) {
-            console.error(error);
-            alert('Error deleting record: ' + error.message);
+        var currentDoctor = null;
+        try { 
+            currentDoctor = JSON.parse(doctorSession); 
+        } catch(e) { 
+            window.location.href = 'login.html'; 
+            return;
         }
-    }
-
-    // ========== SAVE DIAGNOSIS ==========
-    async function saveDiagnosis() {
-        if (!selectedPatient) { alert("No patient selected."); return; }
-        if (!firestoreDB) { alert("Firebase not ready."); return; }
-        
-        const diagnosis = document.getElementById('diagnosisNote').value.trim();
-        if (!diagnosis) { alert("Please enter a diagnosis."); return; }
-        
-        try {
-            await firestoreDB.collection("diagnosis").add({
-                patientId: selectedPatient.id,
-                patientName: selectedPatient.name,
-                doctorId: currentDoctor.id,
-                doctorName: currentDoctor.name,
-                diagnosis: diagnosis,
-                treatment: document.getElementById('treatmentPlan').value.trim(),
-                medicines: document.getElementById('prescribedMeds').value.trim(),
-                createdAt: new Date().toISOString()
-            });
-            document.getElementById('diagnosisNote').value = '';
-            document.getElementById('treatmentPlan').value = '';
-            document.getElementById('prescribedMeds').value = '';
-            await loadDiagnosisHistory();
-            alert('Diagnosis saved successfully!');
-        } catch (error) {
-            console.error(error);
-            alert('Error saving: ' + error.message);
+        if (!currentDoctor || !currentDoctor.id) { 
+            window.location.href = 'login.html'; 
+            return;
         }
-    }
 
-    // ========== LOGOUT ==========
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        sessionStorage.removeItem('doctorSession');
-        localStorage.removeItem('currentDoctor');
-        window.location.href = 'login.html';
-    });
+        var firestoreDB = null;
+        var selectedPatient = null;
+        var diagnosisList = [];
 
-    // ========== EVENT LISTENERS ==========
-    document.getElementById('saveDiagnosisBtn').addEventListener('click', saveDiagnosis);
-
-    // ========== INIT ==========
-    function init() {
-        if (window.db) {
-            firestoreDB = window.db;
-            loadSelectedPatient();
-        } else {
-            setTimeout(init, 500);
+        // ========== HELPER FUNCTIONS ==========
+        function escapeHtml(str) { 
+            if (!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m) { 
+                if (m === '&') return '&amp;'; 
+                if (m === '<') return '&lt;'; 
+                if (m === '>') return '&gt;'; 
+                return m; 
+            }); 
         }
-    }
-    init();
+
+        // ========== LOAD SELECTED PATIENT ==========
+        function loadSelectedPatient() {
+            var patientData = sessionStorage.getItem('selectedPatient');
+            if (patientData) {
+                try {
+                    selectedPatient = JSON.parse(patientData);
+                    document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
+                    document.getElementById('patientId').textContent = '(' + (selectedPatient.id || 'N/A') + ')';
+                    document.getElementById('patientPhone').textContent = '📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A');
+                    loadDiagnosisHistory();
+                } catch(e) { console.error(e); }
+            }
+        }
+
+        // ========== LOAD DIAGNOSIS HISTORY ==========
+        async function loadDiagnosisHistory() {
+            if (!selectedPatient || !firestoreDB) return;
+            try {
+                var snapshot = await firestoreDB.collection("diagnosis")
+                    .where("patientId", "==", selectedPatient.id)
+                    .get();
+                
+                diagnosisList = [];
+                snapshot.forEach(function(doc) {
+                    diagnosisList.push({ id: doc.id, ...doc.data() });
+                });
+                diagnosisList.sort(function(a, b) {
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                });
+                renderDiagnosisList();
+            } catch(error) {
+                console.error(error);
+            }
+        }
+
+        function renderDiagnosisList() {
+            var container = document.getElementById('diagnosisList');
+            if (!diagnosisList.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-stethoscope"></i><p>No diagnosis records found</p></div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < diagnosisList.length; i++) {
+                var d = diagnosisList[i];
+                html += '<div class="diagnosis-item"><div class="diagnosis-date">📅 ' + new Date(d.createdAt).toLocaleString() + '</div><div class="diagnosis-text"><strong>Diagnosis:</strong> ' + escapeHtml(d.diagnosis) + '</div>' + (d.treatment ? '<div class="diagnosis-treatment"><strong>Treatment:</strong> ' + escapeHtml(d.treatment) + '</div>' : '') + (d.medicines ? '<div class="diagnosis-medicines"><strong>Medicines:</strong> ' + escapeHtml(d.medicines) + '</div>' : '') + '<div class="diagnosis-doctor">👨‍⚕️ Dr. ' + escapeHtml(d.doctorName || 'Unknown') + '</div><button class="btn-danger" onclick="window.deleteDiagnosis(\'' + d.id + '\')" style="margin-top:8px;">🗑️ Delete</button></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== DELETE DIAGNOSIS ==========
+        window.deleteDiagnosis = async function(id) {
+            if (!confirm('Delete this diagnosis record?')) return;
+            if (!firestoreDB) return;
+            try {
+                await firestoreDB.collection("diagnosis").doc(id).delete();
+                await loadDiagnosisHistory();
+                alert('Record deleted.');
+            } catch(error) {
+                console.error(error);
+                alert('Error deleting record: ' + error.message);
+            }
+        };
+
+        // ========== SAVE DIAGNOSIS ==========
+        async function saveDiagnosis() {
+            if (!selectedPatient) { alert("No patient selected."); return; }
+            if (!firestoreDB) { alert("Firebase not ready."); return; }
+            
+            var diagnosis = document.getElementById('diagnosisNote').value.trim();
+            if (!diagnosis) { alert("Please enter a diagnosis."); return; }
+            
+            try {
+                await firestoreDB.collection("diagnosis").add({
+                    patientId: selectedPatient.id,
+                    patientName: selectedPatient.name,
+                    doctorId: currentDoctor.id,
+                    doctorName: currentDoctor.name,
+                    diagnosis: diagnosis,
+                    treatment: document.getElementById('treatmentPlan').value.trim(),
+                    medicines: document.getElementById('prescribedMeds').value.trim(),
+                    createdAt: new Date().toISOString()
+                });
+                document.getElementById('diagnosisNote').value = '';
+                document.getElementById('treatmentPlan').value = '';
+                document.getElementById('prescribedMeds').value = '';
+                await loadDiagnosisHistory();
+                alert('Diagnosis saved successfully!');
+            } catch(error) {
+                console.error(error);
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        // ========== LOGOUT ==========
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('doctorSession');
+            localStorage.removeItem('currentDoctor');
+            window.location.href = 'login.html';
+        });
+
+        // ========== EVENT LISTENERS ==========
+        document.getElementById('saveDiagnosisBtn').addEventListener('click', saveDiagnosis);
+
+        // ========== INIT ==========
+        function init() {
+            if (window.db) {
+                firestoreDB = window.db;
+                loadSelectedPatient();
+            } else {
+                setTimeout(init, 500);
+            }
+        }
+        init();
+    })();
 </script>
 </body>
 </html>

@@ -491,18 +491,13 @@
                 <div id="selectedPatientCard" class="selected-card" style="display: none;"></div>
             </div>
             
-            <!-- Patient Details - Hidden fields for data transfer -->
+            <!-- Hidden fields for patient data transfer -->
             <input type="hidden" id="patientId" value="">
             <input type="hidden" id="patientName" value="">
             <input type="hidden" id="contactNo" value="">
-            
-            <!-- Patient Details Display (read-only) -->
-            <div class="input-group" style="grid-column: span 2;">
-                <label>👤 Patient Details (Auto-filled from appointment)</label>
-                <div id="patientDetailsDisplay" style="background: #f8fbfe; padding: 10px 14px; border-radius: 14px; font-size: 12px; color: #5f7f9a; min-height: 40px; border: 1.5px solid #e2eaf0;">
-                    No patient selected yet
-                </div>
-            </div>
+            <input type="hidden" id="patientNationality" value="">
+            <input type="hidden" id="patientIsCitizen" value="">
+            <input type="hidden" id="patientDob" value="">
             
             <!-- Doctor Dropdown -->
             <div class="input-group">
@@ -681,21 +676,6 @@
     function escapeHtml(str) { 
         if(!str) return ''; 
         return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); 
-    }
-    
-    function updatePatientDisplay(patient) {
-        const display = document.getElementById('patientDetailsDisplay');
-        if (!patient) {
-            display.innerHTML = 'No patient selected yet';
-            return;
-        }
-        const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
-        display.innerHTML = `
-            <strong>${escapeHtml(patient.name)}</strong><br>
-            🪪 ID/Passport: ${escapeHtml(displayId)}<br>
-            📞 ${escapeHtml(patient.phone || patient.contactNo || 'N/A')}
-            ${patient.isCitizen ? ' | ✅ Aasandha Eligible' : ''}
-        `;
     }
     
     // ========== SEQUENTIAL MEMO NUMBER GENERATOR ==========
@@ -951,9 +931,9 @@
                     document.getElementById('patientId').value = patient.id || displayId;
                     document.getElementById('patientName').value = patient.name;
                     document.getElementById('contactNo').value = patient.phone || patient.contactNo || apt.contact || '';
-                    
-                    // Update patient details display
-                    updatePatientDisplay(patient);
+                    document.getElementById('patientNationality').value = patient.nationality || '';
+                    document.getElementById('patientIsCitizen').value = patient.isCitizen || false;
+                    document.getElementById('patientDob').value = patient.dob || '';
                     
                     // Update patient dropdown
                     const patientSelect = document.getElementById('patientDropdown');
@@ -1007,7 +987,6 @@
                     document.getElementById('patientId').value = apt.patientId || '';
                     document.getElementById('patientName').value = apt.patientName || '';
                     document.getElementById('contactNo').value = apt.contact || '';
-                    updatePatientDisplay(selectedPatient);
                 }
             } catch (error) {
                 console.error("Error in patient handling:", error);
@@ -1021,7 +1000,6 @@
                 document.getElementById('patientId').value = apt.patientId || '';
                 document.getElementById('patientName').value = apt.patientName || '';
                 document.getElementById('contactNo').value = apt.contact || '';
-                updatePatientDisplay(selectedPatient);
             }
         } else {
             console.warn("No patientId in appointment data");
@@ -1431,6 +1409,9 @@
         const patientId = document.getElementById('patientId').value.trim();
         const patientName = document.getElementById('patientName').value.trim();
         const contactNo = document.getElementById('contactNo').value.trim();
+        const nationality = document.getElementById('patientNationality').value.trim();
+        const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
+        const dob = document.getElementById('patientDob').value.trim();
         
         // If no patient selected but we have data from appointment
         if (!selectedPatient && patientId && patientName) {
@@ -1438,7 +1419,9 @@
                 id: patientId,
                 name: patientName,
                 phone: contactNo,
-                isCitizen: false
+                nationality: nationality,
+                isCitizen: isCitizen,
+                dob: dob
             };
         }
         
@@ -1524,12 +1507,12 @@
                 id: selectedPatient.id || patientId || "",
                 name: selectedPatient.name || patientName || "",
                 phone: selectedPatient.phone || contactNo || "",
-                nationality: selectedPatient.nationality || "",
-                isCitizen: selectedPatient.isCitizen || false,
+                nationality: selectedPatient.nationality || nationality || "",
+                isCitizen: selectedPatient.isCitizen || isCitizen || false,
                 idNumber: selectedPatient.idNumber || patientId || "",
                 passportNumber: selectedPatient.passportNumber || "",
                 nationalId: selectedPatient.nationalId || "",
-                dob: selectedPatient.dob || ""
+                dob: selectedPatient.dob || dob || ""
             },
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
             insurances: insuranceArray,
@@ -1616,7 +1599,9 @@
             document.getElementById('patientId').value = displayId;
             document.getElementById('patientName').value = patient.name;
             document.getElementById('contactNo').value = patient.contactNo || patient.phone || '';
-            updatePatientDisplay(patient);
+            document.getElementById('patientNationality').value = patient.nationality || '';
+            document.getElementById('patientIsCitizen').value = patient.isCitizen || false;
+            document.getElementById('patientDob').value = patient.dob || '';
             if (selectedServices.length > 0) applyAutoCalculation();
             calculateBilling();
         } else { 
@@ -1625,7 +1610,9 @@
             document.getElementById('patientId').value = '';
             document.getElementById('patientName').value = '';
             document.getElementById('contactNo').value = '';
-            updatePatientDisplay(null);
+            document.getElementById('patientNationality').value = '';
+            document.getElementById('patientIsCitizen').value = '';
+            document.getElementById('patientDob').value = '';
             calculateBilling(); 
         }
     });

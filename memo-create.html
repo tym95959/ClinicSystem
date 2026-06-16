@@ -809,7 +809,27 @@
         }
     }
     
-    // ========== AUTO-FILL FROM APPOINTMENT WITH AUTO-CREATE PATIENT ==========
+    // ========== FIND PATIENT BY ID/PASSPORT VALUE ==========
+    function findPatientByIdPassport(idValue) {
+        if (!idValue) return null;
+        const lowerId = idValue.toLowerCase().trim();
+        
+        // Search through patientsList by various fields
+        for (let i = 0; i < patientsList.length; i++) {
+            const p = patientsList[i];
+            // Check by Firestore document ID
+            if (p.id && p.id.toLowerCase() === lowerId) return p;
+            // Check by idNumber
+            if (p.idNumber && p.idNumber.toLowerCase() === lowerId) return p;
+            // Check by passportNumber
+            if (p.passportNumber && p.passportNumber.toLowerCase() === lowerId) return p;
+            // Check by nationalId
+            if (p.nationalId && p.nationalId.toLowerCase() === lowerId) return p;
+        }
+        return null;
+    }
+    
+    // ========== AUTO-FILL FROM APPOINTMENT ==========
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
         if (!apt) {
@@ -821,53 +841,91 @@
         console.log("Selected appointment:", apt);
         
         // ============================================================
-        // 1. FETCH OR CREATE PATIENT
+        // 1. FIND PATIENT BY ID/PASSPORT VALUE
         // ============================================================
         if (apt.patientId) {
             try {
-                console.log("Looking for patient with ID:", apt.patientId);
+                const searchId = apt.patientId;
+                console.log("Looking for patient with ID/Passport:", searchId);
                 
-                // First try to find patient in the loaded patientsList
-                let patient = patientsList.find(p => p.id === apt.patientId);
+                // First try to find in loaded patientsList
+                let patient = findPatientByIdPassport(searchId);
                 console.log("Patient found in list:", patient);
                 
-                // If not found, try searching by other fields
+                // If not found, fetch from Firestore by querying all possible fields
                 if (!patient) {
-                    // Try to find by idNumber, passportNumber, or nationalId
-                    const lowerId = apt.patientId.toLowerCase();
-                    patient = patientsList.find(p => 
-                        (p.idNumber && p.idNumber.toLowerCase() === lowerId) ||
-                        (p.passportNumber && p.passportNumber.toLowerCase() === lowerId) ||
-                        (p.nationalId && p.nationalId.toLowerCase() === lowerId)
-                    );
-                }
-                
-                // If still not found, fetch directly from Firestore
-                if (!patient) {
-                    console.log("Patient not in list, fetching from Firestore...");
-                    const patientDoc = await window.db.collection("patients").doc(apt.patientId).get();
+                    console.log("Patient not in list, searching Firestore...");
+                    
+                    // Try to find by Firestore document ID
+                    let patientDoc = await window.db.collection("patients").doc(searchId).get();
                     if (patientDoc.exists) {
                         patient = { id: patientDoc.id, ...patientDoc.data() };
-                        console.log("Patient fetched from Firestore:", patient);
+                        console.log("Patient found by document ID:", patient);
+                    }
+                    
+                    // If not found, query by idNumber field
+                    if (!patient) {
+                        const idNumberQuery = await window.db.collection("patients")
+                            .where("idNumber", "==", searchId)
+                            .get();
+                        if (!idNumberQuery.empty) {
+                            patient = { id: idNumberQuery.docs[0].id, ...idNumberQuery.docs[0].data() };
+                            console.log("Patient found by idNumber:", patient);
+                        }
+                    }
+                    
+                    // If not found, query by passportNumber field
+                    if (!patient) {
+                        const passportQuery = await window.db.collection("patients")
+                            .where("passportNumber", "==", searchId)
+                            .get();
+                        if (!passportQuery.empty) {
+                            patient = { id: passportQuery.docs[0].id, ...passportQuery.docs[0].data() };
+                            console.log("Patient found by passportNumber:", patient);
+                        }
+                    }
+                    
+                    // If not found, query by nationalId field
+                    if (!patient) {
+                        const nationalQuery = await window.db.collection("patients")
+                            .where("nationalId", "==", searchId)
+                            .get();
+                        if (!nationalQuery.empty) {
+                            patient = { id: nationalQuery.docs[0].id, ...nationalQuery.docs[0].data() };
+                            console.log("Patient found by nationalId:", patient);
+                        }
+                    }
+                    
+                    // If patient found in Firestore, add to list
+                    if (patient) {
                         patientsList.push(patient);
                     }
                 }
                 
                 // If patient still not found, CREATE a new one!
                 if (!patient) {
-                    console.log("Patient not found, creating new patient...");
+                    console.log("Patient not found, creating new patient with ID/Passport:", searchId);
                     const newPatient = {
-                        id: apt.patientId,
+                        id: searchId,
                         name: apt.patientName || 'Unknown Patient',
                         phone: apt.contact || '',
-                        idNumber: apt.patientId,
+                        idNumber: searchId,
                         isCitizen: false,
                         createdAt: new Date().toISOString()
                     };
                     
                     try {
-                        await window.db.collection("patients").doc(apt.patientId).set(newPatient);
-                        patient = newPatient;
+                        // Check again before creating (race condition)
+                        const checkDoc = await window.db.collection("patients").doc(searchId).get();
+                        if (!checkDoc.exists) {
+                            await window.db.collection("patients").doc(searchId).set(newPatient);
+                        } else {
+                            patient = { id: checkDoc.id, ...checkDoc.data() };
+                        }
+                        
+                        if (!patient) {
+                            patient = newPatient;
+                        }
                         patientsList.push(patient);
                         console.log("New patient created:", patient);
                         showMessage(`✅ New patient created: ${patient.name}`, "success");
@@ -875,7 +933,7 @@
                         console.error("Error creating patient:", err);
                         // Use fallback from appointment
                         patient = {
-                            id: apt.patientId,
+                            id: searchId,
                             name: apt.patientName || 'Unknown',
                             phone: apt.contact || '',
                             isCitizen: false
@@ -889,7 +947,7 @@
                     console.log("Selected patient set:", selectedPatient);
                     
                     // Update hidden fields
-                    const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+                    const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || searchId;
                     document.getElementById('patientId').value = patient.id || displayId;
                     document.getElementById('patientName').value = patient.name;
                     document.getElementById('contactNo').value = patient.phone || patient.contactNo || apt.contact || '';
@@ -901,7 +959,7 @@
                     const patientSelect = document.getElementById('patientDropdown');
                     let found = false;
                     for (let i = 0; i < patientSelect.options.length; i++) {
-                        if (patientSelect.options[i].value === apt.patientId) {
+                        if (patientSelect.options[i].value === patient.id) {
                             patientSelect.selectedIndex = i;
                             found = true;
                             break;

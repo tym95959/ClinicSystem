@@ -26,15 +26,14 @@
         }
 
         .clinic-header {
-            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
-            color: #004d4d;
+            background: #0a2f44;
+            color: white;
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .logo h2 {
@@ -284,6 +283,43 @@
             width: 100%;
         }
 
+        .payment-method-select {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid #0f5c7a;
+            width: 100%;
+            background: white;
+            cursor: pointer;
+        }
+
+        .payment-method-select:focus {
+            outline: none;
+            border-color: #146b3a;
+        }
+
+        .cash-input-group {
+            display: none;
+            margin-top: 8px;
+        }
+
+        .cash-input-group label {
+            font-size: 10px;
+            color: #1f5e7e;
+            font-weight: 600;
+        }
+
+        .cash-input-group input {
+            padding: 8px;
+            border: 2px solid #0f5c7a;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            width: 100%;
+        }
+
         .warning-message {
             background: #fff3e0;
             border-left: 4px solid #ff9800;
@@ -308,6 +344,7 @@
             display: flex;
             justify-content: flex-end;
             margin-top: 15px;
+            gap: 10px;
         }
 
         .save-btn {
@@ -324,6 +361,17 @@
         .save-btn:disabled {
             background: #95a5a6;
             cursor: not-allowed;
+        }
+
+        .print-btn {
+            background: #0f5c7a;
+            color: white;
+            padding: 8px 24px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
         }
 
         .message {
@@ -361,6 +409,19 @@
             margin-left: 10px;
         }
 
+        .payment-method-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .badge-cash { background: #28a745; color: white; }
+        .badge-card { background: #007bff; color: white; }
+        .badge-transfer { background: #6f42c1; color: white; }
+
         @media (max-width: 640px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -378,14 +439,19 @@
             .insurance-input {
                 width: 60px;
             }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .action-buttons button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
 <div class="clinic-header">
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <img src="hope1.png" alt="Hope Dental Logo" style="height: 50px; vertical-align: middle;">
-        <h1 style="font-size: 1.3rem; font-weight: 600; margin: 0; background: linear-gradient(135deg, #006666, #20b2aa); -webkit-background-clip: text; background-clip: text; color: transparent;">Hope Dental Clinic</h1>
+    <div class="logo">
+        <h2>🏥 Hope Dental · Create Clinical Memo</h2>
     </div>
     <div>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
@@ -502,14 +568,45 @@
                 <div class="total-item"><label>Primary Insurance</label><div class="value" id="insurancePayment">0.00</div></div>
                 <div class="total-item"><label>Aasandha (Secondary)</label><div class="value" id="aasandhaPayment">0.00</div></div>
                 <div class="total-item payable-item"><label>💰 PATIENT PAYABLE</label><div class="value" id="patientPayAmount" style="color:#0f5c7a; font-size:22px;">0.00</div></div>
-                <div class="total-item"><label>Amount Paid</label><input type="number" id="paidAmount" value="0" step="0.01" class="paid-input"></div>
-                <div class="total-item balance-item"><label id="balanceLabel">⚖️ BALANCE</label><div class="value" id="balanceDue" style="font-size:20px;">0.00</div></div>
             </div>
-            <div id="balanceWarning" class="warning-message" style="display: none;"></div>
+            
+            <!-- Payment Method Section -->
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px dashed #cbdde9;">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>💳 Payment Method</label>
+                        <select id="paymentMethodSelect" class="payment-method-select">
+                            <option value="">-- Select Payment Method --</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="cashInputGroup" style="display: none;">
+                        <label>💰 Cash Given Amount (MVR)</label>
+                        <input type="number" id="cashGivenAmount" placeholder="Enter cash given" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                
+                <!-- Payment Summary -->
+                <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="total-item">
+                        <label>💳 Payment Method</label>
+                        <div id="paymentMethodDisplay" style="font-size: 14px; font-weight: 600; color: #0a2f44;">Not Selected</div>
+                    </div>
+                    <div class="total-item">
+                        <label>💰 Amount Paid</label>
+                        <div id="amountPaidDisplay" style="font-size: 20px; font-weight: 800; color: #0f5c7a;">0.00</div>
+                    </div>
+                </div>
+                
+                <div class="total-item balance-item" style="margin-top: 10px;">
+                    <label id="balanceLabel">⚖️ BALANCE</label>
+                    <div class="value" id="balanceDue" style="font-size: 20px;">0.00</div>
+                </div>
+                <div id="balanceWarning" class="warning-message" style="display: none;"></div>
+            </div>
         </div>
         
         <div class="action-buttons">
-            <button class="save-btn" id="saveMemoBtn">💾 Save & Print Memo</button>
+            <button class="save-btn" id="saveMemoBtn">💾 Save Memo</button>
         </div>
         <div id="messageBox" class="message"></div>
     </div>
@@ -537,6 +634,7 @@
     let insuranceList = [];
     let discountsList = [];
     let appointmentsList = [];
+    let paymentMethodsList = [];
     let selectedAppointmentId = null;
     let selectedPatient = null;
     let selectedDoctor = null;
@@ -548,6 +646,8 @@
     let selectedServices = [];
     let currentPrimaryInsurancePayment = 0;
     let currentAasandhaPayment = 0;
+    let selectedPaymentMethod = null;
+    let cashGivenAmount = 0;
     
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type) {
@@ -562,15 +662,14 @@
         return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); 
     }
     
-    // ========== SEQUENTIAL MEMO NUMBER GENERATOR (Firestore Transaction) ==========
+    // ========== SEQUENTIAL MEMO NUMBER GENERATOR ==========
     async function getNextMemoNumber() {
         if (!window.db) throw new Error("Firestore not ready");
         const counterRef = window.db.collection("counters").doc("memoCounter");
         
-        // Run transaction to safely increment counter
         return await window.db.runTransaction(async (transaction) => {
             const doc = await transaction.get(counterRef);
-            let current = 1000; // starting from 1000 (will produce 1001 as first)
+            let current = 1000;
             if (doc.exists && doc.data().current) {
                 current = doc.data().current;
             }
@@ -579,7 +678,6 @@
             return next;
         }).catch(async (error) => {
             console.error("Transaction failed, retrying once...", error);
-            // Fallback: try to get and increment with update (if transaction fails due to missing doc)
             const doc = await counterRef.get();
             let current = 1000;
             if (doc.exists && doc.data().current) {
@@ -591,7 +689,64 @@
         });
     }
     
-    // ========== LOAD APPOINTMENTS (client‑side sort, no index required) ==========
+    // ========== LOAD PAYMENT METHODS ==========
+    async function loadPaymentMethods() {
+        if (!window.db) return;
+        try {
+            const snapshot = await window.db.collection("paymentMethods").get();
+            if (snapshot.empty) {
+                // Create default payment methods if none exist
+                const defaultMethods = ['Visa', 'Mastercard', 'Amex', 'Cash', 'Bank Transfer'];
+                const batch = window.db.batch();
+                defaultMethods.forEach(name => {
+                    const ref = window.db.collection("paymentMethods").doc();
+                    batch.set(ref, { name: name, active: true, createdAt: new Date().toISOString() });
+                });
+                await batch.commit();
+                console.log("Default payment methods created");
+                // Reload
+                const newSnapshot = await window.db.collection("paymentMethods").get();
+                paymentMethodsList = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } else {
+                paymentMethodsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+            
+            const select = document.getElementById('paymentMethodSelect');
+            select.innerHTML = '<option value="">-- Select Payment Method --</option>';
+            paymentMethodsList.forEach(pm => {
+                const icon = getPaymentIcon(pm.name);
+                select.innerHTML += `<option value="${pm.id}" data-name="${pm.name}">${icon} ${pm.name}</option>`;
+            });
+        } catch (error) {
+            console.error("Error loading payment methods:", error);
+        }
+    }
+    
+    function getPaymentIcon(name) {
+        const icons = {
+            'Visa': '💳',
+            'Mastercard': '💳',
+            'Amex': '💳',
+            'Cash': '💰',
+            'Bank Transfer': '🏦',
+            'Transfer': '🏦'
+        };
+        return icons[name] || '💳';
+    }
+    
+    function getPaymentBadge(name) {
+        const badges = {
+            'Cash': 'badge-cash',
+            'Visa': 'badge-card',
+            'Mastercard': 'badge-card',
+            'Amex': 'badge-card',
+            'Bank Transfer': 'badge-transfer',
+            'Transfer': 'badge-transfer'
+        };
+        return badges[name] || 'badge-card';
+    }
+    
+    // ========== LOAD APPOINTMENTS ==========
     async function loadAppointments() {
         if (!window.db) return;
         try {
@@ -620,7 +775,7 @@
         }
     }
     
-    // ========== AUTO-FILL FROM SELECTED APPOINTMENT ==========
+    // ========== AUTO-FILL FROM APPOINTMENT ==========
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
         if (!apt) return;
@@ -699,9 +854,7 @@
             else {
                 patientSelect.innerHTML = '<option value="">-- Select Patient --</option>';
                 patientsList.forEach(p => {
-                    // Display ID/Passport instead of Patient ID
-                    const displayId = p.idNumber || p.passportNumber || p.id || 'N/A';
-                    patientSelect.innerHTML += `<option value="${p.id}">${displayId} - ${p.name} (${p.nationality || 'N/A'})</option>`;
+                    patientSelect.innerHTML += `<option value="${p.id}">${p.id} - ${p.name} (${p.nationality || 'N/A'})</option>`;
                 });
             }
         } catch (error) { console.error(error); }
@@ -766,7 +919,7 @@
     
     async function loadAllData() {
         if (!window.db) { setTimeout(loadAllData, 500); return; }
-        await Promise.all([loadPatients(), loadDoctors(), loadServices(), loadInsurance(), loadDiscounts(), loadAppointments()]);
+        await Promise.all([loadPatients(), loadDoctors(), loadServices(), loadInsurance(), loadDiscounts(), loadAppointments(), loadPaymentMethods()]);
         showMessage(`Loaded ${patientsList.length} patients, ${doctorsList.length} doctors, ${servicesList.length} services`, "success");
     }
     
@@ -910,31 +1063,78 @@
         document.getElementById('insurancePayment').innerHTML = primaryInsuranceTotal.toFixed(2);
         document.getElementById('aasandhaPayment').innerHTML = aasandhaTotal.toFixed(2);
         document.getElementById('patientPayAmount').innerHTML = patientTotal.toFixed(2);
-        updateBalanceDisplay(patientTotal);
+        updatePaymentDisplay(patientTotal);
     }
     
-    function updateBalanceDisplay(patientPayable) {
-        const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
-        const balance = patientPayable - paid;
+    function updatePaymentDisplay(patientPayable) {
+        const selectedPaymentOption = document.getElementById('paymentMethodSelect');
+        const selectedName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
+        
+        // Determine amount paid based on payment method
+        let paidAmount = 0;
+        let balance = 0;
+        let changeDue = 0;
+        let paymentDisplay = '';
+        
+        if (selectedName === 'Cash') {
+            cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
+            paidAmount = cashGivenAmount;
+            balance = patientPayable - paidAmount;
+            
+            if (balance > 0) {
+                paymentDisplay = `⚠️ Need MVR ${balance.toFixed(2)} more`;
+            } else {
+                changeDue = Math.abs(balance);
+                paymentDisplay = `✅ Change: MVR ${changeDue.toFixed(2)}`;
+            }
+        } else if (selectedName) {
+            // Non-cash payment - paid amount equals invoice amount, no change
+            paidAmount = patientPayable;
+            balance = 0;
+            paymentDisplay = `✅ Paid: MVR ${paidAmount.toFixed(2)}`;
+        } else {
+            paidAmount = 0;
+            balance = patientPayable;
+            paymentDisplay = '❌ Select payment method';
+        }
+        
+        // Update displays
+        document.getElementById('amountPaidDisplay').innerHTML = paidAmount.toFixed(2);
+        document.getElementById('paymentMethodDisplay').innerHTML = selectedName ? `${getPaymentIcon(selectedName)} ${selectedName}` : 'Not Selected';
+        
         const balanceDiv = document.getElementById('balanceDue');
         const warningDiv = document.getElementById('balanceWarning');
-        if (balance > 0) {
-            balanceDiv.innerHTML = balance.toFixed(2);
-            balanceDiv.style.color = '#b91c1c';
-            document.getElementById('balanceLabel').innerHTML = '⚖️ BALANCE DUE';
-            warningDiv.style.display = 'block';
-            warningDiv.innerHTML = `⚠️ MVR ${balance.toFixed(2)} remaining. Please collect before discharge.`;
-        } else if (balance < 0) {
-            balanceDiv.innerHTML = Math.abs(balance).toFixed(2);
-            balanceDiv.style.color = '#146b3a';
-            document.getElementById('balanceLabel').innerHTML = '💰 CHANGE DUE';
-            warningDiv.style.display = 'block';
-            warningDiv.innerHTML = `✓ Paid MVR ${paid.toFixed(2)} | Payable MVR ${patientPayable.toFixed(2)} | Return MVR ${Math.abs(balance).toFixed(2)} to patient.`;
-        } else {
+        
+        if (selectedName === 'Cash') {
+            if (balance > 0) {
+                balanceDiv.innerHTML = balance.toFixed(2);
+                balanceDiv.style.color = '#b91c1c';
+                document.getElementById('balanceLabel').innerHTML = '⚖️ BALANCE DUE';
+                warningDiv.style.display = 'block';
+                warningDiv.innerHTML = `⚠️ MVR ${balance.toFixed(2)} remaining. Please collect before discharge.`;
+            } else if (balance < 0) {
+                balanceDiv.innerHTML = Math.abs(balance).toFixed(2);
+                balanceDiv.style.color = '#146b3a';
+                document.getElementById('balanceLabel').innerHTML = '💰 CHANGE DUE';
+                warningDiv.style.display = 'block';
+                warningDiv.innerHTML = `✓ Paid MVR ${paidAmount.toFixed(2)} | Payable MVR ${patientPayable.toFixed(2)} | Return MVR ${Math.abs(balance).toFixed(2)} to patient.`;
+            } else {
+                balanceDiv.innerHTML = '0.00';
+                balanceDiv.style.color = '#146b3a';
+                document.getElementById('balanceLabel').innerHTML = '✅ PAID FULLY';
+                warningDiv.style.display = 'none';
+            }
+        } else if (selectedName) {
             balanceDiv.innerHTML = '0.00';
             balanceDiv.style.color = '#146b3a';
-            document.getElementById('balanceLabel').innerHTML = '✅ PAID FULLY';
+            document.getElementById('balanceLabel').innerHTML = '✅ PAID (Non-Cash)';
             warningDiv.style.display = 'none';
+        } else {
+            balanceDiv.innerHTML = patientPayable.toFixed(2);
+            balanceDiv.style.color = '#b91c1c';
+            document.getElementById('balanceLabel').innerHTML = '⚖️ SELECT PAYMENT';
+            warningDiv.style.display = 'block';
+            warningDiv.innerHTML = '⚠️ Please select a payment method to proceed.';
         }
     }
     
@@ -949,14 +1149,50 @@
         return true;
     }
     
-    // ========== SAVE MEMO TO FIRESTORE (WITH SEQUENTIAL MEMO NUMBER) ==========
+    // ========== SAVE MEMO TO FIRESTORE ==========
     async function saveToFirebase() {
         if (!selectedPatient) { showMessage("Please select a patient", "error"); return; }
         if (!selectedDoctor) { showMessage("Please select a doctor", "error"); return; }
         if (!selectedServices.length) { showMessage("Please add at least one service", "error"); return; }
         
+        const selectedPaymentOption = document.getElementById('paymentMethodSelect');
+        const selectedPaymentId = selectedPaymentOption.value;
+        const selectedPaymentName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
+        
+        if (!selectedPaymentId) { showMessage("Please select a payment method", "error"); return; }
+        
         const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML);
-        const paidAmount = parseFloat(document.getElementById('paidAmount').value) || 0;
+        let paidAmount = 0;
+        let changeAmount = 0;
+        let paymentDetails = {};
+        
+        if (selectedPaymentName === 'Cash') {
+            cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
+            paidAmount = cashGivenAmount;
+            changeAmount = Math.max(0, paidAmount - patientPayable);
+            if (paidAmount < patientPayable) {
+                showMessage(`Cash given (MVR ${paidAmount.toFixed(2)}) is less than patient payable (MVR ${patientPayable.toFixed(2)})`, "error");
+                return;
+            }
+            paymentDetails = {
+                method: 'Cash',
+                methodId: selectedPaymentId,
+                givenAmount: paidAmount,
+                changeAmount: changeAmount,
+                patientPayable: patientPayable
+            };
+        } else {
+            paidAmount = patientPayable;
+            changeAmount = 0;
+            paymentDetails = {
+                method: selectedPaymentName,
+                methodId: selectedPaymentId,
+                givenAmount: paidAmount,
+                changeAmount: 0,
+                patientPayable: patientPayable
+            };
+        }
+        
         const insuranceArray = [];
         if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
             insuranceArray.push({
@@ -971,7 +1207,6 @@
             insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
         }
         
-        // Get next sequential memo number (short ID)
         let memoNumber;
         try {
             memoNumber = await getNextMemoNumber();
@@ -979,7 +1214,7 @@
             showMessage("Failed to generate memo number: " + err.message, "error");
             return;
         }
-        const memoId = memoNumber.toString();  // e.g., "1001", "1002", etc.
+        const memoId = memoNumber.toString();
         
         const memoData = {
             memoId: memoId,
@@ -992,7 +1227,6 @@
                 nationality: selectedPatient.nationality || "",
                 isCitizen: selectedPatient.isCitizen || false,
                 idNumber: selectedPatient.idNumber || "",
-                passportNumber: selectedPatient.passportNumber || "",
                 dob: selectedPatient.dob || ""
             },
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
@@ -1017,8 +1251,10 @@
                 totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
                 patientPayable: patientPayable || 0,
                 paid: paidAmount || 0,
+                change: changeAmount || 0,
                 balance: (patientPayable - paidAmount) || 0
             },
+            payment: paymentDetails,
             status: "completed",
             createdBy: JSON.parse(loggedInUser).username || "unknown",
             createdAt: new Date().toISOString()
@@ -1035,14 +1271,14 @@
             if (deleted && selectedAppointmentId) showMessage("Linked appointment deleted", "success");
             showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
             setTimeout(() => {
-                alert(`Memo #${memoId} saved successfully!`);
+                alert(`Memo #${memoId} saved successfully!\nPayment: ${paymentDetails.method}\nAmount: MVR ${paidAmount.toFixed(2)}`);
                 window.location.href = 'clinicdash.html';
             }, 1500);
         } catch (error) {
             console.error(error);
             showMessage("❌ Failed to save: " + error.message, "error");
             const saveBtn = document.getElementById('saveMemoBtn');
-            saveBtn.textContent = "💾 Save & Print Memo";
+            saveBtn.textContent = "💾 Save Memo";
             saveBtn.disabled = false;
         }
     }
@@ -1054,9 +1290,7 @@
             selectedPatient = patient;
             const card = document.getElementById('selectedPatientCard');
             card.style.display = 'flex';
-            // Display ID/Passport in the selected card
-            const displayId = patient.idNumber || patient.passportNumber || patient.id || 'N/A';
-            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong> (${displayId})<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
+            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong> (${patient.id})<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
             if (selectedServices.length > 0) applyAutoCalculation();
             calculateBilling();
         } else { selectedPatient = null; document.getElementById('selectedPatientCard').style.display = 'none'; calculateBilling(); }
@@ -1094,9 +1328,28 @@
     document.getElementById('otherInsurancePercent').addEventListener('input', (e) => { selectedInsurancePercent = parseFloat(e.target.value) || 0; if (selectedServices.length > 0) applyAutoCalculation(); calculateBilling(); });
     document.getElementById('otherInsuranceFixed').addEventListener('input', (e) => { selectedInsuranceFixed = parseFloat(e.target.value) || 0; if (selectedServices.length > 0) applyAutoCalculation(); calculateBilling(); });
     document.getElementById('discountTypeSelect').addEventListener('change', (e) => { selectedDiscountPercent = parseFloat(e.target.value) || 0; calculateBilling(); });
-    document.getElementById('paidAmount').addEventListener('input', () => calculateBilling());
     document.getElementById('saveMemoBtn').onclick = saveToFirebase;
     document.getElementById('applyAutoCalcBtn').addEventListener('click', applyAutoCalculation);
+    
+    // Payment Method Listeners
+    document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
+        const opt = e.target.selectedOptions[0];
+        const selectedName = opt?.dataset?.name || '';
+        const cashGroup = document.getElementById('cashInputGroup');
+        
+        if (selectedName === 'Cash') {
+            cashGroup.style.display = 'block';
+            document.getElementById('cashGivenAmount').value = parseFloat(document.getElementById('patientPayAmount').innerHTML) || 0;
+        } else {
+            cashGroup.style.display = 'none';
+            document.getElementById('cashGivenAmount').value = 0;
+        }
+        calculateBilling();
+    });
+    
+    document.getElementById('cashGivenAmount').addEventListener('input', () => {
+        calculateBilling();
+    });
     
     document.getElementById('insurancePercentBtn').onclick = () => {
         insuranceType = "percent";
@@ -1117,7 +1370,6 @@
         calculateBilling();
     };
     
-    // Appointment selection listener
     document.getElementById('appointmentSelect').addEventListener('change', (e) => {
         if (e.target.value) fillFromAppointment(e.target.value);
         else { selectedAppointmentId = null; document.getElementById('appointmentBadge').style.display = 'none'; }

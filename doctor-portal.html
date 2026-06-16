@@ -364,13 +364,22 @@
             return;
         }
 
+        // ========== LINK: Get Doctor ID from Users collection ==========
+        // The currentDoctor.id is the user ID from the users collection
+        // We need to find the corresponding doctor in the doctors collection
+        var doctorId = currentDoctor.id;
+        
         var currentUser = {
-            id: currentDoctor.id,
+            id: doctorId,
             name: currentDoctor.name,
             role: "Doctor",
             speciality: currentDoctor.speciality || "Dental Surgeon",
             type: "doctor"
         };
+        
+        // Also store the doctor's ID from the users collection
+        var userId = doctorId;
+        
         document.getElementById('doctorName').textContent = currentUser.name;
         document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
 
@@ -435,9 +444,13 @@
         // ========== CHECK IF MEMO EXISTS ==========
         function checkMemoExists(patientId, appointmentDate) {
             if (!memosList.length) return false;
-            return memosList.some(function(memo) {
-                return memo.patient && memo.patient.id === patientId && memo.date === appointmentDate;
-            });
+            for (var i = 0; i < memosList.length; i++) {
+                var memo = memosList[i];
+                if (memo.patient && memo.patient.id === patientId && memo.date === appointmentDate) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         // ========== CHAT FUNCTIONS ==========
@@ -720,6 +733,7 @@
         // ========== LOAD DOCTOR'S APPOINTMENTS ==========
         async function loadAppointments() { 
             if (!firestoreDB) return; 
+            // Use the user ID from session (which is the users collection ID)
             var snapshot = await firestoreDB.collection("appointments")
                 .where("doctorId", "==", currentUser.id)
                 .get(); 
@@ -793,6 +807,7 @@
         // ========== LOAD MEMOS ==========
         async function loadMemos() { 
             if (!firestoreDB) return; 
+            // Use the user ID from session
             var snapshot = await firestoreDB.collection("memos")
                 .where("doctor.id", "==", currentUser.id)
                 .get(); 
@@ -1008,7 +1023,6 @@
                 var memoBtn = document.getElementById('markMemoDoneBtn');
                 if (memoBtn) {
                     memoBtn.addEventListener('click', function() {
-                        // Create memo from appointment
                         createMemoFromAppointment(selectedAppointment);
                     });
                 }
@@ -1043,7 +1057,6 @@
             
             try {
                 await firestoreDB.collection("memos").add(memoData);
-                // Update appointment to mark memo done
                 await firestoreDB.collection("appointments").doc(apt.id).update({ 
                     memoCreated: true,
                     memoStatus: 'Completed'
@@ -1065,7 +1078,6 @@
                 return;
             }
             
-            // Find the first appointment without a memo
             var nextAppointment = null;
             for (var i = 0; i < appointments.length; i++) {
                 var apt = appointments[i];
@@ -1081,9 +1093,7 @@
                 return;
             }
             
-            // Select and show the next patient
             selectAppointment(nextAppointment);
-            // Highlight the appointment card
             var cards = document.querySelectorAll('.appointment-card');
             for (var j = 0; j < cards.length; j++) {
                 cards[j].classList.remove('selected');

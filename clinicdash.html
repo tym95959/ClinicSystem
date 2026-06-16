@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Reception Dashboard - Turquoise Theme</title>
+    <title>Hope Dental | Reception Dashboard</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="firebase-config.js"></script>
     <style>
         * {
             margin: 0;
@@ -102,7 +103,6 @@
             min-width: 280px;
         }
 
-        /* Header with white-to-turquoise gradient */
         .header {
             background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
             color: #004d4d;
@@ -261,6 +261,22 @@
             margin-top: 2px;
         }
 
+        .test-btn {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        .test-btn:hover {
+            background: #d68910;
+        }
+
         .footer {
             text-align: center;
             padding: 12px;
@@ -271,11 +287,12 @@
             margin-top: 16px;
         }
 
+        /* ========== CHAT STYLES ========== */
         .chat-panel {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 360px;
+            width: 380px;
             background: white;
             border-radius: 18px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -285,11 +302,13 @@
             z-index: 1000;
             border: 1px solid rgba(32,178,170,0.3);
             overflow: hidden;
+            max-height: 600px;
         }
 
         .chat-panel.minimized {
             width: auto;
             cursor: pointer;
+            max-height: 60px;
         }
 
         .chat-panel.minimized .chat-header {
@@ -474,17 +493,6 @@
             border-bottom-left-radius: 3px;
         }
 
-        /* Read message style - dimmer */
-        .message.staff.read .message-bubble {
-            background: #cce5e3;
-            color: #5d7a7a;
-        }
-
-        .message.reception.read .message-bubble {
-            background: #7fbfbf;
-            color: #f0fafa;
-        }
-
         .message-meta {
             font-size: 8px;
             margin-top: 3px;
@@ -506,19 +514,6 @@
 
         .message:hover .delete-msg {
             opacity: 1;
-        }
-
-        .read-receipt {
-            font-size: 8px;
-            margin-left: 5px;
-        }
-
-        .read-receipt.read {
-            color: #2ecc71;
-        }
-
-        .read-receipt.delivered {
-            color: #f39c12;
         }
 
         .typing-indicator {
@@ -589,7 +584,7 @@
 
         @media (max-width: 700px) {
             .chat-panel {
-                width: 300px;
+                width: 320px;
                 right: 10px;
                 bottom: 10px;
             }
@@ -605,6 +600,13 @@
                 width: 40px;
                 height: 40px;
                 font-size: 1.4rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .chat-panel {
+                width: 280px;
+                right: 5px;
+                bottom: 5px;
             }
         }
     </style>
@@ -670,6 +672,11 @@
                     <div class="quick-icon">👨‍⚕️</div>
                     <div class="quick-label">Doctor Duty</div>
                 </div>
+                <!-- Test Doctor Button -->
+                <div class="quick-card" id="addTestDoctorBtn" style="background: #fef9e7; border: 2px dashed #f39c12;">
+                    <div class="quick-icon">🧪</div>
+                    <div class="quick-label">Add Test Doctor</div>
+                </div>
             </div>
 
             <div class="doctors-section">
@@ -686,6 +693,7 @@
     </div>
 </div>
 
+<!-- ========== CHAT PANEL ========== -->
 <div class="chat-panel minimized" id="chatPanel">
     <div class="chat-header" id="chatHeader">
         <i class="fas fa-comment-dots"></i>
@@ -704,17 +712,17 @@
     </div>
 </div>
 
-<script src="firebase-config.js"></script>
 <script>
     (function() {
-        const loggedInUser = localStorage.getItem('loggedInUser');
+        // ========== AUTH & SESSION ==========
+        var loggedInUser = localStorage.getItem('loggedInUser');
         if (!loggedInUser) {
             window.location.href = 'login.html';
             return;
         }
-        const user = JSON.parse(loggedInUser);
+        var user = JSON.parse(loggedInUser);
         
-        const currentUser = {
+        var currentUser = {
             id: user.username,
             name: user.name,
             role: user.level || "Receptionist",
@@ -722,34 +730,44 @@
         };
 
         document.getElementById('userName').textContent = currentUser.name;
-        document.getElementById('userRole').textContent = `${currentUser.role} | Reception`;
+        document.getElementById('userRole').textContent = currentUser.role + " | Reception";
         
-        const hour = new Date().getHours();
-        const greeting = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening");
-        document.getElementById('welcomeMessage').textContent = `${greeting}, ${currentUser.name}!`;
+        var hour = new Date().getHours();
+        var greeting = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening");
+        document.getElementById('welcomeMessage').textContent = greeting + ", " + currentUser.name + "!";
 
-        let firestoreDB = null;
-        let realtimeDB = null;
-        let onlineListenerRef = null;
-        let chatListener = null;
-        let selectedStaff = null;
-        let onlineDoctorsList = [];
-        let onlineUsersData = {};
-        let unreadCounts = {};
-        let chatMessagesCache = {};
-        let heartbeatInterval = null;
-        let allChatListeners = {};
-        let shownNotifications = new Set();
+        var firestoreDB = null;
+        var realtimeDB = null;
+        var onlineListenerRef = null;
+        var chatListener = null;
+        var selectedStaff = null;
+        var onlineDoctorsList = [];
+        var onlineUsersData = {};
+        var unreadCounts = {};
+        var chatMessagesCache = {};
+        var heartbeatInterval = null;
+        var allChatListeners = {};
+        var shownNotifications = new Set();
 
+        // ========== HELPER FUNCTIONS ==========
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // ========== HEARTBEAT ==========
         function startHeartbeat() {
             if (!realtimeDB) return;
-            heartbeatInterval = setInterval(async () => {
+            heartbeatInterval = setInterval(function() {
                 if (realtimeDB && currentUser.id) {
-                    const userRef = realtimeDB.ref(`online_users/${currentUser.id}`);
-                    const snapshot = await userRef.once('value');
-                    if (snapshot.exists()) {
-                        await userRef.update({ lastSeen: firebase.database.ServerValue.TIMESTAMP });
-                    }
+                    realtimeDB.ref('online_users/' + currentUser.id).update({
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP
+                    });
                 }
             }, 20000);
         }
@@ -761,34 +779,44 @@
             }
         }
 
+        // ========== UNREAD COUNT ==========
         function updateTotalUnreadDisplay() {
-            const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
-            const totalUnreadSpan = document.getElementById('totalUnreadSpan');
+            var totalUnread = 0;
+            for (var key in unreadCounts) {
+                if (unreadCounts.hasOwnProperty(key)) {
+                    totalUnread += unreadCounts[key];
+                }
+            }
+            var totalUnreadSpan = document.getElementById('totalUnreadSpan');
             if (totalUnread > 0) {
                 totalUnreadSpan.style.display = 'inline-block';
-                totalUnreadSpan.innerHTML = `${totalUnread} unread`;
+                totalUnreadSpan.innerHTML = totalUnread + ' unread';
             } else {
                 totalUnreadSpan.style.display = 'none';
             }
             
-            const chatBadge = document.getElementById('onlineCountBadge');
-            if (chatBadge && totalUnread > 0 && chatPanel.classList.contains('minimized')) {
-                chatBadge.innerHTML = `${onlineDoctorsList.length} (${totalUnread})`;
-            } else if (chatBadge) {
-                chatBadge.innerHTML = `${onlineDoctorsList.length} online`;
+            var chatBadge = document.getElementById('onlineCountBadge');
+            var chatPanel = document.getElementById('chatPanel');
+            if (chatBadge) {
+                if (totalUnread > 0 && chatPanel.classList.contains('minimized')) {
+                    chatBadge.innerHTML = onlineDoctorsList.length + ' (' + totalUnread + ')';
+                } else {
+                    chatBadge.innerHTML = onlineDoctorsList.length + ' online';
+                }
             }
         }
 
+        // ========== NOTIFICATIONS ==========
         function playNotificationSound() {
             try {
-                const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                var audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
                 audio.volume = 0.2;
-                audio.play().catch(() => {});
+                audio.play().catch(function() {});
             } catch(e) {}
         }
 
         function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
-            const notificationKey = `${senderId}_${messageId}`;
+            var notificationKey = senderId + '_' + messageId;
             if (shownNotifications.has(notificationKey)) return;
             
             if (!selectedStaff || selectedStaff.userId !== senderId) {
@@ -798,23 +826,25 @@
                 renderStaffList();
                 shownNotifications.add(notificationKey);
                 
-                const toast = document.createElement('div');
+                var toast = document.createElement('div');
                 toast.className = 'notification-toast';
-                const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                var timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                 
-                toast.innerHTML = `
-                    <div><i class="fas fa-comment-dots"></i></div>
-                    <div style="flex:1;">
-                        <strong>${escapeHtml(senderName)}</strong><br>
-                        <small>${escapeHtml(message.substring(0, 60))}${message.length > 60 ? '...' : ''}</small>
-                        <div style="font-size: 8px; opacity: 0.7;">${timeStr}</div>
-                    </div>
-                    <span class="close-toast">×</span>
-                `;
+                toast.innerHTML = '<div><i class="fas fa-comment-dots"></i></div>' +
+                    '<div style="flex:1;"><strong>' + escapeHtml(senderName) + '</strong><br>' +
+                    '<small>' + escapeHtml(message.substring(0, 60)) + (message.length > 60 ? '...' : '') + '</small>' +
+                    '<div style="font-size: 8px; opacity: 0.7;">' + timeStr + '</div></div>' +
+                    '<span class="close-toast">×</span>';
                 
-                toast.addEventListener('click', (e) => {
+                toast.addEventListener('click', function(e) {
                     if (!e.target.classList.contains('close-toast')) {
-                        const staff = onlineDoctorsList.find(d => d.userId === senderId);
+                        var staff = null;
+                        for (var i = 0; i < onlineDoctorsList.length; i++) {
+                            if (onlineDoctorsList[i].userId === senderId) {
+                                staff = onlineDoctorsList[i];
+                                break;
+                            }
+                        }
                         if (staff) {
                             selectStaffForChat(staff);
                             if (chatPanel.classList.contains('minimized')) toggleChatPanel();
@@ -822,55 +852,67 @@
                         toast.remove();
                     }
                 });
-                toast.querySelector('.close-toast').addEventListener('click', () => toast.remove());
+                toast.querySelector('.close-toast').addEventListener('click', function() { toast.remove(); });
                 document.body.appendChild(toast);
                 playNotificationSound();
                 
-                const originalTitle = document.title;
-                document.title = `📩 New message from ${senderName}`;
-                setTimeout(() => { document.title = originalTitle; }, 3000);
-                setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+                var originalTitle = document.title;
+                document.title = '📩 New message from ' + senderName;
+                setTimeout(function() { document.title = originalTitle; }, 3000);
+                setTimeout(function() { if (toast.parentElement) toast.remove(); }, 5000);
             }
         }
 
+        // ========== MARK MESSAGE AS READ ==========
         async function markMessageAsRead(chatId, messageId) {
             if (!realtimeDB) return;
             try {
-                await realtimeDB.ref(`chats/${chatId}/messages/${messageId}`).update({ 
+                await realtimeDB.ref('chats/' + chatId + '/messages/' + messageId).update({ 
                     read: true, 
                     readAt: firebase.database.ServerValue.TIMESTAMP 
                 });
             } catch(e) {}
         }
 
+        // ========== LISTEN TO CHAT ==========
         function listenToChat(staffId, onMessagesUpdate) {
             if (!realtimeDB) return null;
-            const chatUsers = [currentUser.id, staffId].sort();
-            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
-            const messagesRef = realtimeDB.ref(`chats/${chatId}/messages`);
+            var chatUsers = [currentUser.id, staffId].sort();
+            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
             
-            const listener = messagesRef.on('value', (snapshot) => {
-                const messages = [];
-                snapshot.forEach(child => {
+            var listener = messagesRef.on('value', function(snapshot) {
+                var messages = [];
+                snapshot.forEach(function(child) {
                     messages.push({ id: child.key, ...child.val() });
                 });
-                messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
                 chatMessagesCache[staffId] = messages;
                 if (onMessagesUpdate) onMessagesUpdate(messages);
                 
                 if (selectedStaff && selectedStaff.userId === staffId) {
-                    const unreadMessages = messages.filter(m => m.sender === staffId && !m.read);
-                    unreadMessages.forEach(msg => {
-                        markMessageAsRead(chatId, msg.id);
+                    var unreadMessages = [];
+                    for (var i = 0; i < messages.length; i++) {
+                        if (messages[i].sender === staffId && !messages[i].read) {
+                            unreadMessages.push(messages[i]);
+                        }
+                    }
+                    for (var j = 0; j < unreadMessages.length; j++) {
+                        markMessageAsRead(chatId, unreadMessages[j].id);
                         if (unreadCounts[staffId]) unreadCounts[staffId] = Math.max(0, unreadCounts[staffId] - 1);
-                    });
+                    }
                     if (unreadMessages.length > 0) {
                         updateTotalUnreadDisplay();
                         renderDoctorsList();
                         renderStaffList();
                     }
                 } else {
-                    const unreadCount = messages.filter(m => m.sender === staffId && !m.read).length;
+                    var unreadCount = 0;
+                    for (var k = 0; k < messages.length; k++) {
+                        if (messages[k].sender === staffId && !messages[k].read) {
+                            unreadCount++;
+                        }
+                    }
                     if (unreadCount !== (unreadCounts[staffId] || 0)) {
                         unreadCounts[staffId] = unreadCount;
                         updateTotalUnreadDisplay();
@@ -879,17 +921,18 @@
                     }
                 }
             });
-            return () => messagesRef.off('value', listener);
+            return function() { messagesRef.off('value', listener); };
         }
         
         function setupAllChatListeners() {
             if (!realtimeDB) return;
-            onlineDoctorsList.forEach(doctor => {
+            for (var i = 0; i < onlineDoctorsList.length; i++) {
+                var doctor = onlineDoctorsList[i];
                 if (!allChatListeners[doctor.userId]) {
-                    allChatListeners[doctor.userId] = listenToChat(doctor.userId, (messages) => {
-                        const lastMessage = messages[messages.length - 1];
+                    allChatListeners[doctor.userId] = listenToChat(doctor.userId, function(messages) {
+                        var lastMessage = messages[messages.length - 1];
                         if (lastMessage && lastMessage.sender !== currentUser.id && !lastMessage.read) {
-                            const notificationKey = `${doctor.userId}_${lastMessage.id}`;
+                            var notificationKey = doctor.userId + '_' + lastMessage.id;
                             if (!shownNotifications.has(notificationKey)) {
                                 showMessageNotification(doctor.name, lastMessage.text, doctor.userId, lastMessage.timestamp, lastMessage.id);
                             }
@@ -899,52 +942,69 @@
                         }
                     });
                 }
-            });
+            }
         }
 
-        const chatPanel = document.getElementById('chatPanel');
-        const minimizeBtn = document.getElementById('minimizeBtn');
-        const chatHeader = document.getElementById('chatHeader');
+        // ========== CHAT UI CONTROLS ==========
+        var chatPanel = document.getElementById('chatPanel');
+        var minimizeBtn = document.getElementById('minimizeBtn');
+        var chatHeader = document.getElementById('chatHeader');
         
         function toggleChatPanel() {
             chatPanel.classList.toggle('minimized');
             minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
             if (!chatPanel.classList.contains('minimized') && selectedStaff) {
-                setTimeout(() => {
-                    const container = document.getElementById('chatMessages');
+                setTimeout(function() {
+                    var container = document.getElementById('chatMessages');
                     if (container) container.scrollTop = container.scrollHeight;
                 }, 100);
             }
         }
         
-        if (minimizeBtn) minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleChatPanel(); });
-        if (chatHeader) chatHeader.addEventListener('click', (e) => {
-            if (e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) toggleChatPanel();
-        });
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', function(e) { e.stopPropagation(); toggleChatPanel(); });
+        }
+        if (chatHeader) {
+            chatHeader.addEventListener('click', function(e) {
+                if (e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) {
+                    toggleChatPanel();
+                }
+            });
+        }
 
+        // ========== SET USER ONLINE ==========
         async function setUserOnline() {
             if (!realtimeDB) return;
-            await realtimeDB.ref(`online_users/${currentUser.id}`).set({
-                username: currentUser.id, name: currentUser.name, Level: currentUser.role, status: "online", type: "reception",
-                loginTime: firebase.database.ServerValue.TIMESTAMP, lastSeen: firebase.database.ServerValue.TIMESTAMP
+            await realtimeDB.ref('online_users/' + currentUser.id).set({
+                username: currentUser.id,
+                name: currentUser.name,
+                Level: currentUser.role,
+                status: "online",
+                type: "reception",
+                loginTime: firebase.database.ServerValue.TIMESTAMP,
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
             });
         }
         
         async function deleteUserFromOnline() {
             if (!realtimeDB) return;
-            try { await realtimeDB.ref(`online_users/${currentUser.id}`).remove(); } catch(e) {}
+            try { await realtimeDB.ref('online_users/' + currentUser.id).remove(); } catch(e) {}
         }
 
+        // ========== LOAD ONLINE DOCTORS ==========
         async function loadOnlineDoctors() {
             if (!firestoreDB || !realtimeDB) return;
-            let allDoctorsFromFirestore = [];
+            
+            var allDoctorsFromFirestore = [];
             try {
-                const snapshot = await firestoreDB.collection("doctors").get();
-                snapshot.forEach(doc => {
-                    const data = doc.data();
+                var snapshot = await firestoreDB.collection("doctors").get();
+                snapshot.forEach(function(doc) {
+                    var data = doc.data();
                     allDoctorsFromFirestore.push({
                         userId: data.username || data.id || doc.id,
-                        name: data.name, role: "Doctor", department: data.speciality || "Medical"
+                        name: data.name,
+                        role: "Doctor",
+                        department: data.speciality || "Medical"
                     });
                 });
             } catch(e) {}
@@ -952,34 +1012,46 @@
             if (onlineListenerRef) { onlineListenerRef.off(); onlineListenerRef = null; }
             
             onlineListenerRef = realtimeDB.ref('online_users');
-            onlineListenerRef.on('value', (snapshot) => {
+            onlineListenerRef.on('value', function(snapshot) {
                 onlineUsersData = {};
-                const users = snapshot.val();
+                var users = snapshot.val();
                 if (users) {
-                    Object.keys(users).forEach(username => {
-                        const data = users[username];
-                        const isDoctor = data.Level && data.Level.toLowerCase() === 'doctor';
-                        const isOnline = data.status === 'online';
+                    var keys = Object.keys(users);
+                    for (var i = 0; i < keys.length; i++) {
+                        var username = keys[i];
+                        var data = users[username];
+                        var isDoctor = data.Level && data.Level.toLowerCase() === 'doctor';
+                        var isOnline = data.status === 'online';
                         if (isDoctor && isOnline && username !== currentUser.id) {
                             onlineUsersData[username] = { userId: username, name: data.name || username };
                         }
+                    }
+                }
+                
+                onlineDoctorsList = [];
+                var userIds = Object.keys(onlineUsersData);
+                for (var j = 0; j < userIds.length; j++) {
+                    var userId = userIds[j];
+                    var onlineData = onlineUsersData[userId];
+                    var firestoreDoctor = null;
+                    for (var k = 0; k < allDoctorsFromFirestore.length; k++) {
+                        if (allDoctorsFromFirestore[k].userId === userId) {
+                            firestoreDoctor = allDoctorsFromFirestore[k];
+                            break;
+                        }
+                    }
+                    onlineDoctorsList.push({
+                        userId: userId,
+                        name: firestoreDoctor ? firestoreDoctor.name : (onlineData.name || userId),
+                        role: "Doctor",
+                        department: firestoreDoctor ? firestoreDoctor.department : "Medical"
                     });
                 }
                 
-                onlineDoctorsList = Object.keys(onlineUsersData).map(userId => {
-                    const onlineData = onlineUsersData[userId];
-                    const firestoreDoctor = allDoctorsFromFirestore.find(d => d.userId === userId);
-                    return {
-                        userId: userId,
-                        name: firestoreDoctor ? firestoreDoctor.name : (onlineData.name || userId),
-                        role: "Doctor", department: firestoreDoctor ? firestoreDoctor.department : "Medical"
-                    };
-                });
-                
-                const onlineCount = onlineDoctorsList.length;
+                var onlineCount = onlineDoctorsList.length;
                 document.getElementById('onlineStaffCount').textContent = onlineCount;
-                document.getElementById('minimizedOnlineCount').innerHTML = onlineCount > 0 ? `(${onlineCount})` : '';
-                document.getElementById('onlineCountSpan').innerHTML = `(${onlineCount} online)`;
+                document.getElementById('minimizedOnlineCount').innerHTML = onlineCount > 0 ? '(' + onlineCount + ')' : '';
+                document.getElementById('onlineCountSpan').innerHTML = '(' + onlineCount + ' online)';
                 renderDoctorsList();
                 renderStaffList();
                 setupAllChatListeners();
@@ -987,29 +1059,34 @@
         }
         
         function renderDoctorsList() {
-            const container = document.getElementById('doctorsList');
+            var container = document.getElementById('doctorsList');
             if (!onlineDoctorsList.length) {
                 container.innerHTML = '<div style="color:#8ba0b0; text-align:center; padding:15px;"><i class="fas fa-user-clock"></i><br>No doctors on duty</div>';
                 return;
             }
-            container.innerHTML = onlineDoctorsList.map(doc => {
-                const unread = unreadCounts[doc.userId] || 0;
-                const unreadBadge = unread > 0 ? `<span class="unread-badge">${unread}</span>` : '';
-                return `
-                    <div class="doctor-item" data-id="${doc.userId}">
-                        <i class="fas fa-user-md" style="color: #008b8b; font-size: 14px;"></i>
-                        <div style="flex:1;">
-                            <strong>${escapeHtml(doc.name)}</strong>${unreadBadge}
-                            <div class="doctor-status" style="color: #2ecc71;"><span class="online-dot"></span> On Duty • ${escapeHtml(doc.department)}</div>
-                        </div>
-                        <button onclick="selectDoctor('${doc.userId}', '${escapeHtml(doc.name)}')" style="background:#008b8b; color:white; border:none; padding:4px 12px; border-radius:15px; cursor:pointer; font-size:9px;">Chat</button>
-                    </div>
-                `;
-            }).join('');
+            var html = '';
+            for (var i = 0; i < onlineDoctorsList.length; i++) {
+                var doc = onlineDoctorsList[i];
+                var unread = unreadCounts[doc.userId] || 0;
+                var unreadBadge = unread > 0 ? '<span class="unread-badge">' + unread + '</span>' : '';
+                html += '<div class="doctor-item" data-id="' + doc.userId + '">' +
+                    '<i class="fas fa-user-md" style="color: #008b8b; font-size: 14px;"></i>' +
+                    '<div style="flex:1;"><strong>' + escapeHtml(doc.name) + '</strong>' + unreadBadge +
+                    '<div class="doctor-status" style="color: #2ecc71;"><span class="online-dot"></span> On Duty • ' + escapeHtml(doc.department) + '</div></div>' +
+                    '<button onclick="selectDoctor(\'' + doc.userId + '\', \'' + escapeHtml(doc.name) + '\')" style="background:#008b8b; color:white; border:none; padding:4px 12px; border-radius:15px; cursor:pointer; font-size:9px;">Chat</button>' +
+                '</div>';
+            }
+            container.innerHTML = html;
         }
         
         window.selectDoctor = function(userId, name) {
-            const staff = onlineDoctorsList.find(d => d.userId === userId);
+            var staff = null;
+            for (var i = 0; i < onlineDoctorsList.length; i++) {
+                if (onlineDoctorsList[i].userId === userId) {
+                    staff = onlineDoctorsList[i];
+                    break;
+                }
+            }
             if (staff) {
                 selectStaffForChat(staff);
                 if (chatPanel.classList.contains('minimized')) toggleChatPanel();
@@ -1017,41 +1094,50 @@
         };
         
         function renderStaffList() {
-            const container = document.getElementById('staffList');
+            var container = document.getElementById('staffList');
             if (!onlineDoctorsList.length) {
                 container.innerHTML = '<div class="empty-online"><i class="fas fa-user-clock"></i><br>No doctors on duty</div>';
                 return;
             }
-            container.innerHTML = onlineDoctorsList.map(staff => {
-                const unread = unreadCounts[staff.userId] || 0;
-                const unreadBadge = unread > 0 ? `<span style="background:#ff6b6b; color:white; border-radius:20px; padding:2px 6px; font-size:8px; margin-left:5px;">${unread}</span>` : '';
-                return `
-                    <div class="staff-tab" data-id="${staff.userId}" data-name="${escapeHtml(staff.name)}">
-                        <div class="staff-avatar">${staff.name.charAt(0).toUpperCase()}</div>
-                        <div class="staff-info">
-                            <div class="staff-name">${escapeHtml(staff.name)}${unreadBadge}</div>
-                            <div class="staff-role">${escapeHtml(staff.department)}</div>
-                        </div>
-                        <div class="online-indicator"><i class="fas fa-circle" style="font-size: 5px;"></i> On Duty</div>
-                    </div>
-                `;
-            }).join('');
-            document.querySelectorAll('.staff-tab').forEach(el => {
-                el.addEventListener('click', () => {
-                    document.querySelectorAll('.staff-tab').forEach(t => t.classList.remove('active-staff'));
-                    el.classList.add('active-staff');
-                    const staffId = el.dataset.id;
-                    const staff = onlineDoctorsList.find(d => d.userId === staffId);
+            var html = '';
+            for (var i = 0; i < onlineDoctorsList.length; i++) {
+                var staff = onlineDoctorsList[i];
+                var unread = unreadCounts[staff.userId] || 0;
+                var unreadBadge = unread > 0 ? '<span style="background:#ff6b6b; color:white; border-radius:20px; padding:2px 6px; font-size:8px; margin-left:5px;">' + unread + '</span>' : '';
+                html += '<div class="staff-tab" data-id="' + staff.userId + '" data-name="' + escapeHtml(staff.name) + '">' +
+                    '<div class="staff-avatar">' + staff.name.charAt(0).toUpperCase() + '</div>' +
+                    '<div class="staff-info"><div class="staff-name">' + escapeHtml(staff.name) + unreadBadge + '</div>' +
+                    '<div class="staff-role">' + escapeHtml(staff.department) + '</div></div>' +
+                    '<div class="online-indicator"><i class="fas fa-circle" style="font-size: 5px;"></i> On Duty</div>' +
+                '</div>';
+            }
+            container.innerHTML = html;
+            var tabs = container.querySelectorAll('.staff-tab');
+            for (var j = 0; j < tabs.length; j++) {
+                tabs[j].addEventListener('click', function() {
+                    var allTabs = document.querySelectorAll('.staff-tab');
+                    for (var k = 0; k < allTabs.length; k++) {
+                        allTabs[k].classList.remove('active-staff');
+                    }
+                    this.classList.add('active-staff');
+                    var staffId = this.dataset.id;
+                    var staff = null;
+                    for (var l = 0; l < onlineDoctorsList.length; l++) {
+                        if (onlineDoctorsList[l].userId === staffId) {
+                            staff = onlineDoctorsList[l];
+                            break;
+                        }
+                    }
                     if (staff) selectStaffForChat(staff);
                 });
-            });
+            }
         }
         
         function selectStaffForChat(staff) {
             selectedStaff = staff;
             document.getElementById('chatInput').disabled = false;
             document.getElementById('sendChatBtn').disabled = false;
-            document.getElementById('chatInput').placeholder = `Message Dr. ${staff.name}...`;
+            document.getElementById('chatInput').placeholder = 'Message Dr. ' + staff.name + '...';
             document.getElementById('deleteAllBtn').style.display = 'block';
             
             if (unreadCounts[staff.userId]) {
@@ -1068,18 +1154,28 @@
             }
             if (!realtimeDB) return;
             
-            const chatUsers = [currentUser.id, staff.userId].sort();
-            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
-            const messagesRef = realtimeDB.ref(`chats/${chatId}/messages`);
+            var chatUsers = [currentUser.id, staff.userId].sort();
+            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
             
-            chatListener = messagesRef.on('value', (snapshot) => {
-                const messages = [];
-                snapshot.forEach(child => { messages.push({ id: child.key, ...child.val() }); });
-                messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            chatListener = messagesRef.on('value', function(snapshot) {
+                var messages = [];
+                snapshot.forEach(function(child) {
+                    messages.push({ id: child.key, ...child.val() });
+                });
+                messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
                 chatMessagesCache[staff.userId] = messages;
                 renderChatMessages(messages);
-                const unreadMessages = messages.filter(m => m.sender === staff.userId && !m.read);
-                unreadMessages.forEach(msg => markMessageAsRead(chatId, msg.id));
+                var unreadMessages = [];
+                for (var i = 0; i < messages.length; i++) {
+                    if (messages[i].sender === staff.userId && !messages[i].read) {
+                        unreadMessages.push(messages[i]);
+                    }
+                }
+                for (var j = 0; j < unreadMessages.length; j++) {
+                    markMessageAsRead(chatId, unreadMessages[j].id);
+                    if (unreadCounts[staff.userId]) unreadCounts[staff.userId] = Math.max(0, unreadCounts[staff.userId] - 1);
+                }
                 if (unreadMessages.length > 0 && unreadCounts[staff.userId]) {
                     delete unreadCounts[staff.userId];
                     updateTotalUnreadDisplay();
@@ -1088,10 +1184,10 @@
                 }
             });
             
-            realtimeDB.ref(`chats/${chatId}/typing`).off();
-            realtimeDB.ref(`chats/${chatId}/typing`).on('value', (snap) => {
-                const typing = snap.val();
-                const indicator = document.getElementById('typingIndicator');
+            realtimeDB.ref('chats/' + chatId + '/typing').off();
+            realtimeDB.ref('chats/' + chatId + '/typing').on('value', function(snap) {
+                var typing = snap.val();
+                var indicator = document.getElementById('typingIndicator');
                 if (typing === staff.userId) {
                     indicator.style.display = 'block';
                     indicator.innerHTML = '<i class="fas fa-ellipsis-h"></i> Doctor is typing...';
@@ -1102,79 +1198,77 @@
         }
         
         function renderChatMessages(messages) {
-            const container = document.getElementById('chatMessages');
+            var container = document.getElementById('chatMessages');
             if (!messages.length) {
                 container.innerHTML = '<div class="empty-chat">No messages yet</div>';
                 return;
             }
-            let html = '';
-            messages.forEach(msg => {
-                const isCurrentUser = (msg.sender === currentUser.id);
-                const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-                const isRead = msg.read === true;
-                const statusIcon = isCurrentUser ? (msg.delivered ? (msg.read ? '✓✓' : '✓') : '○') : '';
-                const readClass = !isCurrentUser && isRead ? 'read' : '';
-                html += `
-                    <div class="message ${isCurrentUser ? 'reception' : 'staff'} ${readClass}" data-msg-id="${msg.id}">
-                        <div class="message-bubble">${escapeHtml(msg.text)}</div>
-                        <div class="message-meta">
-                            <span>${isCurrentUser ? 'You (Reception)' : `Dr. ${selectedStaff?.name}`} • ${time} ${statusIcon}</span>
-                            <span class="delete-msg" onclick="deleteMessage('${msg.id}')">🗑️</span>
-                        </div>
-                    </div>
-                `;
-            });
+            var html = '';
+            for (var i = 0; i < messages.length; i++) {
+                var msg = messages[i];
+                var isCurrentUser = (msg.sender === currentUser.id);
+                var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                var isRead = msg.read === true;
+                var statusIcon = isCurrentUser ? (msg.delivered ? (msg.read ? '✓✓' : '✓') : '○') : '';
+                var readClass = !isCurrentUser && isRead ? 'read' : '';
+                html += '<div class="message ' + (isCurrentUser ? 'reception' : 'staff') + ' ' + readClass + '" data-msg-id="' + msg.id + '">' +
+                    '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
+                    '<div class="message-meta"><span>' + (isCurrentUser ? 'You (Reception)' : 'Dr. ' + (selectedStaff ? selectedStaff.name : '')) + ' • ' + time + ' ' + statusIcon + '</span>' +
+                    '<span class="delete-msg" onclick="deleteMessage(\'' + msg.id + '\')">🗑️</span></div>' +
+                '</div>';
+            }
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
         }
         
         window.deleteMessage = async function(msgId) {
             if (!selectedStaff || !realtimeDB) return;
-            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
-            await realtimeDB.ref(`chats/${chatId}/messages/${msgId}`).remove();
+            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            await realtimeDB.ref('chats/' + chatId + '/messages/' + msgId).remove();
         };
         
         async function deleteAllMessages() {
             if (!selectedStaff || !confirm('Delete all messages with this doctor?')) return;
-            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
-            await realtimeDB.ref(`chats/${chatId}/messages`).remove();
+            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            await realtimeDB.ref('chats/' + chatId + '/messages').remove();
             renderChatMessages([]);
         }
         
         async function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
+            var input = document.getElementById('chatInput');
+            var text = input.value.trim();
             if (!text || !selectedStaff || !realtimeDB) return;
-            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
-            const newMsgRef = realtimeDB.ref(`chats/${chatId}/messages`).push();
+            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            var newMsgRef = realtimeDB.ref('chats/' + chatId + '/messages').push();
             await newMsgRef.set({
-                id: newMsgRef.key, sender: currentUser.id, senderName: `${currentUser.name} (Reception)`,
-                text: text, timestamp: Date.now(), delivered: true, read: false
+                id: newMsgRef.key,
+                sender: currentUser.id,
+                senderName: currentUser.name + ' (Reception)',
+                text: text,
+                timestamp: Date.now(),
+                delivered: true,
+                read: false
             });
             input.value = "";
-            await realtimeDB.ref(`chats/${chatId}/typing`).remove();
+            await realtimeDB.ref('chats/' + chatId + '/typing').remove();
         }
         
-        let typingTimeoutId;
-        document.getElementById('chatInput').addEventListener('input', async () => {
+        var typingTimeoutId;
+        document.getElementById('chatInput').addEventListener('input', function() {
             if (!selectedStaff || !realtimeDB) return;
-            const chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            const chatId = `chat_${chatUsers[0]}_${chatUsers[1]}`;
-            await realtimeDB.ref(`chats/${chatId}/typing`).set(currentUser.id);
+            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
+            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            realtimeDB.ref('chats/' + chatId + '/typing').set(currentUser.id);
             clearTimeout(typingTimeoutId);
-            typingTimeoutId = setTimeout(async () => {
-                await realtimeDB.ref(`chats/${chatId}/typing`).remove();
+            typingTimeoutId = setTimeout(function() {
+                realtimeDB.ref('chats/' + chatId + '/typing').remove();
             }, 1500);
         });
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
-        }
-
+        // ========== LOGOUT ==========
         async function logout() {
             stopHeartbeat();
             if (onlineListenerRef) { onlineListenerRef.off(); onlineListenerRef = null; }
@@ -1183,11 +1277,13 @@
                 else if (chatListener.off) chatListener.off();
                 chatListener = null;
             }
-            Object.keys(allChatListeners).forEach(key => {
-                if (allChatListeners[key] && typeof allChatListeners[key] === 'function') allChatListeners[key]();
-                else if (allChatListeners[key] && allChatListeners[key].off) allChatListeners[key].off();
-                delete allChatListeners[key];
-            });
+            for (var key in allChatListeners) {
+                if (allChatListeners.hasOwnProperty(key)) {
+                    if (allChatListeners[key] && typeof allChatListeners[key] === 'function') allChatListeners[key]();
+                    else if (allChatListeners[key] && allChatListeners[key].off) allChatListeners[key].off();
+                    delete allChatListeners[key];
+                }
+            }
             await deleteUserFromOnline();
             localStorage.removeItem('loggedInUser');
             sessionStorage.removeItem('clinic_user_session');
@@ -1197,8 +1293,37 @@
         document.getElementById('logoutBtn').addEventListener('click', logout);
         document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
         document.getElementById('deleteAllBtn').addEventListener('click', deleteAllMessages);
-        document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
-        
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') sendMessage();
+        });
+
+        // ========== ADD TEST DOCTOR ==========
+        document.getElementById('addTestDoctorBtn').addEventListener('click', async function() {
+            if (!realtimeDB) {
+                alert('Firebase not ready yet. Please wait.');
+                return;
+            }
+            
+            var testDoctor = {
+                username: "dr_test",
+                name: "Dr. Test Doctor",
+                Level: "Doctor",
+                status: "online",
+                type: "doctor",
+                loginTime: Date.now(),
+                lastSeen: Date.now()
+            };
+            
+            try {
+                await realtimeDB.ref('online_users/dr_test').set(testDoctor);
+                alert('✅ Test doctor added! Refresh the page to see them in the chat list.');
+                location.reload();
+            } catch(err) {
+                alert('❌ Error: ' + err.message);
+            }
+        });
+
+        // ========== INIT ==========
         async function init() {
             if (window.db) firestoreDB = window.db;
             if (window.rtdb) realtimeDB = window.rtdb;

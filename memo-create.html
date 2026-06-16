@@ -26,15 +26,14 @@
         }
 
         .clinic-header {
-            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
-            color: #004d4d;
+            background: #0a2f44;
+            color: white;
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .logo h2 {
@@ -779,7 +778,7 @@
         }
     }
     
-    // ========== AUTO-FILL FROM APPOINTMENT (COMPLETE PATIENT & DOCTOR DATA) ==========
+    // ========== AUTO-FILL FROM APPOINTMENT (FIXED - TRANSFERS ALL PATIENT DATA) ==========
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
         if (!apt) return;
@@ -787,26 +786,28 @@
         selectedAppointmentData = apt;
         
         // ============================================================
-        // 1. FETCH AND TRANSFER ALL PATIENT DETAILS
+        // 1. FETCH AND TRANSFER ALL PATIENT DETAILS FROM PATIENTS COLLECTION
         // ============================================================
         if (apt.patientId) {
             try {
-                // Try to find patient in patientsList first
+                // First try to find patient in the loaded patientsList
                 let patient = patientsList.find(p => p.id === apt.patientId);
                 
-                // If not found, fetch from Firestore directly
+                // If not found, fetch directly from Firestore
                 if (!patient) {
                     const patientDoc = await window.db.collection("patients").doc(apt.patientId).get();
                     if (patientDoc.exists) {
                         patient = { id: patientDoc.id, ...patientDoc.data() };
+                        // Add to patientsList for future use
+                        patientsList.push(patient);
                     }
                 }
                 
                 if (patient) {
-                    // Set the selected patient
+                    // Set the selected patient with ALL details
                     selectedPatient = patient;
                     
-                    // Update patient dropdown
+                    // Update patient dropdown - find or add the patient
                     const patientSelect = document.getElementById('patientDropdown');
                     let found = false;
                     for (let i = 0; i < patientSelect.options.length; i++) {
@@ -831,23 +832,41 @@
                     card.style.display = 'flex';
                     const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
                     const phone = patient.contactNo || patient.phone || apt.contact || '';
+                    const nationality = patient.nationality || '';
+                    
                     card.innerHTML = `
                         <div>
                             <strong>${escapeHtml(patient.name)}</strong><br>
                             ID/Passport: ${escapeHtml(displayId)}<br>
                             📞 ${escapeHtml(phone)}
+                            ${nationality ? `<br>🌍 ${escapeHtml(nationality)}` : ''}
                         </div>
                         <div>
                             <span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span>
-                            ${patient.nationality ? `<span class="selected-badge" style="background:#6c757d;">${escapeHtml(patient.nationality)}</span>` : ''}
+                            ${nationality ? `<span class="selected-badge" style="background:#6c757d;">${escapeHtml(nationality)}</span>` : ''}
                         </div>
                     `;
                     
                     // Trigger change event to update billing
                     patientSelect.dispatchEvent(new Event('change'));
+                } else {
+                    // If patient not found, create a basic patient from appointment data
+                    selectedPatient = {
+                        id: apt.patientId,
+                        name: apt.patientName || 'Unknown',
+                        phone: apt.contact || '',
+                        isCitizen: false
+                    };
                 }
             } catch (error) {
                 console.error("Error fetching patient data:", error);
+                // Fallback: use appointment data
+                selectedPatient = {
+                    id: apt.patientId,
+                    name: apt.patientName || 'Unknown',
+                    phone: apt.contact || '',
+                    isCitizen: false
+                };
             }
         }
         
@@ -861,6 +880,7 @@
                     const doctorDoc = await window.db.collection("doctors").doc(apt.doctorId).get();
                     if (doctorDoc.exists) {
                         doctor = { id: doctorDoc.id, ...doctorDoc.data() };
+                        doctorsList.push(doctor);
                     }
                 }
                 if (doctor) {

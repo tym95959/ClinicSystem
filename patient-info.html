@@ -147,7 +147,9 @@
                 try {
                     selectedPatient = JSON.parse(patientData);
                     renderPatientInfo();
-                } catch(e) { console.error(e); }
+                } catch(e) { 
+                    console.error('Error loading patient:', e); 
+                }
             }
         }
 
@@ -183,7 +185,7 @@
                         '<div class="patient-meta-item"><label>ID/Passport</label><div class="value">' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || 'N/A') + '</div></div>' +
                     '</div>' +
                     '<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
-                        '<button class="btn-edit" onclick="window.openEditModal()"><i class="fas fa-edit"></i> Edit Patient</button>' +
+                        '<button class="btn-edit" onclick="openEditModal()"><i class="fas fa-edit"></i> Edit Patient</button>' +
                         '<button class="btn-primary" onclick="window.location.href=\'medical-history.html\'"><i class="fas fa-notes-medical"></i> Medical History</button>' +
                         '<button class="btn-primary" onclick="window.location.href=\'diagnosis-treatment.html\'"><i class="fas fa-stethoscope"></i> Diagnosis & Treatment</button>' +
                         '<button class="btn-primary" onclick="window.location.href=\'prescriptions.html\'"><i class="fas fa-prescription"></i> Prescriptions</button>' +
@@ -192,9 +194,13 @@
                 '</div>';
         }
 
-        // ========== EDIT MODAL ==========
-        window.openEditModal = function() {
-            if (!selectedPatient) return;
+        // ========== EDIT MODAL - Called from onclick ==========
+        function openEditModal() {
+            console.log('openEditModal called');
+            if (!selectedPatient) {
+                alert('No patient selected. Please select a patient first.');
+                return;
+            }
             var modal = document.getElementById('editModal');
             var title = document.getElementById('editModalTitle');
             var fieldsDiv = document.getElementById('editModalFields');
@@ -209,12 +215,16 @@
                 '<div class="form-group"><label>ID/Passport Number</label><input id="editIdNumber" value="' + escapeHtml(selectedPatient.idNumber || selectedPatient.passportNumber || selectedPatient.nationalId || '') + '"></div>' +
                 '<div class="form-group"><label>Address</label><input id="editAddress" value="' + escapeHtml(selectedPatient.address || '') + '"></div>' +
                 '<div class="form-group"><label>Aasandha Eligible (Citizen)</label><select id="editIsCitizen"><option value="true"' + (selectedPatient.isCitizen ? ' selected' : '') + '>Yes</option><option value="false"' + (!selectedPatient.isCitizen ? ' selected' : '') + '>No</option></select></div>' +
-                '<div class="form-group"><label>Primary Insurance</label><input id="editInsurance" value="' + escapeHtml(selectedPatient.insurance?.primaryName || '') + '"></div>';
+                '<div class="form-group"><label>Primary Insurance</label><input id="editInsurance" value="' + escapeHtml((selectedPatient.insurance && selectedPatient.insurance.primaryName) || '') + '"></div>';
             modal.style.display = 'flex';
-        };
+        }
 
+        // ========== SAVE EDIT ==========
         async function saveEdit() {
-            if (!selectedPatient || !firestoreDB) return;
+            if (!selectedPatient || !firestoreDB) {
+                alert('Patient not selected or Firebase not ready.');
+                return;
+            }
             
             var updatedData = {
                 name: document.getElementById('editName').value.trim(),
@@ -269,10 +279,15 @@
             }
         });
 
+        // ========== EXPOSE FUNCTIONS TO GLOBAL SCOPE ==========
+        window.openEditModal = openEditModal;
+        window.saveEdit = saveEdit;
+
         // ========== INIT ==========
         function init() {
             if (window.db) {
                 firestoreDB = window.db;
+                console.log('Firestore connected');
                 loadSelectedPatient();
             } else {
                 setTimeout(init, 500);

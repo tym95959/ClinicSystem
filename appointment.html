@@ -56,9 +56,13 @@
         .info { background: #e0f2fe; color: #075985; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; border-radius: 28px; padding: 28px 32px; max-width: 450px; width: 90%; }
+        .modal-buttons { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: 600; cursor: pointer; }
         .toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e2f3a; color: white; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 1200; transition: 0.2s; pointer-events: none; white-space: nowrap; }
         @media (max-width:600px){ .toast-msg { white-space: normal; max-width: 90%; } }
         .add-new-btn { background: none; border: none; color: #0f5c7a; cursor: pointer; font-size: 12px; margin-top: 8px; font-weight: 500; text-decoration: underline; }
+        .patient-search-result { padding: 10px 12px; border-bottom: 1px solid #e2eaf0; cursor: pointer; transition: 0.1s; }
+        .patient-search-result:hover { background: #e0f2fe; border-radius: 12px; }
     </style>
 </head>
 <body>
@@ -69,7 +73,6 @@
     </div>
     <div>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
-        
     </div>
 </div>
 
@@ -210,19 +213,41 @@
             setTimeout(() => { div.innerText = ''; div.className = 'message'; }, 4000);
         }
 
-        // ========== LOAD DATA ==========
+        // ========== LOAD DOCTORS FROM DOCTORS COLLECTION ==========
         async function loadDoctors() {
             if (!window.db) return;
             try {
-                const snap = await window.db.collection("users").where("Level", "==", "Doctor").get();
+                // Load from "doctors" collection instead of "users"
+                const snap = await window.db.collection("doctors").get();
                 doctorsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
                 const select = document.getElementById('doctorSelect');
                 select.innerHTML = '<option value="">-- Select Doctor --</option>';
+                
+                if (doctorsList.length === 0) {
+                    // Fallback: try loading from users collection
+                    console.log("No doctors found in 'doctors' collection, trying 'users'...");
+                    const userSnap = await window.db.collection("users").where("Level", "==", "Doctor").get();
+                    doctorsList = userSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
+                
                 doctorsList.forEach(d => {
-                    select.innerHTML += `<option value="${d.id}">${d.name || d.username} (${d.speciality || 'General'})</option>`;
+                    const displayName = d.name || d.username || d.displayName || 'Unknown';
+                    const speciality = d.speciality || d.Speciality || 'General';
+                    select.innerHTML += `<option value="${d.id}">${displayName} (${speciality})</option>`;
                 });
-                if (doctorsList.length === 0) select.innerHTML += '<option disabled>⚠️ No doctors found</option>';
-            } catch(e) { console.error(e); showToast("Failed to load doctors", true); }
+                
+                if (doctorsList.length === 0) {
+                    select.innerHTML += '<option disabled>⚠️ No doctors found</option>';
+                    showToast("No doctors found. Please add doctors first.", true);
+                } else {
+                    console.log(`✅ Loaded ${doctorsList.length} doctors`);
+                }
+            } catch(e) { 
+                console.error(e); 
+                showToast("Failed to load doctors", true);
+                document.getElementById('doctorSelect').innerHTML = '<option value="">⚠️ Error loading doctors</option>';
+            }
         }
 
         async function loadDutyAllocations() {
@@ -248,11 +273,19 @@
         }
         async function loadAppointments() {
             if (!window.db) return;
-            const snap = await window.db.collection("appointments").orderBy("date", "desc").get();
-            appointments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderAppointments();
-            // If doctor/date selected, refresh conflict display
-            if (currentDoctorId && currentDate) displayExistingAppointments();
+            try {
+                const snap = await window.db.collection("appointments").orderBy("date", "desc").get();
+                appointments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAppointments();
+                if (currentDoctorId && currentDate) displayExistingAppointments();
+            } catch(e) {
+                // Fallback without orderBy if index doesn't exist
+                const snap = await window.db.collection("appointments").get();
+                appointments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                appointments.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                renderAppointments();
+                if (currentDoctorId && currentDate) displayExistingAppointments();
+            }
         }
 
         // ========== DUTY & TIME VALIDATION ==========
@@ -290,14 +323,13 @@
             const dutyStart = timeToMinutes(duty.startTime);
             const dutyEnd = timeToMinutes(duty.endTime);
             if (startMinutes < dutyStart || endMinutes > dutyEnd) return false;
-            // Check conflicts with existing appointments (including those with duration)
+            // Check conflicts with existing appointments
             for (let apt of appointments) {
                 if (apt.doctorId === doctorId && apt.date === date && apt.status !== 'Cancelled' && apt.startTime && apt.durationMinutes) {
                     const aptStart = timeToMinutes(apt.startTime);
                     const aptEnd = aptStart + apt.durationMinutes;
                     if ((startMinutes < aptEnd && endMinutes > aptStart)) return false;
                 } else if (apt.doctorId === doctorId && apt.date === date && apt.status !== 'Cancelled' && apt.time) {
-                    // Legacy appointments stored with only time (assuming 30 min default)
                     const legacyStart = timeToMinutes(apt.time);
                     const legacyEnd = legacyStart + 30;
                     if ((startMinutes < legacyEnd && endMinutes > legacyStart)) return false;
@@ -317,7 +349,7 @@
             currentDate = date;
             const doctor = doctorsList.find(d => d.id === doctorId);
             if (!doctor) return;
-            document.getElementById('selectedDoctorName').innerText = doctor.name || doctor.username;
+            document.getElementById('selectedDoctorName').innerText = doctor.name || doctor.username || 'Doctor';
             document.getElementById('selectedDateDisplay').innerText = date;
 
             const duty = getDutyForDoctor(doctorId, date);
@@ -405,9 +437,9 @@
             const service = servicesList.find(s => s.id === serviceId);
             try {
                 await window.db.collection("appointments").add({
-                    doctorId, doctorName: doctor.name || doctor.username, doctorSpeciality: doctor.speciality || '',
+                    doctorId, doctorName: doctor.name || doctor.username || 'Doctor', doctorSpeciality: doctor.speciality || '',
                     date, startTime, durationMinutes: duration,
-                    time: formatTimeForDisplay(startTime), // for display
+                    time: formatTimeForDisplay(startTime),
                     patientId, patientName, contact: contact,
                     serviceId: serviceId || null, serviceName: service?.name || null,
                     status: 'Scheduled', notes, createdBy: currentUser.username,
@@ -513,9 +545,10 @@
             }
             div.innerHTML = results.map(p => {
                 const displayContact = p.contactNo || p.phone || 'N/A';
+                const displayId = p.idNumber || p.id || 'N/A';
                 return `<div class="patient-search-result" onclick="selectPatient('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${displayContact}')">
-                    <strong>${p.id}</strong> - ${p.name}<br>
-                    <small>📞 ${displayContact} ${p.idNumber ? '| ID: '+p.idNumber : ''}</small>
+                    <strong>${p.name}</strong> (${displayId})<br>
+                    <small>📞 ${displayContact}</small>
                 </div>`;
             }).join('');
         }
@@ -575,11 +608,13 @@
         // ========== INIT ==========
         async function init() {
             if (!window.db) { setTimeout(init, 500); return; }
+            console.log("Firebase connected, loading data...");
             await loadDoctors();
             await loadDutyAllocations();
             await loadPatients();
             await loadServices();
             await loadAppointments();
+            console.log(`✅ Loaded ${doctorsList.length} doctors, ${patientsList.length} patients, ${servicesList.length} services`);
         }
         init();
     })();

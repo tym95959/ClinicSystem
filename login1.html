@@ -556,7 +556,7 @@
 
 <script>
     // ===================================================================
-    // PWA INSTALLATION - Same for both panels
+    // PWA INSTALLATION - Fixed async/await issue
     // ===================================================================
     let deferredPrompt;
     
@@ -565,23 +565,24 @@
     const deviceInstallInstructions = document.getElementById('deviceInstallInstructions');
     
     if (deviceInstallBtn) {
-        deviceInstallBtn.addEventListener('click', () => {
+        deviceInstallBtn.addEventListener('click', function() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    deviceInstallBtn.textContent = '✅ App Installed!';
-                    deviceInstallBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-                    setTimeout(() => {
-                        deviceInstallBtn.textContent = '📲 App Installed ✓';
-                    }, 3000);
-                }
-                deferredPrompt = null;
+                deferredPrompt.userChoice.then(function(result) {
+                    if (result.outcome === 'accepted') {
+                        deviceInstallBtn.textContent = '✅ App Installed!';
+                        deviceInstallBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                        setTimeout(function() {
+                            deviceInstallBtn.textContent = '📲 App Installed ✓';
+                        }, 3000);
+                    }
+                    deferredPrompt = null;
+                });
             } else {
                 deviceInstallInstructions.classList.toggle('show');
-                const originalText = deviceInstallBtn.innerHTML;
+                var originalText = deviceInstallBtn.innerHTML;
                 deviceInstallBtn.innerHTML = '📖 Check instructions ↑';
-                setTimeout(() => {
+                setTimeout(function() {
                     deviceInstallBtn.innerHTML = originalText;
                 }, 3000);
             }
@@ -593,36 +594,38 @@
     const loginInstallInstructions = document.getElementById('loginInstallInstructions');
     
     if (loginInstallBtn) {
-        loginInstallBtn.addEventListener('click', () => {
+        loginInstallBtn.addEventListener('click', function() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    loginInstallBtn.textContent = '✅ App Installed!';
-                    loginInstallBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-                    setTimeout(() => {
-                        loginInstallBtn.textContent = '📲 App Installed ✓';
-                    }, 3000);
-                }
-                deferredPrompt = null;
+                deferredPrompt.userChoice.then(function(result) {
+                    if (result.outcome === 'accepted') {
+                        loginInstallBtn.textContent = '✅ App Installed!';
+                        loginInstallBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                        setTimeout(function() {
+                            loginInstallBtn.textContent = '📲 App Installed ✓';
+                        }, 3000);
+                    }
+                    deferredPrompt = null;
+                });
             } else {
                 loginInstallInstructions.classList.toggle('show');
-                const originalText = loginInstallBtn.innerHTML;
+                var originalText = loginInstallBtn.innerHTML;
                 loginInstallBtn.innerHTML = '📖 Check instructions ↑';
-                setTimeout(() => {
+                setTimeout(function() {
                     loginInstallBtn.innerHTML = originalText;
                 }, 3000);
             }
         });
     }
 
-    window.addEventListener('beforeinstallprompt', (e) => {
+    window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         deferredPrompt = e;
         console.log('Install prompt available');
         
         // Update both install buttons
-        [deviceInstallBtn, loginInstallBtn].forEach(btn => {
+        var buttons = [deviceInstallBtn, loginInstallBtn];
+        buttons.forEach(function(btn) {
             if (btn) {
                 btn.innerHTML = '📲 Install Now (Click to Install)';
                 btn.style.background = 'linear-gradient(135deg, #e67e22 0%, #f39c12 100%)';
@@ -633,16 +636,16 @@
 
     // Register Service Worker
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
+        window.addEventListener('load', function() {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registered:', reg))
-                .catch(err => console.log('Service Worker error:', err));
+                .then(function(reg) { console.log('Service Worker registered:', reg); })
+                .catch(function(err) { console.log('Service Worker error:', err); });
         });
     }
 
     // Check if already installed - hide install buttons
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-        document.querySelectorAll('.install-container').forEach(el => {
+        document.querySelectorAll('.install-container').forEach(function(el) {
             if (el) el.style.display = 'none';
         });
         console.log('Running as installed app');
@@ -651,18 +654,18 @@
     // ===================================================================
     // DEVICE AUTHORIZATION MODULE
     // ===================================================================
-    const STORAGE_KEY = 'hopedental_device_auth';
-    const AUTH_EXPIRY_DAYS = 365;
+    var STORAGE_KEY = 'hopedental_device_auth';
+    var AUTH_EXPIRY_DAYS = 365;
     
     // Device authorization functions
     function getExpiryDate() {
-        const date = new Date();
+        var date = new Date();
         date.setDate(date.getDate() + AUTH_EXPIRY_DAYS);
         return date.toISOString();
     }
     
     function generateDeviceId() {
-        let deviceId = localStorage.getItem('device_id');
+        var deviceId = localStorage.getItem('device_id');
         if (!deviceId) {
             deviceId = 'dev_' + Math.random().toString(36).substr(2, 16);
             try { localStorage.setItem('device_id', deviceId); } catch(e) {}
@@ -671,21 +674,21 @@
     }
     
     function saveDeviceAuthorization() {
-        const authData = {
+        var authData = {
             authorized: true,
             authorizedAt: new Date().toISOString(),
             expiresAt: getExpiryDate(),
             deviceId: generateDeviceId()
         };
         
-        const authString = JSON.stringify(authData);
+        var authString = JSON.stringify(authData);
         
         try { localStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
         try { sessionStorage.setItem(STORAGE_KEY, authString); } catch(e) {}
         
         // Cookie - survives cache clearing!
         try {
-            document.cookie = `${STORAGE_KEY}=${encodeURIComponent(authString)}; expires=${authData.expiresAt}; path=/; SameSite=Lax`;
+            document.cookie = STORAGE_KEY + '=' + encodeURIComponent(authString) + '; expires=' + authData.expiresAt + '; path=/; SameSite=Lax';
         } catch(e) {}
         
         return true;
@@ -693,10 +696,10 @@
     
     function isDeviceAuthorized() {
         // Check Cookie first (most persistent)
-        const cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
+        var cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
         if (cookieMatch) {
             try {
-                const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
+                var authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
                 if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
                     return true;
                 }
@@ -705,9 +708,9 @@
         
         // Check localStorage
         try {
-            const localData = localStorage.getItem(STORAGE_KEY);
+            var localData = localStorage.getItem(STORAGE_KEY);
             if (localData) {
-                const authData = JSON.parse(localData);
+                var authData = JSON.parse(localData);
                 if (authData.authorized && new Date(authData.expiresAt) > new Date()) {
                     return true;
                 }
@@ -721,18 +724,18 @@
         try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
         try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
         try { 
-            document.cookie = `${STORAGE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            document.cookie = STORAGE_KEY + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         } catch(e) {}
     }
     
     function getRemainingDays() {
         try {
-            const cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
+            var cookieMatch = document.cookie.match(new RegExp('(^| )' + STORAGE_KEY + '=([^;]+)'));
             if (cookieMatch) {
-                const authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
-                const expiry = new Date(authData.expiresAt);
-                const now = new Date();
-                const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+                var authData = JSON.parse(decodeURIComponent(cookieMatch[2]));
+                var expiry = new Date(authData.expiresAt);
+                var now = new Date();
+                var daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
                 return daysLeft > 0 ? daysLeft : 0;
             }
         } catch(e) {}
@@ -740,11 +743,11 @@
     }
     
     function showDeviceMessage(msg, type) {
-        const msgDiv = document.getElementById('deviceMessage');
+        var msgDiv = document.getElementById('deviceMessage');
         if (!msgDiv) return;
         msgDiv.innerHTML = msg;
-        msgDiv.className = `message-box ${type}-msg`;
-        setTimeout(() => {
+        msgDiv.className = 'message-box ' + type + '-msg';
+        setTimeout(function() {
             if (msgDiv.innerHTML === msg) {
                 msgDiv.innerHTML = '';
                 msgDiv.className = 'message-box';
@@ -755,23 +758,23 @@
     // ===================================================================
     // ORIGINAL LOGIN FUNCTIONS
     // ===================================================================
-    let firestoreDB = null;
-    let realtimeDB = null;
+    var firestoreDB = null;
+    var realtimeDB = null;
 
     async function sha256Hash(text) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(text);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        var encoder = new TextEncoder();
+        var data = encoder.encode(text);
+        var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        var hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 
     function showMessage(msg, type) {
-        const messageDiv = document.getElementById('message');
+        var messageDiv = document.getElementById('message');
         if (!messageDiv) return;
         messageDiv.innerHTML = msg;
-        messageDiv.className = `message-box ${type}-msg`;
-        setTimeout(() => {
+        messageDiv.className = 'message-box ' + type + '-msg';
+        setTimeout(function() {
             if (messageDiv.innerHTML === msg) {
                 messageDiv.innerHTML = '';
                 messageDiv.className = 'message-box';
@@ -780,7 +783,7 @@
     }
 
     function setLoading(isLoading) {
-        const loginBtn = document.getElementById('loginBtn');
+        var loginBtn = document.getElementById('loginBtn');
         if (!loginBtn) return;
         if (isLoading) {
             loginBtn.disabled = true;
@@ -794,13 +797,13 @@
     async function saveOnlineUserRTDB(username, name, level) {
         if (!realtimeDB) return false;
         try {
-            await realtimeDB.ref(`online_users/${username}`).set({
+            await realtimeDB.ref('online_users/' + username).set({
                 username: username, 
                 name: name, 
                 Level: level, 
                 status: "online"
             });
-            console.log(`✅ User ${username} marked online`);
+            console.log('✅ User ' + username + ' marked online');
             return true;
         } catch (err) {
             console.error("Error saving online user:", err);
@@ -811,8 +814,8 @@
     async function removeOnlineUserRTDB(username) {
         if (!realtimeDB || !username) return;
         try {
-            await realtimeDB.ref(`online_users/${username}`).remove();
-            console.log(`✅ User ${username} removed`);
+            await realtimeDB.ref('online_users/' + username).remove();
+            console.log('✅ User ' + username + ' removed');
         } catch (err) {
             console.warn("Error removing online user:", err);
         }
@@ -827,15 +830,15 @@
     }
 
     // Handle login
-    const loginForm = document.getElementById('loginForm');
+    var loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value;
+            var usernameInput = document.getElementById('username');
+            var passwordInput = document.getElementById('password');
+            var username = usernameInput.value.trim();
+            var password = passwordInput.value;
             
             if (!username || !password) {
                 showMessage("❌ Please enter both username and password.", "error");
@@ -851,7 +854,7 @@
                     return;
                 }
                 
-                const userDoc = await firestoreDB.collection("users").doc(username).get();
+                var userDoc = await firestoreDB.collection("users").doc(username).get();
                 
                 if (!userDoc.exists) {
                     showMessage("❌ Invalid username or password.", "error");
@@ -860,14 +863,14 @@
                     return;
                 }
                 
-                const userData = userDoc.data();
-                const hashedInput = await sha256Hash(password);
+                var userData = userDoc.data();
+                var hashedInput = await sha256Hash(password);
                 
                 if (hashedInput === userData.passwordHash) {
                     await removeOnlineUserRTDB(username);
                     await saveOnlineUserRTDB(username, userData.name, userData.Level);
                     
-                    const userSession = { 
+                    var userSession = { 
                         username: userData.username, 
                         name: userData.name, 
                         level: userData.Level,
@@ -880,7 +883,7 @@
                     sessionStorage.setItem('clinic_user_session', JSON.stringify(userSession));
                     
                     if (userData.Level === "Doctor") {
-                        const doctorSession = {
+                        var doctorSession = {
                             id: userData.username,
                             name: userData.name,
                             speciality: userData.speciality || "General Physician",
@@ -890,10 +893,10 @@
                         localStorage.setItem('currentDoctor', JSON.stringify(doctorSession));
                     }
                     
-                    const redirectUrl = getRedirectUrl(userData.Level);
-                    showMessage(`✅ Welcome ${userData.name}! Redirecting...`, "success");
+                    var redirectUrl = getRedirectUrl(userData.Level);
+                    showMessage('✅ Welcome ' + userData.name + '! Redirecting...', "success");
                     
-                    setTimeout(() => {
+                    setTimeout(function() {
                         window.location.href = redirectUrl;
                     }, 1000);
                 } else {
@@ -910,10 +913,10 @@
     }
 
     async function clearExistingSession() {
-        const loggedInUser = localStorage.getItem('loggedInUser');
+        var loggedInUser = localStorage.getItem('loggedInUser');
         if (loggedInUser) {
             try {
-                const session = JSON.parse(loggedInUser);
+                var session = JSON.parse(loggedInUser);
                 if (session.username && realtimeDB) {
                     await removeOnlineUserRTDB(session.username);
                 }
@@ -932,8 +935,8 @@
             console.log("✅ Firebase ready");
             clearExistingSession();
             showMessage("🔐 System ready. Please log in with your credentials.", "info");
-            setTimeout(() => {
-                const messageDiv = document.getElementById('message');
+            setTimeout(function() {
+                var messageDiv = document.getElementById('message');
                 if (messageDiv && messageDiv.innerHTML === "🔐 System ready. Please log in with your credentials.") {
                     messageDiv.innerHTML = '';
                     messageDiv.className = 'message-box';
@@ -948,7 +951,7 @@
     // DEVICE AUTHENTICATION HANDLER
     // ===================================================================
     async function authorizeDevice() {
-        const devicePassword = document.getElementById('devicePassword').value;
+        var devicePassword = document.getElementById('devicePassword').value;
         
         if (!devicePassword || devicePassword.trim() === '') {
             showDeviceMessage("❌ Please enter the device master password.", "error");
@@ -969,7 +972,7 @@
         saveDeviceAuthorization();
         showDeviceMessage("✅ Device authorized successfully! Redirecting...", "success");
         
-        setTimeout(() => {
+        setTimeout(function() {
             document.getElementById('devicePanel').classList.add('hidden-panel');
             document.getElementById('loginPanel').classList.remove('hidden-panel');
             waitForFirebase();
@@ -982,7 +985,7 @@
     // INITIALIZATION - Check if device is already authorized
     // ===================================================================
     function checkDeviceAuthorization() {
-        const authorized = isDeviceAuthorized();
+        var authorized = isDeviceAuthorized();
         
         if (authorized) {
             // Device already authorized, show login panel directly
@@ -991,11 +994,11 @@
             waitForFirebase();
             
             // Show remaining days
-            const daysLeft = getRemainingDays();
-            const deviceInfoDisplay = document.getElementById('deviceInfoDisplay');
+            var daysLeft = getRemainingDays();
+            var deviceInfoDisplay = document.getElementById('deviceInfoDisplay');
             if (deviceInfoDisplay) {
                 deviceInfoDisplay.style.display = 'block';
-                deviceInfoDisplay.innerHTML = `🔐 <strong>Device Authorized</strong> — ${daysLeft} days remaining until renewal (${AUTH_EXPIRY_DAYS}-day cycle)`;
+                deviceInfoDisplay.innerHTML = '🔐 <strong>Device Authorized</strong> — ' + daysLeft + ' days remaining until renewal (' + AUTH_EXPIRY_DAYS + '-day cycle)';
             }
         } else {
             // Need device authorization
@@ -1006,27 +1009,27 @@
     }
     
     // Event listeners
-    document.getElementById('deviceAuthBtn').addEventListener('click', () => {
-        const btn = document.getElementById('deviceAuthBtn');
+    document.getElementById('deviceAuthBtn').addEventListener('click', function() {
+        var btn = document.getElementById('deviceAuthBtn');
         btn.disabled = true;
-        const originalText = btn.innerHTML;
+        var originalText = btn.innerHTML;
         btn.innerHTML = '<span class="btn-text"><span class="loading-spinner"></span>Verifying...</span>';
         
-        authorizeDevice().finally(() => {
+        authorizeDevice().finally(function() {
             btn.disabled = false;
             btn.innerHTML = originalText;
         });
     });
     
-    document.getElementById('devicePassword').addEventListener('keypress', (e) => {
+    document.getElementById('devicePassword').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             document.getElementById('deviceAuthBtn').click();
         }
     });
     
-    const resetDeviceBtn = document.getElementById('resetDeviceBtn');
+    var resetDeviceBtn = document.getElementById('resetDeviceBtn');
     if (resetDeviceBtn) {
-        resetDeviceBtn.addEventListener('click', () => {
+        resetDeviceBtn.addEventListener('click', function() {
             if (confirm('⚠️ WARNING: This will reset device authorization for this browser. You will need to re-enter the device master password to access the system again. Continue?')) {
                 clearDeviceAuthorization();
                 window.location.reload();

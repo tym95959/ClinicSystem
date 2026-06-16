@@ -479,7 +479,6 @@
         <div class="section-title">
             📅 Select Appointment (Optional)
             <span id="appointmentBadge" class="appointment-badge" style="display: none;">Linked to Appointment</span>
-            <span id="completedBadge" class="completed-badge" style="display: none;">✅ Completed</span>
         </div>
         <div class="form-grid">
             <div class="input-group">
@@ -487,7 +486,7 @@
                 <select id="appointmentSelect">
                     <option value="">-- Load appointments --</option>
                 </select>
-                <small style="font-size: 9px; color: #6c757d;">Only future appointments shown. After memo is saved, appointment status will change to "Completed" but NOT deleted.</small>
+                <small style="font-size: 9px; color: #6c757d;">Select an appointment to auto‑fill patient, doctor, and services. The appointment will be DELETED after saving the memo.</small>
             </div>
         </div>
     </div>
@@ -789,39 +788,102 @@
         }
     }
     
-    // ========== AUTO-FILL FROM APPOINTMENT ==========
+    // ========== AUTO-FILL FROM APPOINTMENT (WITH PATIENT DATA) ==========
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
         if (!apt) return;
         
         selectedAppointmentData = apt;
         
-        const patientSelect = document.getElementById('patientDropdown');
-        for (let i = 0; i < patientSelect.options.length; i++) {
-            if (patientSelect.options[i].value === apt.patientId) {
-                patientSelect.selectedIndex = i;
-                patientSelect.dispatchEvent(new Event('change'));
-                break;
+        // ---- FETCH PATIENT DATA ----
+        if (apt.patientId) {
+            try {
+                // Try to find patient in patientsList first
+                let patient = patientsList.find(p => p.id === apt.patientId);
+                
+                // If not found, fetch from Firestore directly
+                if (!patient) {
+                    const patientDoc = await window.db.collection("patients").doc(apt.patientId).get();
+                    if (patientDoc.exists) {
+                        patient = { id: patientDoc.id, ...patientDoc.data() };
+                    }
+                }
+                
+                if (patient) {
+                    selectedPatient = patient;
+                    
+                    // Update patient dropdown
+                    const patientSelect = document.getElementById('patientDropdown');
+                    let found = false;
+                    for (let i = 0; i < patientSelect.options.length; i++) {
+                        if (patientSelect.options[i].value === apt.patientId) {
+                            patientSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        // Add patient to dropdown if not found
+                        const option = document.createElement('option');
+                        option.value = patient.id;
+                        option.text = `${patient.name} (ID/Passport: ${patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A'})`;
+                        patientSelect.add(option);
+                        patientSelect.value = patient.id;
+                    }
+                    
+                    // Show patient card
+                    const card = document.getElementById('selectedPatientCard');
+                    card.style.display = 'flex';
+                    const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+                    card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong><br>ID/Passport: ${escapeHtml(displayId)}<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
+                    
+                    // Trigger change event to update billing
+                    patientSelect.dispatchEvent(new Event('change'));
+                }
+            } catch (error) {
+                console.error("Error fetching patient data:", error);
             }
         }
         
-        const doctorSelect = document.getElementById('doctorSelect');
-        let doctorFound = false;
-        for (let i = 0; i < doctorSelect.options.length; i++) {
-            if (doctorSelect.options[i].value === apt.doctorId) {
-                doctorSelect.selectedIndex = i;
-                doctorSelect.dispatchEvent(new Event('change'));
-                doctorFound = true;
-                break;
+        // ---- FETCH DOCTOR DATA ----
+        if (apt.doctorId) {
+            try {
+                let doctor = doctorsList.find(d => d.id === apt.doctorId);
+                if (!doctor) {
+                    const doctorDoc = await window.db.collection("doctors").doc(apt.doctorId).get();
+                    if (doctorDoc.exists) {
+                        doctor = { id: doctorDoc.id, ...doctorDoc.data() };
+                    }
+                }
+                if (doctor) {
+                    selectedDoctor = doctor;
+                    const doctorSelect = document.getElementById('doctorSelect');
+                    let found = false;
+                    for (let i = 0; i < doctorSelect.options.length; i++) {
+                        if (doctorSelect.options[i].value === apt.doctorId) {
+                            doctorSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        const option = document.createElement('option');
+                        option.value = doctor.id;
+                        option.text = `${doctor.name} (${doctor.speciality || 'General'})`;
+                        doctorSelect.add(option);
+                        doctorSelect.value = doctor.id;
+                    }
+                    
+                    const card = document.getElementById('selectedDoctorCard');
+                    card.style.display = 'flex';
+                    card.innerHTML = `<div><strong>${escapeHtml(doctor.name)}</strong></div><div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>`;
+                }
+            } catch (error) {
+                console.error("Error fetching doctor data:", error);
             }
         }
-        if (!doctorFound && apt.doctorName) {
-            selectedDoctor = { id: apt.doctorId, name: apt.doctorName, speciality: apt.doctorSpeciality || 'General' };
-            const card = document.getElementById('selectedDoctorCard');
-            card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(apt.doctorName)}</strong></div><div><span class="selected-badge">${escapeHtml(apt.doctorSpeciality || 'General')}</span></div>`;
-        }
         
+        // ---- FETCH SERVICE DATA ----
         if (apt.serviceId || apt.serviceName) {
             const serviceSelect = document.getElementById('serviceSelectDropdown');
             let serviceFound = false;
@@ -857,7 +919,6 @@
         }
         
         document.getElementById('appointmentBadge').style.display = 'inline-block';
-        document.getElementById('completedBadge').style.display = 'none';
         selectedAppointmentId = appointmentId;
     }
     
@@ -872,7 +933,6 @@
             } else {
                 patientSelect.innerHTML = '<option value="">-- Select Patient --</option>';
                 patientsList.forEach(p => {
-                    // Display: Name (ID/Passport: value)
                     const displayId = p.idNumber || p.passportNumber || p.nationalId || p.id || 'N/A';
                     const displayText = `${p.name} (ID/Passport: ${displayId})`;
                     patientSelect.innerHTML += `<option value="${p.id}">${escapeHtml(displayText)}</option>`;
@@ -1158,20 +1218,14 @@
         }
     }
     
-    // ========== UPDATE APPOINTMENT STATUS TO "COMPLETED" (NOT DELETE) ==========
-    async function updateAppointmentStatus() {
+    // ========== DELETE APPOINTMENT (NOT JUST MARK COMPLETED) ==========
+    async function deleteLinkedAppointment() {
         if (selectedAppointmentId) {
             try {
-                await window.db.collection("appointments").doc(selectedAppointmentId).update({
-                    status: "Completed",
-                    completedAt: new Date().toISOString(),
-                    memoCreated: true
-                });
-                document.getElementById('appointmentBadge').style.display = 'inline-block';
-                document.getElementById('completedBadge').style.display = 'inline-block';
+                await window.db.collection("appointments").doc(selectedAppointmentId).delete();
                 return true;
             } catch (error) {
-                console.error("Error updating appointment status:", error);
+                console.error("Error deleting appointment:", error);
                 return false;
             }
         }
@@ -1300,10 +1354,12 @@
             memoData.firebaseId = docRef.id;
             localStorage.setItem('printMemoData', JSON.stringify(memoData));
             
+            // DELETE the linked appointment (not just mark as completed)
             if (selectedAppointmentId) {
-                const updated = await updateAppointmentStatus();
-                if (updated) {
-                    showMessage("✅ Appointment marked as Completed", "success");
+                const deleted = await deleteLinkedAppointment();
+                if (deleted) {
+                    showMessage("✅ Linked appointment deleted", "success");
+                    document.getElementById('appointmentBadge').style.display = 'none';
                 }
             }
             
@@ -1416,7 +1472,6 @@
             selectedAppointmentId = null;
             selectedAppointmentData = null;
             document.getElementById('appointmentBadge').style.display = 'none';
-            document.getElementById('completedBadge').style.display = 'none';
         }
     });
     

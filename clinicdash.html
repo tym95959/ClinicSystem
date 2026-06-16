@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Reception Dashboard</title>
+    <title>Hope Dental | Doctor's Portal</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -12,684 +12,286 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="firebase-config.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #d4f1f4 0%, #b2e0e6 100%);
-            min-height: 100vh;
-            position: relative;
-        }
-
-        .notification-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #1a8f8f 0%, #0e6b6b 100%);
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #eef2f7; min-height: 100vh; }
+        
+        .clinic-header {
+            background: #0a2f44;
             color: white;
-            padding: 10px 18px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            z-index: 2000;
+            padding: 12px 24px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            animation: slideInRight 0.3s ease;
-            cursor: pointer;
-            max-width: 350px;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .notification-toast .close-toast {
-            margin-left: 10px;
-            cursor: pointer;
-            opacity: 0.7;
-        }
-
-        .unread-badge {
-            background: #ff6b6b;
-            color: white;
-            border-radius: 20px;
-            padding: 2px 6px;
-            font-size: 9px;
-            margin-left: 6px;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        .online-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #2ecc71;
-            display: inline-block;
-            margin-right: 5px;
-            animation: pulseOnline 1.5s infinite;
-        }
-
-        @keyframes pulseOnline {
-            0% { opacity: 0.5; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
+        .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .doctor-info { background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .online-status { display: flex; align-items: center; gap: 6px; font-size: 11px; background: #2ecc71; padding: 4px 10px; border-radius: 20px; color: white; }
+        .logout-btn { background: #c63d2f; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .logout-btn:hover { background: #a52a1f; transform: translateY(-1px); }
+        
         .dashboard-container {
             max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .main-layout {
+            margin: 20px auto;
+            padding: 0 20px;
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
         }
-
-        .content-area {
-            flex: 2;
-            min-width: 280px;
-        }
-
-        .header {
-            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
-            color: #004d4d;
-            padding: 16px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border: 1px solid rgba(32,178,170,0.3);
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            font-size: 2rem;
-            color: #008b8b;
+        
+        .appointments-panel {
+            flex: 1.2;
+            min-width: 350px;
             background: white;
-            width: 50px;
-            height: 50px;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            overflow: hidden;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex-direction: column;
+            height: calc(100vh - 100px);
         }
-
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #006666, #20b2aa);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.3px;
+        
+        .panel-header { background: #f4f9fe; padding: 15px 20px; border-bottom: 1px solid #e2eaf0; }
+        .panel-header h3 { font-size: 16px; color: #0a2f44; display: flex; align-items: center; gap: 8px; }
+        
+        .list-tabs { display: flex; gap: 5px; background: #f4f9fe; padding: 0 12px; border-bottom: 1px solid #e2eaf0; overflow-x: auto; }
+        .list-tab { background: none; border: none; padding: 10px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: #5f7f9a; transition: 0.2s; white-space: nowrap; }
+        .list-tab.active-list { color: #0f5c7a; border-bottom: 2px solid #0f5c7a; background: white; margin-bottom: -1px; }
+        
+        .appointments-list, .memos-list, .patients-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: none;
         }
-
-        .user-info-card {
-            background: rgba(0,139,139,0.1);
-            backdrop-filter: blur(4px);
-            padding: 8px 16px;
+        .appointments-list.active-list, .memos-list.active-list, .patients-list.active-list { display: block; }
+        
+        .appointment-card, .memo-card {
+            background: #f8fbfe;
             border-radius: 16px;
-            border: 1px solid rgba(0,128,128,0.2);
+            padding: 14px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            border-left: 3px solid #cbdde9;
         }
-
-        .user-name {
-            font-size: 13px;
-            font-weight: 700;
-            color: #004d4d;
-        }
-
-        .user-role {
-            font-size: 10px;
-            opacity: 0.8;
-            margin-top: 2px;
-            color: #006666;
-        }
-
-        .logout-btn {
-            background: rgba(220, 53, 69, 0.9);
+        .appointment-card:hover, .memo-card:hover { background: #e8f0fe; transform: translateX(3px); }
+        .appointment-card.selected, .memo-card.selected { background: #e0f2fe; border-left-color: #0f5c7a; }
+        
+        .appointment-time, .memo-date { font-size: 12px; font-weight: 700; color: #0f5c7a; margin-bottom: 6px; }
+        .appointment-patient, .memo-patient { font-size: 14px; font-weight: 600; color: #0a2f44; }
+        .appointment-details, .memo-details { font-size: 11px; color: #5f7f9a; margin-top: 5px; }
+        
+        .btn-complete {
+            background: #27ae60;
             color: white;
             border: none;
-            padding: 5px 14px;
-            border-radius: 8px;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-weight: 600;
             cursor: pointer;
             font-size: 11px;
-            font-weight: 600;
-            margin-top: 5px;
-            width: 100%;
+            margin-top: 10px;
             transition: 0.2s;
         }
-        .logout-btn:hover {
-            background: #c0392b;
-        }
-
-        .welcome-section {
+        .btn-complete:hover { background: #219a52; }
+        
+        .patient-search-area { padding: 12px; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
+        .patient-search-input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 30px; font-size: 13px; outline: none; }
+        .patient-search-input:focus { border-color: #0f5c7a; }
+        .patient-suggestions { max-height: 300px; overflow-y: auto; margin-top: 8px; }
+        .suggestion-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: 0.1s; border-bottom: 1px solid #e2eaf0; }
+        .suggestion-item:hover { background: #e0f2fe; }
+        
+        .detail-panel {
+            flex: 2;
+            min-width: 550px;
             background: white;
-            padding: 18px 24px;
-            border-radius: 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-
-        .welcome-section h2 {
-            font-size: 18px;
-            color: #006666;
-        }
-
-        .quick-access {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .quick-card {
-            background: white;
-            padding: 12px 8px;
-            border-radius: 16px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid rgba(0,128,128,0.2);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-        }
-
-        .quick-card:hover {
-            background: #20b2aa;
-            color: white;
-            transform: translateY(-2px);
-            border-color: #20b2aa;
-        }
-
-        .quick-icon {
-            font-size: 20px;
-            margin-bottom: 4px;
-        }
-
-        .quick-label {
-            font-size: 9px;
-            font-weight: 600;
-        }
-
-        .doctors-section {
-            background: white;
-            padding: 16px;
-            border-radius: 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-
-        .doctors-section h3 {
-            color: #006666;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .doctor-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #eef3fa;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 12px;
+            flex-direction: column;
+            height: calc(100vh - 100px);
         }
-
-        .doctor-status {
-            font-size: 9px;
-            margin-top: 2px;
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            padding: 20px;
         }
-
-        .test-btn {
-            background: #f39c12;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 10px;
-            font-weight: 600;
-            transition: 0.2s;
-            margin-top: 8px;
-        }
-        .test-btn:hover {
-            background: #d68910;
-        }
-
-        .footer {
+        .quick-action-card {
+            background: #f8fbfe;
+            border: 1px solid #e2eaf0;
+            border-radius: 16px;
+            padding: 20px;
             text-align: center;
-            padding: 12px;
-            color: #008b8b;
-            font-size: 10px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 12px;
-            margin-top: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: #0a2f44;
         }
-
+        .quick-action-card:hover {
+            background: #e0f2fe;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .quick-action-card i { font-size: 32px; color: #0f5c7a; margin-bottom: 10px; display: block; }
+        .quick-action-card h4 { font-size: 14px; margin-bottom: 5px; }
+        .quick-action-card p { font-size: 11px; color: #5f7f9a; }
+        
+        .badge-upcoming { background: #27ae60; color: white; border-radius: 20px; padding: 2px 8px; font-size: 9px; margin-left: 8px; }
+        .empty-list { text-align: center; color: #8ba0b0; padding: 40px; font-size: 12px; }
+        
+        .patient-info-card { background: #f0f6fc; border-radius: 16px; padding: 16px; margin: 0 20px 20px 20px; }
+        .patient-name { font-size: 18px; font-weight: 700; color: #0a2f44; }
+        .patient-meta { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px; font-size: 12px; color: #5f7f9a; }
+        
+        .section-title { font-size: 14px; font-weight: 600; color: #0a2f44; padding: 0 20px; margin-bottom: 10px; }
+        
         /* ========== CHAT STYLES ========== */
         .chat-panel {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 24px;
+            right: 24px;
             width: 380px;
             background: white;
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             display: flex;
             flex-direction: column;
             transition: all 0.3s;
             z-index: 1000;
-            border: 1px solid rgba(32,178,170,0.3);
+            border: 1px solid rgba(15,92,122,0.2);
             overflow: hidden;
             max-height: 600px;
         }
-
-        .chat-panel.minimized {
-            width: auto;
-            cursor: pointer;
-            max-height: 60px;
-        }
-
-        .chat-panel.minimized .chat-header {
-            border-radius: 18px;
-        }
-
-        .chat-panel.minimized .staff-list,
-        .chat-panel.minimized .chat-messages,
-        .chat-panel.minimized .chat-input-area,
-        .chat-panel.minimized .staff-list-title,
-        .chat-panel.minimized .typing-indicator,
-        .chat-panel.minimized .delete-all-btn {
-            display: none;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #008b8b 0%, #20b2aa 100%);
-            color: white;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .chat-header i {
-            font-size: 1rem;
-        }
-
-        .chat-header h3 {
-            font-size: 0.85rem;
-            font-weight: 600;
-            flex: 1;
-        }
-
-        .chat-badge {
-            background: #ff6b6b;
-            color: white;
-            border-radius: 30px;
-            padding: 2px 8px;
-            font-size: 9px;
-            font-weight: bold;
-        }
-
-        .minimize-icon {
-            background: rgba(255,255,255,0.2);
-            border-radius: 16px;
-            padding: 2px 6px;
-            font-size: 10px;
-        }
-
-        .staff-list-title {
-            font-size: 9px;
-            color: #008b8b;
-            padding: 8px 12px 4px;
-            font-weight: 600;
-            background: #f0fafc;
-            border-bottom: 1px solid #d4f1f4;
-        }
-
-        .staff-list {
-            background: #f0fafc;
-            padding: 6px 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            border-bottom: 1px solid #d4f1f4;
-        }
-
-        .staff-tab {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px;
-            margin: 4px 0;
-            border-radius: 12px;
-            cursor: pointer;
-            background: white;
-            border: 1px solid #d4f1f4;
-            transition: all 0.2s;
-        }
-
-        .staff-tab:hover {
-            background: #e0f7f5;
-            transform: translateX(2px);
-        }
-
-        .staff-tab.active-staff {
-            background: linear-gradient(135deg, #008b8b 0%, #20b2aa 100%);
-            color: white;
-        }
-
-        .staff-avatar {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #b2dfdb 0%, #80cbc4 100%);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #006666;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .staff-info {
-            flex: 1;
-        }
-
-        .staff-name {
-            font-weight: 700;
-            font-size: 12px;
-            color: #004d4d;
-        }
-
-        .staff-role {
-            font-size: 9px;
-            color: #5f7f9a;
-            margin-top: 1px;
-        }
-
-        .online-indicator {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            font-size: 8px;
-            color: #2ecc71;
-            background: #e8f8f5;
-            padding: 2px 6px;
-            border-radius: 16px;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            background: #ffffff;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-height: 320px;
-            min-height: 280px;
-        }
-
-        .message {
-            display: flex;
-            flex-direction: column;
-            max-width: 88%;
-            animation: slideIn 0.2s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.reception {
-            align-self: flex-end;
-        }
-
-        .message.staff {
-            align-self: flex-start;
-        }
-
-        .message-bubble {
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 11px;
-            line-height: 1.4;
-            word-break: break-word;
-        }
-
-        .message.reception .message-bubble {
-            background: linear-gradient(135deg, #008b8b 0%, #20b2aa 100%);
-            color: white;
-            border-bottom-right-radius: 3px;
-        }
-
-        .message.staff .message-bubble {
-            background: #e0f2f1;
-            color: #004d4d;
-            border-bottom-left-radius: 3px;
-        }
-
-        .message-meta {
-            font-size: 8px;
-            margin-top: 3px;
-            padding: 0 5px;
-            color: #8ba0b0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .delete-msg {
-            font-size: 8px;
-            color: #ff6b6b;
-            cursor: pointer;
-            margin-left: 6px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .message:hover .delete-msg {
-            opacity: 1;
-        }
-
-        .typing-indicator {
-            font-size: 9px;
-            color: #008b8b;
-            padding: 6px 12px;
-            font-style: italic;
-            background: #f0fafc;
-            border-top: 1px solid #d4f1f4;
-        }
-
-        .chat-input-area {
-            padding: 10px;
-            background: white;
-            border-top: 1px solid #d4f1f4;
-            display: flex;
-            gap: 8px;
-        }
-
-        .chat-input-area input {
-            flex: 1;
-            border: 1.5px solid #d4f1f4;
-            border-radius: 25px;
-            padding: 8px 14px;
-            font-size: 11px;
-            outline: none;
-        }
-
-        .chat-input-area input:focus {
-            border-color: #20b2aa;
-        }
-
-        .chat-input-area button {
-            background: #008b8b;
-            border: none;
-            color: white;
-            padding: 0 16px;
-            border-radius: 25px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .delete-all-btn {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 16px;
-            font-size: 9px;
-            cursor: pointer;
-            margin: 6px 10px;
-        }
-
-        .empty-chat {
-            text-align: center;
-            color: #8ba0b0;
-            padding: 30px;
-            font-size: 11px;
-        }
-
-        .empty-online {
-            text-align: center;
-            padding: 20px;
-            color: #8ba0b0;
-            font-size: 11px;
-        }
-
-        @media (max-width: 700px) {
-            .chat-panel {
-                width: 320px;
-                right: 10px;
-                bottom: 10px;
-            }
-            .notification-toast {
-                max-width: 280px;
-                right: 10px;
-                top: 10px;
-            }
-            .header h1 {
-                font-size: 1.1rem;
-            }
-            .logo-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 1.4rem;
-            }
+        .chat-panel.minimized { width: auto; cursor: pointer; max-height: 60px; }
+        .chat-panel.minimized .chat-header { border-radius: 20px; }
+        .chat-panel.minimized .staff-list, .chat-panel.minimized .chat-messages, 
+        .chat-panel.minimized .chat-input-area, .chat-panel.minimized .staff-list-title, 
+        .chat-panel.minimized .typing-indicator, .chat-panel.minimized .delete-all-btn { display: none; }
+        
+        .chat-header { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 18px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+        .chat-header i { font-size: 1.2rem; }
+        .chat-header h3 { font-size: 0.95rem; font-weight: 600; flex: 1; }
+        .chat-badge { background: #ff4757; color: white; border-radius: 40px; padding: 3px 10px; font-size: 10px; font-weight: bold; }
+        .minimize-icon { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+        
+        .staff-list-title { font-size: 10px; color: #0f5c7a; padding: 10px 14px 4px; font-weight: 600; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
+        .staff-list { background: #f8fbfe; padding: 8px 12px; max-height: 200px; overflow-y: auto; border-bottom: 1px solid #e2eaf0; }
+        .staff-tab { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 5px 0; border-radius: 14px; cursor: pointer; background: white; border: 1px solid #e2eaf0; transition: all 0.2s; }
+        .staff-tab.active-staff { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; }
+        .staff-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0f5c7a; font-weight: bold; font-size: 16px; }
+        .active-staff .staff-avatar { background: rgba(255,255,255,0.25); color: white; }
+        .staff-info { flex: 1; }
+        .staff-name { font-weight: 700; font-size: 13px; color: #0a2f44; }
+        .staff-role { font-size: 10px; color: #5f7f9a; margin-top: 2px; }
+        .online-indicator { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #4caf50; background: #e8f5e9; padding: 3px 8px; border-radius: 20px; }
+        
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #fefefe; display: flex; flex-direction: column; gap: 12px; max-height: 350px; min-height: 300px; }
+        .message { display: flex; flex-direction: column; max-width: 88%; animation: slideIn 0.2s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .message.doctor { align-self: flex-end; }
+        .message.reception { align-self: flex-start; }
+        .message-bubble { padding: 8px 14px; border-radius: 18px; font-size: 12px; line-height: 1.4; word-break: break-word; }
+        .message.doctor .message-bubble { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; border-bottom-right-radius: 4px; }
+        .message.reception .message-bubble { background: #eef2f7; color: #1a2c3e; border-bottom-left-radius: 4px; }
+        .message-meta { font-size: 9px; margin-top: 4px; padding: 0 6px; color: #8ba0b0; display: flex; justify-content: space-between; align-items: center; }
+        .delete-msg { font-size: 9px; color: #ff4757; cursor: pointer; margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
+        .message:hover .delete-msg { opacity: 1; }
+        
+        .typing-indicator { font-size: 10px; color: #0f5c7a; padding: 8px 16px; font-style: italic; background: #f8fbfe; border-top: 1px solid #e2eaf0; }
+        .chat-input-area { padding: 12px; background: white; border-top: 1px solid #e2eaf0; display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; border: 1.5px solid #e2eaf0; border-radius: 30px; padding: 10px 16px; font-size: 12px; outline: none; }
+        .chat-input-area input:focus { border-color: #0f5c7a; }
+        .chat-input-area button { background: #0f5c7a; border: none; color: white; padding: 0 20px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 12px; }
+        .chat-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .delete-all-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin: 8px 12px; }
+        
+        .online-dot-chat { width: 6px; height: 6px; border-radius: 50%; background-color: #4caf50; display: inline-block; animation: pulseOnline 1.5s infinite; }
+        @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+        
+        @media (max-width: 700px) { 
+            .chat-panel { width: 320px; right: 16px; bottom: 16px; } 
+            .tab-btn { padding: 8px 12px; font-size: 11px; } 
         }
         @media (max-width: 480px) {
-            .chat-panel {
-                width: 280px;
-                right: 5px;
-                bottom: 5px;
-            }
+            .chat-panel { width: 280px; right: 10px; bottom: 10px; }
         }
     </style>
 </head>
 <body>
+<div class="clinic-header">
+    <div class="logo"><h2>👨‍⚕️ Hope Dental · Doctor's Portal</h2></div>
+    <div class="doctor-info">
+        <span id="doctorName">Loading...</span>
+        <span id="doctorSpeciality"></span>
+        <span id="onlineStatusBadge" class="online-status">🟢 Online</span>
+        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
 <div class="dashboard-container">
-    <div class="header">
-        <div class="logo-area">
-            <div class="logo-icon">
-                <img src="hope1.png" alt="Hope Dental Logo" style="height:80px; vertical-align:middle; margin-right:10px;">
-            </div>
-            <h1>Hope Dental Clinic</h1>
+    <div class="appointments-panel">
+        <div class="panel-header"><h3>📋 Patient Encounters</h3></div>
+        <div class="list-tabs">
+            <button class="list-tab active-list" data-list="appointments">📅 Appointments (Upcoming)</button>
+            <button class="list-tab" data-list="memos">📜 History</button>
+            <button class="list-tab" data-list="patients">🔍 Search Patient</button>
         </div>
-        <div class="user-info-card">
-            <div class="user-name" id="userName">Loading...</div>
-            <div class="user-role" id="userRole"></div>
-            <button class="logout-btn" id="logoutBtn">🚪 Sign Out</button>
-        </div>
-    </div>
-
-    <div class="main-layout">
-        <div class="content-area">
-            <div class="welcome-section">
-                <h2 id="welcomeMessage">Welcome to Hope Dental Reception</h2>
-                <p style="font-size: 11px; margin-top: 6px;">Manage patient check-ins, appointments, and communicate with doctors on duty.</p>
-                <div style="margin-top: 8px; font-size: 11px; color: #008b8b;">
-                    <i class="fas fa-comment-dots"></i> 
-                    <span id="onlineStaffCount">0</span> doctors on duty
-                    <span id="totalUnreadSpan" style="margin-left: 10px; background: #ff6b6b; padding: 2px 6px; border-radius: 20px; display: none; font-size: 9px; color:white;">0 unread</span>
-                </div>
-            </div>
-
-            <div class="quick-access">
-                <div class="quick-card" onclick="window.location.href='memo-create.html'">
-                    <div class="quick-icon">📝</div>
-                    <div class="quick-label">Create Memo</div>
-                </div>
-                <div class="quick-card" onclick="window.location.href='appointment.html'">
-                    <div class="quick-icon">📅</div>
-                    <div class="quick-label">Appointment</div>
-                </div>
-                <div class="quick-card" onclick="window.location.href='patient.html'">
-                    <div class="quick-icon">👤</div>
-                    <div class="quick-label">New Patient</div>
-                </div>
-                <div class="quick-card" onclick="window.location.href='reports.html'">
-                    <div class="quick-icon">📊</div>
-                    <div class="quick-label">Reports</div>
-                </div>
-                <div class="quick-card" onclick="window.location.href='adminclinic.html'">
-                    <div class="quick-icon">⚙️</div>
-                    <div class="quick-label">Admin</div>
-                </div>
-                <div class="quick-card" onclick="window.location.href='memolist.html'">
-                    <div class="quick-icon">📋</div>
-                    <div class="quick-label">Memo</div>
-                </div>
-                <div class="quick-card" onclick="window.location.href='memoedit.html'">
-                    <div class="quick-icon">✏️</div>
-                    <div class="quick-label">MemoEdit</div>
-                </div>
-                <div class="quick-card" onclick="window.location.href='docduty.html'">
-                    <div class="quick-icon">👨‍⚕️</div>
-                    <div class="quick-label">Doctor Duty</div>
-                </div>
-                <!-- Test Doctor Button -->
-                <div class="quick-card" id="addTestDoctorBtn" style="background: #fef9e7; border: 2px dashed #f39c12;">
-                    <div class="quick-icon">🧪</div>
-                    <div class="quick-label">Add Test Doctor</div>
-                </div>
-            </div>
-
-            <div class="doctors-section">
-                <h3><i class="fas fa-user-md"></i> Doctors on Duty <span id="onlineCountSpan" style="font-size: 11px; color: #2ecc71;"></span></h3>
-                <div id="doctorsList">
-                    <div style="color:#8ba0b0; text-align:center; padding:15px;"><i class="fas fa-spinner fa-pulse"></i> Loading doctors...</div>
-                </div>
+        <div class="appointments-list active-list" id="appointmentsList"><div class="empty-list">Loading appointments...</div></div>
+        <div class="memos-list" id="memosList"><div class="empty-list">Loading consultation history...</div></div>
+        <div class="patients-list" id="patientsList">
+            <div class="patient-search-area">
+                <input type="text" id="patientSearchInput" class="patient-search-input" placeholder="Search by name or ID...">
+                <div id="patientSuggestions" class="patient-suggestions"></div>
             </div>
         </div>
     </div>
 
-    <div class="footer">
-        <p>© 2025 Hope Dental Clinic | <span class="online-dot"></span> Doctors on duty are online and available for chat</p>
+    <div class="detail-panel">
+        <div style="padding: 20px 20px 0 20px;">
+            <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Quick Actions</h3>
+        </div>
+        <div id="patientInfoContainer">
+            <div class="patient-info-card" style="margin: 12px 20px;">
+                <div style="text-align: center; padding: 20px; color: #8ba0b0;">
+                    <i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i>
+                    <p style="margin-top: 10px;">Select a patient from the left panel</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="quick-actions" id="quickActions">
+            <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-user"></i>
+                <h4>Patient Info</h4>
+                <p>View and edit patient details</p>
+            </a>
+            <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-notes-medical"></i>
+                <h4>Medical History</h4>
+                <p>View and add medical records</p>
+            </a>
+            <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-stethoscope"></i>
+                <h4>Diagnosis & Treatment</h4>
+                <p>Add diagnosis and treatment plans</p>
+            </a>
+            <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-prescription"></i>
+                <h4>Prescriptions</h4>
+                <p>Issue and manage prescriptions</p>
+            </a>
+            <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate" style="pointer-events: none; opacity: 0.5;">
+                <i class="fas fa-file-medical-alt"></i>
+                <h4>Medical Certificate</h4>
+                <p>Issue medical certificates</p>
+            </a>
+        </div>
     </div>
 </div>
 
@@ -697,506 +299,288 @@
 <div class="chat-panel minimized" id="chatPanel">
     <div class="chat-header" id="chatHeader">
         <i class="fas fa-comment-dots"></i>
-        <h3>Chat with Doctors <span id="minimizedOnlineCount"></span></h3>
+        <h3>Chat with Reception <span id="minimizedOnlineCount"></span></h3>
         <div class="chat-badge" id="onlineCountBadge">0</div>
         <div class="minimize-icon" id="minimizeBtn"><i class="fas fa-plus"></i></div>
     </div>
-    <div class="staff-list-title"><i class="fas fa-users"></i> Doctors on Duty</div>
-    <div class="staff-list" id="staffList"><div class="empty-online">Loading...</div></div>
-    <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select a doctor to chat</div></div>
-    <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Doctor is typing...</div>
+    <div class="staff-list-title"><i class="fas fa-users"></i> Reception Staff Online</div>
+    <div class="staff-list" id="staffList"><div class="empty-list">Loading...</div></div>
+    <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select reception to chat</div></div>
+    <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Reception is typing...</div>
     <button class="delete-all-btn" id="deleteAllBtn" style="display:none;">🗑️ Delete All Messages</button>
     <div class="chat-input-area">
-        <input type="text" id="chatInput" placeholder="Select a doctor..." disabled>
+        <input type="text" id="chatInput" placeholder="Select reception..." disabled>
         <button id="sendChatBtn" disabled><i class="fas fa-paper-plane"></i> Send</button>
     </div>
 </div>
 
 <script>
     (function() {
-        // ========== AUTH & SESSION ==========
-        var loggedInUser = localStorage.getItem('loggedInUser');
-        if (!loggedInUser) {
-            window.location.href = 'login.html';
+        // ========== DOCTOR SESSION & AUTH ==========
+        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+        if (!doctorSession) { 
+            window.location.href = 'login.html'; 
             return;
         }
-        var user = JSON.parse(loggedInUser);
-        
-        var currentUser = {
-            id: user.username,
-            name: user.name,
-            role: user.level || "Receptionist",
-            type: "reception"
-        };
-
-        document.getElementById('userName').textContent = currentUser.name;
-        document.getElementById('userRole').textContent = currentUser.role + " | Reception";
-        
-        var hour = new Date().getHours();
-        var greeting = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening");
-        document.getElementById('welcomeMessage').textContent = greeting + ", " + currentUser.name + "!";
-
-        var firestoreDB = null;
-        var realtimeDB = null;
-        var onlineListenerRef = null;
-        var chatListener = null;
-        var selectedStaff = null;
-        var onlineDoctorsList = [];
-        var onlineUsersData = {};
-        var unreadCounts = {};
-        var chatMessagesCache = {};
-        var heartbeatInterval = null;
-        var allChatListeners = {};
-        var shownNotifications = new Set();
-
-        // ========== HELPER FUNCTIONS ==========
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
+        var currentDoctor = null;
+        try { 
+            currentDoctor = JSON.parse(doctorSession); 
+        } catch(e) { 
+            window.location.href = 'login.html'; 
+            return;
+        }
+        if (!currentDoctor || !currentDoctor.id) { 
+            window.location.href = 'login.html'; 
+            return;
         }
 
-        // ========== HEARTBEAT ==========
+        var currentUser = {
+            id: currentDoctor.id,
+            name: currentDoctor.name,
+            role: "Doctor",
+            speciality: currentDoctor.speciality || "Dental Surgeon",
+            type: "doctor"
+        };
+        document.getElementById('doctorName').textContent = currentUser.name;
+        document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
+
+        var firestoreDB = null, realtimeDB = null;
+        var appointments = [], memosList = [], patientsList = [];
+        var selectedAppointment = null, selectedMemo = null, selectedPatient = null;
+
+        // ========== CHAT VARIABLES ==========
+        var selectedStaff = null;
+        var onlineListener = null;
+        var currentChatListener = null;
+        var onlineStaffData = [];
+        var heartbeatInterval = null;
+
+        // ========== HELPER FUNCTIONS ==========
+        function escapeHtml(str) { 
+            if (!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m) { 
+                if (m === '&') return '&amp;'; 
+                if (m === '<') return '&lt;'; 
+                if (m === '>') return '&gt;'; 
+                return m; 
+            }); 
+        }
+        
+        function calculateAge(dob) { 
+            if (!dob) return 'N/A'; 
+            var birthDate = new Date(dob); 
+            if (isNaN(birthDate.getTime())) return 'Invalid'; 
+            var today = new Date(); 
+            var age = today.getFullYear() - birthDate.getFullYear(); 
+            var m = today.getMonth() - birthDate.getMonth(); 
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; 
+            return age; 
+        }
+        
+        function isTodayOrFuture(dateStr) {
+            if (!dateStr) return false;
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            var aptDate = new Date(dateStr);
+            if (isNaN(aptDate.getTime())) return false;
+            aptDate.setHours(0, 0, 0, 0);
+            return aptDate >= today;
+        }
+
+        // ========== GET ID/PASSPORT DISPLAY ==========
+        function getDisplayId(patient) {
+            if (!patient) return 'N/A';
+            if (patient.idNumber && patient.idNumber.trim() !== '') {
+                return patient.idNumber;
+            }
+            if (patient.passportNumber && patient.passportNumber.trim() !== '') {
+                return patient.passportNumber;
+            }
+            if (patient.nationalId && patient.nationalId.trim() !== '') {
+                return patient.nationalId;
+            }
+            return 'N/A';
+        }
+
+        // ========== CHAT FUNCTIONS ==========
+        function getChatId(u1, u2) {
+            var sorted = [u1, u2].sort();
+            return 'chat_' + sorted[0] + '_' + sorted[1];
+        }
+
+        async function setDoctorOnline() {
+            if(!realtimeDB) return;
+            try {
+                await realtimeDB.ref('online_users/' + currentUser.id).set({
+                    username: currentUser.id,
+                    name: currentUser.name,
+                    Level: "Doctor",
+                    status: "online",
+                    type: "doctor",
+                    loginTime: firebase.database.ServerValue.TIMESTAMP,
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                });
+                document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
+            } catch(e) { console.warn(e); }
+        }
+
         function startHeartbeat() {
-            if (!realtimeDB) return;
+            if(!realtimeDB) return;
             heartbeatInterval = setInterval(function() {
-                if (realtimeDB && currentUser.id) {
+                if(realtimeDB && currentUser.id) {
                     realtimeDB.ref('online_users/' + currentUser.id).update({
                         lastSeen: firebase.database.ServerValue.TIMESTAMP
                     });
                 }
             }, 20000);
         }
-        
+
         function stopHeartbeat() {
-            if (heartbeatInterval) {
-                clearInterval(heartbeatInterval);
-                heartbeatInterval = null;
+            if(heartbeatInterval) clearInterval(heartbeatInterval);
+        }
+
+        function listenOnlineReception() {
+            if(!realtimeDB) return;
+            if(onlineListener) {
+                onlineListener.off();
+                onlineListener = null;
             }
-        }
-
-        // ========== UNREAD COUNT ==========
-        function updateTotalUnreadDisplay() {
-            var totalUnread = 0;
-            for (var key in unreadCounts) {
-                if (unreadCounts.hasOwnProperty(key)) {
-                    totalUnread += unreadCounts[key];
-                }
-            }
-            var totalUnreadSpan = document.getElementById('totalUnreadSpan');
-            if (totalUnread > 0) {
-                totalUnreadSpan.style.display = 'inline-block';
-                totalUnreadSpan.innerHTML = totalUnread + ' unread';
-            } else {
-                totalUnreadSpan.style.display = 'none';
-            }
-            
-            var chatBadge = document.getElementById('onlineCountBadge');
-            var chatPanel = document.getElementById('chatPanel');
-            if (chatBadge) {
-                if (totalUnread > 0 && chatPanel.classList.contains('minimized')) {
-                    chatBadge.innerHTML = onlineDoctorsList.length + ' (' + totalUnread + ')';
-                } else {
-                    chatBadge.innerHTML = onlineDoctorsList.length + ' online';
-                }
-            }
-        }
-
-        // ========== NOTIFICATIONS ==========
-        function playNotificationSound() {
-            try {
-                var audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-                audio.volume = 0.2;
-                audio.play().catch(function() {});
-            } catch(e) {}
-        }
-
-        function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
-            var notificationKey = senderId + '_' + messageId;
-            if (shownNotifications.has(notificationKey)) return;
-            
-            if (!selectedStaff || selectedStaff.userId !== senderId) {
-                unreadCounts[senderId] = (unreadCounts[senderId] || 0) + 1;
-                updateTotalUnreadDisplay();
-                renderDoctorsList();
-                renderStaffList();
-                shownNotifications.add(notificationKey);
-                
-                var toast = document.createElement('div');
-                toast.className = 'notification-toast';
-                var timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                
-                toast.innerHTML = '<div><i class="fas fa-comment-dots"></i></div>' +
-                    '<div style="flex:1;"><strong>' + escapeHtml(senderName) + '</strong><br>' +
-                    '<small>' + escapeHtml(message.substring(0, 60)) + (message.length > 60 ? '...' : '') + '</small>' +
-                    '<div style="font-size: 8px; opacity: 0.7;">' + timeStr + '</div></div>' +
-                    '<span class="close-toast">×</span>';
-                
-                toast.addEventListener('click', function(e) {
-                    if (!e.target.classList.contains('close-toast')) {
-                        var staff = null;
-                        for (var i = 0; i < onlineDoctorsList.length; i++) {
-                            if (onlineDoctorsList[i].userId === senderId) {
-                                staff = onlineDoctorsList[i];
-                                break;
-                            }
-                        }
-                        if (staff) {
-                            selectStaffForChat(staff);
-                            if (chatPanel.classList.contains('minimized')) toggleChatPanel();
-                        }
-                        toast.remove();
-                    }
-                });
-                toast.querySelector('.close-toast').addEventListener('click', function() { toast.remove(); });
-                document.body.appendChild(toast);
-                playNotificationSound();
-                
-                var originalTitle = document.title;
-                document.title = '📩 New message from ' + senderName;
-                setTimeout(function() { document.title = originalTitle; }, 3000);
-                setTimeout(function() { if (toast.parentElement) toast.remove(); }, 5000);
-            }
-        }
-
-        // ========== MARK MESSAGE AS READ ==========
-        async function markMessageAsRead(chatId, messageId) {
-            if (!realtimeDB) return;
-            try {
-                await realtimeDB.ref('chats/' + chatId + '/messages/' + messageId).update({ 
-                    read: true, 
-                    readAt: firebase.database.ServerValue.TIMESTAMP 
-                });
-            } catch(e) {}
-        }
-
-        // ========== LISTEN TO CHAT ==========
-        function listenToChat(staffId, onMessagesUpdate) {
-            if (!realtimeDB) return null;
-            var chatUsers = [currentUser.id, staffId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
-            var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
-            
-            var listener = messagesRef.on('value', function(snapshot) {
-                var messages = [];
-                snapshot.forEach(function(child) {
-                    messages.push({ id: child.key, ...child.val() });
-                });
-                messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
-                chatMessagesCache[staffId] = messages;
-                if (onMessagesUpdate) onMessagesUpdate(messages);
-                
-                if (selectedStaff && selectedStaff.userId === staffId) {
-                    var unreadMessages = [];
-                    for (var i = 0; i < messages.length; i++) {
-                        if (messages[i].sender === staffId && !messages[i].read) {
-                            unreadMessages.push(messages[i]);
-                        }
-                    }
-                    for (var j = 0; j < unreadMessages.length; j++) {
-                        markMessageAsRead(chatId, unreadMessages[j].id);
-                        if (unreadCounts[staffId]) unreadCounts[staffId] = Math.max(0, unreadCounts[staffId] - 1);
-                    }
-                    if (unreadMessages.length > 0) {
-                        updateTotalUnreadDisplay();
-                        renderDoctorsList();
-                        renderStaffList();
-                    }
-                } else {
-                    var unreadCount = 0;
-                    for (var k = 0; k < messages.length; k++) {
-                        if (messages[k].sender === staffId && !messages[k].read) {
-                            unreadCount++;
-                        }
-                    }
-                    if (unreadCount !== (unreadCounts[staffId] || 0)) {
-                        unreadCounts[staffId] = unreadCount;
-                        updateTotalUnreadDisplay();
-                        renderDoctorsList();
-                        renderStaffList();
-                    }
-                }
-            });
-            return function() { messagesRef.off('value', listener); };
-        }
-        
-        function setupAllChatListeners() {
-            if (!realtimeDB) return;
-            for (var i = 0; i < onlineDoctorsList.length; i++) {
-                var doctor = onlineDoctorsList[i];
-                if (!allChatListeners[doctor.userId]) {
-                    allChatListeners[doctor.userId] = listenToChat(doctor.userId, function(messages) {
-                        var lastMessage = messages[messages.length - 1];
-                        if (lastMessage && lastMessage.sender !== currentUser.id && !lastMessage.read) {
-                            var notificationKey = doctor.userId + '_' + lastMessage.id;
-                            if (!shownNotifications.has(notificationKey)) {
-                                showMessageNotification(doctor.name, lastMessage.text, doctor.userId, lastMessage.timestamp, lastMessage.id);
-                            }
-                            if (selectedStaff && selectedStaff.userId === doctor.userId) renderChatMessages(messages);
-                        } else if (selectedStaff && selectedStaff.userId === doctor.userId) {
-                            renderChatMessages(messages);
-                        }
-                    });
-                }
-            }
-        }
-
-        // ========== CHAT UI CONTROLS ==========
-        var chatPanel = document.getElementById('chatPanel');
-        var minimizeBtn = document.getElementById('minimizeBtn');
-        var chatHeader = document.getElementById('chatHeader');
-        
-        function toggleChatPanel() {
-            chatPanel.classList.toggle('minimized');
-            minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
-            if (!chatPanel.classList.contains('minimized') && selectedStaff) {
-                setTimeout(function() {
-                    var container = document.getElementById('chatMessages');
-                    if (container) container.scrollTop = container.scrollHeight;
-                }, 100);
-            }
-        }
-        
-        if (minimizeBtn) {
-            minimizeBtn.addEventListener('click', function(e) { e.stopPropagation(); toggleChatPanel(); });
-        }
-        if (chatHeader) {
-            chatHeader.addEventListener('click', function(e) {
-                if (e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) {
-                    toggleChatPanel();
-                }
-            });
-        }
-
-        // ========== SET USER ONLINE ==========
-        async function setUserOnline() {
-            if (!realtimeDB) return;
-            await realtimeDB.ref('online_users/' + currentUser.id).set({
-                username: currentUser.id,
-                name: currentUser.name,
-                Level: currentUser.role,
-                status: "online",
-                type: "reception",
-                loginTime: firebase.database.ServerValue.TIMESTAMP,
-                lastSeen: firebase.database.ServerValue.TIMESTAMP
-            });
-        }
-        
-        async function deleteUserFromOnline() {
-            if (!realtimeDB) return;
-            try { await realtimeDB.ref('online_users/' + currentUser.id).remove(); } catch(e) {}
-        }
-
-        // ========== LOAD ONLINE DOCTORS ==========
-        async function loadOnlineDoctors() {
-            if (!firestoreDB || !realtimeDB) return;
-            
-            var allDoctorsFromFirestore = [];
-            try {
-                var snapshot = await firestoreDB.collection("doctors").get();
-                snapshot.forEach(function(doc) {
-                    var data = doc.data();
-                    allDoctorsFromFirestore.push({
-                        userId: data.username || data.id || doc.id,
-                        name: data.name,
-                        role: "Doctor",
-                        department: data.speciality || "Medical"
-                    });
-                });
-            } catch(e) {}
-            
-            if (onlineListenerRef) { onlineListenerRef.off(); onlineListenerRef = null; }
-            
-            onlineListenerRef = realtimeDB.ref('online_users');
-            onlineListenerRef.on('value', function(snapshot) {
-                onlineUsersData = {};
+            onlineListener = realtimeDB.ref('online_users');
+            onlineListener.on('value', function(snapshot) {
+                onlineStaffData = [];
                 var users = snapshot.val();
-                if (users) {
+                if(users) {
                     var keys = Object.keys(users);
-                    for (var i = 0; i < keys.length; i++) {
+                    for(var i = 0; i < keys.length; i++) {
                         var username = keys[i];
                         var data = users[username];
-                        var isDoctor = data.Level && data.Level.toLowerCase() === 'doctor';
-                        var isOnline = data.status === 'online';
-                        if (isDoctor && isOnline && username !== currentUser.id) {
-                            onlineUsersData[username] = { userId: username, name: data.name || username };
+                        var isReception = data.Level && (data.Level.toLowerCase() === 'supervisor' || data.Level.toLowerCase() === 'receptionist');
+                        if(isReception && data.status === 'online' && username !== currentUser.id) {
+                            onlineStaffData.push({
+                                userId: username,
+                                name: data.name || username,
+                                role: data.Level,
+                                department: 'Reception Desk'
+                            });
                         }
                     }
                 }
-                
-                onlineDoctorsList = [];
-                var userIds = Object.keys(onlineUsersData);
-                for (var j = 0; j < userIds.length; j++) {
-                    var userId = userIds[j];
-                    var onlineData = onlineUsersData[userId];
-                    var firestoreDoctor = null;
-                    for (var k = 0; k < allDoctorsFromFirestore.length; k++) {
-                        if (allDoctorsFromFirestore[k].userId === userId) {
-                            firestoreDoctor = allDoctorsFromFirestore[k];
-                            break;
-                        }
-                    }
-                    onlineDoctorsList.push({
-                        userId: userId,
-                        name: firestoreDoctor ? firestoreDoctor.name : (onlineData.name || userId),
-                        role: "Doctor",
-                        department: firestoreDoctor ? firestoreDoctor.department : "Medical"
-                    });
-                }
-                
-                var onlineCount = onlineDoctorsList.length;
-                document.getElementById('onlineStaffCount').textContent = onlineCount;
-                document.getElementById('minimizedOnlineCount').innerHTML = onlineCount > 0 ? '(' + onlineCount + ')' : '';
-                document.getElementById('onlineCountSpan').innerHTML = '(' + onlineCount + ' online)';
-                renderDoctorsList();
-                renderStaffList();
-                setupAllChatListeners();
+                document.getElementById('onlineCountBadge').textContent = onlineStaffData.length;
+                document.getElementById('minimizedOnlineCount').innerHTML = onlineStaffData.length > 0 ? '(' + onlineStaffData.length + ')' : '';
+                renderOnlineStaffList();
             });
         }
-        
-        function renderDoctorsList() {
-            var container = document.getElementById('doctorsList');
-            if (!onlineDoctorsList.length) {
-                container.innerHTML = '<div style="color:#8ba0b0; text-align:center; padding:15px;"><i class="fas fa-user-clock"></i><br>No doctors on duty</div>';
-                return;
-            }
-            var html = '';
-            for (var i = 0; i < onlineDoctorsList.length; i++) {
-                var doc = onlineDoctorsList[i];
-                var unread = unreadCounts[doc.userId] || 0;
-                var unreadBadge = unread > 0 ? '<span class="unread-badge">' + unread + '</span>' : '';
-                html += '<div class="doctor-item" data-id="' + doc.userId + '">' +
-                    '<i class="fas fa-user-md" style="color: #008b8b; font-size: 14px;"></i>' +
-                    '<div style="flex:1;"><strong>' + escapeHtml(doc.name) + '</strong>' + unreadBadge +
-                    '<div class="doctor-status" style="color: #2ecc71;"><span class="online-dot"></span> On Duty • ' + escapeHtml(doc.department) + '</div></div>' +
-                    '<button onclick="selectDoctor(\'' + doc.userId + '\', \'' + escapeHtml(doc.name) + '\')" style="background:#008b8b; color:white; border:none; padding:4px 12px; border-radius:15px; cursor:pointer; font-size:9px;">Chat</button>' +
-                '</div>';
-            }
-            container.innerHTML = html;
-        }
-        
-        window.selectDoctor = function(userId, name) {
-            var staff = null;
-            for (var i = 0; i < onlineDoctorsList.length; i++) {
-                if (onlineDoctorsList[i].userId === userId) {
-                    staff = onlineDoctorsList[i];
-                    break;
-                }
-            }
-            if (staff) {
-                selectStaffForChat(staff);
-                if (chatPanel.classList.contains('minimized')) toggleChatPanel();
-            }
-        };
-        
-        function renderStaffList() {
+
+        function renderOnlineStaffList() {
             var container = document.getElementById('staffList');
-            if (!onlineDoctorsList.length) {
-                container.innerHTML = '<div class="empty-online"><i class="fas fa-user-clock"></i><br>No doctors on duty</div>';
+            if(!onlineStaffData.length) {
+                container.innerHTML = '<div class="empty-list">No reception staff online</div>';
                 return;
             }
             var html = '';
-            for (var i = 0; i < onlineDoctorsList.length; i++) {
-                var staff = onlineDoctorsList[i];
-                var unread = unreadCounts[staff.userId] || 0;
-                var unreadBadge = unread > 0 ? '<span style="background:#ff6b6b; color:white; border-radius:20px; padding:2px 6px; font-size:8px; margin-left:5px;">' + unread + '</span>' : '';
+            for(var i = 0; i < onlineStaffData.length; i++) {
+                var staff = onlineStaffData[i];
                 html += '<div class="staff-tab" data-id="' + staff.userId + '" data-name="' + escapeHtml(staff.name) + '">' +
                     '<div class="staff-avatar">' + staff.name.charAt(0).toUpperCase() + '</div>' +
-                    '<div class="staff-info"><div class="staff-name">' + escapeHtml(staff.name) + unreadBadge + '</div>' +
-                    '<div class="staff-role">' + escapeHtml(staff.department) + '</div></div>' +
-                    '<div class="online-indicator"><i class="fas fa-circle" style="font-size: 5px;"></i> On Duty</div>' +
+                    '<div class="staff-info">' +
+                        '<div class="staff-name">' + escapeHtml(staff.name) + '</div>' +
+                        '<div class="staff-role">' + escapeHtml(staff.role) + '</div>' +
+                    '</div>' +
+                    '<div class="online-indicator"><span class="online-dot-chat"></span> Online</div>' +
                 '</div>';
             }
             container.innerHTML = html;
+            
             var tabs = container.querySelectorAll('.staff-tab');
-            for (var j = 0; j < tabs.length; j++) {
+            for(var j = 0; j < tabs.length; j++) {
                 tabs[j].addEventListener('click', function() {
                     var allTabs = document.querySelectorAll('.staff-tab');
-                    for (var k = 0; k < allTabs.length; k++) {
+                    for(var k = 0; k < allTabs.length; k++) {
                         allTabs[k].classList.remove('active-staff');
                     }
                     this.classList.add('active-staff');
                     var staffId = this.dataset.id;
                     var staff = null;
-                    for (var l = 0; l < onlineDoctorsList.length; l++) {
-                        if (onlineDoctorsList[l].userId === staffId) {
-                            staff = onlineDoctorsList[l];
+                    for(var l = 0; l < onlineStaffData.length; l++) {
+                        if(onlineStaffData[l].userId === staffId) {
+                            staff = onlineStaffData[l];
                             break;
                         }
                     }
-                    if (staff) selectStaffForChat(staff);
+                    if(staff) selectStaffForChat(staff);
                 });
             }
         }
-        
+
         function selectStaffForChat(staff) {
             selectedStaff = staff;
             document.getElementById('chatInput').disabled = false;
             document.getElementById('sendChatBtn').disabled = false;
-            document.getElementById('chatInput').placeholder = 'Message Dr. ' + staff.name + '...';
+            document.getElementById('chatInput').placeholder = 'Message ' + staff.name + '...';
             document.getElementById('deleteAllBtn').style.display = 'block';
             
-            if (unreadCounts[staff.userId]) {
-                delete unreadCounts[staff.userId];
-                updateTotalUnreadDisplay();
-                renderDoctorsList();
-                renderStaffList();
+            // Remove any existing listener
+            if (currentChatListener) {
+                try {
+                    if (typeof currentChatListener === 'function') {
+                        currentChatListener();
+                    } else if (currentChatListener.off) {
+                        currentChatListener.off();
+                    }
+                } catch(e) {
+                    console.warn('Error removing chat listener:', e);
+                }
+                currentChatListener = null;
             }
             
-            if (chatListener) {
-                if (typeof chatListener === 'function') chatListener();
-                else if (chatListener.off) chatListener.off();
-                chatListener = null;
-            }
-            if (!realtimeDB) return;
+            if (!realtimeDB || !staff) return;
             
-            var chatUsers = [currentUser.id, staff.userId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            var chatId = getChatId(currentUser.id, staff.userId);
             var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
             
-            chatListener = messagesRef.on('value', function(snapshot) {
+            // Store the listener reference properly
+            currentChatListener = messagesRef;
+            currentChatListener.on('value', function(snapshot) {
                 var messages = [];
                 snapshot.forEach(function(child) {
                     messages.push({ id: child.key, ...child.val() });
                 });
                 messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
-                chatMessagesCache[staff.userId] = messages;
                 renderChatMessages(messages);
-                var unreadMessages = [];
+                
+                // Mark messages as read
                 for (var i = 0; i < messages.length; i++) {
                     if (messages[i].sender === staff.userId && !messages[i].read) {
-                        unreadMessages.push(messages[i]);
+                        markMessageAsRead(chatId, messages[i].id);
                     }
-                }
-                for (var j = 0; j < unreadMessages.length; j++) {
-                    markMessageAsRead(chatId, unreadMessages[j].id);
-                    if (unreadCounts[staff.userId]) unreadCounts[staff.userId] = Math.max(0, unreadCounts[staff.userId] - 1);
-                }
-                if (unreadMessages.length > 0 && unreadCounts[staff.userId]) {
-                    delete unreadCounts[staff.userId];
-                    updateTotalUnreadDisplay();
-                    renderDoctorsList();
-                    renderStaffList();
                 }
             });
             
-            realtimeDB.ref('chats/' + chatId + '/typing').off();
-            realtimeDB.ref('chats/' + chatId + '/typing').on('value', function(snap) {
+            // Typing indicator
+            var typingRef = realtimeDB.ref('chats/' + chatId + '/typing');
+            typingRef.off();
+            typingRef.on('value', function(snap) {
                 var typing = snap.val();
                 var indicator = document.getElementById('typingIndicator');
                 if (typing === staff.userId) {
                     indicator.style.display = 'block';
-                    indicator.innerHTML = '<i class="fas fa-ellipsis-h"></i> Doctor is typing...';
+                    indicator.innerHTML = '<i class="fas fa-ellipsis-h"></i> Reception is typing...';
                 } else {
                     indicator.style.display = 'none';
                 }
             });
         }
         
+        function markMessageAsRead(chatId, messageId) {
+            if (!realtimeDB) return;
+            try {
+                realtimeDB.ref('chats/' + chatId + '/messages/' + messageId).update({
+                    read: true,
+                    readAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch(e) {}
+        }
+
         function renderChatMessages(messages) {
             var container = document.getElementById('chatMessages');
             if (!messages.length) {
@@ -1204,133 +588,446 @@
                 return;
             }
             var html = '';
-            for (var i = 0; i < messages.length; i++) {
+            for(var i = 0; i < messages.length; i++) {
                 var msg = messages[i];
-                var isCurrentUser = (msg.sender === currentUser.id);
-                var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-                var isRead = msg.read === true;
-                var statusIcon = isCurrentUser ? (msg.delivered ? (msg.read ? '✓✓' : '✓') : '○') : '';
-                var readClass = !isCurrentUser && isRead ? 'read' : '';
-                html += '<div class="message ' + (isCurrentUser ? 'reception' : 'staff') + ' ' + readClass + '" data-msg-id="' + msg.id + '">' +
+                var isDoctor = (msg.sender === currentUser.id);
+                var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+                html += '<div class="message ' + (isDoctor ? 'doctor' : 'reception') + '">' +
                     '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
-                    '<div class="message-meta"><span>' + (isCurrentUser ? 'You (Reception)' : 'Dr. ' + (selectedStaff ? selectedStaff.name : '')) + ' • ' + time + ' ' + statusIcon + '</span>' +
-                    '<span class="delete-msg" onclick="deleteMessage(\'' + msg.id + '\')">🗑️</span></div>' +
+                    '<div class="message-meta">' +
+                        '<span>' + (isDoctor ? 'You' : (selectedStaff ? selectedStaff.name : 'Reception')) + ' • ' + time + '</span>' +
+                        '<span class="delete-msg" onclick="window.deleteChatMessage(\'' + msg.id + '\')">🗑️</span>' +
+                    '</div>' +
                 '</div>';
             }
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
         }
-        
-        window.deleteMessage = async function(msgId) {
+
+        window.deleteChatMessage = async function(msgId) {
             if (!selectedStaff || !realtimeDB) return;
-            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            var chatId = getChatId(currentUser.id, selectedStaff.userId);
             await realtimeDB.ref('chats/' + chatId + '/messages/' + msgId).remove();
         };
-        
-        async function deleteAllMessages() {
-            if (!selectedStaff || !confirm('Delete all messages with this doctor?')) return;
-            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
-            await realtimeDB.ref('chats/' + chatId + '/messages').remove();
-            renderChatMessages([]);
-        }
-        
+
         async function sendMessage() {
             var input = document.getElementById('chatInput');
             var text = input.value.trim();
             if (!text || !selectedStaff || !realtimeDB) return;
-            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            var chatId = getChatId(currentUser.id, selectedStaff.userId);
             var newMsgRef = realtimeDB.ref('chats/' + chatId + '/messages').push();
             await newMsgRef.set({
                 id: newMsgRef.key,
                 sender: currentUser.id,
-                senderName: currentUser.name + ' (Reception)',
+                senderName: 'Dr. ' + currentUser.name,
                 text: text,
                 timestamp: Date.now(),
                 delivered: true,
                 read: false
             });
             input.value = "";
-            await realtimeDB.ref('chats/' + chatId + '/typing').remove();
+        }
+
+        // ========== CHAT UI CONTROLS ==========
+        var chatPanel = document.getElementById('chatPanel');
+        var minimizeBtn = document.getElementById('minimizeBtn');
+        
+        function toggleChatPanel() {
+            chatPanel.classList.toggle('minimized');
+            minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
         }
         
-        var typingTimeoutId;
-        document.getElementById('chatInput').addEventListener('input', function() {
-            if (!selectedStaff || !realtimeDB) return;
-            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
-            realtimeDB.ref('chats/' + chatId + '/typing').set(currentUser.id);
-            clearTimeout(typingTimeoutId);
-            typingTimeoutId = setTimeout(function() {
-                realtimeDB.ref('chats/' + chatId + '/typing').remove();
-            }, 1500);
+        minimizeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleChatPanel();
+        });
+        
+        document.getElementById('chatHeader').addEventListener('click', function(e) {
+            if(e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) {
+                toggleChatPanel();
+            }
         });
 
-        // ========== LOGOUT ==========
-        async function logout() {
-            stopHeartbeat();
-            if (onlineListenerRef) { onlineListenerRef.off(); onlineListenerRef = null; }
-            if (chatListener) {
-                if (typeof chatListener === 'function') chatListener();
-                else if (chatListener.off) chatListener.off();
-                chatListener = null;
-            }
-            for (var key in allChatListeners) {
-                if (allChatListeners.hasOwnProperty(key)) {
-                    if (allChatListeners[key] && typeof allChatListeners[key] === 'function') allChatListeners[key]();
-                    else if (allChatListeners[key] && allChatListeners[key].off) allChatListeners[key].off();
-                    delete allChatListeners[key];
-                }
-            }
-            await deleteUserFromOnline();
-            localStorage.removeItem('loggedInUser');
-            sessionStorage.removeItem('clinic_user_session');
-            window.location.href = 'login.html';
-        }
-        
-        document.getElementById('logoutBtn').addEventListener('click', logout);
         document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
-        document.getElementById('deleteAllBtn').addEventListener('click', deleteAllMessages);
         document.getElementById('chatInput').addEventListener('keypress', function(e) {
             if(e.key === 'Enter') sendMessage();
         });
 
-        // ========== ADD TEST DOCTOR ==========
-        document.getElementById('addTestDoctorBtn').addEventListener('click', async function() {
-            if (!realtimeDB) {
-                alert('Firebase not ready yet. Please wait.');
+        document.getElementById('deleteAllBtn').addEventListener('click', async function() {
+            if(selectedStaff && confirm('Delete all messages?')) {
+                var chatId = getChatId(currentUser.id, selectedStaff.userId);
+                await realtimeDB.ref('chats/' + chatId + '/messages').remove();
+                document.getElementById('chatMessages').innerHTML = '<div class="empty-chat">No messages yet</div>';
+                alert('All messages deleted.');
+            }
+        });
+
+        // ========== ENABLE/DISABLE QUICK ACTIONS ==========
+        function enableQuickActions() {
+            var buttons = document.querySelectorAll('.quick-action-card');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].style.pointerEvents = 'auto';
+                buttons[i].style.opacity = '1';
+            }
+        }
+
+        function disableQuickActions() {
+            var buttons = document.querySelectorAll('.quick-action-card');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].style.pointerEvents = 'none';
+                buttons[i].style.opacity = '0.5';
+            }
+        }
+
+        // ========== LOAD DATA ==========
+        async function loadMemos() { 
+            if (!firestoreDB) return; 
+            var snapshot = await firestoreDB.collection("memos").where("doctor.id", "==", currentUser.id).get(); 
+            memosList = []; 
+            snapshot.forEach(function(doc) { 
+                memosList.push({ id: doc.id, ...doc.data() }); 
+            }); 
+            memosList.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }); 
+            renderMemosList(); 
+        }
+        
+        function renderMemosList() { 
+            var container = document.getElementById('memosList'); 
+            if (!memosList.length) { 
+                container.innerHTML = '<div class="empty-list">No consultation history found.</div>'; 
+                return; 
+            } 
+            var html = ''; 
+            for (var i = 0; i < memosList.length; i++) { 
+                var memo = memosList[i]; 
+                var displayId = getDisplayId(memo.patient);
+                html += '<div class="memo-card" data-id="' + memo.id + '">' +
+                    '<div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) + '</div>' +
+                    '<div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div>' +
+                    '<div class="memo-details">🪪 ' + escapeHtml(displayId) + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs)</div>' +
+                '</div>'; 
+            } 
+            container.innerHTML = html; 
+            var cards = document.querySelectorAll('.memo-card'); 
+            for (var j = 0; j < cards.length; j++) { 
+                cards[j].addEventListener('click', function() { 
+                    var allCards = document.querySelectorAll('.memo-card, .appointment-card'); 
+                    for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); } 
+                    this.classList.add('selected'); 
+                    var memoId = this.dataset.id; 
+                    var memo = null; 
+                    for (var l = 0; l < memosList.length; l++) { 
+                        if (memosList[l].id === memoId) { memo = memosList[l]; break; } 
+                    } 
+                    if (memo) selectMemo(memo); 
+                }); 
+            } 
+        }
+        
+        async function selectMemo(memo) { 
+            selectedMemo = memo; 
+            selectedAppointment = null; 
+            var patient = null; 
+            for (var i = 0; i < patientsList.length; i++) { 
+                if (patientsList[i].id === memo.patient?.id) { patient = patientsList[i]; break; } 
+            } 
+            if (!patient) patient = memo.patient; 
+            selectedPatient = patient; 
+            if (selectedPatient) { 
+                savePatientSession(); 
+                displayPatientInfo(); 
+                enableQuickActions(); 
+            } 
+        }
+
+        async function loadPatients() { 
+            if (!firestoreDB) return; 
+            var snapshot = await firestoreDB.collection("patients").get(); 
+            patientsList = []; 
+            snapshot.forEach(function(doc) { 
+                patientsList.push({ id: doc.id, ...doc.data() }); 
+            }); 
+        }
+        
+        var searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
+        
+        function renderPatientSuggestions(filterText) { 
+            if (!filterText.trim()) { 
+                suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; 
+                return; 
+            } 
+            var lowerFilter = filterText.toLowerCase(); 
+            var filtered = []; 
+            for (var i = 0; i < patientsList.length; i++) { 
+                var p = patientsList[i]; 
+                var displayId = getDisplayId(p);
+                if ((p.name && p.name.toLowerCase().includes(lowerFilter)) || 
+                    (displayId && displayId.toLowerCase().includes(lowerFilter))) { 
+                    filtered.push(p); 
+                } 
+            } 
+            filtered = filtered.slice(0, 15); 
+            if (!filtered.length) { 
+                suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; 
+                return; 
+            } 
+            var html = ''; 
+            for (var j = 0; j < filtered.length; j++) { 
+                var p = filtered[j]; 
+                var displayId = getDisplayId(p);
+                html += '<div class="suggestion-item" data-id="' + p.id + '" data-name="' + escapeHtml(p.name) + '" data-phone="' + (p.phone || '') + '">' +
+                    '<strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">🪪 ' + escapeHtml(displayId) + '</span><br>' +
+                    '<small>📞 ' + (p.phone || 'N/A') + '</small>' +
+                '</div>'; 
+            } 
+            suggestionsDiv.innerHTML = html; 
+            var items = document.querySelectorAll('.suggestion-item'); 
+            for (var k = 0; k < items.length; k++) { 
+                items[k].addEventListener('click', function() { 
+                    var patientId = this.dataset.id; 
+                    var patient = null; 
+                    for (var l = 0; l < patientsList.length; l++) { 
+                        if (patientsList[l].id === patientId) { patient = patientsList[l]; break; } 
+                    } 
+                    if (patient) { 
+                        selectedPatient = patient; 
+                        selectedAppointment = null; 
+                        selectedMemo = null; 
+                        savePatientSession(); 
+                        displayPatientInfo(); 
+                        enableQuickActions(); 
+                        var displayId = getDisplayId(patient);
+                        searchInput.value = patient.name + ' (🪪 ' + displayId + ')'; 
+                        suggestionsDiv.innerHTML = ''; 
+                    } 
+                }); 
+            } 
+        }
+        
+        searchInput.addEventListener('input', function(e) { renderPatientSuggestions(e.target.value); });
+        
+        async function loadAppointments() { 
+            if (!firestoreDB) return; 
+            var snapshot = await firestoreDB.collection("appointments").where("doctorId", "==", currentUser.id).get(); 
+            var allAppointments = []; 
+            snapshot.forEach(function(doc) { allAppointments.push({ id: doc.id, ...doc.data() }); });
+            appointments = []; 
+            for (var i = 0; i < allAppointments.length; i++) { 
+                var apt = allAppointments[i]; 
+                if (!apt.completed && isTodayOrFuture(apt.date)) { 
+                    appointments.push(apt); 
+                } 
+            }
+            appointments.sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+            renderAppointments(); 
+        }
+        
+        function renderAppointments() { 
+            var container = document.getElementById('appointmentsList'); 
+            if (!appointments.length) { 
+                container.innerHTML = '<div class="empty-list">✨ No upcoming appointments. All caught up!</div>'; 
+                return; 
+            } 
+            var html = ''; 
+            for (var i = 0; i < appointments.length; i++) { 
+                var apt = appointments[i]; 
+                var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt.passportNumber, nationalId: apt.nationalId });
+                html += '<div class="appointment-card" data-id="' + apt.id + '">' +
+                    '<div class="appointment-time">📅 ' + (apt.date || 'N/A') + ' | ⏰ ' + (apt.time || 'N/A') + ' <span class="badge-upcoming">Upcoming</span></div>' +
+                    '<div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div>' +
+                    '<div class="appointment-details">🪪 ' + escapeHtml(displayId) + ' | 📞 ' + (apt.contact || 'N/A') + '</div>' +
+                '</div>'; 
+            } 
+            container.innerHTML = html; 
+            var cards = document.querySelectorAll('.appointment-card'); 
+            for (var j = 0; j < cards.length; j++) { 
+                cards[j].addEventListener('click', function() { 
+                    var allCards = document.querySelectorAll('.appointment-card, .memo-card'); 
+                    for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); } 
+                    this.classList.add('selected'); 
+                    var aptId = this.dataset.id; 
+                    var apt = null; 
+                    for (var l = 0; l < appointments.length; l++) { 
+                        if (appointments[l].id === aptId) { apt = appointments[l]; break; } 
+                    } 
+                    if (apt) selectAppointment(apt); 
+                }); 
+            } 
+        }
+
+        // ========== MARK APPOINTMENT ATTENDED ==========
+        async function markAppointmentAttended() { 
+            if (!selectedAppointment) { alert("No appointment selected."); return; } 
+            if (!firestoreDB) return; 
+            var patient = selectedPatient; 
+            if (!patient) { alert("Patient data not loaded."); return; } 
+            var memoData = { 
+                memoId: 'MEM-' + Date.now(), 
+                patient: { 
+                    id: patient.id, 
+                    name: patient.name, 
+                    phone: patient.phone, 
+                    dob: patient.dob, 
+                    insurance: patient.insurance,
+                    idNumber: patient.idNumber,
+                    passportNumber: patient.passportNumber,
+                    nationalId: patient.nationalId
+                }, 
+                doctor: { id: currentUser.id, name: currentUser.name }, 
+                date: new Date().toLocaleDateString(), 
+                timestamp: Date.now(), 
+                services: [], 
+                billing: { afterDiscount: 0, paid: 0, discount: { amount: 0 } }, 
+                insurance: patient.insurance || {}, 
+                createdAt: new Date().toISOString() 
+            }; 
+            await firestoreDB.collection("memos").add(memoData); 
+            await firestoreDB.collection("appointments").doc(selectedAppointment.id).update({ completed: true }); 
+            await loadAppointments(); 
+            await loadMemos(); 
+            selectedAppointment = null; 
+            selectedPatient = null; 
+            var cards = document.querySelectorAll('.appointment-card, .memo-card'); 
+            for (var i = 0; i < cards.length; i++) { cards[i].classList.remove('selected'); } 
+            document.getElementById('patientInfoContainer').innerHTML = '<div class="patient-info-card" style="margin:12px 20px;"><div style="text-align:center; padding:20px; color:#27ae60;"><i class="fas fa-check-circle" style="font-size:48px;"></i><p style="margin-top:10px;">Patient attended and moved to history.</p></div></div>'; 
+            disableQuickActions();
+            alert("Patient marked as attended. Appointment moved to history."); 
+        }
+
+        async function selectAppointment(apt) { 
+            selectedAppointment = apt; 
+            selectedMemo = null; 
+            var patient = null; 
+            for (var i = 0; i < patientsList.length; i++) { 
+                if (patientsList[i].id === apt.patientId) { patient = patientsList[i]; break; } 
+            } 
+            if (!patient && apt.patientId) patient = { 
+                id: apt.patientId, 
+                name: apt.patientName, 
+                phone: apt.contact,
+                idNumber: apt.idNumber,
+                passportNumber: apt.passportNumber,
+                nationalId: apt.nationalId
+            }; 
+            selectedPatient = patient; 
+            if (selectedPatient) { 
+                savePatientSession(); 
+                displayPatientInfo(); 
+                enableQuickActions();
+            } 
+        }
+
+        // ========== SAVE PATIENT SESSION ==========
+        function savePatientSession() {
+            if (selectedPatient) {
+                sessionStorage.setItem('selectedPatient', JSON.stringify(selectedPatient));
+                sessionStorage.setItem('selectedPatientId', selectedPatient.id);
+            }
+        }
+
+        // ========== DISPLAY PATIENT INFO ==========
+        function displayPatientInfo() {
+            var container = document.getElementById('patientInfoContainer');
+            if (!selectedPatient) {
+                container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div style="text-align: center; padding: 20px; color: #8ba0b0;"><i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i><p style="margin-top: 10px;">Select a patient from the left panel</p></div></div>';
                 return;
             }
             
-            var testDoctor = {
-                username: "dr_test",
-                name: "Dr. Test Doctor",
-                Level: "Doctor",
-                status: "online",
-                type: "doctor",
-                loginTime: Date.now(),
-                lastSeen: Date.now()
-            };
+            var dob = selectedPatient.dob || 'N/A';
+            var age = calculateAge(dob);
+            var insurance = selectedPatient.insurance || {};
+            var primaryIns = insurance.primaryName || 'None';
+            var displayId = getDisplayId(selectedPatient);
             
-            try {
-                await realtimeDB.ref('online_users/dr_test').set(testDoctor);
-                alert('✅ Test doctor added! Refresh the page to see them in the chat list.');
-                location.reload();
-            } catch(err) {
-                alert('❌ Error: ' + err.message);
+            var extraHtml = '';
+            if (selectedAppointment) {
+                extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;"><p><strong>📋 Current Visit:</strong> ' + (selectedAppointment.date || 'N/A') + ' at ' + (selectedAppointment.time || 'N/A') + '</p><button class="btn-complete" id="completeConsultationBtn"><i class="fas fa-check-circle"></i> Mark as Attended</button></div>';
+            } else if (selectedMemo) {
+                extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;"><p><strong>📋 Previous Consultation:</strong> ' + (selectedMemo.date || new Date(selectedMemo.timestamp).toLocaleString()) + '</p></div>';
             }
+            
+            container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div><div class="patient-meta"><span>🪪 ' + escapeHtml(displayId) + '</span><span>📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A') + '</span><span>🎂 ' + dob + ' (' + age + ' yrs)</span><span>🏥 ' + escapeHtml(primaryIns) + '</span></div>' + extraHtml + '</div>';
+            
+            if (selectedAppointment) {
+                var completeBtn = document.getElementById('completeConsultationBtn');
+                if (completeBtn) {
+                    completeBtn.addEventListener('click', markAppointmentAttended);
+                }
+            }
+        }
+
+        // ========== LOGOUT ==========
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            try { 
+                stopHeartbeat(); 
+                if (onlineListener) {
+                    onlineListener.off();
+                    onlineListener = null;
+                }
+                if (currentChatListener) {
+                    try {
+                        if (typeof currentChatListener === 'function') {
+                            currentChatListener();
+                        } else if (currentChatListener.off) {
+                            currentChatListener.off();
+                        }
+                    } catch(e) {}
+                    currentChatListener = null;
+                }
+                if (realtimeDB) await realtimeDB.ref('online_users/' + currentUser.id).remove(); 
+            } catch(e) { console.warn(e); }
+            sessionStorage.removeItem('doctorSession');
+            localStorage.removeItem('currentDoctor');
+            window.location.href = 'login.html';
         });
+
+        // ========== EVENT LISTENERS ==========
+        var tabs = document.querySelectorAll('.list-tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].addEventListener('click', function() {
+                var allTabs = document.querySelectorAll('.list-tab');
+                for (var j = 0; j < allTabs.length; j++) {
+                    allTabs[j].classList.remove('active-list');
+                }
+                var allLists = document.querySelectorAll('.appointments-list, .memos-list, .patients-list');
+                for (var k = 0; k < allLists.length; k++) {
+                    allLists[k].classList.remove('active-list');
+                }
+                this.classList.add('active-list');
+                var listId = this.dataset.list + 'List';
+                document.getElementById(listId).classList.add('active-list');
+                if (this.dataset.list === 'patients') {
+                    suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>';
+                    searchInput.value = '';
+                }
+            });
+        }
 
         // ========== INIT ==========
         async function init() {
             if (window.db) firestoreDB = window.db;
             if (window.rtdb) realtimeDB = window.rtdb;
             if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
-            await setUserOnline();
+            
+            await setDoctorOnline();
             startHeartbeat();
-            await loadOnlineDoctors();
+            await loadPatients();
+            await loadAppointments();
+            await loadMemos();
+            listenOnlineReception();
+            
+            var savedPatientId = sessionStorage.getItem('selectedPatientId');
+            if (savedPatientId) {
+                for (var i = 0; i < patientsList.length; i++) {
+                    if (patientsList[i].id === savedPatientId) {
+                        selectedPatient = patientsList[i];
+                        displayPatientInfo();
+                        enableQuickActions();
+                        break;
+                    }
+                }
+            }
+            
             if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
         }
         init();

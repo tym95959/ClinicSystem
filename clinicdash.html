@@ -261,22 +261,6 @@
             margin-top: 2px;
         }
 
-        .test-btn {
-            background: #f39c12;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 10px;
-            font-weight: 600;
-            transition: 0.2s;
-            margin-top: 8px;
-        }
-        .test-btn:hover {
-            background: #d68910;
-        }
-
         .footer {
             text-align: center;
             padding: 12px;
@@ -671,11 +655,6 @@
                 <div class="quick-card" onclick="window.location.href='docduty.html'">
                     <div class="quick-icon">👨‍⚕️</div>
                     <div class="quick-label">Doctor Duty</div>
-                </div>
-                <!-- Test Doctor Button -->
-                <div class="quick-card" id="addTestDoctorBtn" style="background: #fef9e7; border: 2px dashed #f39c12;">
-                    <div class="quick-icon">🧪</div>
-                    <div class="quick-label">Add Test Doctor</div>
                 </div>
             </div>
 
@@ -1295,32 +1274,6 @@
         document.getElementById('deleteAllBtn').addEventListener('click', deleteAllMessages);
         document.getElementById('chatInput').addEventListener('keypress', function(e) {
             if(e.key === 'Enter') sendMessage();
-        });
-
-        // ========== ADD TEST DOCTOR ==========
-        document.getElementById('addTestDoctorBtn').addEventListener('click', async function() {
-            if (!realtimeDB) {
-                alert('Firebase not ready yet. Please wait.');
-                return;
-            }
-            
-            var testDoctor = {
-                username: "dr_test",
-                name: "Dr. Test Doctor",
-                Level: "Doctor",
-                status: "online",
-                type: "doctor",
-                loginTime: Date.now(),
-                lastSeen: Date.now()
-            };
-            
-            try {
-                await realtimeDB.ref('online_users/dr_test').set(testDoctor);
-                alert('✅ Test doctor added! Refresh the page to see them in the chat list.');
-                location.reload();
-            } catch(err) {
-                alert('❌ Error: ' + err.message);
-            }
         });
 
         // ========== INIT ==========

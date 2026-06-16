@@ -54,6 +54,10 @@
             font-size: 11px;
         }
 
+        .back-btn:hover {
+            background: #2a5f89;
+        }
+
         .memo-container {
             max-width: 1200px;
             margin: 12px auto;
@@ -102,6 +106,12 @@
             border-radius: 14px;
             font-size: 12px;
             background: white;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
         }
 
         .selected-card {
@@ -223,6 +233,10 @@
             border-radius: 16px;
             cursor: pointer;
             font-size: 10px;
+        }
+
+        .remove-row:hover {
+            background: #ffc9c9;
         }
 
         .billing-highlight {
@@ -358,20 +372,13 @@
             font-size: 13px;
         }
 
+        .save-btn:hover {
+            background: #1a8045;
+        }
+
         .save-btn:disabled {
             background: #95a5a6;
             cursor: not-allowed;
-        }
-
-        .print-btn {
-            background: #0f5c7a;
-            color: white;
-            padding: 8px 24px;
-            border: none;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
         }
 
         .message {
@@ -409,18 +416,22 @@
             margin-left: 10px;
         }
 
-        .payment-method-badge {
-            display: inline-block;
+        .payment-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .completed-badge {
+            background: #28a745;
+            color: white;
             padding: 2px 10px;
             border-radius: 12px;
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 600;
             margin-left: 5px;
         }
-
-        .badge-cash { background: #28a745; color: white; }
-        .badge-card { background: #007bff; color: white; }
-        .badge-transfer { background: #6f42c1; color: white; }
 
         @media (max-width: 640px) {
             .form-grid {
@@ -445,6 +456,9 @@
             .action-buttons button {
                 width: 100%;
             }
+            .payment-summary-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -465,6 +479,7 @@
         <div class="section-title">
             📅 Select Appointment (Optional)
             <span id="appointmentBadge" class="appointment-badge" style="display: none;">Linked to Appointment</span>
+            <span id="completedBadge" class="completed-badge" style="display: none;">✅ Completed</span>
         </div>
         <div class="form-grid">
             <div class="input-group">
@@ -472,7 +487,7 @@
                 <select id="appointmentSelect">
                     <option value="">-- Load appointments --</option>
                 </select>
-                <small style="font-size: 9px; color: #6c757d;">Select an appointment to auto‑fill patient, doctor, and services. The appointment will be deleted after saving the memo.</small>
+                <small style="font-size: 9px; color: #6c757d;">Only future appointments shown. After memo is saved, appointment status will change to "Completed" but NOT deleted.</small>
             </div>
         </div>
     </div>
@@ -579,14 +594,14 @@
                             <option value="">-- Select Payment Method --</option>
                         </select>
                     </div>
-                    <div class="input-group" id="cashInputGroup" style="display: none;">
+                    <div class="input-group cash-input-group" id="cashInputGroup">
                         <label>💰 Cash Given Amount (MVR)</label>
                         <input type="number" id="cashGivenAmount" placeholder="Enter cash given" step="0.01" min="0" value="0">
                     </div>
                 </div>
                 
                 <!-- Payment Summary -->
-                <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="payment-summary-grid">
                     <div class="total-item">
                         <label>💳 Payment Method</label>
                         <div id="paymentMethodDisplay" style="font-size: 14px; font-weight: 600; color: #0a2f44;">Not Selected</div>
@@ -636,6 +651,7 @@
     let appointmentsList = [];
     let paymentMethodsList = [];
     let selectedAppointmentId = null;
+    let selectedAppointmentData = null;
     let selectedPatient = null;
     let selectedDoctor = null;
     let selectedPrimaryInsurance = null;
@@ -695,7 +711,6 @@
         try {
             const snapshot = await window.db.collection("paymentMethods").get();
             if (snapshot.empty) {
-                // Create default payment methods if none exist
                 const defaultMethods = ['Visa', 'Mastercard', 'Amex', 'Cash', 'Bank Transfer'];
                 const batch = window.db.batch();
                 defaultMethods.forEach(name => {
@@ -704,7 +719,6 @@
                 });
                 await batch.commit();
                 console.log("Default payment methods created");
-                // Reload
                 const newSnapshot = await window.db.collection("paymentMethods").get();
                 paymentMethodsList = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             } else {
@@ -734,38 +748,41 @@
         return icons[name] || '💳';
     }
     
-    function getPaymentBadge(name) {
-        const badges = {
-            'Cash': 'badge-cash',
-            'Visa': 'badge-card',
-            'Mastercard': 'badge-card',
-            'Amex': 'badge-card',
-            'Bank Transfer': 'badge-transfer',
-            'Transfer': 'badge-transfer'
-        };
-        return badges[name] || 'badge-card';
-    }
-    
-    // ========== LOAD APPOINTMENTS ==========
+    // ========== LOAD APPOINTMENTS - ONLY FUTURE APPOINTMENTS ==========
     async function loadAppointments() {
         if (!window.db) return;
         try {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            // Get all appointments with status "Scheduled"
             const snap = await window.db.collection("appointments")
                 .where("status", "==", "Scheduled")
                 .get();
-            appointmentsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            appointmentsList.sort((a, b) => {
-                if (a.date < b.date) return 1;
-                if (a.date > b.date) return -1;
-                return 0;
-            });
+            
+            // Filter to only future appointments (date >= today)
+            appointmentsList = snap.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(apt => {
+                    // Check if appointment date is today or in the future
+                    if (!apt.date) return false;
+                    return apt.date >= todayStr;
+                })
+                .sort((a, b) => {
+                    if (a.date < b.date) return -1;
+                    if (a.date > b.date) return 1;
+                    return 0;
+                });
+            
             const select = document.getElementById('appointmentSelect');
             if (appointmentsList.length === 0) {
                 select.innerHTML = '<option value="">-- No upcoming appointments --</option>';
             } else {
                 let html = '<option value="">-- Select an appointment --</option>';
                 appointmentsList.forEach(apt => {
-                    html += `<option value="${apt.id}" data-patient-id="${apt.patientId}" data-patient-name="${apt.patientName}" data-contact="${apt.contact || ''}" data-doctor-id="${apt.doctorId}" data-doctor-name="${apt.doctorName}" data-service-id="${apt.serviceId || ''}" data-service-name="${apt.serviceName || ''}">${apt.date} ${apt.time} - ${apt.patientName} with ${apt.doctorName}</option>`;
+                    const displayDate = apt.date || 'No date';
+                    const displayTime = apt.time || '';
+                    html += `<option value="${apt.id}" data-patient-id="${apt.patientId}" data-patient-name="${apt.patientName}" data-contact="${apt.contact || ''}" data-doctor-id="${apt.doctorId}" data-doctor-name="${apt.doctorName}" data-service-id="${apt.serviceId || ''}" data-service-name="${apt.serviceName || ''}">${displayDate} ${displayTime} - ${apt.patientName} with ${apt.doctorName}</option>`;
                 });
                 select.innerHTML = html;
             }
@@ -779,6 +796,8 @@
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
         if (!apt) return;
+        
+        selectedAppointmentData = apt;
         
         const patientSelect = document.getElementById('patientDropdown');
         for (let i = 0; i < patientSelect.options.length; i++) {
@@ -841,6 +860,7 @@
         }
         
         document.getElementById('appointmentBadge').style.display = 'inline-block';
+        document.getElementById('completedBadge').style.display = 'none';
         selectedAppointmentId = appointmentId;
     }
     
@@ -1070,7 +1090,6 @@
         const selectedPaymentOption = document.getElementById('paymentMethodSelect');
         const selectedName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
         
-        // Determine amount paid based on payment method
         let paidAmount = 0;
         let balance = 0;
         let changeDue = 0;
@@ -1088,7 +1107,6 @@
                 paymentDisplay = `✅ Change: MVR ${changeDue.toFixed(2)}`;
             }
         } else if (selectedName) {
-            // Non-cash payment - paid amount equals invoice amount, no change
             paidAmount = patientPayable;
             balance = 0;
             paymentDisplay = `✅ Paid: MVR ${paidAmount.toFixed(2)}`;
@@ -1098,7 +1116,6 @@
             paymentDisplay = '❌ Select payment method';
         }
         
-        // Update displays
         document.getElementById('amountPaidDisplay').innerHTML = paidAmount.toFixed(2);
         document.getElementById('paymentMethodDisplay').innerHTML = selectedName ? `${getPaymentIcon(selectedName)} ${selectedName}` : 'Not Selected';
         
@@ -1138,13 +1155,22 @@
         }
     }
     
-    // ========== DELETE APPOINTMENT AFTER MEMO SAVED ==========
-    async function deleteLinkedAppointment() {
+    // ========== UPDATE APPOINTMENT STATUS TO "COMPLETED" (NOT DELETE) ==========
+    async function updateAppointmentStatus() {
         if (selectedAppointmentId) {
             try {
-                await window.db.collection("appointments").doc(selectedAppointmentId).delete();
+                await window.db.collection("appointments").doc(selectedAppointmentId).update({
+                    status: "Completed",
+                    completedAt: new Date().toISOString(),
+                    memoCreated: true
+                });
+                document.getElementById('appointmentBadge').style.display = 'inline-block';
+                document.getElementById('completedBadge').style.display = 'inline-block';
                 return true;
-            } catch (error) { return false; }
+            } catch (error) {
+                console.error("Error updating appointment status:", error);
+                return false;
+            }
         }
         return true;
     }
@@ -1255,6 +1281,7 @@
                 balance: (patientPayable - paidAmount) || 0
             },
             payment: paymentDetails,
+            linkedAppointmentId: selectedAppointmentId || null,
             status: "completed",
             createdBy: JSON.parse(loggedInUser).username || "unknown",
             createdAt: new Date().toISOString()
@@ -1267,8 +1294,15 @@
             const docRef = await window.db.collection("memos").add(memoData);
             memoData.firebaseId = docRef.id;
             localStorage.setItem('printMemoData', JSON.stringify(memoData));
-            const deleted = await deleteLinkedAppointment();
-            if (deleted && selectedAppointmentId) showMessage("Linked appointment deleted", "success");
+            
+            // Update appointment status to "Completed" (NOT DELETE)
+            if (selectedAppointmentId) {
+                const updated = await updateAppointmentStatus();
+                if (updated) {
+                    showMessage("✅ Appointment marked as Completed", "success");
+                }
+            }
+            
             showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
             setTimeout(() => {
                 alert(`Memo #${memoId} saved successfully!\nPayment: ${paymentDetails.method}\nAmount: MVR ${paidAmount.toFixed(2)}`);
@@ -1371,8 +1405,14 @@
     };
     
     document.getElementById('appointmentSelect').addEventListener('change', (e) => {
-        if (e.target.value) fillFromAppointment(e.target.value);
-        else { selectedAppointmentId = null; document.getElementById('appointmentBadge').style.display = 'none'; }
+        if (e.target.value) {
+            fillFromAppointment(e.target.value);
+        } else {
+            selectedAppointmentId = null;
+            selectedAppointmentData = null;
+            document.getElementById('appointmentBadge').style.display = 'none';
+            document.getElementById('completedBadge').style.display = 'none';
+        }
     });
     
     function logout() {

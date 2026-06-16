@@ -145,18 +145,33 @@
             height: calc(100vh - 100px);
         }
         
+        .patient-detail-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .patient-detail-area .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #8ba0b0;
+        }
+        
+        .patient-detail-area .empty-state i {
+            font-size: 48px;
+            opacity: 0.3;
+            margin-bottom: 15px;
+        }
+        
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 12px;
             padding: 20px;
-            opacity: 0.4;
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-        .quick-actions.active {
-            opacity: 1;
-            pointer-events: auto;
         }
         .quick-action-card {
             background: #f8fbfe;
@@ -181,6 +196,16 @@
         .patient-info-card { background: #f0f6fc; border-radius: 16px; padding: 16px; margin: 0 20px 20px 20px; }
         .patient-name { font-size: 18px; font-weight: 700; color: #0a2f44; }
         .patient-meta { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px; font-size: 12px; color: #5f7f9a; }
+        
+        .memo-number-badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
         
         .empty-list { text-align: center; color: #8ba0b0; padding: 40px; font-size: 12px; }
         .empty-list i { font-size: 36px; opacity: 0.3; margin-bottom: 10px; display: block; }
@@ -290,44 +315,46 @@
     </div>
 
     <div class="detail-panel">
-        <div style="padding: 20px 20px 0 20px;">
-            <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Quick Actions</h3>
-        </div>
-        <div id="patientInfoContainer">
-            <div class="patient-info-card" style="margin: 12px 20px;">
-                <div style="text-align: center; padding: 20px; color: #8ba0b0;">
-                    <i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i>
-                    <p style="margin-top: 10px;">Select a patient from the left panel</p>
+        <div class="patient-detail-area">
+            <div style="padding: 20px 20px 0 20px;">
+                <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Quick Actions</h3>
+            </div>
+            <div id="patientInfoContainer">
+                <!-- Empty state - no patient selected -->
+                <div class="empty-state" id="emptyPatientState">
+                    <i class="fas fa-user-circle"></i>
+                    <p>No patient selected</p>
+                    <p style="font-size: 12px; margin-top: 8px;">Click an appointment or search for a patient</p>
                 </div>
             </div>
-        </div>
-        
-        <div class="quick-actions" id="quickActions">
-            <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo">
-                <i class="fas fa-user"></i>
-                <h4>Patient Info</h4>
-                <p>View and edit patient details</p>
-            </a>
-            <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory">
-                <i class="fas fa-notes-medical"></i>
-                <h4>Medical History</h4>
-                <p>View and add medical records</p>
-            </a>
-            <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis">
-                <i class="fas fa-stethoscope"></i>
-                <h4>Diagnosis & Treatment</h4>
-                <p>Add diagnosis and treatment plans</p>
-            </a>
-            <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions">
-                <i class="fas fa-prescription"></i>
-                <h4>Prescriptions</h4>
-                <p>Issue and manage prescriptions</p>
-            </a>
-            <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate">
-                <i class="fas fa-file-medical-alt"></i>
-                <h4>Medical Certificate</h4>
-                <p>Issue medical certificates</p>
-            </a>
+            
+            <div class="quick-actions" id="quickActions" style="display: none;">
+                <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo">
+                    <i class="fas fa-user"></i>
+                    <h4>Patient Info</h4>
+                    <p>View and edit patient details</p>
+                </a>
+                <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory">
+                    <i class="fas fa-notes-medical"></i>
+                    <h4>Medical History</h4>
+                    <p>View and add medical records</p>
+                </a>
+                <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis">
+                    <i class="fas fa-stethoscope"></i>
+                    <h4>Diagnosis & Treatment</h4>
+                    <p>Add diagnosis and treatment plans</p>
+                </a>
+                <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions">
+                    <i class="fas fa-prescription"></i>
+                    <h4>Prescriptions</h4>
+                    <p>Issue and manage prescriptions</p>
+                </a>
+                <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate">
+                    <i class="fas fa-file-medical-alt"></i>
+                    <h4>Medical Certificate</h4>
+                    <p>Issue medical certificates</p>
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -442,16 +469,16 @@
             return 'N/A';
         }
 
-        // ========== CHECK IF MEMO EXISTS ==========
-        function checkMemoExists(patientId, appointmentDate) {
-            if (!memosList.length) return false;
+        // ========== CHECK IF MEMO EXISTS AND GET MEMO NUMBER ==========
+        function getMemoInfo(patientId, appointmentDate) {
+            if (!memosList.length) return { exists: false, memoId: null };
             for (var i = 0; i < memosList.length; i++) {
                 var memo = memosList[i];
                 if (memo.patient && memo.patient.id === patientId && memo.date === appointmentDate) {
-                    return true;
+                    return { exists: true, memoId: memo.memoId || memo.id, memoNumber: memo.memoId || 'N/A' };
                 }
             }
-            return false;
+            return { exists: false, memoId: null };
         }
 
         // ========== CHAT FUNCTIONS ==========
@@ -710,30 +737,34 @@
             }
         });
 
-        // ========== ENABLE/DISABLE QUICK ACTIONS ==========
-        function enableQuickActions() {
-            var container = document.getElementById('quickActions');
-            if (container) {
-                container.classList.add('active');
+        // ========== SHOW/HIDE PATIENT DETAILS ==========
+        function showPatientDetails(patient, appointment) {
+            selectedPatient = patient;
+            selectedAppointment = appointment || null;
+            
+            var emptyState = document.getElementById('emptyPatientState');
+            var quickActions = document.getElementById('quickActions');
+            var container = document.getElementById('patientInfoContainer');
+            
+            if (!selectedPatient) {
+                if (emptyState) emptyState.style.display = 'block';
+                if (quickActions) quickActions.style.display = 'none';
+                container.innerHTML = '';
+                return;
             }
-        }
-
-        function disableQuickActions() {
-            var container = document.getElementById('quickActions');
-            if (container) {
-                container.classList.remove('active');
-            }
+            
+            if (emptyState) emptyState.style.display = 'none';
+            if (quickActions) quickActions.style.display = 'grid';
+            
+            displayPatientInfo();
         }
 
         // ========== LOAD DOCTOR'S APPOINTMENTS ==========
         async function loadAppointments() { 
             if (!firestoreDB) return; 
             
-            // First, find the doctor's ID from the users collection
-            // Try to find doctor by username match
             var doctorIdToUse = currentUser.id;
             
-            // Query appointments with doctorId
             var snapshot = await firestoreDB.collection("appointments")
                 .where("doctorId", "==", doctorIdToUse)
                 .get(); 
@@ -765,12 +796,12 @@
             for (var i = 0; i < appointments.length; i++) { 
                 var apt = appointments[i]; 
                 var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt.passportNumber, nationalId: apt.nationalId });
-                var memoExists = checkMemoExists(apt.patientId, apt.date);
-                var statusText = memoExists ? '✅ Memo Done' : '⏳ Pending';
-                var statusClass = memoExists ? 'status-done' : 'status-pending';
+                var memoInfo = getMemoInfo(apt.patientId, apt.date);
+                var statusText = memoInfo.exists ? '📄 Memo #' + memoInfo.memoNumber : '⏳ Pending';
+                var statusClass = memoInfo.exists ? 'status-done' : 'status-pending';
                 var isNext = false;
                 
-                if (i === 0 && !memoExists) {
+                if (i === 0 && !memoInfo.exists) {
                     isNext = true;
                     nextPatientFound = true;
                 }
@@ -830,10 +861,11 @@
             for (var i = 0; i < memosList.length; i++) { 
                 var memo = memosList[i]; 
                 var displayId = getDisplayId(memo.patient);
+                var memoNumber = memo.memoId || memo.id || 'N/A';
                 html += '<div class="memo-card" data-id="' + memo.id + '" data-patient-id="' + (memo.patient ? memo.patient.id : '') + '">' +
                     '<div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) + '</div>' +
                     '<div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div>' +
-                    '<div class="memo-details">🪪 ' + escapeHtml(displayId) + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs)</div>' +
+                    '<div class="memo-details">🪪 ' + escapeHtml(displayId) + ' | 🎂 ' + (memo.patient?.dob || 'N/A') + ' (' + calculateAge(memo.patient?.dob) + ' yrs) | 📄 Memo #' + escapeHtml(memoNumber) + '</div>' +
                 '</div>'; 
             } 
             container.innerHTML = html; 
@@ -869,12 +901,7 @@
                 } 
             } 
             if (!patient) patient = memo.patient; 
-            selectedPatient = patient; 
-            if (selectedPatient) { 
-                savePatientSession(); 
-                displayPatientInfo(); 
-                enableQuickActions(); 
-            } 
+            showPatientDetails(patient, null);
         }
 
         // ========== SELECT APPOINTMENT ==========
@@ -897,12 +924,7 @@
                 passportNumber: apt.passportNumber,
                 nationalId: apt.nationalId
             }; 
-            selectedPatient = patient; 
-            if (selectedPatient) { 
-                savePatientSession(); 
-                displayPatientInfo(); 
-                enableQuickActions();
-            } 
+            showPatientDetails(patient, apt);
         }
 
         // ========== LOAD PATIENTS ==========
@@ -959,12 +981,7 @@
                         } 
                     } 
                     if (patient) { 
-                        selectedPatient = patient; 
-                        selectedAppointment = null; 
-                        selectedMemo = null; 
-                        savePatientSession(); 
-                        displayPatientInfo(); 
-                        enableQuickActions(); 
+                        showPatientDetails(patient, null);
                         var displayId = getDisplayId(patient);
                         searchInput.value = patient.name + ' (🪪 ' + displayId + ')'; 
                         suggestionsDiv.innerHTML = ''; 
@@ -983,12 +1000,10 @@
             }
         }
 
-        // ========== DISPLAY PATIENT INFO ==========
+        // ========== DISPLAY PATIENT INFO (READ ONLY - NO MARK MEMO BUTTON) ==========
         function displayPatientInfo() {
             var container = document.getElementById('patientInfoContainer');
             if (!selectedPatient) {
-                container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;"><div style="text-align: center; padding: 20px; color: #8ba0b0;"><i class="fas fa-user-circle" style="font-size: 48px; opacity: 0.5;"></i><p style="margin-top: 10px;">Select a patient from the left panel</p></div></div>';
-                disableQuickActions();
                 return;
             }
             
@@ -997,16 +1012,16 @@
             var insurance = selectedPatient.insurance || {};
             var primaryIns = insurance.primaryName || 'None';
             var displayId = getDisplayId(selectedPatient);
-            var memoExists = checkMemoExists(selectedPatient.id, selectedAppointment ? selectedAppointment.date : null);
-            var memoStatus = memoExists ? '✅ Memo Completed' : '⏳ Pending Memo';
-            var memoStatusColor = memoExists ? '#27ae60' : '#ffc107';
+            var memoInfo = getMemoInfo(selectedPatient.id, selectedAppointment ? selectedAppointment.date : null);
+            var memoStatus = memoInfo.exists ? '✅ Memo Completed (# ' + memoInfo.memoNumber + ')' : '⏳ Pending Memo';
+            var memoStatusColor = memoInfo.exists ? '#27ae60' : '#ffc107';
             
             var extraHtml = '';
             if (selectedAppointment) {
                 extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">' +
                     '<p><strong>📋 Current Appointment:</strong> ' + (selectedAppointment.date || 'N/A') + ' at ' + (selectedAppointment.time || selectedAppointment.startTime || 'N/A') + '</p>' +
-                    '<p><strong>Memo Status:</strong> <span style="color:' + memoStatusColor + ';">' + memoStatus + '</span></p>' +
-                    (memoExists ? '<p style="color:#27ae60; font-size:12px;">✅ Memo already created for this visit</p>' : '<button class="btn-complete" id="markMemoDoneBtn"><i class="fas fa-file-medical"></i> Mark Memo as Done (Create Memo)</button>') +
+                    '<p><strong>Memo Status:</strong> <span style="color:' + memoStatusColor + '; font-weight:600;">' + memoStatus + '</span></p>' +
+                    (memoInfo.exists ? '<p style="color:#0f5c7a; font-size:12px; margin-top:4px;">📄 Memo Number: <strong>' + memoInfo.memoNumber + '</strong> (Created by Reception)</p>' : '<p style="color:#856404; font-size:12px; margin-top:4px;">⏳ Memo not yet created by reception</p>') +
                 '</div>';
             }
             
@@ -1020,59 +1035,6 @@
                 '</div>' +
                 extraHtml +
             '</div>';
-            
-            if (selectedAppointment && !memoExists) {
-                var memoBtn = document.getElementById('markMemoDoneBtn');
-                if (memoBtn) {
-                    memoBtn.addEventListener('click', function() {
-                        createMemoFromAppointment(selectedAppointment);
-                    });
-                }
-            }
-            
-            enableQuickActions();
-        }
-
-        // ========== CREATE MEMO FROM APPOINTMENT ==========
-        async function createMemoFromAppointment(apt) {
-            if (!apt) return;
-            var patient = selectedPatient;
-            if (!patient) return;
-            
-            var memoData = { 
-                memoId: 'MEM-' + Date.now(), 
-                patient: { 
-                    id: patient.id, 
-                    name: patient.name, 
-                    phone: patient.phone || patient.contactNo || '', 
-                    dob: patient.dob || '',
-                    insurance: patient.insurance || {}
-                }, 
-                doctor: { id: currentUser.id, name: currentUser.name }, 
-                date: new Date().toLocaleDateString(), 
-                timestamp: Date.now(), 
-                services: [], 
-                billing: { afterDiscount: 0, paid: 0, discount: { amount: 0 } }, 
-                appointmentId: apt.id,
-                appointmentDate: apt.date,
-                appointmentTime: apt.time || apt.startTime || '',
-                createdAt: new Date().toISOString() 
-            };
-            
-            try {
-                await firestoreDB.collection("memos").add(memoData);
-                await firestoreDB.collection("appointments").doc(apt.id).update({ 
-                    memoCreated: true,
-                    memoStatus: 'Completed'
-                });
-                await loadMemos();
-                await loadAppointments();
-                displayPatientInfo();
-                alert('✅ Memo created successfully!');
-            } catch(e) {
-                console.error(e);
-                alert('Error creating memo: ' + e.message);
-            }
         }
 
         // ========== NEXT PATIENT ==========
@@ -1085,8 +1047,8 @@
             var nextAppointment = null;
             for (var i = 0; i < appointments.length; i++) {
                 var apt = appointments[i];
-                var memoExists = checkMemoExists(apt.patientId, apt.date);
-                if (!memoExists) {
+                var memoInfo = getMemoInfo(apt.patientId, apt.date);
+                if (!memoInfo.exists) {
                     nextAppointment = apt;
                     break;
                 }
@@ -1170,17 +1132,10 @@
             await loadMemos();
             listenOnlineReception();
             
-            var savedPatientId = sessionStorage.getItem('selectedPatientId');
-            if (savedPatientId) {
-                for (var i = 0; i < patientsList.length; i++) {
-                    if (patientsList[i].id === savedPatientId) {
-                        selectedPatient = patientsList[i];
-                        displayPatientInfo();
-                        enableQuickActions();
-                        break;
-                    }
-                }
-            }
+            // Clear any saved patient from session - start fresh
+            sessionStorage.removeItem('selectedPatient');
+            sessionStorage.removeItem('selectedPatientId');
+            selectedPatient = null;
             
             if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
         }

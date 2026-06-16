@@ -753,18 +753,15 @@
         if (!window.db) return;
         try {
             const today = new Date();
-            const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+            const todayStr = today.toISOString().split('T')[0];
             
-            // Get all appointments with status "Scheduled"
             const snap = await window.db.collection("appointments")
                 .where("status", "==", "Scheduled")
                 .get();
             
-            // Filter to only future appointments (date >= today)
             appointmentsList = snap.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(apt => {
-                    // Check if appointment date is today or in the future
                     if (!apt.date) return false;
                     return apt.date >= todayStr;
                 })
@@ -870,14 +867,20 @@
             const snapshot = await window.db.collection("patients").get();
             patientsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const patientSelect = document.getElementById('patientDropdown');
-            if (patientsList.length === 0) patientSelect.innerHTML = '<option value="">-- No Patients Found --</option>';
-            else {
+            if (patientsList.length === 0) {
+                patientSelect.innerHTML = '<option value="">-- No Patients Found --</option>';
+            } else {
                 patientSelect.innerHTML = '<option value="">-- Select Patient --</option>';
                 patientsList.forEach(p => {
-                    patientSelect.innerHTML += `<option value="${p.id}">${p.id} - ${p.name} (${p.nationality || 'N/A'})</option>`;
+                    // Display: Name (ID/Passport: value)
+                    const displayId = p.idNumber || p.passportNumber || p.nationalId || p.id || 'N/A';
+                    const displayText = `${p.name} (ID/Passport: ${displayId})`;
+                    patientSelect.innerHTML += `<option value="${p.id}">${escapeHtml(displayText)}</option>`;
                 });
             }
-        } catch (error) { console.error(error); }
+        } catch (error) { 
+            console.error("Error loading patients:", error);
+        }
     }
     
     async function loadDoctors() {
@@ -1253,6 +1256,8 @@
                 nationality: selectedPatient.nationality || "",
                 isCitizen: selectedPatient.isCitizen || false,
                 idNumber: selectedPatient.idNumber || "",
+                passportNumber: selectedPatient.passportNumber || "",
+                nationalId: selectedPatient.nationalId || "",
                 dob: selectedPatient.dob || ""
             },
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
@@ -1295,7 +1300,6 @@
             memoData.firebaseId = docRef.id;
             localStorage.setItem('printMemoData', JSON.stringify(memoData));
             
-            // Update appointment status to "Completed" (NOT DELETE)
             if (selectedAppointmentId) {
                 const updated = await updateAppointmentStatus();
                 if (updated) {
@@ -1324,7 +1328,8 @@
             selectedPatient = patient;
             const card = document.getElementById('selectedPatientCard');
             card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong> (${patient.id})<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
+            const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong><br>ID/Passport: ${escapeHtml(displayId)}<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
             if (selectedServices.length > 0) applyAutoCalculation();
             calculateBilling();
         } else { selectedPatient = null; document.getElementById('selectedPatientCard').style.display = 'none'; calculateBilling(); }

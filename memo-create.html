@@ -26,15 +26,14 @@
         }
 
         .clinic-header {
-            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
-            color: #004d4d;
+            background: #0a2f44;
+            color: white;
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .logo h2 {
@@ -424,16 +423,6 @@
             margin-top: 10px;
         }
 
-        .completed-badge {
-            background: #28a745;
-            color: white;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 8px;
-            font-weight: 600;
-            margin-left: 5px;
-        }
-
         @media (max-width: 640px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -789,14 +778,16 @@
         }
     }
     
-    // ========== AUTO-FILL FROM APPOINTMENT (WITH PATIENT DATA) ==========
+    // ========== AUTO-FILL FROM APPOINTMENT (COMPLETE PATIENT & DOCTOR DATA) ==========
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
         if (!apt) return;
         
         selectedAppointmentData = apt;
         
-        // ---- FETCH PATIENT DATA ----
+        // ============================================================
+        // 1. FETCH AND TRANSFER ALL PATIENT DETAILS
+        // ============================================================
         if (apt.patientId) {
             try {
                 // Try to find patient in patientsList first
@@ -811,6 +802,7 @@
                 }
                 
                 if (patient) {
+                    // Set the selected patient
                     selectedPatient = patient;
                     
                     // Update patient dropdown
@@ -827,16 +819,28 @@
                         // Add patient to dropdown if not found
                         const option = document.createElement('option');
                         option.value = patient.id;
-                        option.text = `${patient.name} (ID/Passport: ${patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A'})`;
+                        const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+                        option.text = `${patient.name} (ID/Passport: ${displayId})`;
                         patientSelect.add(option);
                         patientSelect.value = patient.id;
                     }
                     
-                    // Show patient card
+                    // Display patient card with ALL details
                     const card = document.getElementById('selectedPatientCard');
                     card.style.display = 'flex';
                     const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
-                    card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong><br>ID/Passport: ${escapeHtml(displayId)}<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
+                    const phone = patient.contactNo || patient.phone || apt.contact || '';
+                    card.innerHTML = `
+                        <div>
+                            <strong>${escapeHtml(patient.name)}</strong><br>
+                            ID/Passport: ${escapeHtml(displayId)}<br>
+                            📞 ${escapeHtml(phone)}
+                        </div>
+                        <div>
+                            <span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span>
+                            ${patient.nationality ? `<span class="selected-badge" style="background:#6c757d;">${escapeHtml(patient.nationality)}</span>` : ''}
+                        </div>
+                    `;
                     
                     // Trigger change event to update billing
                     patientSelect.dispatchEvent(new Event('change'));
@@ -846,7 +850,9 @@
             }
         }
         
-        // ---- FETCH DOCTOR DATA ----
+        // ============================================================
+        // 2. FETCH AND TRANSFER ALL DOCTOR DETAILS
+        // ============================================================
         if (apt.doctorId) {
             try {
                 let doctor = doctorsList.find(d => d.id === apt.doctorId);
@@ -857,7 +863,10 @@
                     }
                 }
                 if (doctor) {
+                    // Set the selected doctor
                     selectedDoctor = doctor;
+                    
+                    // Update doctor dropdown
                     const doctorSelect = document.getElementById('doctorSelect');
                     let found = false;
                     for (let i = 0; i < doctorSelect.options.length; i++) {
@@ -875,16 +884,22 @@
                         doctorSelect.value = doctor.id;
                     }
                     
+                    // Display doctor card
                     const card = document.getElementById('selectedDoctorCard');
                     card.style.display = 'flex';
-                    card.innerHTML = `<div><strong>${escapeHtml(doctor.name)}</strong></div><div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>`;
+                    card.innerHTML = `
+                        <div><strong>${escapeHtml(doctor.name)}</strong></div>
+                        <div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>
+                    `;
                 }
             } catch (error) {
                 console.error("Error fetching doctor data:", error);
             }
         }
         
-        // ---- FETCH SERVICE DATA ----
+        // ============================================================
+        // 3. FETCH AND TRANSFER SERVICE DETAILS (if available)
+        // ============================================================
         if (apt.serviceId || apt.serviceName) {
             const serviceSelect = document.getElementById('serviceSelectDropdown');
             let serviceFound = false;
@@ -1219,7 +1234,7 @@
         }
     }
     
-    // ========== DELETE APPOINTMENT (NOT JUST MARK COMPLETED) ==========
+    // ========== DELETE APPOINTMENT ==========
     async function deleteLinkedAppointment() {
         if (selectedAppointmentId) {
             try {
@@ -1355,7 +1370,7 @@
             memoData.firebaseId = docRef.id;
             localStorage.setItem('printMemoData', JSON.stringify(memoData));
             
-            // DELETE the linked appointment (not just mark as completed)
+            // DELETE the linked appointment
             if (selectedAppointmentId) {
                 const deleted = await deleteLinkedAppointment();
                 if (deleted) {
@@ -1386,7 +1401,17 @@
             const card = document.getElementById('selectedPatientCard');
             card.style.display = 'flex';
             const displayId = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
-            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong><br>ID/Passport: ${escapeHtml(displayId)}<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
+            card.innerHTML = `
+                <div>
+                    <strong>${escapeHtml(patient.name)}</strong><br>
+                    ID/Passport: ${escapeHtml(displayId)}<br>
+                    📞 ${patient.contactNo || patient.phone || ''}
+                </div>
+                <div>
+                    <span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span>
+                    ${patient.nationality ? `<span class="selected-badge" style="background:#6c757d;">${escapeHtml(patient.nationality)}</span>` : ''}
+                </div>
+            `;
             if (selectedServices.length > 0) applyAutoCalculation();
             calculateBilling();
         } else { selectedPatient = null; document.getElementById('selectedPatientCard').style.display = 'none'; calculateBilling(); }
@@ -1399,7 +1424,10 @@
             selectedDoctor = doctor;
             const card = document.getElementById('selectedDoctorCard');
             card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(doctor.name)}</strong></div><div><span class="selected-badge">${escapeHtml(doctor.speciality)}</span></div>`;
+            card.innerHTML = `
+                <div><strong>${escapeHtml(doctor.name)}</strong></div>
+                <div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>
+            `;
         } else { selectedDoctor = null; document.getElementById('selectedDoctorCard').style.display = 'none'; }
     });
     

@@ -48,8 +48,6 @@
         
         .btn-primary { background: #0f5c7a; color: white; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s; }
         .btn-primary:hover { background: #1a6f8f; }
-        .btn-danger { background: #e74c3c; color: white; border: none; padding: 6px 14px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 11px; }
-        .btn-danger:hover { background: #c0392b; }
         
         .empty-state { text-align: center; padding: 40px 20px; color: #8ba0b0; }
         .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
@@ -94,135 +92,150 @@
 </div>
 
 <script>
-    // ========== AUTH & SESSION ==========
-    let doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-    if (!doctorSession) { window.location.href = 'login.html'; return; }
-    let currentDoctor = null;
-    try { currentDoctor = JSON.parse(doctorSession); } catch(e) { window.location.href = 'login.html'; return; }
-    if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
-
-    let firestoreDB = null;
-    let selectedPatient = null;
-    let medicalHistoryList = [];
-
-    // ========== HELPER FUNCTIONS ==========
-    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-
-    // ========== LOAD SELECTED PATIENT ==========
-    function loadSelectedPatient() {
-        const patientData = sessionStorage.getItem('selectedPatient');
-        if (patientData) {
-            try {
-                selectedPatient = JSON.parse(patientData);
-                document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
-                document.getElementById('patientId').textContent = `(${selectedPatient.id || 'N/A'})`;
-                document.getElementById('patientPhone').textContent = `📞 ${selectedPatient.phone || selectedPatient.contactNo || 'N/A'}`;
-                loadMedicalHistory();
-            } catch(e) { console.error(e); }
-        }
-    }
-
-    // ========== LOAD MEDICAL HISTORY ==========
-    async function loadMedicalHistory() {
-        if (!selectedPatient || !firestoreDB) return;
-        try {
-            const snapshot = await firestoreDB.collection("medicalHistory")
-                .where("patientId", "==", selectedPatient.id)
-                .orderBy("createdAt", "desc")
-                .get();
-            
-            medicalHistoryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderHistoryList();
-        } catch (error) {
-            console.error(error);
-            // Fallback without orderBy if index not created
-            try {
-                const snapshot = await firestoreDB.collection("medicalHistory")
-                    .where("patientId", "==", selectedPatient.id)
-                    .get();
-                medicalHistoryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                medicalHistoryList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                renderHistoryList();
-            } catch(e2) { console.error(e2); }
-        }
-    }
-
-    function renderHistoryList() {
-        const container = document.getElementById('historyList');
-        if (!medicalHistoryList.length) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-notes-medical"></i><p>No medical history records found</p></div>`;
+    (function() {
+        // ========== AUTH & SESSION ==========
+        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+        if (!doctorSession) { 
+            window.location.href = 'login.html'; 
             return;
         }
-        container.innerHTML = medicalHistoryList.map(h => `
-            <div class="history-item">
-                <div class="history-date">📅 ${new Date(h.createdAt).toLocaleString()}</div>
-                <div class="history-note">📝 ${escapeHtml(h.note)}</div>
-                <div class="history-doctor">👨‍⚕️ Dr. ${escapeHtml(h.doctorName || 'Unknown')}</div>
-                <button class="delete-btn" onclick="deleteHistory('${h.id}')" style="margin-top:8px;">🗑️ Delete</button>
-            </div>
-        `).join('');
-    }
-
-    // ========== DELETE HISTORY ==========
-    async function deleteHistory(id) {
-        if (!confirm('Delete this medical history record?')) return;
-        if (!firestoreDB) return;
-        try {
-            await firestoreDB.collection("medicalHistory").doc(id).delete();
-            await loadMedicalHistory();
-            alert('Record deleted.');
-        } catch (error) {
-            console.error(error);
-            alert('Error deleting record: ' + error.message);
+        var currentDoctor = null;
+        try { 
+            currentDoctor = JSON.parse(doctorSession); 
+        } catch(e) { 
+            window.location.href = 'login.html'; 
+            return;
         }
-    }
-
-    // ========== SAVE MEDICAL HISTORY ==========
-    async function saveMedicalHistory() {
-        if (!selectedPatient) { alert("No patient selected."); return; }
-        if (!firestoreDB) { alert("Firebase not ready."); return; }
-        
-        const note = document.getElementById('medicalNote').value.trim();
-        if (!note) { alert("Please enter a medical note."); return; }
-        
-        try {
-            await firestoreDB.collection("medicalHistory").add({
-                patientId: selectedPatient.id,
-                patientName: selectedPatient.name,
-                doctorId: currentDoctor.id,
-                doctorName: currentDoctor.name,
-                note: note,
-                createdAt: new Date().toISOString()
-            });
-            document.getElementById('medicalNote').value = '';
-            await loadMedicalHistory();
-            alert('Medical history saved successfully!');
-        } catch (error) {
-            console.error(error);
-            alert('Error saving: ' + error.message);
+        if (!currentDoctor || !currentDoctor.id) { 
+            window.location.href = 'login.html'; 
+            return;
         }
-    }
 
-    // ========== LOGOUT ==========
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        sessionStorage.removeItem('doctorSession');
-        localStorage.removeItem('currentDoctor');
-        window.location.href = 'login.html';
-    });
+        var firestoreDB = null;
+        var selectedPatient = null;
+        var medicalHistoryList = [];
 
-    // ========== EVENT LISTENERS ==========
-    document.getElementById('saveMedicalBtn').addEventListener('click', saveMedicalHistory);
-
-    // ========== INIT ==========
-    function init() {
-        if (window.db) {
-            firestoreDB = window.db;
-            loadSelectedPatient();
-        } else {
-            setTimeout(init, 500);
+        // ========== HELPER FUNCTIONS ==========
+        function escapeHtml(str) { 
+            if (!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m) { 
+                if (m === '&') return '&amp;'; 
+                if (m === '<') return '&lt;'; 
+                if (m === '>') return '&gt;'; 
+                return m; 
+            }); 
         }
-    }
-    init();
+
+        // ========== LOAD SELECTED PATIENT ==========
+        function loadSelectedPatient() {
+            var patientData = sessionStorage.getItem('selectedPatient');
+            if (patientData) {
+                try {
+                    selectedPatient = JSON.parse(patientData);
+                    document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
+                    document.getElementById('patientId').textContent = '(' + (selectedPatient.id || 'N/A') + ')';
+                    document.getElementById('patientPhone').textContent = '📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A');
+                    loadMedicalHistory();
+                } catch(e) { console.error(e); }
+            }
+        }
+
+        // ========== LOAD MEDICAL HISTORY ==========
+        async function loadMedicalHistory() {
+            if (!selectedPatient || !firestoreDB) return;
+            try {
+                var snapshot = await firestoreDB.collection("medicalHistory")
+                    .where("patientId", "==", selectedPatient.id)
+                    .get();
+                
+                medicalHistoryList = [];
+                snapshot.forEach(function(doc) {
+                    medicalHistoryList.push({ id: doc.id, ...doc.data() });
+                });
+                medicalHistoryList.sort(function(a, b) {
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                });
+                renderHistoryList();
+            } catch(error) {
+                console.error(error);
+            }
+        }
+
+        function renderHistoryList() {
+            var container = document.getElementById('historyList');
+            if (!medicalHistoryList.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-notes-medical"></i><p>No medical history records found</p></div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < medicalHistoryList.length; i++) {
+                var h = medicalHistoryList[i];
+                html += '<div class="history-item"><div class="history-date">📅 ' + new Date(h.createdAt).toLocaleString() + '</div><div class="history-note">📝 ' + escapeHtml(h.note) + '</div><div class="history-doctor">👨‍⚕️ Dr. ' + escapeHtml(h.doctorName || 'Unknown') + '</div><button class="delete-btn" onclick="window.deleteHistory(\'' + h.id + '\')" style="margin-top:8px;">🗑️ Delete</button></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== DELETE HISTORY ==========
+        window.deleteHistory = async function(id) {
+            if (!confirm('Delete this medical history record?')) return;
+            if (!firestoreDB) return;
+            try {
+                await firestoreDB.collection("medicalHistory").doc(id).delete();
+                await loadMedicalHistory();
+                alert('Record deleted.');
+            } catch(error) {
+                console.error(error);
+                alert('Error deleting record: ' + error.message);
+            }
+        };
+
+        // ========== SAVE MEDICAL HISTORY ==========
+        async function saveMedicalHistory() {
+            if (!selectedPatient) { alert("No patient selected."); return; }
+            if (!firestoreDB) { alert("Firebase not ready."); return; }
+            
+            var note = document.getElementById('medicalNote').value.trim();
+            if (!note) { alert("Please enter a medical note."); return; }
+            
+            try {
+                await firestoreDB.collection("medicalHistory").add({
+                    patientId: selectedPatient.id,
+                    patientName: selectedPatient.name,
+                    doctorId: currentDoctor.id,
+                    doctorName: currentDoctor.name,
+                    note: note,
+                    createdAt: new Date().toISOString()
+                });
+                document.getElementById('medicalNote').value = '';
+                await loadMedicalHistory();
+                alert('Medical history saved successfully!');
+            } catch(error) {
+                console.error(error);
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        // ========== LOGOUT ==========
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('doctorSession');
+            localStorage.removeItem('currentDoctor');
+            window.location.href = 'login.html';
+        });
+
+        // ========== EVENT LISTENERS ==========
+        document.getElementById('saveMedicalBtn').addEventListener('click', saveMedicalHistory);
+
+        // ========== INIT ==========
+        function init() {
+            if (window.db) {
+                firestoreDB = window.db;
+                loadSelectedPatient();
+            } else {
+                setTimeout(init, 500);
+            }
+        }
+        init();
+    })();
 </script>
 </body>
 </html>

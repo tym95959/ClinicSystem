@@ -344,8 +344,8 @@
         }
     }
 
-    // Get all insurances with amounts
-    function getAllInsurances(memo) {
+    // Get all insurances with amounts > 0
+    function getActiveInsurances(memo) {
         const insurances = memo.insurances || [];
         const billing = memo.billing || {};
         const results = [];
@@ -358,13 +358,16 @@
             if (amount === 0 && ins.priority === 'secondary') {
                 amount = billing.aasandhaPayment || 0;
             }
-            results.push({
-                name: ins.name || 'Insurance',
-                amount: amount,
-                priority: ins.priority || 'primary'
-            });
+            if (amount > 0) {
+                results.push({
+                    name: ins.name || 'Insurance',
+                    amount: amount,
+                    priority: ins.priority || 'primary'
+                });
+            }
         });
         
+        // If no insurances but we have insurance payments in billing
         if (results.length === 0) {
             if (billing.primaryInsurancePayment > 0) {
                 results.push({
@@ -391,19 +394,6 @@
         const primary = insurances.find(ins => ins.priority === 'primary');
         if (primary) return primary.name;
         return 'Insurance';
-    }
-
-    // Check if any service has insurance amount > 0
-    function hasInsuranceCoverage(memo) {
-        const services = memo.services || [];
-        const billing = memo.billing || {};
-        // Check if total insurance payment > 0
-        if (billing.totalInsurancePayment > 0) return true;
-        // Check individual services
-        for (let s of services) {
-            if ((s.primaryInsuranceAmount || 0) > 0) return true;
-        }
-        return false;
     }
 
     // Get memo heading - Consultation Memo or Service Memo
@@ -513,7 +503,7 @@
         });
     }
 
-    // UPDATED PRINT FUNCTION - Hides insurance column if no insurance amount > 0
+    // UPDATED PRINT FUNCTION - Dynamic columns based on insurance count
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) { alert("Please allow pop-ups to print."); return; }
@@ -526,9 +516,9 @@
         const services = memo.services || [];
         const discount = memo.discount || {};
         const billing = memo.billing || {};
-        const insurances = getAllInsurances(memo);
+        const activeInsurances = getActiveInsurances(memo);
+        const insuranceCount = activeInsurances.length;
         const primaryInsuranceName = getPrimaryInsuranceName(memo);
-        const hasInsurance = hasInsuranceCoverage(memo);
         
         // Calculate age
         const age = calculateAge(patient.dob);
@@ -536,56 +526,101 @@
         // Get dynamic memo heading
         const memoHeading = getMemoHeading(memo);
         
-        // Build insurance display - only show if there's insurance coverage
+        // Build insurance display
         let insuranceHtml = '';
-        if (hasInsurance && insurances.length > 0) {
-            const activeInsurances = insurances.filter(ins => ins.amount > 0);
-            if (activeInsurances.length > 0) {
-                insuranceHtml = activeInsurances.map(ins => {
-                    return `<div class="insurance-item">
-                        <span class="ins-name">${escapeHtml(ins.name)}</span>
-                        <span class="ins-amount">MVR ${(ins.amount || 0).toFixed(2)}</span>
-                    </div>`;
-                }).join('');
-                insuranceHtml = `<div class="insurance-box">
-                    <span class="ins-title">🏥 Insurance Coverage</span>
-                    ${insuranceHtml}
+        if (insuranceCount > 0) {
+            insuranceHtml = activeInsurances.map(ins => {
+                return `<div class="insurance-item">
+                    <span class="ins-name">${escapeHtml(ins.name)}</span>
+                    <span class="ins-amount">MVR ${(ins.amount || 0).toFixed(2)}</span>
                 </div>`;
-            }
+            }).join('');
+            insuranceHtml = `<div class="insurance-box">
+                <span class="ins-title">🏥 Insurance Coverage</span>
+                ${insuranceHtml}
+            </div>`;
         }
         
-        // Services table - dynamically show/hide insurance column
-        const insuranceHeading = primaryInsuranceName || 'Insurance';
+        // Build services table with dynamic columns
         let servicesHtml = '';
         if (services.length > 0) {
-            let headerHtml = `<tr>
-                <th style="text-align:center; width:12%;">Code</th>
-                <th style="text-align:left; width:${hasInsurance ? '28%' : '40%'};">Service</th>
-                <th style="text-align:center; width:8%;">Qty</th>
-                <th style="text-align:right; width:${hasInsurance ? '13%' : '18%'};">Price</th>
-                <th style="text-align:right; width:${hasInsurance ? '13%' : '18%'};">Total</th>`;
-            if (hasInsurance) {
-                headerHtml += `<th style="text-align:right; width:13%;">${escapeHtml(insuranceHeading)}</th>
-                               <th style="text-align:right; width:13%;">Aasandha</th>`;
-            }
-            headerHtml += `</tr>`;
+            let headerHtml = '';
+            let rowHtml = '';
             
-            servicesHtml = `<table class="services-table"><thead>${headerHtml}</thead><tbody>`;
-            services.forEach(s => {
-                let rowHtml = `<tr>
-                    <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
-                    <td style="text-align:left;">${escapeHtml(s.name)}</td>
-                    <td style="text-align:center;">${s.qty}</td>
-                    <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
-                    <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>`;
-                if (hasInsurance) {
-                    rowHtml += `<td style="text-align:right;">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
-                                <td style="text-align:right;">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>`;
-                }
-                rowHtml += `</tr>`;
-                servicesHtml += rowHtml;
-            });
-            servicesHtml += `</tbody></table>`;
+            if (insuranceCount === 0) {
+                // No insurance - 5 columns: Code, Service, Qty, Price, Total
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:12%;">Code</th>
+                    <th style="text-align:left; width:40%;">Service</th>
+                    <th style="text-align:center; width:10%;">Qty</th>
+                    <th style="text-align:right; width:19%;">Price</th>
+                    <th style="text-align:right; width:19%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+            } else if (insuranceCount === 1) {
+                // Single insurance - 6 columns: Code, Service, Qty, Price, Insurance, Total
+                const insName = activeInsurances[0].name || 'Insurance';
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:12%;">Code</th>
+                    <th style="text-align:left; width:32%;">Service</th>
+                    <th style="text-align:center; width:8%;">Qty</th>
+                    <th style="text-align:right; width:16%;">Price</th>
+                    <th style="text-align:right; width:16%;">${escapeHtml(insName)}</th>
+                    <th style="text-align:right; width:16%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    const insAmount = s.primaryInsuranceAmount || s.aasandhaAmount || 0;
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${insAmount.toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+            } else {
+                // Dual insurance - 7 columns: Code, Service, Qty, Price, Insurance1, Insurance2, Total
+                const ins1Name = activeInsurances[0]?.name || 'Insurance';
+                const ins2Name = activeInsurances[1]?.name || 'Aasandha';
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:12%;">Code</th>
+                    <th style="text-align:left; width:26%;">Service</th>
+                    <th style="text-align:center; width:7%;">Qty</th>
+                    <th style="text-align:right; width:13%;">Price</th>
+                    <th style="text-align:right; width:14%;">${escapeHtml(ins1Name)}</th>
+                    <th style="text-align:right; width:14%;">${escapeHtml(ins2Name)}</th>
+                    <th style="text-align:right; width:14%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    const ins1Amount = s.primaryInsuranceAmount || 0;
+                    const ins2Amount = s.aasandhaAmount || 0;
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${ins1Amount.toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${ins2Amount.toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            
+            servicesHtml = `<table class="services-table"><thead>${headerHtml}</thead><tbody>${rowHtml}</tbody></table>`;
         } else {
             servicesHtml = '<div class="no-services">No services recorded.</div>';
         }
@@ -662,7 +697,7 @@
                     <div class="info-row"><span class="info-label">Date:</span><span class="info-value">${escapeHtml(dateStr)}</span></div>
                     <div class="info-row"><span class="info-label">Memo No:</span><span class="info-value">${escapeHtml(memoId)}</span></div>
                     <div class="info-row"><span class="info-label">Doctor:</span><span class="info-value">${escapeHtml(doctor.name || '')} ${doctor.speciality ? `(${escapeHtml(doctor.speciality)})` : ''}</span></div>
-                    <div class="info-row"><span class="info-label">Insurance:</span><span class="info-value" style="font-size:8px;">${insurances.map(i => escapeHtml(i.name)).join(' + ')}</span></div>
+                    <div class="info-row"><span class="info-label">Insurance:</span><span class="info-value" style="font-size:8px;">${activeInsurances.map(i => escapeHtml(i.name)).join(' + ')}</span></div>
                 </div>
             </div>
             

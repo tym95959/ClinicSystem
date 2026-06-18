@@ -86,13 +86,32 @@
         .doctor-select-field.show { display: block; }
         .auto-fill-info { background: #e8f0fe; padding: 10px 14px; border-radius: 12px; font-size: 12px; color: #0f5c7a; margin-bottom: 12px; display: none; }
         .auto-fill-info.show { display: block; }
+        .code-badge { 
+            background: #e8f0fe; 
+            color: #0f5c7a; 
+            padding: 2px 10px; 
+            border-radius: 12px; 
+            font-size: 10px; 
+            font-weight: 600;
+            font-family: monospace;
+        }
+        .service-code-input {
+            font-family: monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .code-hint {
+            font-size: 10px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
 <div class="clinic-header">
     <div class="logo"><h2>⚙️ Hope Dental · Admin Panel</h2></div>
     <div>
-        <button class="sync-btn" id="saveToFirebaseBtn">💾 Save All </button>
+        <button class="sync-btn" id="saveToFirebaseBtn">💾 Save All</button>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
     </div>
 </div>
@@ -114,7 +133,7 @@
     <!-- Services Tab -->
     <div id="servicesTab" class="card">
         <div class="card-title">📋 Services & Aasandha Coverage <button class="btn-primary" id="addServiceBtn" style="padding:6px 18px;">+ Add Service</button></div>
-        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Service Name</th><th>Price (MVR)</th><th>Aasandha</th><th>Cover Amount</th><th>Actions</th></tr></thead><tbody id="servicesList"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Code</th><th>Service Name</th><th>Price (MVR)</th><th>Aasandha</th><th>Cover Amount</th><th>Actions</th></tr></thead><tbody id="servicesList"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody></table></div>
         <div id="servicesMessage" class="message" style="display:none;"></div>
     </div>
 
@@ -139,19 +158,17 @@
         <div id="discountsMessage" class="message" style="display:none;"></div>
     </div>
 
-    <!-- System Users Tab (Firebase) - Updated with Doctor Selection -->
+    <!-- System Users Tab -->
     <div id="usersTab" class="card" style="display:none;">
         <div class="card-title">👥 System Users (Firebase) <span style="font-size:12px; font-weight:normal;">🔐 SHA-256 hashed passwords stored in Firestore</span></div>
         <div class="users-grid">
             <div style="background:#fafdff; border-radius:24px; padding:8px 4px;">
                 <div style="font-weight:600; margin-bottom:16px;">➕ Register New User</div>
                 
-                <!-- Auto-fill info message -->
                 <div class="auto-fill-info" id="autoFillInfo">
                     <i class="fas fa-info-circle"></i> <span id="autoFillMessage">Select a doctor from the dropdown below to auto-fill details</span>
                 </div>
                 
-                <!-- Doctor Selection (for existing doctors) -->
                 <div class="input-group doctor-select-field" id="doctorSelectGroup">
                     <label>👨‍⚕️ Select Existing Doctor</label>
                     <select id="existingDoctorSelect">
@@ -169,7 +186,6 @@
                     <label><input type="radio" name="accessLevel" value="Doctor" id="doctorRoleRadio" checked> Doctor</label>
                     <label><input type="radio" name="accessLevel" value="Receptionist"> Receptionist</label>
                 </div></div>
-                <!-- Speciality field - only visible when Doctor role is selected -->
                 <div class="input-group speciality-field" id="specialityGroup">
                     <label>🩺 Speciality * (For Doctors)</label>
                     <input type="text" id="regSpeciality" placeholder="e.g., Dental Surgeon, Cardiologist">
@@ -183,11 +199,36 @@
     </div>
 </div>
 
-<!-- Modals (CRUD for services, doctors, insurance, discounts) -->
-<div id="serviceModal" class="modal"><div class="modal-content"><h3 id="serviceModalTitle">Add Service</h3><div class="input-group"><label>Service Name *</label><input type="text" id="serviceName" placeholder="e.g., Consultation"></div><div class="input-group"><label>Price (MVR) *</label><input type="number" id="servicePrice" step="10" placeholder="550"></div><div class="input-group"><label><input type="checkbox" id="serviceAasandhaCovered"> Aasandha Covered</label></div><div class="input-group"><label>Aasandha Cover Amount (MVR)</label><input type="number" id="serviceAasandhaAmount" step="10" placeholder="200"></div><div class="modal-buttons"><button class="btn-primary" id="saveServiceBtn">Save</button><button class="btn-danger" id="cancelServiceBtn">Cancel</button></div></div></div>
-<div id="doctorModal" class="modal"><div class="modal-content"><h3 id="doctorModalTitle">Add Doctor</h3><div class="input-group"><label>Doctor Name *</label><input type="text" id="doctorName" placeholder="Dr. Abdulla Irufan"></div><div class="input-group"><label>Speciality *</label><input type="text" id="doctorSpeciality" placeholder="Cardiology"></div><div class="input-group"><label>Base Commission (%)</label><input type="number" id="doctorCommission" step="1" min="0" max="100" placeholder="15"></div><div class="modal-buttons"><button class="btn-primary" id="saveDoctorBtn">Save</button><button class="btn-danger" id="cancelDoctorBtn">Cancel</button></div></div></div>
-<div id="insuranceModal" class="modal"><div class="modal-content"><h3 id="insuranceModalTitle">Add Insurance</h3><div class="input-group"><label>Company Name *</label><input type="text" id="insuranceName" placeholder="Allied Insurance"></div><div class="modal-buttons"><button class="btn-primary" id="saveInsuranceBtn">Save</button><button class="btn-danger" id="cancelInsuranceBtn">Cancel</button></div></div></div>
-<div id="discountModal" class="modal"><div class="modal-content"><h3 id="discountModalTitle">Add Discount</h3><div class="input-group"><label>Discount Name *</label><input type="text" id="discountName" placeholder="Special Offer"></div><div class="input-group"><label>Percentage (%) *</label><input type="number" id="discountPercent" step="1" min="0" max="100" placeholder="10"></div><div class="input-group"><label>Description</label><input type="text" id="discountDesc" placeholder="Optional"></div><div class="modal-buttons"><button class="btn-primary" id="saveDiscountBtn">Save</button><button class="btn-danger" id="cancelDiscountBtn">Cancel</button></div></div></div>
+<!-- Modals -->
+<div id="serviceModal" class="modal"><div class="modal-content"><h3 id="serviceModalTitle">Add Service</h3>
+    <div class="input-group"><label>Service Code *</label><input type="text" id="serviceCode" class="service-code-input" placeholder="e.g., CONS-001" maxlength="20">
+        <div class="code-hint">Unique code for this service (e.g., CONS-001, EXTR-002)</div>
+    </div>
+    <div class="input-group"><label>Service Name *</label><input type="text" id="serviceName" placeholder="e.g., Consultation"></div>
+    <div class="input-group"><label>Price (MVR) *</label><input type="number" id="servicePrice" step="10" placeholder="550"></div>
+    <div class="input-group"><label><input type="checkbox" id="serviceAasandhaCovered"> Aasandha Covered</label></div>
+    <div class="input-group"><label>Aasandha Cover Amount (MVR)</label><input type="number" id="serviceAasandhaAmount" step="10" placeholder="200"></div>
+    <div class="modal-buttons"><button class="btn-primary" id="saveServiceBtn">Save</button><button class="btn-danger" id="cancelServiceBtn">Cancel</button></div>
+</div></div>
+
+<div id="doctorModal" class="modal"><div class="modal-content"><h3 id="doctorModalTitle">Add Doctor</h3>
+    <div class="input-group"><label>Doctor Name *</label><input type="text" id="doctorName" placeholder="Dr. Abdulla Irufan"></div>
+    <div class="input-group"><label>Speciality *</label><input type="text" id="doctorSpeciality" placeholder="Cardiology"></div>
+    <div class="input-group"><label>Base Commission (%)</label><input type="number" id="doctorCommission" step="1" min="0" max="100" placeholder="15"></div>
+    <div class="modal-buttons"><button class="btn-primary" id="saveDoctorBtn">Save</button><button class="btn-danger" id="cancelDoctorBtn">Cancel</button></div>
+</div></div>
+
+<div id="insuranceModal" class="modal"><div class="modal-content"><h3 id="insuranceModalTitle">Add Insurance</h3>
+    <div class="input-group"><label>Company Name *</label><input type="text" id="insuranceName" placeholder="Allied Insurance"></div>
+    <div class="modal-buttons"><button class="btn-primary" id="saveInsuranceBtn">Save</button><button class="btn-danger" id="cancelInsuranceBtn">Cancel</button></div>
+</div></div>
+
+<div id="discountModal" class="modal"><div class="modal-content"><h3 id="discountModalTitle">Add Discount</h3>
+    <div class="input-group"><label>Discount Name *</label><input type="text" id="discountName" placeholder="Special Offer"></div>
+    <div class="input-group"><label>Percentage (%) *</label><input type="number" id="discountPercent" step="1" min="0" max="100" placeholder="10"></div>
+    <div class="input-group"><label>Description</label><input type="text" id="discountDesc" placeholder="Optional"></div>
+    <div class="modal-buttons"><button class="btn-primary" id="saveDiscountBtn">Save</button><button class="btn-danger" id="cancelDiscountBtn">Cancel</button></div>
+</div></div>
 
 <div id="toastMsg" class="toast-msg" style="opacity:0; visibility:hidden;"></div>
 
@@ -207,7 +248,7 @@
             document.getElementById('adminUser').textContent = `${currentUser.name || currentUser.username} (${currentUser.level})`;
         } catch(e) { window.location.href = 'login.html'; return; }
 
-        // ----- Data stores for services, doctors, insurance, discounts -----
+        // ----- Data stores -----
         let services = [], doctors = [], insuranceList = [], discountsList = [];
         let currentEditId = null;
         let existingDoctorsList = [];
@@ -238,12 +279,11 @@
             }
         }
 
-        // Listen for role changes
         document.querySelectorAll('input[name="accessLevel"]').forEach(radio => {
             radio.addEventListener('change', toggleSpecialityField);
         });
 
-        // ========== LOAD EXISTING DOCTORS FOR SELECTION ==========
+        // ========== LOAD EXISTING DOCTORS ==========
         async function loadExistingDoctors() {
             if (!window.db) return;
             try {
@@ -278,19 +318,15 @@
             const doctorName = selectedOption.dataset.name || '';
             const speciality = selectedOption.dataset.speciality || '';
             
-            // Auto-fill fields
-            const username = doctorId; // Use doctor ID as username
-            document.getElementById('regUsername').value = username;
+            document.getElementById('regUsername').value = doctorId;
             document.getElementById('regFullName').value = doctorName;
             document.getElementById('regSpeciality').value = speciality;
             
             document.getElementById('autoFillMessage').innerHTML = `<i class="fas fa-check-circle" style="color:#28a745;"></i> Auto-filled from: <strong>${escapeHtml(doctorName)}</strong> (${escapeHtml(speciality || 'General')})`;
             
-            // Check if this doctor already has a login
             checkIfDoctorHasLogin(doctorId);
         });
 
-        // ========== CHECK IF DOCTOR ALREADY HAS LOGIN ==========
         async function checkIfDoctorHasLogin(doctorId) {
             if (!window.db) return;
             try {
@@ -305,7 +341,7 @@
             }
         }
 
-        // ========== Firebase Load for services, doctors, etc. ==========
+        // ========== Firebase Load ==========
         async function loadAllData() {
             if (!window.db) { setTimeout(loadAllData, 500); return; }
             try {
@@ -333,60 +369,165 @@
             } catch (error) { showMessage('servicesMessage', '❌ Error: ' + error.message, 'error'); }
         }
 
+        // ========== RENDER FUNCTIONS ==========
         function renderServices() {
             const tbody = document.getElementById('servicesList');
             if (!tbody) return;
-            if (services.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No services</td></tr>'; return; }
-            tbody.innerHTML = services.map(s => `<tr><td><strong>${escapeHtml(s.name)}</strong></td><td>MVR ${s.price}</td><td>${s.aasandhaCovered ? '✅ Yes' : '❌ No'}</td><td>${s.aasandhaCovered ? `MVR ${s.aasandhaCoverAmount}` : '—'}</td><td><button class="btn-sm" onclick="window.editService('${s.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteService('${s.id}')">🗑️ Delete</button></td></tr>`).join('');
+            if (services.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No services</td></tr>'; return; }
+            tbody.innerHTML = services.map(s => `
+                <tr>
+                    <td><span class="code-badge">${escapeHtml(s.code || 'N/A')}</span></td>
+                    <td><strong>${escapeHtml(s.name)}</strong></td>
+                    <td>MVR ${s.price}</td>
+                    <td>${s.aasandhaCovered ? '✅ Yes' : '❌ No'}</td>
+                    <td>${s.aasandhaCovered ? `MVR ${s.aasandhaCoverAmount}` : '—'}</td>
+                    <td><button class="btn-sm" onclick="window.editService('${s.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteService('${s.id}')">🗑️ Delete</button></td>
+                </tr>
+            `).join('');
         }
+        
         function renderDoctors() {
             const tbody = document.getElementById('doctorsList');
             if (!tbody) return;
             if (doctors.length === 0) { tbody.innerHTML = '<tr><td colspan="4">No doctors</td></tr>'; return; }
             tbody.innerHTML = doctors.map(d => `<tr><td><strong>${escapeHtml(d.name)}</strong></td><td>${escapeHtml(d.speciality)}</td><td>${d.baseCommission || 0}%</td><td><button class="btn-sm" onclick="window.editDoctor('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDoctor('${d.id}')">🗑️ Delete</button></td></tr>`).join('');
         }
+        
         function renderInsurance() {
             const tbody = document.getElementById('insuranceList');
             if (!tbody) return;
             if (insuranceList.length === 0) { tbody.innerHTML = '<tr><td colspan="3">No insurance</td></tr>'; return; }
             tbody.innerHTML = insuranceList.map(i => `<tr><td><strong>${escapeHtml(i.name)}</strong></td><td><span class="badge-active">Active</span></td><td><button class="btn-sm" onclick="window.editInsurance('${i.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteInsurance('${i.id}')">🗑️ Delete</button></td></tr>`).join('');
         }
+        
         function renderDiscounts() {
             const tbody = document.getElementById('discountsList');
             if (!tbody) return;
             if (discountsList.length === 0) { tbody.innerHTML = '<tr><td colspan="4">No discounts</td></tr>'; return; }
             tbody.innerHTML = discountsList.map(d => `<tr><td><strong>${escapeHtml(d.name)}</strong></td><td>${d.percent}%</td><td>${escapeHtml(d.description || '')}</td><td><button class="btn-sm" onclick="window.editDiscount('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDiscount('${d.id}')">🗑️ Delete</button></td></tr>`).join('');
         }
+        
         function renderAll() { renderServices(); renderDoctors(); renderInsurance(); renderDiscounts(); }
 
-        // CRUD for services, doctors, insurance, discounts
-        window.editService = (id) => { const s = services.find(x => x.id === id); if(s){ currentEditId=id; document.getElementById('serviceModalTitle').innerText='Edit Service'; document.getElementById('serviceName').value=s.name; document.getElementById('servicePrice').value=s.price; document.getElementById('serviceAasandhaCovered').checked=s.aasandhaCovered||false; document.getElementById('serviceAasandhaAmount').value=s.aasandhaCoverAmount||0; document.getElementById('serviceModal').style.display='flex'; } };
-        window.deleteService = async (id) => { if(confirm('Delete?')){ services = services.filter(s=>s.id!==id); await window.db.collection("services").doc(id).delete(); renderServices(); showMessage('servicesMessage','Service deleted','info'); } };
-        window.editDoctor = (id) => { const d = doctors.find(x=>x.id===id); if(d){ currentEditId=id; document.getElementById('doctorModalTitle').innerText='Edit Doctor'; document.getElementById('doctorName').value=d.name; document.getElementById('doctorSpeciality').value=d.speciality; document.getElementById('doctorCommission').value=d.baseCommission||0; document.getElementById('doctorModal').style.display='flex'; } };
-        window.deleteDoctor = async (id) => { if(confirm('Delete doctor?')){ doctors = doctors.filter(d=>d.id!==id); await window.db.collection("doctors").doc(id).delete(); renderDoctors(); showMessage('doctorsMessage','Doctor deleted','info'); } };
-        window.editInsurance = (id) => { const ins = insuranceList.find(i=>i.id===id); if(ins){ currentEditId=id; document.getElementById('insuranceModalTitle').innerText='Edit Insurance'; document.getElementById('insuranceName').value=ins.name; document.getElementById('insuranceModal').style.display='flex'; } };
-        window.deleteInsurance = async (id) => { if(confirm('Delete insurance?')){ insuranceList = insuranceList.filter(i=>i.id!==id); await window.db.collection("insurance").doc(id).delete(); renderInsurance(); showMessage('insuranceMessage','Insurance deleted','info'); } };
-        window.editDiscount = (id) => { const disc = discountsList.find(d=>d.id===id); if(disc){ currentEditId=id; document.getElementById('discountModalTitle').innerText='Edit Discount'; document.getElementById('discountName').value=disc.name; document.getElementById('discountPercent').value=disc.percent; document.getElementById('discountDesc').value=disc.description||''; document.getElementById('discountModal').style.display='flex'; } };
-        window.deleteDiscount = async (id) => { if(confirm('Delete discount?')){ discountsList = discountsList.filter(d=>d.id!==id); await window.db.collection("discounts").doc(id).delete(); renderDiscounts(); showMessage('discountsMessage','Discount deleted','info'); } };
+        // ========== CRUD OPERATIONS ==========
+        window.editService = (id) => { 
+            const s = services.find(x => x.id === id); 
+            if(s){ 
+                currentEditId = id; 
+                document.getElementById('serviceModalTitle').innerText = 'Edit Service'; 
+                document.getElementById('serviceCode').value = s.code || ''; 
+                document.getElementById('serviceName').value = s.name; 
+                document.getElementById('servicePrice').value = s.price; 
+                document.getElementById('serviceAasandhaCovered').checked = s.aasandhaCovered || false; 
+                document.getElementById('serviceAasandhaAmount').value = s.aasandhaCoverAmount || 0; 
+                document.getElementById('serviceModal').style.display = 'flex'; 
+            } 
+        };
+        
+        window.deleteService = async (id) => { 
+            if(confirm('Delete this service?')){ 
+                services = services.filter(s => s.id !== id); 
+                await window.db.collection("services").doc(id).delete(); 
+                renderServices(); 
+                showMessage('servicesMessage', 'Service deleted', 'info'); 
+            } 
+        };
+        
+        window.editDoctor = (id) => { 
+            const d = doctors.find(x => x.id === id); 
+            if(d){ 
+                currentEditId = id; 
+                document.getElementById('doctorModalTitle').innerText = 'Edit Doctor'; 
+                document.getElementById('doctorName').value = d.name; 
+                document.getElementById('doctorSpeciality').value = d.speciality; 
+                document.getElementById('doctorCommission').value = d.baseCommission || 0; 
+                document.getElementById('doctorModal').style.display = 'flex'; 
+            } 
+        };
+        
+        window.deleteDoctor = async (id) => { 
+            if(confirm('Delete doctor?')){ 
+                doctors = doctors.filter(d => d.id !== id); 
+                await window.db.collection("doctors").doc(id).delete(); 
+                renderDoctors(); 
+                showMessage('doctorsMessage', 'Doctor deleted', 'info'); 
+            } 
+        };
+        
+        window.editInsurance = (id) => { 
+            const ins = insuranceList.find(i => i.id === id); 
+            if(ins){ 
+                currentEditId = id; 
+                document.getElementById('insuranceModalTitle').innerText = 'Edit Insurance'; 
+                document.getElementById('insuranceName').value = ins.name; 
+                document.getElementById('insuranceModal').style.display = 'flex'; 
+            } 
+        };
+        
+        window.deleteInsurance = async (id) => { 
+            if(confirm('Delete insurance?')){ 
+                insuranceList = insuranceList.filter(i => i.id !== id); 
+                await window.db.collection("insurance").doc(id).delete(); 
+                renderInsurance(); 
+                showMessage('insuranceMessage', 'Insurance deleted', 'info'); 
+            } 
+        };
+        
+        window.editDiscount = (id) => { 
+            const disc = discountsList.find(d => d.id === id); 
+            if(disc){ 
+                currentEditId = id; 
+                document.getElementById('discountModalTitle').innerText = 'Edit Discount'; 
+                document.getElementById('discountName').value = disc.name; 
+                document.getElementById('discountPercent').value = disc.percent; 
+                document.getElementById('discountDesc').value = disc.description || ''; 
+                document.getElementById('discountModal').style.display = 'flex'; 
+            } 
+        };
+        
+        window.deleteDiscount = async (id) => { 
+            if(confirm('Delete discount?')){ 
+                discountsList = discountsList.filter(d => d.id !== id); 
+                await window.db.collection("discounts").doc(id).delete(); 
+                renderDiscounts(); 
+                showMessage('discountsMessage', 'Discount deleted', 'info'); 
+            } 
+        };
 
+        // ========== SAVE FUNCTIONS ==========
         async function saveService() {
+            const code = document.getElementById('serviceCode').value.trim().toUpperCase();
             const name = document.getElementById('serviceName').value.trim();
             const price = parseFloat(document.getElementById('servicePrice').value);
             const aasandhaCovered = document.getElementById('serviceAasandhaCovered').checked;
             const aasandhaCoverAmount = parseFloat(document.getElementById('serviceAasandhaAmount').value) || 0;
-            if (!name || isNaN(price) || price <= 0) { showMessage('servicesMessage', 'Valid name and price required', 'error'); return; }
+            
+            if (!code) { showMessage('servicesMessage', 'Service Code is required', 'error'); return; }
+            if (!name) { showMessage('servicesMessage', 'Service Name is required', 'error'); return; }
+            if (isNaN(price) || price <= 0) { showMessage('servicesMessage', 'Valid price required', 'error'); return; }
+            
+            // Check for duplicate code (excluding current edit)
+            const duplicate = services.find(s => s.code === code && s.id !== currentEditId);
+            if (duplicate) {
+                showMessage('servicesMessage', `Service code "${code}" already exists!`, 'error');
+                return;
+            }
+            
             if (currentEditId) {
                 const idx = services.findIndex(s => s.id === currentEditId);
-                if (idx !== -1) services[idx] = { ...services[idx], name, price, aasandhaCovered, aasandhaCoverAmount };
+                if (idx !== -1) services[idx] = { ...services[idx], code, name, price, aasandhaCovered, aasandhaCoverAmount };
                 await window.db.collection("services").doc(currentEditId).set(services[idx]);
             } else {
-                const newId = `S${Date.now()}`;
-                const newService = { id: newId, name, price, aasandhaCovered, aasandhaCoverAmount, createdAt: new Date().toISOString() };
+                const newId = `SVC${Date.now()}`;
+                const newService = { id: newId, code, name, price, aasandhaCovered, aasandhaCoverAmount, createdAt: new Date().toISOString() };
                 services.push(newService);
                 await window.db.collection("services").doc(newId).set(newService);
             }
-            renderServices(); closeModal('serviceModal'); showMessage('servicesMessage', currentEditId ? 'Service updated' : 'Service added', 'success');
+            renderServices(); 
+            closeModal('serviceModal'); 
+            showMessage('servicesMessage', currentEditId ? 'Service updated' : 'Service added', 'success');
         }
+        
         async function saveDoctor() {
             const name = document.getElementById('doctorName').value.trim();
             const speciality = document.getElementById('doctorSpeciality').value.trim();
@@ -402,8 +543,11 @@
                 doctors.push(newDoctor);
                 await window.db.collection("doctors").doc(newId).set(newDoctor);
             }
-            renderDoctors(); closeModal('doctorModal'); showMessage('doctorsMessage', currentEditId ? 'Doctor updated' : 'Doctor added', 'success');
+            renderDoctors(); 
+            closeModal('doctorModal'); 
+            showMessage('doctorsMessage', currentEditId ? 'Doctor updated' : 'Doctor added', 'success');
         }
+        
         async function saveInsurance() {
             const name = document.getElementById('insuranceName').value.trim();
             if (!name) { showMessage('insuranceMessage', 'Insurance name required', 'error'); return; }
@@ -417,13 +561,19 @@
                 insuranceList.push(newIns);
                 await window.db.collection("insurance").doc(newId).set(newIns);
             }
-            renderInsurance(); closeModal('insuranceModal'); showMessage('insuranceMessage', currentEditId ? 'Insurance updated' : 'Insurance added', 'success');
+            renderInsurance(); 
+            closeModal('insuranceModal'); 
+            showMessage('insuranceMessage', currentEditId ? 'Insurance updated' : 'Insurance added', 'success');
         }
+        
         async function saveDiscount() {
             const name = document.getElementById('discountName').value.trim();
             const percent = parseFloat(document.getElementById('discountPercent').value);
             const description = document.getElementById('discountDesc').value.trim();
-            if (!name || isNaN(percent) || percent < 0 || percent > 100) { showMessage('discountsMessage', 'Valid name and percentage 0-100 required', 'error'); return; }
+            if (!name || isNaN(percent) || percent < 0 || percent > 100) { 
+                showMessage('discountsMessage', 'Valid name and percentage 0-100 required', 'error'); 
+                return; 
+            }
             if (currentEditId) {
                 const idx = discountsList.findIndex(d => d.id === currentEditId);
                 if (idx !== -1) discountsList[idx] = { ...discountsList[idx], name, percent, description };
@@ -434,10 +584,12 @@
                 discountsList.push(newDisc);
                 await window.db.collection("discounts").doc(newId).set(newDisc);
             }
-            renderDiscounts(); closeModal('discountModal'); showMessage('discountsMessage', currentEditId ? 'Discount updated' : 'Discount added', 'success');
+            renderDiscounts(); 
+            closeModal('discountModal'); 
+            showMessage('discountsMessage', currentEditId ? 'Discount updated' : 'Discount added', 'success');
         }
 
-        // ----- Tab switching -----
+        // ========== TAB SWITCHING ==========
         function switchTab(tabName) {
             document.getElementById('servicesTab').style.display = tabName === 'services' ? 'block' : 'none';
             document.getElementById('doctorsTab').style.display = tabName === 'doctors' ? 'block' : 'none';
@@ -449,7 +601,7 @@
             if (tabName === 'users') loadUsersFromFirebase();
         }
 
-        // ----- USER MANAGEMENT USING FIREBASE (COLLECTION "users") -----
+        // ========== USER MANAGEMENT ==========
         async function loadUsersFromFirebase() {
             if (!window.db) { setTimeout(loadUsersFromFirebase, 500); return; }
             const container = document.getElementById('usersListContainer');
@@ -478,6 +630,7 @@
             toast.style.opacity = '1'; toast.style.visibility = 'visible';
             setTimeout(() => { toast.style.opacity = '0'; toast.style.visibility = 'hidden'; }, 2500);
         }
+        
         function showUserMsg(msg, type) {
             const el = document.getElementById('userMgmtMessage');
             if(el){ el.innerText=msg; el.className=`message ${type}`; el.style.display='block'; setTimeout(()=>el.style.display='none',2800); }
@@ -500,7 +653,6 @@
             const role = document.querySelector('input[name="accessLevel"]:checked').value;
             const rcNo = document.getElementById('regRCNo').value.trim();
             
-            // Get speciality if role is Doctor
             let speciality = '';
             if (role === 'Doctor') {
                 speciality = document.getElementById('regSpeciality').value.trim();
@@ -514,7 +666,6 @@
             if (password !== confirm) { showUserMsg('Passwords do not match', 'error'); return; }
             if (password.length < 4) { showUserMsg('Password min 4 characters', 'error'); return; }
             
-            // Check if username already exists
             const userRef = window.db.collection("users").doc(username);
             const docSnap = await userRef.get();
             if (docSnap.exists) {
@@ -522,7 +673,6 @@
                 return;
             }
             
-            // Check RCNo uniqueness across users
             const existingRC = await window.db.collection("users").where("RCNo", "==", rcNo).get();
             if (!existingRC.empty) { showUserMsg(`RC Number "${rcNo}" already used`, 'error'); return; }
             
@@ -538,10 +688,8 @@
                 createdAt: new Date().toISOString()
             };
             
-            // Also add to doctors collection if role is Doctor and doctor doesn't already exist
             if (role === 'Doctor') {
                 try {
-                    // Check if doctor already exists in doctors collection
                     const doctorRef = window.db.collection("doctors").doc(username);
                     const doctorSnap = await doctorRef.get();
                     if (!doctorSnap.exists) {
@@ -554,11 +702,7 @@
                             createdAt: new Date().toISOString()
                         });
                     } else {
-                        // Update existing doctor with any new info
-                        await doctorRef.update({
-                            name: fullName,
-                            speciality: speciality
-                        });
+                        await doctorRef.update({ name: fullName, speciality: speciality });
                     }
                 } catch(err) {
                     console.warn('Error saving to doctors collection:', err);
@@ -578,8 +722,8 @@
                 document.getElementById('autoFillMessage').textContent = 'Select a doctor from the dropdown below to auto-fill details';
                 updateStrength('');
                 toggleSpecialityField();
-                loadUsersFromFirebase(); // refresh list
-                await loadExistingDoctors(); // refresh doctor list
+                loadUsersFromFirebase();
+                await loadExistingDoctors();
                 showUserToast(`Registered ${username}`, false);
             } catch (err) {
                 showUserMsg('Firestore error: '+err.message, 'error');
@@ -589,7 +733,6 @@
         async function deleteUserFromFirebase(userId, username) {
             if (!confirm(`Delete user "${username}"?`)) return;
             try {
-                // Also delete from doctors collection if it exists
                 try {
                     const doctorRef = window.db.collection("doctors").doc(userId);
                     const doctorSnap = await doctorRef.get();
@@ -643,7 +786,7 @@
             });
             container.innerHTML = html;
             if(countSpan) countSpan.innerText = `${users.length} user${users.length!==1?'s':''}`;
-            // Attach delete events
+            
             document.querySelectorAll('.delete-user').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const userId = btn.getAttribute('data-id');
@@ -651,7 +794,7 @@
                     if (userId) deleteUserFromFirebase(userId, userName);
                 });
             });
-            // Attach copy events
+            
             document.querySelectorAll('.copy-hash-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const hash = btn.getAttribute('data-hash');
@@ -662,16 +805,54 @@
             });
         }
 
-        // ----- Event Listeners -----
+        // ========== EVENT LISTENERS ==========
         document.getElementById('saveToFirebaseBtn').onclick = saveAllToFirebase;
-        document.getElementById('addServiceBtn').onclick = () => { currentEditId = null; document.getElementById('serviceModalTitle').innerText = 'Add Service'; document.getElementById('serviceName').value = ''; document.getElementById('servicePrice').value = ''; document.getElementById('serviceAasandhaCovered').checked = false; document.getElementById('serviceAasandhaAmount').value = ''; document.getElementById('serviceModal').style.display = 'flex'; };
-        document.getElementById('addDoctorBtn').onclick = () => { currentEditId = null; document.getElementById('doctorModalTitle').innerText = 'Add Doctor'; document.getElementById('doctorName').value = ''; document.getElementById('doctorSpeciality').value = ''; document.getElementById('doctorCommission').value = ''; document.getElementById('doctorModal').style.display = 'flex'; };
-        document.getElementById('addInsuranceBtn').onclick = () => { currentEditId = null; document.getElementById('insuranceModalTitle').innerText = 'Add Insurance'; document.getElementById('insuranceName').value = ''; document.getElementById('insuranceModal').style.display = 'flex'; };
-        document.getElementById('addDiscountBtn').onclick = () => { currentEditId = null; document.getElementById('discountModalTitle').innerText = 'Add Discount'; document.getElementById('discountName').value = ''; document.getElementById('discountPercent').value = ''; document.getElementById('discountDesc').value = ''; document.getElementById('discountModal').style.display = 'flex'; };
-        document.getElementById('saveServiceBtn').onclick = saveService; document.getElementById('cancelServiceBtn').onclick = () => closeModal('serviceModal');
-        document.getElementById('saveDoctorBtn').onclick = saveDoctor; document.getElementById('cancelDoctorBtn').onclick = () => closeModal('doctorModal');
-        document.getElementById('saveInsuranceBtn').onclick = saveInsurance; document.getElementById('cancelInsuranceBtn').onclick = () => closeModal('insuranceModal');
-        document.getElementById('saveDiscountBtn').onclick = saveDiscount; document.getElementById('cancelDiscountBtn').onclick = () => closeModal('discountModal');
+        
+        document.getElementById('addServiceBtn').onclick = () => { 
+            currentEditId = null; 
+            document.getElementById('serviceModalTitle').innerText = 'Add Service'; 
+            document.getElementById('serviceCode').value = ''; 
+            document.getElementById('serviceName').value = ''; 
+            document.getElementById('servicePrice').value = ''; 
+            document.getElementById('serviceAasandhaCovered').checked = false; 
+            document.getElementById('serviceAasandhaAmount').value = ''; 
+            document.getElementById('serviceModal').style.display = 'flex'; 
+        };
+        
+        document.getElementById('addDoctorBtn').onclick = () => { 
+            currentEditId = null; 
+            document.getElementById('doctorModalTitle').innerText = 'Add Doctor'; 
+            document.getElementById('doctorName').value = ''; 
+            document.getElementById('doctorSpeciality').value = ''; 
+            document.getElementById('doctorCommission').value = ''; 
+            document.getElementById('doctorModal').style.display = 'flex'; 
+        };
+        
+        document.getElementById('addInsuranceBtn').onclick = () => { 
+            currentEditId = null; 
+            document.getElementById('insuranceModalTitle').innerText = 'Add Insurance'; 
+            document.getElementById('insuranceName').value = ''; 
+            document.getElementById('insuranceModal').style.display = 'flex'; 
+        };
+        
+        document.getElementById('addDiscountBtn').onclick = () => { 
+            currentEditId = null; 
+            document.getElementById('discountModalTitle').innerText = 'Add Discount'; 
+            document.getElementById('discountName').value = ''; 
+            document.getElementById('discountPercent').value = ''; 
+            document.getElementById('discountDesc').value = ''; 
+            document.getElementById('discountModal').style.display = 'flex'; 
+        };
+        
+        document.getElementById('saveServiceBtn').onclick = saveService; 
+        document.getElementById('cancelServiceBtn').onclick = () => closeModal('serviceModal');
+        document.getElementById('saveDoctorBtn').onclick = saveDoctor; 
+        document.getElementById('cancelDoctorBtn').onclick = () => closeModal('doctorModal');
+        document.getElementById('saveInsuranceBtn').onclick = saveInsurance; 
+        document.getElementById('cancelInsuranceBtn').onclick = () => closeModal('insuranceModal');
+        document.getElementById('saveDiscountBtn').onclick = saveDiscount; 
+        document.getElementById('cancelDiscountBtn').onclick = () => closeModal('discountModal');
+        
         document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => switchTab(btn.dataset.tab));
         document.getElementById('registerUserBtn').onclick = registerSystemUser;
         document.getElementById('clearUserFormBtn').onclick = () => { 
@@ -687,13 +868,17 @@
             toggleSpecialityField();
             showUserMsg('Form cleared','info'); 
         };
+        
         document.getElementById('regPassword').addEventListener('input', (e) => updateStrength(e.target.value));
         
-        // Initialize speciality field visibility
         toggleSpecialityField();
         
-        // Initialize
-        function waitForFirebase() { if (window.db) { loadAllData(); loadUsersFromFirebase(); } else setTimeout(waitForFirebase, 500); }
+        function waitForFirebase() { 
+            if (window.db) { 
+                loadAllData(); 
+                loadUsersFromFirebase(); 
+            } else setTimeout(waitForFirebase, 500); 
+        }
         waitForFirebase();
     })();
 </script>

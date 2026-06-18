@@ -116,6 +116,12 @@
             box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
         }
 
+        .input-group input:disabled {
+            background: #f0f4f9;
+            color: #6c7a89;
+            cursor: not-allowed;
+        }
+
         .patient-search-wrapper {
             position: relative;
         }
@@ -475,12 +481,103 @@
 
         .discount-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 10px;
             margin-bottom: 15px;
             background: #fff8e7;
-            padding: 10px;
+            padding: 12px;
             border-radius: 12px;
+            border: 1px solid #f0e6d3;
+        }
+
+        .discount-toggle {
+            display: flex;
+            gap: 6px;
+            margin: 4px 0;
+        }
+
+        .discount-toggle button {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid #cbdde9;
+            background: white;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .discount-toggle button.active {
+            background: #f0ad4e;
+            color: white;
+            border-color: #f0ad4e;
+        }
+
+        .discount-toggle button:hover {
+            background: #f0ad4e;
+            color: white;
+        }
+
+        .discount-custom-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .discount-custom-input input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 12px;
+            background: white;
+        }
+
+        .discount-custom-input input:focus {
+            outline: none;
+            border-color: #f0ad4e;
+            box-shadow: 0 0 0 3px rgba(240, 173, 78, 0.2);
+        }
+
+        .discount-custom-input .currency-symbol {
+            font-weight: 600;
+            color: #0f5c7a;
+            font-size: 12px;
+        }
+
+        .discount-preset-select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 12px;
+            background: white;
+        }
+
+        .discount-preset-select:focus {
+            outline: none;
+            border-color: #f0ad4e;
+            box-shadow: 0 0 0 3px rgba(240, 173, 78, 0.2);
+        }
+
+        .discount-type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .discount-type-badge.percentage {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .discount-type-badge.fixed {
+            background: #cce5ff;
+            color: #004085;
         }
 
         .action-buttons {
@@ -629,6 +726,12 @@
             .patient-search-results {
                 max-height: 200px;
             }
+            .discount-row {
+                grid-template-columns: 1fr;
+            }
+            .discount-custom-input {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
@@ -753,18 +856,35 @@
     <div class="billing-card">
         <div class="section-title">💰 Billing Summary</div>
         
+        <!-- Updated Discount Section with Customizable Options -->
         <div class="discount-row">
             <div class="input-group">
                 <label>🎟️ Discount Type</label>
-                <select id="discountTypeSelect"><option value="0">None</option></select>
+                <div class="discount-toggle">
+                    <button id="discountPresetBtn" class="active">📋 Preset</button>
+                    <button id="discountCustomBtn">✏️ Custom</button>
+                </div>
+                <select id="discountPresetSelect" class="discount-preset-select">
+                    <option value="0">None</option>
+                </select>
+            </div>
+            <div class="input-group" id="customDiscountGroup" style="display: none;">
+                <label>Custom Discount</label>
+                <div class="discount-toggle" style="margin-bottom: 4px;">
+                    <button id="discountPercentBtn" class="active">% Percentage</button>
+                    <button id="discountAmountBtn">💰 Fixed Amount</button>
+                </div>
+                <div class="discount-custom-input">
+                    <input type="number" id="customDiscountValue" placeholder="Enter value" step="0.01" min="0" value="0">
+                    <span class="currency-symbol" id="customDiscountSymbol">%</span>
+                </div>
             </div>
             <div class="input-group">
-                <label>Discount %</label>
-                <input type="number" id="totalDiscountPercent" value="0" step="1" readonly style="background:#f0f4f9;">
-            </div>
-            <div class="input-group">
-                <label>Discount Amount (MVR)</label>
-                <input type="text" id="discountAmount" readonly style="background:#f0f4f9;">
+                <label>Discount Applied</label>
+                <div style="display: flex; align-items: center; gap: 8px; background: #f0f4f9; padding: 8px 12px; border-radius: 14px; min-height: 36px;">
+                    <span id="discountDisplayText" style="font-size: 13px; font-weight: 600; color: #0a2f44;">None</span>
+                    <span id="discountDisplayAmount" style="font-size: 13px; font-weight: 700; color: #d9534f; margin-left: auto;">MVR 0.00</span>
+                </div>
             </div>
         </div>
         
@@ -848,6 +968,9 @@
     let selectedDoctor = null;
     let selectedPrimaryInsurance = null;
     let selectedDiscountPercent = 0;
+    let selectedDiscountFixed = 0;
+    let discountType = "percent"; // "percent" or "fixed"
+    let discountMode = "preset"; // "preset" or "custom"
     let selectedInsurancePercent = 0;
     let selectedInsuranceFixed = 0;
     let insuranceType = "percent";
@@ -1364,10 +1487,11 @@
         try {
             const snapshot = await window.db.collection("discounts").get();
             discountsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const discountSelect = document.getElementById('discountTypeSelect');
+            const discountSelect = document.getElementById('discountPresetSelect');
             discountSelect.innerHTML = '<option value="0">None</option>';
             discountsList.forEach(d => {
-                discountSelect.innerHTML += `<option value="${d.percent}">${d.name} (${d.percent}%)</option>`;
+                const typeLabel = d.type === 'fixed' ? '💰 Fixed' : '%';
+                discountSelect.innerHTML += `<option value="${d.percent}" data-type="${d.type || 'percent'}" data-name="${d.name}">${d.name} (${d.percent}${d.type === 'fixed' ? ' MVR' : '%'})</option>`;
             });
         } catch (error) { console.error(error); }
     }
@@ -1440,6 +1564,52 @@
         else showMessage("Already up to date", "info");
     }
     
+    // ========== DISCOUNT FUNCTIONS ==========
+    function getDiscountValue() {
+        if (discountMode === "preset") {
+            const select = document.getElementById('discountPresetSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const value = parseFloat(select.value) || 0;
+            const type = selectedOption?.dataset?.type || 'percent';
+            return { value, type };
+        } else {
+            const customValue = parseFloat(document.getElementById('customDiscountValue').value) || 0;
+            return { value: customValue, type: discountType };
+        }
+    }
+    
+    function updateDiscountDisplay() {
+        const { value, type } = getDiscountValue();
+        const displayText = document.getElementById('discountDisplayText');
+        const displayAmount = document.getElementById('discountDisplayAmount');
+        
+        if (value === 0) {
+            displayText.textContent = 'None';
+            displayAmount.textContent = 'MVR 0.00';
+            return;
+        }
+        
+        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        let discountAmount = 0;
+        let displayValue = '';
+        
+        if (type === 'percent') {
+            discountAmount = (subtotal * value) / 100;
+            displayValue = `${value}%`;
+        } else {
+            discountAmount = Math.min(value, subtotal);
+            displayValue = `MVR ${value.toFixed(2)}`;
+        }
+        
+        displayText.textContent = `${displayValue} discount`;
+        displayAmount.textContent = `- MVR ${discountAmount.toFixed(2)}`;
+        displayAmount.style.color = discountAmount > 0 ? '#d9534f' : '#0a2f44';
+        
+        // Update hidden fields for billing
+        selectedDiscountPercent = type === 'percent' ? value : 0;
+        selectedDiscountFixed = type === 'fixed' ? value : 0;
+    }
+    
     function renderServices() {
         const tbody = document.getElementById('servicesTbody');
         if (!selectedServices.length) {
@@ -1509,6 +1679,7 @@
         }).join('');
         
         updateInsuranceCoverageInfo();
+        updateDiscountDisplay();
     }
     
     function updateInsuranceCoverageInfo() {
@@ -1587,11 +1758,17 @@
     
     function calculateBilling() {
         const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
-        const discPercent = selectedDiscountPercent;
-        const discAmount = (subtotal * discPercent) / 100;
+        
+        // Calculate discount
+        const { value, type } = getDiscountValue();
+        let discAmount = 0;
+        if (type === 'percent') {
+            discAmount = (subtotal * value) / 100;
+        } else {
+            discAmount = Math.min(value, subtotal);
+        }
+        
         let afterDiscount = subtotal - discAmount;
-        document.getElementById('discountAmount').value = discAmount.toFixed(2);
-        document.getElementById('totalDiscountPercent').value = discPercent;
         document.getElementById('subtotalAmount').innerHTML = subtotal.toFixed(2);
         document.getElementById('totalAfterDiscount').innerHTML = afterDiscount.toFixed(2);
         
@@ -1603,7 +1780,7 @@
             let primaryPortion = s.primaryInsuranceAmount || 0;
             let aasandhaPortion = s.aasandhaAmount || 0;
             
-            if (discPercent > 0 && serviceTotal > 0) {
+            if (discAmount > 0 && serviceTotal > 0 && subtotal > 0) {
                 const discountWeight = discAmount * (serviceTotal / subtotal);
                 if (primaryPortion > 0) primaryPortion = Math.max(0, primaryPortion - (primaryPortion / serviceTotal) * discountWeight);
                 if (aasandhaPortion > 0) aasandhaPortion = Math.max(0, aasandhaPortion - (aasandhaPortion / serviceTotal) * discountWeight);
@@ -1626,6 +1803,7 @@
         document.getElementById('aasandhaPayment').innerHTML = aasandhaTotal.toFixed(2);
         document.getElementById('patientPayAmount').innerHTML = patientTotal.toFixed(2);
         updatePaymentDisplay(patientTotal);
+        updateDiscountDisplay();
     }
     
     function updatePaymentDisplay(patientPayable) {
@@ -1788,6 +1966,16 @@
             insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
         }
         
+        // Get discount details
+        const { value: discountValue, type: discountTypeValue } = getDiscountValue();
+        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        let discountAmount = 0;
+        if (discountTypeValue === 'percent') {
+            discountAmount = (subtotal * discountValue) / 100;
+        } else {
+            discountAmount = Math.min(discountValue, subtotal);
+        }
+        
         let memoNumber;
         try {
             memoNumber = await getNextMemoNumber();
@@ -1826,13 +2014,17 @@
                 patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0))
             })),
             discount: {
-                percent: selectedDiscountPercent || 0,
-                reason: document.getElementById('discountTypeSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None",
-                amount: parseFloat(document.getElementById('discountAmount').value) || 0
+                type: discountTypeValue,
+                value: discountValue,
+                amount: discountAmount,
+                mode: discountMode,
+                reason: discountMode === 'preset' ? 
+                    (document.getElementById('discountPresetSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None") : 
+                    "Custom Discount"
             },
             billing: {
-                subtotal: parseFloat(document.getElementById('subtotalAmount').innerHTML) || 0,
-                afterDiscount: parseFloat(document.getElementById('totalAfterDiscount').innerHTML) || 0,
+                subtotal: subtotal || 0,
+                afterDiscount: subtotal - discountAmount || 0,
                 primaryInsurancePayment: currentPrimaryInsurancePayment,
                 aasandhaPayment: currentAasandhaPayment,
                 totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
@@ -1877,6 +2069,62 @@
             saveBtn.disabled = false;
         }
     }
+    
+    // ========== DISCOUNT EVENT LISTENERS ==========
+    // Toggle between preset and custom discount
+    document.getElementById('discountPresetBtn').addEventListener('click', function() {
+        discountMode = 'preset';
+        document.getElementById('discountPresetBtn').classList.add('active');
+        document.getElementById('discountCustomBtn').classList.remove('active');
+        document.getElementById('discountPresetSelect').style.display = 'block';
+        document.getElementById('customDiscountGroup').style.display = 'none';
+        calculateBilling();
+    });
+    
+    document.getElementById('discountCustomBtn').addEventListener('click', function() {
+        discountMode = 'custom';
+        document.getElementById('discountCustomBtn').classList.add('active');
+        document.getElementById('discountPresetBtn').classList.remove('active');
+        document.getElementById('discountPresetSelect').style.display = 'none';
+        document.getElementById('customDiscountGroup').style.display = 'block';
+        calculateBilling();
+    });
+    
+    // Toggle between percentage and fixed for custom discount
+    document.getElementById('discountPercentBtn').addEventListener('click', function() {
+        discountType = 'percent';
+        document.getElementById('discountPercentBtn').classList.add('active');
+        document.getElementById('discountAmountBtn').classList.remove('active');
+        document.getElementById('customDiscountSymbol').textContent = '%';
+        document.getElementById('customDiscountValue').placeholder = 'Enter percentage';
+        calculateBilling();
+    });
+    
+    document.getElementById('discountAmountBtn').addEventListener('click', function() {
+        discountType = 'fixed';
+        document.getElementById('discountAmountBtn').classList.add('active');
+        document.getElementById('discountPercentBtn').classList.remove('active');
+        document.getElementById('customDiscountSymbol').textContent = 'MVR';
+        document.getElementById('customDiscountValue').placeholder = 'Enter amount';
+        calculateBilling();
+    });
+    
+    // Preset discount change
+    document.getElementById('discountPresetSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const type = selectedOption?.dataset?.type || 'percent';
+        if (type === 'fixed') {
+            discountType = 'fixed';
+        } else {
+            discountType = 'percent';
+        }
+        calculateBilling();
+    });
+    
+    // Custom discount value change
+    document.getElementById('customDiscountValue').addEventListener('input', function() {
+        calculateBilling();
+    });
     
     // ========== EVENT LISTENERS ==========
     document.getElementById('patientSearchInput').addEventListener('input', function(e) {
@@ -1970,7 +2218,6 @@
         calculateBilling(); 
     });
     
-    document.getElementById('discountTypeSelect').addEventListener('change', (e) => { selectedDiscountPercent = parseFloat(e.target.value) || 0; calculateBilling(); });
     document.getElementById('saveMemoBtn').onclick = saveToFirebase;
     document.getElementById('applyAutoCalcBtn').addEventListener('click', applyAutoCalculation);
     

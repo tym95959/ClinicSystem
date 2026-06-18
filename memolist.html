@@ -494,7 +494,7 @@
         });
     }
 
-    // UPDATED PRINT FUNCTION - Redesigned layout with dynamic heading
+    // UPDATED PRINT FUNCTION - With logo support
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) { alert("Please allow pop-ups to print."); return; }
@@ -557,6 +557,8 @@
             .header { text-align:center; border-bottom:2px solid #0a2f44; padding-bottom:4px; margin-bottom:8px; position:relative; }
             .header h1 { color:#0a2f44; margin:0; font-size:16px; }
             .header p { margin:2px 0; font-size:8px; color:#5f7f9a; }
+            .logo-container { text-align:center; margin-bottom:4px; }
+            .logo-container img { max-height:60px; width:auto; }
             .memo-title { text-align:center; background:#e0f2fe; padding:3px; border-radius:20px; margin:6px 0; font-weight:bold; font-size:11px; }
             
             .info-grid { display:flex; gap:10px; margin:8px 0; }
@@ -596,6 +598,10 @@
         </head><body>
         <div class="receipt">
             <div class="header">
+                <div class="logo-container">
+                    <img src="hope1.png" alt="Hope Dental Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none; font-size:24px; font-weight:bold; color:#0a2f44;">Hope Dental</div>
+                </div>
                 <h1>Hope Dental Clinic</h1>
                 <p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p>
                 <p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p>

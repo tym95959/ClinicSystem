@@ -980,6 +980,7 @@
     let selectedPaymentMethod = null;
     let cashGivenAmount = 0;
     let searchTimeout = null;
+    let savedMemoData = null;
     
     // Insurance names that cover 100% of all services
     const FULL_COVER_INSURANCES = ['MNDF', 'POLICE', 'MNDF Insurance', 'POLICE Insurance'];
@@ -2056,11 +2057,17 @@
                 }
             }
             
+            savedMemoData = memoData;
             showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
+            
+            // Redirect to memos list page after save
             setTimeout(() => {
-                alert(`Memo #${memoId} saved successfully!\nPayment: ${paymentDetails.method}\nAmount: MVR ${paidAmount.toFixed(2)}`);
-                window.location.href = 'clinicdash.html';
+                // Store the memo ID to auto-print
+                localStorage.setItem('autoPrintMemoId', memoId);
+                // Redirect to memos list
+                window.location.href = 'memos-list.html';
             }, 1500);
+            
         } catch (error) {
             console.error(error);
             showMessage("❌ Failed to save: " + error.message, "error");

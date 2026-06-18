@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Memos List (Filter on Demand) | Smart Insurance Display</title>
+    <title>Hope Dental | Memos List</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -385,6 +385,14 @@
         return results;
     }
 
+    // Get primary insurance name from memo
+    function getPrimaryInsuranceName(memo) {
+        const insurances = memo.insurances || [];
+        const primary = insurances.find(ins => ins.priority === 'primary');
+        if (primary) return primary.name;
+        return 'Insurance';
+    }
+
     // Get memo heading - Consultation Memo or Service Memo
     function getMemoHeading(memo) {
         const services = memo.services || [];
@@ -393,12 +401,10 @@
         const firstService = services[0];
         const serviceName = firstService.name || '';
         
-        // Check if it's a consultation
         if (serviceName.toLowerCase().includes('consultation')) {
             return 'Consultation Memo';
         }
         
-        // For all other services, show 'Service Memo'
         return 'Service Memo';
     }
 
@@ -494,7 +500,7 @@
         });
     }
 
-    // UPDATED PRINT FUNCTION - Removed Patient Pay from table, added Code column, Insurance shows name
+    // UPDATED PRINT FUNCTION - Proper alignment, dynamic insurance heading, shows services table with Code column
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) { alert("Please allow pop-ups to print."); return; }
@@ -508,6 +514,7 @@
         const discount = memo.discount || {};
         const billing = memo.billing || {};
         const insurances = getAllInsurances(memo);
+        const primaryInsuranceName = getPrimaryInsuranceName(memo);
         
         // Calculate age
         const age = calculateAge(patient.dob);
@@ -528,21 +535,32 @@
             insuranceHtml = `<div class="insurance-item"><span class="ins-name">No Insurance</span><span class="ins-amount">MVR 0.00</span></div>`;
         }
         
-        // Services table - REMOVED Patient Pay column, ADDED Code column, Insurance shows name
+        // Services table - with dynamic insurance column heading and proper alignment
+        const insuranceHeading = primaryInsuranceName || 'Insurance';
         let servicesHtml = '';
         if (services.length > 0) {
-            servicesHtml = `<table class="services-table"><thead><tr><th>Code</th><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th></tr></thead><tbody>`;
+            servicesHtml = `<table class="services-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:center; width:12%;">Code</th>
+                        <th style="text-align:left; width:28%;">Service</th>
+                        <th style="text-align:center; width:8%;">Qty</th>
+                        <th style="text-align:right; width:13%;">Price</th>
+                        <th style="text-align:right; width:13%;">Total</th>
+                        <th style="text-align:right; width:13%;">${escapeHtml(insuranceHeading)}</th>
+                        <th style="text-align:right; width:13%;">Aasandha</th>
+                    </tr>
+                </thead>
+                <tbody>`;
             services.forEach(s => {
-                const insName = s.insuranceName || s.primaryInsuranceName || '';
-                const insDisplay = insName ? escapeHtml(insName) : '—';
                 servicesHtml += `<tr>
-                    <td class="center"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
-                    <td>${escapeHtml(s.name)}</td>
-                    <td class="center">${s.qty}</td>
-                    <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.total || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
+                    <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                    <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                    <td style="text-align:center;">${s.qty}</td>
+                    <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                    <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
+                    <td style="text-align:right;">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
+                    <td style="text-align:right;">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
                 </tr>`;
             });
             servicesHtml += `</tbody></table>`;
@@ -579,10 +597,9 @@
             .insurance-item .ins-amount { font-weight:600; color:#0f5c7a; }
             
             .services-table { width:100%; border-collapse:collapse; margin:6px 0; font-size:8px; }
-            .services-table th { background:#f4f9fe; padding:3px 3px; text-align:left; border-bottom:1px solid #d0dfe8; font-size:7px; }
-            .services-table td { padding:3px 3px; border-bottom:1px solid #e9edf2; font-size:8px; }
-            .right { text-align:right; }
-            .center { text-align:center; }
+            .services-table th { background:#f4f9fe; padding:4px 4px; border-bottom:2px solid #d0dfe8; font-size:7px; font-weight:700; color:#0a2f44; }
+            .services-table td { padding:4px 4px; border-bottom:1px solid #e9edf2; font-size:8px; }
+            .services-table tr:last-child td { border-bottom:none; }
             
             .totals-grid { display:flex; gap:10px; margin:8px 0; }
             .totals-left { flex:1; background:#f0f9ff; padding:6px 10px; border-radius:8px; border:1px solid #0f5c7a; }

@@ -124,80 +124,212 @@
         return new Date();
     }
 
-    function getActiveInsurance(memo) {
-        const insurances = memo.insurances || [];
-        if (insurances.length === 0) return null;
-        const firstInsurance = insurances[0];
-        let paymentAmount = memo.billing?.primaryInsurancePayment || 0;
-        if (paymentAmount === 0 && firstInsurance.amount) paymentAmount = firstInsurance.amount;
-        return {
-            name: firstInsurance.name || 'Insurance',
-            amount: paymentAmount
-        };
+    function formatDate(dateObj) {
+        if (!dateObj) return 'N/A';
+        try {
+            return dateObj.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch(e) {
+            return 'N/A';
+        }
     }
 
-    // ========== DIRECT PRINT FUNCTION - Opens print window immediately ==========
+    function calculateAge(dob) {
+        if (!dob) return 'N/A';
+        try {
+            const birthDate = new Date(dob);
+            if (isNaN(birthDate)) return 'N/A';
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        } catch(e) {
+            return 'N/A';
+        }
+    }
+
+    function getActiveInsurances(memo) {
+        const insurances = memo.insurances || [];
+        const billing = memo.billing || {};
+        const results = [];
+        
+        insurances.forEach(ins => {
+            let amount = ins.amount || 0;
+            if (amount === 0 && ins.priority === 'primary') {
+                amount = billing.primaryInsurancePayment || 0;
+            }
+            if (amount === 0 && ins.priority === 'secondary') {
+                amount = billing.aasandhaPayment || 0;
+            }
+            if (amount > 0) {
+                results.push({
+                    name: ins.name || 'Insurance',
+                    amount: amount,
+                    priority: ins.priority || 'primary'
+                });
+            }
+        });
+        
+        if (results.length === 0) {
+            if (billing.primaryInsurancePayment > 0) {
+                results.push({
+                    name: 'Primary Insurance',
+                    amount: billing.primaryInsurancePayment,
+                    priority: 'primary'
+                });
+            }
+            if (billing.aasandhaPayment > 0) {
+                results.push({
+                    name: 'Aasandha',
+                    amount: billing.aasandhaPayment,
+                    priority: 'secondary'
+                });
+            }
+        }
+        
+        return results;
+    }
+
+    function getMemoHeading(memo) {
+        const services = memo.services || [];
+        if (services.length === 0) return 'Service Memo';
+        const firstService = services[0];
+        const serviceName = firstService.name || '';
+        if (serviceName.toLowerCase().includes('consultation')) {
+            return 'Consultation Memo';
+        }
+        return 'Service Memo';
+    }
+
+    // ========== REDESIGNED PRINT FUNCTION ==========
     function openPrintWindow(memo) {
         const memoId = memo.memoId || memo.id;
         const dateObj = parseMemoDate(memo);
-        const dateStr = dateObj ? dateObj.toLocaleString() : (memo.date || 'N/A');
+        const dateStr = formatDate(dateObj);
         const patient = memo.patient || {};
         const doctor = memo.doctor || {};
         const services = memo.services || [];
         const discount = memo.discount || {};
         const billing = memo.billing || {};
-        const insurances = memo.insurances || [];
+        const activeInsurances = getActiveInsurances(memo);
+        const insuranceCount = activeInsurances.length;
+        const age = calculateAge(patient.dob);
+        const memoHeading = getMemoHeading(memo);
         
-        const activeInsurance = getActiveInsurance(memo);
-        const aasandhaPayment = billing.aasandhaPayment || 0;
-        
+        // Build insurance display
         let insuranceHtml = '';
-        if (insurances.length > 0) {
-            insuranceHtml = `<div class="insurance-box"><strong>Insurance Coverage</strong><div class="insurance-list">`;
-            insurances.forEach(ins => {
-                insuranceHtml += `<span class="insurance-item">${escapeHtml(ins.name)}: MVR ${(ins.amount || 0).toFixed(2)}</span>`;
-            });
-            insuranceHtml += `</div></div>`;
+        if (insuranceCount > 0) {
+            insuranceHtml = activeInsurances.map(ins => {
+                return `<div class="insurance-item">
+                    <span class="ins-name">${escapeHtml(ins.name)}</span>
+                    <span class="ins-amount">MVR ${(ins.amount || 0).toFixed(2)}</span>
+                </div>`;
+            }).join('');
+            insuranceHtml = `<div class="insurance-box">
+                <span class="ins-title">🏥 Insurance Coverage</span>
+                ${insuranceHtml}
+            </div>`;
         }
         
+        // Build services table with dynamic columns
         let servicesHtml = '';
         if (services.length > 0) {
-            servicesHtml = `<table class="services-table"><thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Total</th><th>Insurance</th><th>Aasandha</th><th>Patient Pay</th></tr></thead><tbody>`;
-            services.forEach(s => {
-                servicesHtml += `<tr>
-                    <td>${escapeHtml(s.name)}</td>
-                    <td class="center">${s.qty}</td>
-                    <td class="right">MVR ${(s.price || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.primaryInsuranceAmount || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.aasandhaAmount || 0).toFixed(2)}</td>
-                    <td class="right">MVR ${(s.patientPay || 0).toFixed(2)}</td>
+            let headerHtml = '';
+            let rowHtml = '';
+            
+            if (insuranceCount === 0) {
+                // No insurance - 5 columns: Code, Service, Qty, Price, Total
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:12%;">Code</th>
+                    <th style="text-align:left; width:40%;">Service</th>
+                    <th style="text-align:center; width:10%;">Qty</th>
+                    <th style="text-align:right; width:19%;">Price</th>
+                    <th style="text-align:right; width:19%;">Total</th>
                 </tr>`;
-            });
-            servicesHtml += `</tbody></table>`;
+                
+                services.forEach(s => {
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+            } else if (insuranceCount === 1) {
+                // Single insurance - 6 columns: Code, Service, Qty, Price, Insurance, Total
+                const insName = activeInsurances[0].name || 'Insurance';
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:12%;">Code</th>
+                    <th style="text-align:left; width:32%;">Service</th>
+                    <th style="text-align:center; width:8%;">Qty</th>
+                    <th style="text-align:right; width:16%;">Price</th>
+                    <th style="text-align:right; width:16%;">${escapeHtml(insName)}</th>
+                    <th style="text-align:right; width:16%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    const insAmount = s.primaryInsuranceAmount || s.aasandhaAmount || 0;
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${insAmount.toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+            } else {
+                // Dual insurance - 7 columns: Code, Service, Qty, Price, Insurance1, Insurance2, Total
+                const ins1Name = activeInsurances[0]?.name || 'Insurance';
+                const ins2Name = activeInsurances[1]?.name || 'Aasandha';
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:12%;">Code</th>
+                    <th style="text-align:left; width:26%;">Service</th>
+                    <th style="text-align:center; width:7%;">Qty</th>
+                    <th style="text-align:right; width:13%;">Price</th>
+                    <th style="text-align:right; width:14%;">${escapeHtml(ins1Name)}</th>
+                    <th style="text-align:right; width:14%;">${escapeHtml(ins2Name)}</th>
+                    <th style="text-align:right; width:14%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    const ins1Amount = s.primaryInsuranceAmount || 0;
+                    const ins2Amount = s.aasandhaAmount || 0;
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${ins1Amount.toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${ins2Amount.toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            
+            servicesHtml = `<table class="services-table"><thead>${headerHtml}</thead><tbody>${rowHtml}</tbody></table>`;
         } else {
             servicesHtml = '<div class="no-services">No services recorded.</div>';
-        }
-        
-        let insurancePaymentRow = '';
-        if (activeInsurance && activeInsurance.amount > 0) {
-            insurancePaymentRow = `<div class="totals-row"><span>🏥 ${escapeHtml(activeInsurance.name)} Paid:</span><span>MVR ${activeInsurance.amount.toFixed(2)}</span></div>`;
-        }
-        
-        let aasandhaRow = '';
-        if (aasandhaPayment > 0) {
-            aasandhaRow = `<div class="totals-row"><span>🏛️ Aasandha (Govt.) Paid:</span><span>MVR ${aasandhaPayment.toFixed(2)}</span></div>`;
         }
 
         const printContent = `<!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>Hope Dental - Receipt ${memoId}</title>
+            <title>Hope Dental - ${memoHeading} ${memoId}</title>
             <style>
                 @page {
                     size: A5;
-                    margin: 8mm;
+                    margin: 6mm;
                 }
                 body {
                     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -205,141 +337,218 @@
                     padding: 0;
                     background: white;
                     color: #1e2a36;
-                    font-size: 11px;
+                    font-size: 10px;
                     line-height: 1.4;
                 }
                 .receipt {
                     max-width: 100%;
                     margin: 0 auto;
                     background: white;
+                    padding: 0;
                 }
                 .header {
                     text-align: center;
                     border-bottom: 2px solid #0a2f44;
-                    padding-bottom: 6px;
-                    margin-bottom: 12px;
+                    padding-bottom: 4px;
+                    margin-bottom: 8px;
                     position: relative;
                 }
                 .header h1 {
                     color: #0a2f44;
                     margin: 0;
-                    font-size: 20px;
+                    font-size: 16px;
                 }
                 .header p {
-                    margin: 3px 0;
-                    font-size: 9px;
+                    margin: 2px 0;
+                    font-size: 8px;
                     color: #5f7f9a;
+                }
+                .logo-container {
+                    text-align: center;
+                    margin-bottom: 4px;
+                }
+                .logo-container img {
+                    max-height: 60px;
+                    width: auto;
                 }
                 .memo-title {
                     text-align: center;
                     background: #e0f2fe;
-                    padding: 4px;
+                    padding: 3px;
                     border-radius: 20px;
-                    margin: 8px 0;
+                    margin: 6px 0;
                     font-weight: bold;
-                    font-size: 12px;
+                    font-size: 11px;
                 }
+                .code-badge {
+                    background: #e8f0fe;
+                    color: #0f5c7a;
+                    padding: 1px 6px;
+                    border-radius: 8px;
+                    font-size: 7px;
+                    font-family: monospace;
+                    font-weight: 600;
+                }
+                
                 .info-grid {
                     display: flex;
-                    justify-content: space-between;
-                    background: #f4f9fe;
-                    padding: 8px 10px;
-                    border-radius: 12px;
-                    margin: 10px 0;
-                    gap: 15px;
-                    flex-wrap: wrap;
+                    gap: 10px;
+                    margin: 8px 0;
                 }
-                .info-box {
+                .info-left {
                     flex: 1;
+                    background: #f8fafd;
+                    padding: 6px 10px;
+                    border-radius: 8px;
                 }
-                .info-box strong {
-                    font-size: 10px;
+                .info-right {
+                    flex: 1;
+                    background: #f8fafd;
+                    padding: 6px 10px;
+                    border-radius: 8px;
+                }
+                .info-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 2px 0;
+                    font-size: 9px;
+                    border-bottom: 1px dotted #e9edf2;
+                }
+                .info-row:last-child {
+                    border-bottom: none;
+                }
+                .info-label {
+                    font-weight: 600;
+                    color: #0a2f44;
+                }
+                .info-value {
+                    color: #1e2a36;
+                }
+                
+                .insurance-box {
+                    background: #fff8e7;
+                    padding: 5px 8px;
+                    border-radius: 8px;
+                    margin: 8px 0;
+                    border: 1px solid #f0c674;
+                }
+                .insurance-box .ins-title {
+                    font-weight: 600;
+                    font-size: 9px;
                     color: #0a2f44;
                     display: block;
-                    margin-bottom: 4px;
-                    border-left: 2px solid #0f5c7a;
-                    padding-left: 6px;
+                    margin-bottom: 3px;
                 }
-                .info-box div {
-                    font-size: 10px;
-                    margin: 3px 0;
+                .insurance-item {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 2px 4px;
+                    font-size: 9px;
+                    background: white;
+                    margin: 2px 0;
+                    border-radius: 4px;
                 }
+                .insurance-item .ins-name {
+                    font-weight: 500;
+                }
+                .insurance-item .ins-amount {
+                    font-weight: 600;
+                    color: #0f5c7a;
+                }
+                
                 .services-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin: 10px 0;
-                    font-size: 9px;
+                    margin: 6px 0;
+                    font-size: 8px;
                 }
                 .services-table th {
                     background: #f4f9fe;
-                    padding: 5px 4px;
-                    text-align: left;
-                    font-weight: 600;
-                    border-bottom: 1px solid #d0dfe8;
+                    padding: 4px 4px;
+                    border-bottom: 2px solid #d0dfe8;
+                    font-size: 7px;
+                    font-weight: 700;
+                    color: #0a2f44;
                 }
                 .services-table td {
-                    padding: 4px;
+                    padding: 4px 4px;
                     border-bottom: 1px solid #e9edf2;
+                    font-size: 8px;
                 }
-                .services-table .right {
-                    text-align: right;
+                .services-table tr:last-child td {
+                    border-bottom: none;
                 }
-                .services-table .center {
-                    text-align: center;
-                }
-                .insurance-box {
-                    background: #fff8e7;
-                    padding: 6px 10px;
-                    border-radius: 10px;
-                    margin: 10px 0;
-                    font-size: 9px;
-                }
-                .insurance-list {
+                
+                .totals-grid {
                     display: flex;
-                    flex-wrap: wrap;
-                    gap: 12px;
-                    margin-top: 4px;
+                    gap: 10px;
+                    margin: 8px 0;
                 }
-                .insurance-item {
-                    background: white;
-                    padding: 2px 8px;
-                    border-radius: 20px;
-                    border: 1px solid #f0c674;
-                }
-                .totals-box {
-                    background: linear-gradient(135deg, #f0f9ff, #e8f4fd);
+                .totals-left {
+                    flex: 1;
+                    background: #f0f9ff;
+                    padding: 6px 10px;
+                    border-radius: 8px;
                     border: 1px solid #0f5c7a;
-                    border-radius: 12px;
-                    padding: 10px;
-                    margin: 12px 0;
+                }
+                .totals-right {
+                    flex: 1;
+                    background: #f0f9ff;
+                    padding: 6px 10px;
+                    border-radius: 8px;
+                    border: 1px solid #0f5c7a;
                 }
                 .totals-row {
                     display: flex;
                     justify-content: space-between;
-                    padding: 4px 0;
-                    font-size: 10px;
+                    padding: 2px 0;
+                    font-size: 9px;
+                    border-bottom: 1px dotted #d0dfe8;
+                }
+                .totals-row:last-child {
+                    border-bottom: none;
                 }
                 .totals-row.total {
                     font-weight: 800;
-                    font-size: 13px;
-                    border-top: 1px dashed #8ba0b0;
-                    margin-top: 6px;
-                    padding-top: 6px;
+                    font-size: 11px;
+                    border-top: 2px solid #0f5c7a;
+                    margin-top: 3px;
+                    padding-top: 3px;
                 }
+                .totals-row.total .label {
+                    color: #0a2f44;
+                }
+                .totals-row.total .value {
+                    color: #0f5c7a;
+                }
+                
                 .footer {
                     text-align: center;
-                    font-size: 8px;
+                    font-size: 7px;
                     color: #8ba0b0;
                     border-top: 1px solid #ddd;
-                    padding-top: 8px;
-                    margin-top: 12px;
+                    padding-top: 6px;
+                    margin-top: 8px;
+                }
+                .non-refundable {
+                    text-align: center;
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: #b91c1c;
+                    margin-top: 4px;
+                    padding: 4px;
+                    border: 1px dashed #b91c1c;
+                    border-radius: 6px;
+                    background: #fff5f5;
+                    letter-spacing: 0.5px;
                 }
                 .no-services {
                     background: #f9f9f9;
-                    padding: 20px;
+                    padding: 15px;
                     text-align: center;
-                    border-radius: 8px;
+                    border-radius: 6px;
                     font-style: italic;
+                    font-size: 9px;
                 }
                 .no-print {
                     display: none;
@@ -364,43 +573,66 @@
         <body>
             <div class="receipt">
                 <div class="header">
-                    <img src="hope1.png" alt="Hope Dental Logo" style="position:absolute; left:10px; top:5px; height:80px;">
+                    <div class="logo-container">
+                        <img src="hope1.png" alt="Hope Dental Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display:none; font-size:24px; font-weight:bold; color:#0a2f44;">Hope Dental</div>
+                    </div>
                     <h1>Hope Dental Clinic</h1>
                     <p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p>
                     <p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p>
-                    <p><strong>CLINICAL MEMO / RECEIPT</strong></p>
                 </div>
-                <div class="memo-title">MEMO NO: ${escapeHtml(memoId)} | DATE: ${escapeHtml(dateStr)}</div>
+                <div class="memo-title">📄 ${escapeHtml(memoHeading)} — #${escapeHtml(memoId)}</div>
+                
                 <div class="info-grid">
-                    <div class="info-box">
-                        <strong>PATIENT DETAILS</strong>
-                        <div>Name: ${escapeHtml(patient.name || '')}</div>
-                        <div>ID: ${escapeHtml(patient.id || patient.idNumber || '')}</div>
-                        <div>Contact: ${escapeHtml(patient.phone || '')}</div>
-                        <div>Nationality: ${escapeHtml(patient.nationality || '')}</div>
-                        <div>${patient.isCitizen ? '✓ Aasandha Eligible' : ''}</div>
+                    <div class="info-left">
+                        <div class="info-row"><span class="info-label">Patient Name:</span><span class="info-value">${escapeHtml(patient.name || '')}</span></div>
+                        <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patient.id || patient.idNumber || patient.passportNumber || patient.nationalId || '')}</span></div>
+                        <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patient.phone || '')}</span></div>
+                        <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patient.nationality || '')}</span></div>
+                        <div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${escapeHtml(patient.dob || '')} ${age !== 'N/A' ? `(Age: ${age})` : ''}</span></div>
                     </div>
-                    <div class="info-box">
-                        <strong>DOCTOR DETAILS</strong>
-                        <div>Name: ${escapeHtml(doctor.name || '')}</div>
-                        <div>Speciality: ${escapeHtml(doctor.speciality || '')}</div>
+                    <div class="info-right">
+                        <div class="info-row"><span class="info-label">Date:</span><span class="info-value">${escapeHtml(dateStr)}</span></div>
+                        <div class="info-row"><span class="info-label">Memo No:</span><span class="info-value">${escapeHtml(memoId)}</span></div>
+                        <div class="info-row"><span class="info-label">Doctor:</span><span class="info-value">${escapeHtml(doctor.name || '')} ${doctor.speciality ? `(${escapeHtml(doctor.speciality)})` : ''}</span></div>
+                        <div class="info-row"><span class="info-label">Insurance:</span><span class="info-value" style="font-size:8px;">${activeInsurances.map(i => escapeHtml(i.name)).join(' + ')}</span></div>
                     </div>
                 </div>
+                
                 ${servicesHtml}
+                
                 ${insuranceHtml}
-                <div class="totals-box">
-                    <div class="totals-row"><span>Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
-                    <div class="totals-row"><span>Discount (${discount.percent || 0}%):</span><span>MVR ${(discount.amount || 0).toFixed(2)}</span></div>
-                    <div class="totals-row"><span>After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
-                    ${insurancePaymentRow}
-                    ${aasandhaRow}
-                    <div class="totals-row total"><span>💰 PATIENT PAYABLE:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
-                    <div class="totals-row"><span>Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
-                    <div class="totals-row"><span>${billing.balance > 0 ? '⚖️ BALANCE DUE' : billing.balance < 0 ? '💰 CHANGE DUE' : '✅ PAID IN FULL'}:</span><span>MVR ${Math.abs(billing.balance || 0).toFixed(2)}</span></div>
+                
+                <div class="totals-grid">
+                    <div class="totals-left">
+                        <div class="totals-row"><span class="label">Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span class="label">Discount (${discount.percent || 0}%):</span><span>- MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span class="label">After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span class="label">Total Patient Payable:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
+                    </div>
+                    <div class="totals-right">
+                        <div class="totals-row"><span class="label">Total Insurance Paid:</span><span>MVR ${(billing.totalInsurancePayment || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span class="label">Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
+                        <div class="totals-row total">
+                            <span class="label">💰 PATIENT PAYABLE:</span>
+                            <span class="value">MVR ${(billing.patientPayable || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="footer">
-                    Thank you for choosing Hope Dental.<br>
-                    This is a computer-generated receipt. Valid without signature.
+                
+                <div style="text-align:center; font-size:9px; padding:4px; background:#f4f9fe; border-radius:6px; margin:4px 0;">
+                    ${(billing.balance || 0) > 0 ? `⚖️ BALANCE DUE: MVR ${(billing.balance || 0).toFixed(2)}` : 
+                      (billing.balance || 0) < 0 ? `💰 CHANGE DUE: MVR ${Math.abs(billing.balance || 0).toFixed(2)}` : 
+                      '✅ PAID IN FULL'}
+                </div>
+                
+                <div class="non-refundable">⚠️ THIS MEMO IS NOT REFUNDABLE ⚠️</div>
+                
+                <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt. Valid without signature.</div>
+                
+                <div class="no-print" style="text-align:center; margin-top:10px;">
+                    <button onclick="window.print();" style="padding:5px 14px; background:#0a2f44; color:white; border:none; border-radius:30px; font-size:10px; cursor:pointer;">🖨️ Print</button>
+                    <button onclick="window.close();" style="padding:5px 14px; background:#c63d2f; color:white; border:none; border-radius:30px; font-size:10px; cursor:pointer;">✖ Close</button>
                 </div>
             </div>
         </body>

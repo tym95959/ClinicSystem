@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Create Clinical Memo - Auto Insurance Calc</title>
+    <title>Hope Dental | Create Clinical Memo</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -26,14 +26,15 @@
         }
 
         .clinic-header {
-            background: #0a2f44;
-            color: white;
+            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
+            color: #004d4d;
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .logo h2 {
@@ -52,6 +53,10 @@
             cursor: pointer;
             font-weight: 500;
             font-size: 11px;
+        }
+
+        .back-btn:hover {
+            background: #2a5f89;
         }
 
         .memo-container {
@@ -87,6 +92,7 @@
             display: flex;
             flex-direction: column;
             gap: 3px;
+            position: relative;
         }
 
         .input-group label {
@@ -102,6 +108,120 @@
             border-radius: 14px;
             font-size: 12px;
             background: white;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+        }
+
+        /* Patient Search Styles */
+        .patient-search-wrapper {
+            position: relative;
+        }
+
+        .patient-search-input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 2px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .patient-search-input:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+            outline: none;
+        }
+
+        .patient-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a9aa8;
+            font-size: 14px;
+        }
+
+        .patient-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #0f5c7a;
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            margin-top: -2px;
+        }
+
+        .patient-search-results.active {
+            display: block;
+        }
+
+        .patient-search-result-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f4f9;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .patient-search-result-item:hover {
+            background: #f0f8ff;
+        }
+
+        .patient-search-result-item .patient-name {
+            font-weight: 600;
+            color: #0a2f44;
+            font-size: 13px;
+        }
+
+        .patient-search-result-item .patient-id {
+            font-size: 11px;
+            color: #6c7a89;
+        }
+
+        .patient-search-result-item .patient-details {
+            font-size: 11px;
+            color: #6c7a89;
+        }
+
+        .patient-search-result-item .patient-badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .patient-search-result-item .patient-badge.citizen {
+            background: #146b3a;
+        }
+
+        .patient-search-empty {
+            padding: 20px;
+            text-align: center;
+            color: #8a9aa8;
+            font-size: 13px;
+        }
+
+        .patient-search-loading {
+            padding: 15px;
+            text-align: center;
+            color: #0f5c7a;
+            font-size: 13px;
         }
 
         .selected-card {
@@ -223,6 +343,10 @@
             border-radius: 16px;
             cursor: pointer;
             font-size: 10px;
+        }
+
+        .remove-row:hover {
+            background: #ffc9c9;
         }
 
         .billing-highlight {
@@ -358,20 +482,13 @@
             font-size: 13px;
         }
 
+        .save-btn:hover {
+            background: #1a8045;
+        }
+
         .save-btn:disabled {
             background: #95a5a6;
             cursor: not-allowed;
-        }
-
-        .print-btn {
-            background: #0f5c7a;
-            color: white;
-            padding: 8px 24px;
-            border: none;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
         }
 
         .message {
@@ -409,18 +526,12 @@
             margin-left: 10px;
         }
 
-        .payment-method-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: 600;
-            margin-left: 5px;
+        .payment-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
         }
-
-        .badge-cash { background: #28a745; color: white; }
-        .badge-card { background: #007bff; color: white; }
-        .badge-transfer { background: #6f42c1; color: white; }
 
         @media (max-width: 640px) {
             .form-grid {
@@ -444,6 +555,12 @@
             }
             .action-buttons button {
                 width: 100%;
+            }
+            .payment-summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .patient-search-results {
+                max-height: 200px;
             }
         }
     </style>
@@ -472,7 +589,7 @@
                 <select id="appointmentSelect">
                     <option value="">-- Load appointments --</option>
                 </select>
-                <small style="font-size: 9px; color: #6c757d;">Select an appointment to auto‑fill patient, doctor, and services. The appointment will be deleted after saving the memo.</small>
+                <small style="font-size: 9px; color: #6c757d;">Select an appointment to auto‑fill patient, doctor, and services. The appointment will be DELETED after saving the memo.</small>
             </div>
         </div>
     </div>
@@ -480,18 +597,35 @@
     <div class="top-card">
         <div class="section-title">📋 Patient & Service Details</div>
         <div class="form-grid">
+            <!-- Enhanced Patient Search -->
             <div class="input-group">
-                <label>🔍 Select Patient</label>
-                <select id="patientDropdown"><option value="">-- Loading patients... --</option></select>
+                <label>🔍 Search Patient (Name or ID/Passport)</label>
+                <div class="patient-search-wrapper">
+                    <i class="fas fa-search patient-search-icon"></i>
+                    <input type="text" id="patientSearchInput" class="patient-search-input" placeholder="Type to search patients..." autocomplete="off">
+                    <div id="patientSearchResults" class="patient-search-results">
+                        <div class="patient-search-empty">Start typing to search patients...</div>
+                    </div>
+                </div>
                 <div id="selectedPatientCard" class="selected-card" style="display: none;"></div>
             </div>
             
+            <!-- Hidden fields for patient data -->
+            <input type="hidden" id="patientId" value="">
+            <input type="hidden" id="patientName" value="">
+            <input type="hidden" id="contactNo" value="">
+            <input type="hidden" id="patientNationality" value="">
+            <input type="hidden" id="patientIsCitizen" value="">
+            <input type="hidden" id="patientDob" value="">
+            
+            <!-- Doctor Dropdown -->
             <div class="input-group">
                 <label>👨‍⚕️ Select Doctor</label>
                 <select id="doctorSelect"><option value="">-- Loading doctors... --</option></select>
                 <div id="selectedDoctorCard" class="selected-card" style="display: none;"></div>
             </div>
             
+            <!-- Insurance -->
             <div class="input-group">
                 <label>🏥 Primary Insurance (Optional)</label>
                 <select id="otherInsuranceSelect"><option value="">-- No Primary Insurance --</option></select>
@@ -579,14 +713,14 @@
                             <option value="">-- Select Payment Method --</option>
                         </select>
                     </div>
-                    <div class="input-group" id="cashInputGroup" style="display: none;">
+                    <div class="input-group cash-input-group" id="cashInputGroup">
                         <label>💰 Cash Given Amount (MVR)</label>
                         <input type="number" id="cashGivenAmount" placeholder="Enter cash given" step="0.01" min="0" value="0">
                     </div>
                 </div>
                 
                 <!-- Payment Summary -->
-                <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="payment-summary-grid">
                     <div class="total-item">
                         <label>💳 Payment Method</label>
                         <div id="paymentMethodDisplay" style="font-size: 14px; font-weight: 600; color: #0a2f44;">Not Selected</div>
@@ -636,6 +770,7 @@
     let appointmentsList = [];
     let paymentMethodsList = [];
     let selectedAppointmentId = null;
+    let selectedAppointmentData = null;
     let selectedPatient = null;
     let selectedDoctor = null;
     let selectedPrimaryInsurance = null;
@@ -648,6 +783,8 @@
     let currentAasandhaPayment = 0;
     let selectedPaymentMethod = null;
     let cashGivenAmount = 0;
+    let searchTimeout = null;
+    let isSearching = false;
     
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type) {
@@ -660,6 +797,134 @@
     function escapeHtml(str) { 
         if(!str) return ''; 
         return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); 
+    }
+    
+    function getPatientDisplayId(patient) {
+        return patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+    }
+    
+    // ========== PATIENT SEARCH FUNCTIONALITY ==========
+    function searchPatients(query) {
+        if (!query || query.length < 1) {
+            document.getElementById('patientSearchResults').classList.remove('active');
+            return;
+        }
+        
+        const resultsContainer = document.getElementById('patientSearchResults');
+        const lowerQuery = query.toLowerCase().trim();
+        
+        // Search in loaded patients
+        const results = patientsList.filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const id = (p.idNumber || p.passportNumber || p.nationalId || p.id || '').toLowerCase();
+            const phone = (p.phone || p.contactNo || '').toLowerCase();
+            return name.includes(lowerQuery) || 
+                   id.includes(lowerQuery) || 
+                   phone.includes(lowerQuery);
+        });
+        
+        resultsContainer.innerHTML = '';
+        
+        if (results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="patient-search-empty">
+                    <i class="fas fa-user-plus" style="margin-right: 8px;"></i>
+                    No patients found. You can add new patient from the dashboard.
+                </div>
+            `;
+            resultsContainer.classList.add('active');
+            return;
+        }
+        
+        // Show results with limit of 10
+        const displayResults = results.slice(0, 10);
+        displayResults.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'patient-search-result-item';
+            const displayId = getPatientDisplayId(p);
+            const badgeClass = p.isCitizen ? 'citizen' : '';
+            const badgeText = p.isCitizen ? '🇲🇻 Citizen' : '🌍 Non-Citizen';
+            
+            div.innerHTML = `
+                <div>
+                    <div class="patient-name">${escapeHtml(p.name)}</div>
+                    <div class="patient-details">
+                        <span class="patient-id">📋 ${escapeHtml(displayId)}</span>
+                        ${p.phone || p.contactNo ? ` · 📞 ${escapeHtml(p.phone || p.contactNo)}` : ''}
+                        ${p.nationality ? ` · 🌍 ${escapeHtml(p.nationality)}` : ''}
+                    </div>
+                </div>
+                <div>
+                    <span class="patient-badge ${badgeClass}">${badgeText}</span>
+                </div>
+            `;
+            
+            div.addEventListener('click', () => selectPatient(p));
+            div.addEventListener('mouseenter', () => {
+                div.style.background = '#e0f2fe';
+            });
+            div.addEventListener('mouseleave', () => {
+                div.style.background = 'transparent';
+            });
+            
+            resultsContainer.appendChild(div);
+        });
+        
+        if (results.length > 10) {
+            const moreDiv = document.createElement('div');
+            moreDiv.className = 'patient-search-empty';
+            moreDiv.style.padding = '8px';
+            moreDiv.style.fontSize = '11px';
+            moreDiv.style.color = '#8a9aa8';
+            moreDiv.textContent = `+ ${results.length - 10} more results...`;
+            resultsContainer.appendChild(moreDiv);
+        }
+        
+        resultsContainer.classList.add('active');
+    }
+    
+    function selectPatient(patient) {
+        selectedPatient = patient;
+        
+        // Update hidden fields
+        const displayId = getPatientDisplayId(patient);
+        document.getElementById('patientId').value = patient.id || displayId;
+        document.getElementById('patientName').value = patient.name || '';
+        document.getElementById('contactNo').value = patient.phone || patient.contactNo || '';
+        document.getElementById('patientNationality').value = patient.nationality || '';
+        document.getElementById('patientIsCitizen').value = patient.isCitizen || false;
+        document.getElementById('patientDob').value = patient.dob || '';
+        
+        // Update search input
+        document.getElementById('patientSearchInput').value = `${patient.name} (${displayId})`;
+        
+        // Hide results
+        document.getElementById('patientSearchResults').classList.remove('active');
+        
+        // Update selected patient card
+        const card = document.getElementById('selectedPatientCard');
+        card.style.display = 'flex';
+        const badgeClass = patient.isCitizen ? 'citizen' : '';
+        const badgeText = patient.isCitizen ? '🇲🇻 Aasandha Eligible' : '🌍 No Aasandha';
+        card.innerHTML = `
+            <div>
+                <strong>${escapeHtml(patient.name)}</strong><br>
+                ID/Passport: ${escapeHtml(displayId)}<br>
+                📞 ${escapeHtml(patient.phone || patient.contactNo || '')}
+                ${patient.nationality ? `<br>🌍 ${escapeHtml(patient.nationality)}` : ''}
+            </div>
+            <div>
+                <span class="selected-badge ${badgeClass}">${badgeText}</span>
+                ${patient.nationality ? `<span class="selected-badge" style="background:#6c757d;">${escapeHtml(patient.nationality)}</span>` : ''}
+            </div>
+        `;
+        
+        // Recalculate with new patient
+        if (selectedServices.length > 0) {
+            applyAutoCalculation();
+        }
+        calculateBilling();
+        showMessage(`✅ Patient selected: ${patient.name}`, "success");
     }
     
     // ========== SEQUENTIAL MEMO NUMBER GENERATOR ==========
@@ -695,7 +960,6 @@
         try {
             const snapshot = await window.db.collection("paymentMethods").get();
             if (snapshot.empty) {
-                // Create default payment methods if none exist
                 const defaultMethods = ['Visa', 'Mastercard', 'Amex', 'Cash', 'Bank Transfer'];
                 const batch = window.db.batch();
                 defaultMethods.forEach(name => {
@@ -704,7 +968,6 @@
                 });
                 await batch.commit();
                 console.log("Default payment methods created");
-                // Reload
                 const newSnapshot = await window.db.collection("paymentMethods").get();
                 paymentMethodsList = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             } else {
@@ -734,38 +997,38 @@
         return icons[name] || '💳';
     }
     
-    function getPaymentBadge(name) {
-        const badges = {
-            'Cash': 'badge-cash',
-            'Visa': 'badge-card',
-            'Mastercard': 'badge-card',
-            'Amex': 'badge-card',
-            'Bank Transfer': 'badge-transfer',
-            'Transfer': 'badge-transfer'
-        };
-        return badges[name] || 'badge-card';
-    }
-    
     // ========== LOAD APPOINTMENTS ==========
     async function loadAppointments() {
         if (!window.db) return;
         try {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
             const snap = await window.db.collection("appointments")
                 .where("status", "==", "Scheduled")
                 .get();
-            appointmentsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            appointmentsList.sort((a, b) => {
-                if (a.date < b.date) return 1;
-                if (a.date > b.date) return -1;
-                return 0;
-            });
+            
+            appointmentsList = snap.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(apt => {
+                    if (!apt.date) return false;
+                    return apt.date >= todayStr;
+                })
+                .sort((a, b) => {
+                    if (a.date < b.date) return -1;
+                    if (a.date > b.date) return 1;
+                    return 0;
+                });
+            
             const select = document.getElementById('appointmentSelect');
             if (appointmentsList.length === 0) {
                 select.innerHTML = '<option value="">-- No upcoming appointments --</option>';
             } else {
                 let html = '<option value="">-- Select an appointment --</option>';
                 appointmentsList.forEach(apt => {
-                    html += `<option value="${apt.id}" data-patient-id="${apt.patientId}" data-patient-name="${apt.patientName}" data-contact="${apt.contact || ''}" data-doctor-id="${apt.doctorId}" data-doctor-name="${apt.doctorName}" data-service-id="${apt.serviceId || ''}" data-service-name="${apt.serviceName || ''}">${apt.date} ${apt.time} - ${apt.patientName} with ${apt.doctorName}</option>`;
+                    const displayDate = apt.date || 'No date';
+                    const displayTime = apt.time || '';
+                    html += `<option value="${apt.id}" data-patient-id="${apt.patientId}" data-patient-name="${apt.patientName}" data-contact="${apt.contact || ''}" data-doctor-id="${apt.doctorId}" data-doctor-name="${apt.doctorName}" data-service-id="${apt.serviceId || ''}" data-service-name="${apt.serviceName || ''}">${displayDate} ${displayTime} - ${apt.patientName} with ${apt.doctorName}</option>`;
                 });
                 select.innerHTML = html;
             }
@@ -775,37 +1038,147 @@
         }
     }
     
+    // ========== FIND PATIENT BY ID/PASSPORT VALUE ==========
+    function findPatientByIdPassport(idValue) {
+        if (!idValue) return null;
+        const lowerId = idValue.toLowerCase().trim();
+        
+        for (let i = 0; i < patientsList.length; i++) {
+            const p = patientsList[i];
+            if (p.id && p.id.toLowerCase() === lowerId) return p;
+            if (p.idNumber && p.idNumber.toLowerCase() === lowerId) return p;
+            if (p.passportNumber && p.passportNumber.toLowerCase() === lowerId) return p;
+            if (p.nationalId && p.nationalId.toLowerCase() === lowerId) return p;
+        }
+        return null;
+    }
+    
     // ========== AUTO-FILL FROM APPOINTMENT ==========
     async function fillFromAppointment(appointmentId) {
         const apt = appointmentsList.find(a => a.id === appointmentId);
-        if (!apt) return;
+        if (!apt) {
+            console.error("Appointment not found:", appointmentId);
+            return;
+        }
         
-        const patientSelect = document.getElementById('patientDropdown');
-        for (let i = 0; i < patientSelect.options.length; i++) {
-            if (patientSelect.options[i].value === apt.patientId) {
-                patientSelect.selectedIndex = i;
-                patientSelect.dispatchEvent(new Event('change'));
-                break;
+        selectedAppointmentData = apt;
+        console.log("Selected appointment:", apt);
+        
+        // 1. FIND PATIENT
+        if (apt.patientId) {
+            try {
+                const searchId = apt.patientId;
+                let patient = findPatientByIdPassport(searchId);
+                
+                if (!patient) {
+                    // Try to fetch from Firestore
+                    let patientDoc = await window.db.collection("patients").doc(searchId).get();
+                    if (patientDoc.exists) {
+                        patient = { id: patientDoc.id, ...patientDoc.data() };
+                    }
+                    
+                    if (!patient) {
+                        const idNumberQuery = await window.db.collection("patients")
+                            .where("idNumber", "==", searchId)
+                            .get();
+                        if (!idNumberQuery.empty) {
+                            patient = { id: idNumberQuery.docs[0].id, ...idNumberQuery.docs[0].data() };
+                        }
+                    }
+                    
+                    if (!patient) {
+                        const passportQuery = await window.db.collection("patients")
+                            .where("passportNumber", "==", searchId)
+                            .get();
+                        if (!passportQuery.empty) {
+                            patient = { id: passportQuery.docs[0].id, ...passportQuery.docs[0].data() };
+                        }
+                    }
+                    
+                    if (!patient) {
+                        const nationalQuery = await window.db.collection("patients")
+                            .where("nationalId", "==", searchId)
+                            .get();
+                        if (!nationalQuery.empty) {
+                            patient = { id: nationalQuery.docs[0].id, ...nationalQuery.docs[0].data() };
+                        }
+                    }
+                    
+                    if (patient) {
+                        patientsList.push(patient);
+                    }
+                }
+                
+                if (patient) {
+                    selectPatient(patient);
+                } else {
+                    // Create fallback patient
+                    const fallbackPatient = {
+                        id: searchId,
+                        name: apt.patientName || 'Unknown Patient',
+                        phone: apt.contact || '',
+                        idNumber: searchId,
+                        isCitizen: false
+                    };
+                    patientsList.push(fallbackPatient);
+                    selectPatient(fallbackPatient);
+                    showMessage(`⚠️ Patient not found in system. Created temporary record for ${fallbackPatient.name}`, "info");
+                }
+            } catch (error) {
+                console.error("Error in patient handling:", error);
+                const fallbackPatient = {
+                    id: apt.patientId,
+                    name: apt.patientName || 'Unknown',
+                    phone: apt.contact || '',
+                    isCitizen: false
+                };
+                selectPatient(fallbackPatient);
             }
         }
         
-        const doctorSelect = document.getElementById('doctorSelect');
-        let doctorFound = false;
-        for (let i = 0; i < doctorSelect.options.length; i++) {
-            if (doctorSelect.options[i].value === apt.doctorId) {
-                doctorSelect.selectedIndex = i;
-                doctorSelect.dispatchEvent(new Event('change'));
-                doctorFound = true;
-                break;
+        // 2. FETCH DOCTOR
+        if (apt.doctorId) {
+            try {
+                let doctor = doctorsList.find(d => d.id === apt.doctorId);
+                if (!doctor) {
+                    const doctorDoc = await window.db.collection("doctors").doc(apt.doctorId).get();
+                    if (doctorDoc.exists) {
+                        doctor = { id: doctorDoc.id, ...doctorDoc.data() };
+                        doctorsList.push(doctor);
+                    }
+                }
+                if (doctor) {
+                    selectedDoctor = doctor;
+                    const doctorSelect = document.getElementById('doctorSelect');
+                    let found = false;
+                    for (let i = 0; i < doctorSelect.options.length; i++) {
+                        if (doctorSelect.options[i].value === apt.doctorId) {
+                            doctorSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        const option = document.createElement('option');
+                        option.value = doctor.id;
+                        option.text = `${doctor.name} (${doctor.speciality || 'General'})`;
+                        doctorSelect.add(option);
+                        doctorSelect.value = doctor.id;
+                    }
+                    
+                    const card = document.getElementById('selectedDoctorCard');
+                    card.style.display = 'flex';
+                    card.innerHTML = `
+                        <div><strong>${escapeHtml(doctor.name)}</strong></div>
+                        <div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error fetching doctor data:", error);
             }
         }
-        if (!doctorFound && apt.doctorName) {
-            selectedDoctor = { id: apt.doctorId, name: apt.doctorName, speciality: apt.doctorSpeciality || 'General' };
-            const card = document.getElementById('selectedDoctorCard');
-            card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(apt.doctorName)}</strong></div><div><span class="selected-badge">${escapeHtml(apt.doctorSpeciality || 'General')}</span></div>`;
-        }
         
+        // 3. FETCH SERVICE
         if (apt.serviceId || apt.serviceName) {
             const serviceSelect = document.getElementById('serviceSelectDropdown');
             let serviceFound = false;
@@ -842,6 +1215,7 @@
         
         document.getElementById('appointmentBadge').style.display = 'inline-block';
         selectedAppointmentId = appointmentId;
+        console.log("Appointment fill complete");
     }
     
     // ========== LOAD ALL MASTER DATA ==========
@@ -849,15 +1223,10 @@
         try {
             const snapshot = await window.db.collection("patients").get();
             patientsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const patientSelect = document.getElementById('patientDropdown');
-            if (patientsList.length === 0) patientSelect.innerHTML = '<option value="">-- No Patients Found --</option>';
-            else {
-                patientSelect.innerHTML = '<option value="">-- Select Patient --</option>';
-                patientsList.forEach(p => {
-                    patientSelect.innerHTML += `<option value="${p.id}">${p.id} - ${p.name} (${p.nationality || 'N/A'})</option>`;
-                });
-            }
-        } catch (error) { console.error(error); }
+            console.log(`Loaded ${patientsList.length} patients`);
+        } catch (error) { 
+            console.error("Error loading patients:", error);
+        }
     }
     
     async function loadDoctors() {
@@ -1070,7 +1439,6 @@
         const selectedPaymentOption = document.getElementById('paymentMethodSelect');
         const selectedName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
         
-        // Determine amount paid based on payment method
         let paidAmount = 0;
         let balance = 0;
         let changeDue = 0;
@@ -1088,7 +1456,6 @@
                 paymentDisplay = `✅ Change: MVR ${changeDue.toFixed(2)}`;
             }
         } else if (selectedName) {
-            // Non-cash payment - paid amount equals invoice amount, no change
             paidAmount = patientPayable;
             balance = 0;
             paymentDisplay = `✅ Paid: MVR ${paidAmount.toFixed(2)}`;
@@ -1098,7 +1465,6 @@
             paymentDisplay = '❌ Select payment method';
         }
         
-        // Update displays
         document.getElementById('amountPaidDisplay').innerHTML = paidAmount.toFixed(2);
         document.getElementById('paymentMethodDisplay').innerHTML = selectedName ? `${getPaymentIcon(selectedName)} ${selectedName}` : 'Not Selected';
         
@@ -1138,22 +1504,52 @@
         }
     }
     
-    // ========== DELETE APPOINTMENT AFTER MEMO SAVED ==========
+    // ========== DELETE APPOINTMENT ==========
     async function deleteLinkedAppointment() {
         if (selectedAppointmentId) {
             try {
                 await window.db.collection("appointments").doc(selectedAppointmentId).delete();
                 return true;
-            } catch (error) { return false; }
+            } catch (error) {
+                console.error("Error deleting appointment:", error);
+                return false;
+            }
         }
         return true;
     }
     
     // ========== SAVE MEMO TO FIRESTORE ==========
     async function saveToFirebase() {
-        if (!selectedPatient) { showMessage("Please select a patient", "error"); return; }
-        if (!selectedDoctor) { showMessage("Please select a doctor", "error"); return; }
-        if (!selectedServices.length) { showMessage("Please add at least one service", "error"); return; }
+        const patientId = document.getElementById('patientId').value.trim();
+        const patientName = document.getElementById('patientName').value.trim();
+        const contactNo = document.getElementById('contactNo').value.trim();
+        const nationality = document.getElementById('patientNationality').value.trim();
+        const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
+        const dob = document.getElementById('patientDob').value.trim();
+        
+        if (!selectedPatient && patientId && patientName) {
+            selectedPatient = {
+                id: patientId,
+                name: patientName,
+                phone: contactNo,
+                nationality: nationality,
+                isCitizen: isCitizen,
+                dob: dob
+            };
+        }
+        
+        if (!selectedPatient) { 
+            showMessage("Please search and select a patient", "error"); 
+            return; 
+        }
+        if (!selectedDoctor) { 
+            showMessage("Please select a doctor", "error"); 
+            return; 
+        }
+        if (!selectedServices.length) { 
+            showMessage("Please add at least one service", "error"); 
+            return; 
+        }
         
         const selectedPaymentOption = document.getElementById('paymentMethodSelect');
         const selectedPaymentId = selectedPaymentOption.value;
@@ -1221,13 +1617,15 @@
             date: new Date().toLocaleString(),
             timestamp: new Date().toISOString(),
             patient: {
-                id: selectedPatient.id || "",
-                name: selectedPatient.name || "",
-                phone: selectedPatient.contactNo || selectedPatient.phone || "",
-                nationality: selectedPatient.nationality || "",
-                isCitizen: selectedPatient.isCitizen || false,
-                idNumber: selectedPatient.idNumber || "",
-                dob: selectedPatient.dob || ""
+                id: selectedPatient.id || patientId || "",
+                name: selectedPatient.name || patientName || "",
+                phone: selectedPatient.phone || contactNo || "",
+                nationality: selectedPatient.nationality || nationality || "",
+                isCitizen: selectedPatient.isCitizen || isCitizen || false,
+                idNumber: selectedPatient.idNumber || patientId || "",
+                passportNumber: selectedPatient.passportNumber || "",
+                nationalId: selectedPatient.nationalId || "",
+                dob: selectedPatient.dob || dob || ""
             },
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
             insurances: insuranceArray,
@@ -1255,6 +1653,7 @@
                 balance: (patientPayable - paidAmount) || 0
             },
             payment: paymentDetails,
+            linkedAppointmentId: selectedAppointmentId || null,
             status: "completed",
             createdBy: JSON.parse(loggedInUser).username || "unknown",
             createdAt: new Date().toISOString()
@@ -1267,8 +1666,15 @@
             const docRef = await window.db.collection("memos").add(memoData);
             memoData.firebaseId = docRef.id;
             localStorage.setItem('printMemoData', JSON.stringify(memoData));
-            const deleted = await deleteLinkedAppointment();
-            if (deleted && selectedAppointmentId) showMessage("Linked appointment deleted", "success");
+            
+            if (selectedAppointmentId) {
+                const deleted = await deleteLinkedAppointment();
+                if (deleted) {
+                    showMessage("✅ Linked appointment deleted", "success");
+                    document.getElementById('appointmentBadge').style.display = 'none';
+                }
+            }
+            
             showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
             setTimeout(() => {
                 alert(`Memo #${memoId} saved successfully!\nPayment: ${paymentDetails.method}\nAmount: MVR ${paidAmount.toFixed(2)}`);
@@ -1284,18 +1690,37 @@
     }
     
     // ========== EVENT LISTENERS ==========
-    document.getElementById('patientDropdown').addEventListener('change', (e) => {
-        const patient = patientsList.find(p => p.id === e.target.value);
-        if (patient) {
-            selectedPatient = patient;
-            const card = document.getElementById('selectedPatientCard');
-            card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(patient.name)}</strong> (${patient.id})<br>📞 ${patient.contactNo || patient.phone || ''}</div><div><span class="selected-badge">${patient.isCitizen ? 'Aasandha Eligible' : 'No Aasandha'}</span></div>`;
-            if (selectedServices.length > 0) applyAutoCalculation();
-            calculateBilling();
-        } else { selectedPatient = null; document.getElementById('selectedPatientCard').style.display = 'none'; calculateBilling(); }
+    // Patient Search Input
+    document.getElementById('patientSearchInput').addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const query = this.value;
+        
+        if (query.length < 1) {
+            document.getElementById('patientSearchResults').classList.remove('active');
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            searchPatients(query);
+        }, 300);
     });
     
+    // Close search results on outside click
+    document.addEventListener('click', function(e) {
+        const wrapper = document.querySelector('.patient-search-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            document.getElementById('patientSearchResults').classList.remove('active');
+        }
+    });
+    
+    // Clear search when patient selected via other methods
+    document.getElementById('patientSearchInput').addEventListener('blur', function() {
+        setTimeout(() => {
+            document.getElementById('patientSearchResults').classList.remove('active');
+        }, 200);
+    });
+    
+    // Doctor select
     document.getElementById('doctorSelect').addEventListener('change', (e) => {
         const opt = e.target.selectedOptions[0];
         const doctor = doctorsList.find(d => d.id === opt.value);
@@ -1303,7 +1728,10 @@
             selectedDoctor = doctor;
             const card = document.getElementById('selectedDoctorCard');
             card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(doctor.name)}</strong></div><div><span class="selected-badge">${escapeHtml(doctor.speciality)}</span></div>`;
+            card.innerHTML = `
+                <div><strong>${escapeHtml(doctor.name)}</strong></div>
+                <div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>
+            `;
         } else { selectedDoctor = null; document.getElementById('selectedDoctorCard').style.display = 'none'; }
     });
     
@@ -1371,8 +1799,13 @@
     };
     
     document.getElementById('appointmentSelect').addEventListener('change', (e) => {
-        if (e.target.value) fillFromAppointment(e.target.value);
-        else { selectedAppointmentId = null; document.getElementById('appointmentBadge').style.display = 'none'; }
+        if (e.target.value) {
+            fillFromAppointment(e.target.value);
+        } else {
+            selectedAppointmentId = null;
+            selectedAppointmentData = null;
+            document.getElementById('appointmentBadge').style.display = 'none';
+        }
     });
     
     function logout() {
@@ -1380,6 +1813,20 @@
         sessionStorage.removeItem('clinic_user_session');
         window.location.href = 'login.html';
     }
+    
+    // ========== KEYBOARD SHORTCUT ==========
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+F or Ctrl+/ to focus search
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === '/')) {
+            e.preventDefault();
+            document.getElementById('patientSearchInput').focus();
+        }
+        // Escape to clear search
+        if (e.key === 'Escape') {
+            document.getElementById('patientSearchResults').classList.remove('active');
+            document.getElementById('patientSearchInput').blur();
+        }
+    });
     
     // Initialization
     function waitForFirebase() {

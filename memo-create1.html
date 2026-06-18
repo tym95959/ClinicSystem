@@ -588,6 +588,18 @@
             color: #721c24;
         }
 
+        .service-code-badge {
+            background: #e8f0fe;
+            color: #0f5c7a;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-family: monospace;
+            font-weight: 600;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
         @media (max-width: 640px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -719,6 +731,7 @@
             <table class="services-table">
                 <thead>
                     <tr>
+                        <th>Code</th>
                         <th>Service</th>
                         <th>Qty</th>
                         <th>Price</th>
@@ -731,7 +744,7 @@
                     </tr>
                 </thead>
                 <tbody id="servicesTbody">
-                    <tr><td colspan="9" style="text-align:center; padding:20px;">Select a service from dropdown to add</td></tr>
+                    <tr><td colspan="10" style="text-align:center; padding:20px;">Select a service from dropdown to add</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1260,6 +1273,7 @@
                     const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
                     selectedServices.push({
                         id: Date.now(),
+                        code: service.code || '',
                         name: service.name,
                         qty: 1,
                         price: price,
@@ -1312,6 +1326,7 @@
                 const data = doc.data();
                 return { 
                     id: doc.id, 
+                    code: data.code || '',
                     name: data.name, 
                     price: data.price, 
                     aasandhaCovered: data.aasandhaCovered || false, 
@@ -1324,7 +1339,8 @@
                 serviceSelect.innerHTML = '<option value="">-- Select Service --</option>';
                 servicesList.forEach(s => {
                     const coverBadge = s.aasandhaCoverAmount > 0 ? '✅' : '❌';
-                    serviceSelect.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount}">${s.name} - MVR ${s.price} ${coverBadge}</option>`;
+                    const codeDisplay = s.code ? `[${s.code}] ` : '';
+                    serviceSelect.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-code="${s.code || ''}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount}">${codeDisplay}${s.name} - MVR ${s.price} ${coverBadge}</option>`;
                 });
             }
         } catch (error) { console.error(error); }
@@ -1362,38 +1378,29 @@
         showMessage(`Loaded ${patientsList.length} patients, ${doctorsList.length} doctors, ${servicesList.length} services`, "success");
     }
     
-    // ========== INSURANCE CALCULATION - UPDATED LOGIC ==========
+    // ========== INSURANCE CALCULATION ==========
     function calculateServiceInsurance(serviceTotal, service) {
         let primaryAmount = 0;
         let aasandhaAmount = 0;
         
-        // Check if service is Aasandha covered
         const isCovered = service && service.aasandhaCoverAmount > 0;
-        
-        // Get insurance name
         const insuranceName = selectedPrimaryInsurance ? selectedPrimaryInsurance.name : '';
         const isFullCover = isFullCoverInsurance(insuranceName);
         
-        // PRIMARY INSURANCE CALCULATION
         if (selectedPrimaryInsurance) {
             if (isFullCover) {
-                // MNDF or POLICE - covers 100% of all services
                 primaryAmount = serviceTotal;
             } else if (isCovered) {
-                // Regular insurance only covers Aasandha-covered services
                 if (insuranceType === "percent" && selectedInsurancePercent > 0) {
                     primaryAmount = (serviceTotal * selectedInsurancePercent) / 100;
                 } else if (insuranceType === "fixed" && selectedInsuranceFixed > 0) {
                     primaryAmount = Math.min(serviceTotal, selectedInsuranceFixed);
                 }
             } else {
-                // Service not Aasandha covered - no primary insurance coverage
                 primaryAmount = 0;
             }
         }
         
-        // AASANDHA CALCULATION (Secondary)
-        // Only for citizens and only if service is Aasandha covered
         if (selectedPatient && selectedPatient.isCitizen && isCovered) {
             const aasandhaLimit = service ? service.aasandhaCoverAmount : 0;
             if (aasandhaLimit > 0) {
@@ -1402,7 +1409,6 @@
             }
         }
         
-        // For full cover insurance, Aasandha is not needed
         if (isFullCover) {
             aasandhaAmount = 0;
         }
@@ -1415,10 +1421,10 @@
         let hasChanges = false;
         selectedServices.forEach(service => {
             const serviceTotal = service.qty * service.price;
-            // Find the full service data to get aasandhaCoverAmount
             const fullService = servicesList.find(s => s.name === service.name);
             if (fullService) {
                 service.aasandhaCoverAmount = fullService.aasandhaCoverAmount || 0;
+                service.code = fullService.code || '';
             }
             const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
             if (service.primaryInsuranceAmount !== primaryAmount) {
@@ -1437,7 +1443,7 @@
     function renderServices() {
         const tbody = document.getElementById('servicesTbody');
         if (!selectedServices.length) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:16px;">No services added. Select from dropdown to add</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:16px;">No services added. Select from dropdown to add</td></tr>';
             return;
         }
         
@@ -1455,21 +1461,21 @@
             const coverBadgeClass = isCovered ? 'covered' : 'not-covered';
             const coverBadgeText = isCovered ? `✅ MVR ${aasandhaCoverAmt}` : '❌ Not Covered';
             
-            // Determine if primary insurance applies to this service
             let primaryInsDisplay = primaryInsAmount;
             let primaryInsDisabled = false;
             
             if (isFullCover) {
-                // Full cover insurance applies to all services
                 primaryInsDisplay = primaryInsAmount;
             } else if (!isCovered) {
-                // Non-covered services get NO primary insurance
                 primaryInsDisplay = 0;
                 primaryInsDisabled = true;
             }
             
+            const codeDisplay = s.code ? `<span class="service-code-badge">${escapeHtml(s.code)}</span>` : '';
+            
             return `
                 <tr>
+                    <td>${codeDisplay}</td>
                     <td>
                         <strong>${escapeHtml(s.name)}</strong>
                         <span class="service-cover-badge ${coverBadgeClass}">${coverBadgeText}</span>
@@ -1502,7 +1508,6 @@
             `;
         }).join('');
         
-        // Update insurance coverage info
         updateInsuranceCoverageInfo();
     }
     
@@ -1559,12 +1564,14 @@
         if (!opt || !opt.value) return;
         const price = parseFloat(opt.dataset.price);
         const aasandhaCoverAmt = parseFloat(opt.dataset.aasandhaAmt) || 0;
+        const code = opt.dataset.code || '';
         const serviceTotal = price;
         const service = { name: opt.dataset.name, aasandhaCoverAmount: aasandhaCoverAmt };
         const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
         
         selectedServices.push({
             id: Date.now(),
+            code: code,
             name: opt.dataset.name,
             qty: 1,
             price: price,
@@ -1808,6 +1815,7 @@
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
             insurances: insuranceArray,
             services: selectedServices.map(s => ({
+                code: s.code || '',
                 name: s.name, 
                 qty: s.qty, 
                 price: s.price,
@@ -1921,7 +1929,6 @@
             const isFullCover = isFullCoverInsurance(insurance.name);
             
             if (isFullCover) {
-                // Full cover insurance - set to 100%
                 document.getElementById('otherInsurancePercent').value = 100;
                 selectedInsurancePercent = 100;
                 document.getElementById('otherInsurancePercent').disabled = true;

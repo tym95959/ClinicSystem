@@ -116,7 +116,6 @@
             box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
         }
 
-        /* Patient Search Styles */
         .patient-search-wrapper {
             position: relative;
         }
@@ -245,6 +244,10 @@
             font-size: 9px;
         }
 
+        .selected-badge.full-cover {
+            background: #146b3a;
+        }
+
         .insurance-toggle {
             display: flex;
             gap: 6px;
@@ -319,6 +322,12 @@
         .insurance-input:focus {
             outline: none;
             border-color: #0f5c7a;
+        }
+
+        .insurance-input.disabled-input {
+            background: #f0f4f9;
+            color: #6c7a89;
+            cursor: not-allowed;
         }
 
         .auto-btn {
@@ -454,6 +463,16 @@
             color: #e65100;
         }
 
+        .info-message {
+            background: #e0f2fe;
+            border-left: 4px solid #0f5c7a;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #0a2f44;
+        }
+
         .discount-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -516,6 +535,16 @@
             color: white;
         }
 
+        .full-cover-badge {
+            background: #146b3a;
+            color: white;
+        }
+
+        .no-cover-badge {
+            background: #dc3545;
+            color: white;
+        }
+
         .appointment-badge {
             background: #ffc107;
             color: #0a2f44;
@@ -531,6 +560,32 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-top: 10px;
+        }
+
+        .coverage-info {
+            font-size: 10px;
+            color: #0f5c7a;
+            margin-top: 4px;
+            padding: 4px 8px;
+            background: #f0f9ff;
+            border-radius: 8px;
+        }
+
+        .service-cover-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+        }
+
+        .service-cover-badge.covered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .service-cover-badge.not-covered {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         @media (max-width: 640px) {
@@ -636,7 +691,11 @@
                 <input type="number" id="otherInsurancePercent" placeholder="Coverage %" step="1" min="0" max="100" value="0">
                 <input type="number" id="otherInsuranceFixed" placeholder="Fixed Amount MVR" step="10" min="0" value="0" class="fixed-amount-field" style="display:none;">
                 <div id="selectedInsuranceCard" class="selected-card" style="display: none;"></div>
-                <small style="font-size: 9px; color: #6c757d; margin-top: 5px;">For Maldivian citizens, Aasandha will be automatically applied as secondary insurance for covered services.</small>
+                <div id="insuranceCoverageInfo" class="coverage-info" style="display: none;"></div>
+                <small style="font-size: 9px; color: #6c757d; margin-top: 5px;">
+                    <strong>Note:</strong> Aasandha covers only services with Aasandha coverage amount > 0. 
+                    MNDF and POLICE insurance cover 100% of all services.
+                </small>
             </div>
         </div>
     </div>
@@ -664,6 +723,7 @@
                         <th>Qty</th>
                         <th>Price</th>
                         <th>Total</th>
+                        <th>Aasandha Cover</th>
                         <th>Primary Ins.<br><span style="font-weight:normal;">(MVR)</span></th>
                         <th>Aasandha<br><span style="font-weight:normal;">(MVR)</span></th>
                         <th>Patient Pay</th>
@@ -671,7 +731,7 @@
                     </tr>
                 </thead>
                 <tbody id="servicesTbody">
-                    <tr><td colspan="8" style="text-align:center; padding:20px;">Select a service from dropdown to add</td></tr>
+                    <tr><td colspan="9" style="text-align:center; padding:20px;">Select a service from dropdown to add</td></tr>
                 </tbody>
             </table>
         </div>
@@ -784,7 +844,9 @@
     let selectedPaymentMethod = null;
     let cashGivenAmount = 0;
     let searchTimeout = null;
-    let isSearching = false;
+    
+    // Insurance names that cover 100% of all services
+    const FULL_COVER_INSURANCES = ['MNDF', 'POLICE', 'MNDF Insurance', 'POLICE Insurance'];
     
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type) {
@@ -803,6 +865,17 @@
         return patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
     }
     
+    function isFullCoverInsurance(insuranceName) {
+        if (!insuranceName) return false;
+        return FULL_COVER_INSURANCES.some(name => 
+            insuranceName.toUpperCase().includes(name.toUpperCase())
+        );
+    }
+    
+    function isAasandhaCovered(service) {
+        return service && service.aasandhaCoverAmount > 0;
+    }
+    
     // ========== PATIENT SEARCH FUNCTIONALITY ==========
     function searchPatients(query) {
         if (!query || query.length < 1) {
@@ -813,7 +886,6 @@
         const resultsContainer = document.getElementById('patientSearchResults');
         const lowerQuery = query.toLowerCase().trim();
         
-        // Search in loaded patients
         const results = patientsList.filter(p => {
             const name = (p.name || '').toLowerCase();
             const id = (p.idNumber || p.passportNumber || p.nationalId || p.id || '').toLowerCase();
@@ -836,7 +908,6 @@
             return;
         }
         
-        // Show results with limit of 10
         const displayResults = results.slice(0, 10);
         displayResults.forEach(p => {
             const div = document.createElement('div');
@@ -886,7 +957,6 @@
     function selectPatient(patient) {
         selectedPatient = patient;
         
-        // Update hidden fields
         const displayId = getPatientDisplayId(patient);
         document.getElementById('patientId').value = patient.id || displayId;
         document.getElementById('patientName').value = patient.name || '';
@@ -895,13 +965,9 @@
         document.getElementById('patientIsCitizen').value = patient.isCitizen || false;
         document.getElementById('patientDob').value = patient.dob || '';
         
-        // Update search input
         document.getElementById('patientSearchInput').value = `${patient.name} (${displayId})`;
-        
-        // Hide results
         document.getElementById('patientSearchResults').classList.remove('active');
         
-        // Update selected patient card
         const card = document.getElementById('selectedPatientCard');
         card.style.display = 'flex';
         const badgeClass = patient.isCitizen ? 'citizen' : '';
@@ -919,7 +985,6 @@
             </div>
         `;
         
-        // Recalculate with new patient
         if (selectedServices.length > 0) {
             applyAutoCalculation();
         }
@@ -1038,7 +1103,7 @@
         }
     }
     
-    // ========== FIND PATIENT BY ID/PASSPORT VALUE ==========
+    // ========== FIND PATIENT ==========
     function findPatientByIdPassport(idValue) {
         if (!idValue) return null;
         const lowerId = idValue.toLowerCase().trim();
@@ -1064,14 +1129,12 @@
         selectedAppointmentData = apt;
         console.log("Selected appointment:", apt);
         
-        // 1. FIND PATIENT
         if (apt.patientId) {
             try {
                 const searchId = apt.patientId;
                 let patient = findPatientByIdPassport(searchId);
                 
                 if (!patient) {
-                    // Try to fetch from Firestore
                     let patientDoc = await window.db.collection("patients").doc(searchId).get();
                     if (patientDoc.exists) {
                         patient = { id: patientDoc.id, ...patientDoc.data() };
@@ -1112,7 +1175,6 @@
                 if (patient) {
                     selectPatient(patient);
                 } else {
-                    // Create fallback patient
                     const fallbackPatient = {
                         id: searchId,
                         name: apt.patientName || 'Unknown Patient',
@@ -1136,7 +1198,6 @@
             }
         }
         
-        // 2. FETCH DOCTOR
         if (apt.doctorId) {
             try {
                 let doctor = doctorsList.find(d => d.id === apt.doctorId);
@@ -1178,7 +1239,6 @@
             }
         }
         
-        // 3. FETCH SERVICE
         if (apt.serviceId || apt.serviceName) {
             const serviceSelect = document.getElementById('serviceSelectDropdown');
             let serviceFound = false;
@@ -1197,12 +1257,13 @@
                 if (service) {
                     const price = service.price;
                     const serviceTotal = price;
-                    const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal);
+                    const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
                     selectedServices.push({
                         id: Date.now(),
                         name: service.name,
                         qty: 1,
                         price: price,
+                        aasandhaCoverAmount: service.aasandhaCoverAmount || 0,
                         primaryInsuranceAmount: primaryAmount,
                         aasandhaAmount: aasandhaAmount
                     });
@@ -1249,14 +1310,21 @@
             const snapshot = await window.db.collection("services").get();
             servicesList = snapshot.docs.map(doc => {
                 const data = doc.data();
-                return { id: doc.id, name: data.name, price: data.price, aasandhaCovered: data.aasandhaCovered || false, aasandhaCoverAmount: data.aasandhaCoverAmount || 0 };
+                return { 
+                    id: doc.id, 
+                    name: data.name, 
+                    price: data.price, 
+                    aasandhaCovered: data.aasandhaCovered || false, 
+                    aasandhaCoverAmount: data.aasandhaCoverAmount || 0 
+                };
             });
             const serviceSelect = document.getElementById('serviceSelectDropdown');
             if (servicesList.length === 0) serviceSelect.innerHTML = '<option value="">-- No Services Found --</option>';
             else {
                 serviceSelect.innerHTML = '<option value="">-- Select Service --</option>';
                 servicesList.forEach(s => {
-                    serviceSelect.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount}">${s.name} - MVR ${s.price}</option>`;
+                    const coverBadge = s.aasandhaCoverAmount > 0 ? '✅' : '❌';
+                    serviceSelect.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount}">${s.name} - MVR ${s.price} ${coverBadge}</option>`;
                 });
             }
         } catch (error) { console.error(error); }
@@ -1269,7 +1337,9 @@
             const insuranceSelect = document.getElementById('otherInsuranceSelect');
             insuranceSelect.innerHTML = '<option value="">-- No Primary Insurance --</option>';
             insuranceList.forEach(i => {
-                insuranceSelect.innerHTML += `<option value="${i.id}" data-name="${i.name}" data-default-coverage="${i.defaultCoverage || 0}">${i.name}</option>`;
+                const isFullCover = isFullCoverInsurance(i.name);
+                const badge = isFullCover ? ' (100% Cover)' : '';
+                insuranceSelect.innerHTML += `<option value="${i.id}" data-name="${i.name}" data-default-coverage="${i.defaultCoverage || 0}" data-full-cover="${isFullCover}">${i.name}${badge}</option>`;
             });
         } catch (error) { console.error(error); }
     }
@@ -1292,25 +1362,51 @@
         showMessage(`Loaded ${patientsList.length} patients, ${doctorsList.length} doctors, ${servicesList.length} services`, "success");
     }
     
-    // ========== INSURANCE CALCULATION ==========
-    function calculateServiceInsurance(serviceTotal) {
+    // ========== INSURANCE CALCULATION - UPDATED LOGIC ==========
+    function calculateServiceInsurance(serviceTotal, service) {
         let primaryAmount = 0;
         let aasandhaAmount = 0;
+        
+        // Check if service is Aasandha covered
+        const isCovered = service && service.aasandhaCoverAmount > 0;
+        
+        // Get insurance name
+        const insuranceName = selectedPrimaryInsurance ? selectedPrimaryInsurance.name : '';
+        const isFullCover = isFullCoverInsurance(insuranceName);
+        
+        // PRIMARY INSURANCE CALCULATION
         if (selectedPrimaryInsurance) {
-            if (insuranceType === "percent" && selectedInsurancePercent > 0) {
-                primaryAmount = (serviceTotal * selectedInsurancePercent) / 100;
-            } else if (insuranceType === "fixed" && selectedInsuranceFixed > 0) {
-                primaryAmount = Math.min(serviceTotal, selectedInsuranceFixed);
+            if (isFullCover) {
+                // MNDF or POLICE - covers 100% of all services
+                primaryAmount = serviceTotal;
+            } else if (isCovered) {
+                // Regular insurance only covers Aasandha-covered services
+                if (insuranceType === "percent" && selectedInsurancePercent > 0) {
+                    primaryAmount = (serviceTotal * selectedInsurancePercent) / 100;
+                } else if (insuranceType === "fixed" && selectedInsuranceFixed > 0) {
+                    primaryAmount = Math.min(serviceTotal, selectedInsuranceFixed);
+                }
+            } else {
+                // Service not Aasandha covered - no primary insurance coverage
+                primaryAmount = 0;
             }
         }
-        if (selectedPatient && selectedPatient.isCitizen) {
-            const serviceInfo = servicesList.find(s => s.name === selectedServices.find(ss => ss.name === s.name)?.name);
-            const aasandhaLimit = serviceInfo?.aasandhaCoverAmount || 0;
+        
+        // AASANDHA CALCULATION (Secondary)
+        // Only for citizens and only if service is Aasandha covered
+        if (selectedPatient && selectedPatient.isCitizen && isCovered) {
+            const aasandhaLimit = service ? service.aasandhaCoverAmount : 0;
             if (aasandhaLimit > 0) {
-                const remainingAfterPrimary = serviceTotal - primaryAmount;
+                const remainingAfterPrimary = Math.max(0, serviceTotal - primaryAmount);
                 aasandhaAmount = Math.min(remainingAfterPrimary, aasandhaLimit);
             }
         }
+        
+        // For full cover insurance, Aasandha is not needed
+        if (isFullCover) {
+            aasandhaAmount = 0;
+        }
+        
         return { primaryAmount, aasandhaAmount };
     }
     
@@ -1319,7 +1415,12 @@
         let hasChanges = false;
         selectedServices.forEach(service => {
             const serviceTotal = service.qty * service.price;
-            const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal);
+            // Find the full service data to get aasandhaCoverAmount
+            const fullService = servicesList.find(s => s.name === service.name);
+            if (fullService) {
+                service.aasandhaCoverAmount = fullService.aasandhaCoverAmount || 0;
+            }
+            const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
             if (service.primaryInsuranceAmount !== primaryAmount) {
                 service.primaryInsuranceAmount = primaryAmount;
                 hasChanges = true;
@@ -1336,43 +1437,120 @@
     function renderServices() {
         const tbody = document.getElementById('servicesTbody');
         if (!selectedServices.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:16px;">No services added. Select from dropdown to add</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:16px;">No services added. Select from dropdown to add</td></tr>';
             return;
         }
+        
+        const insuranceName = selectedPrimaryInsurance ? selectedPrimaryInsurance.name : '';
+        const isFullCover = isFullCoverInsurance(insuranceName);
+        
         tbody.innerHTML = selectedServices.map((s, idx) => {
             const serviceTotal = s.qty * s.price;
+            const aasandhaCoverAmt = s.aasandhaCoverAmount || 0;
+            const isCovered = aasandhaCoverAmt > 0;
             const primaryInsAmount = s.primaryInsuranceAmount || 0;
             const aasandhaAmount = s.aasandhaAmount || 0;
             const patientPay = Math.max(0, serviceTotal - primaryInsAmount - aasandhaAmount);
+            
+            const coverBadgeClass = isCovered ? 'covered' : 'not-covered';
+            const coverBadgeText = isCovered ? `✅ MVR ${aasandhaCoverAmt}` : '❌ Not Covered';
+            
+            // Determine if primary insurance applies to this service
+            let primaryInsDisplay = primaryInsAmount;
+            let primaryInsDisabled = false;
+            
+            if (isFullCover) {
+                // Full cover insurance applies to all services
+                primaryInsDisplay = primaryInsAmount;
+            } else if (!isCovered) {
+                // Non-covered services get NO primary insurance
+                primaryInsDisplay = 0;
+                primaryInsDisabled = true;
+            }
+            
             return `
                 <tr>
-                    <td><strong>${escapeHtml(s.name)}</strong></td>
+                    <td>
+                        <strong>${escapeHtml(s.name)}</strong>
+                        <span class="service-cover-badge ${coverBadgeClass}">${coverBadgeText}</span>
+                    </td>
                     <td><input type="number" value="${s.qty}" min="1" step="1" onchange="updateServiceQty(${idx}, this.value)" class="qty-input"></td>
                     <td>MVR ${s.price}</td>
                     <td>MVR ${serviceTotal.toFixed(2)}</td>
-                    <td><input type="number" value="${primaryInsAmount}" min="0" step="1" onchange="updateServiceInsurance(${idx}, 'primary', this.value)" class="insurance-input" placeholder="Primary Ins"></td>
-                    <td><input type="number" value="${aasandhaAmount}" min="0" step="1" onchange="updateServiceInsurance(${idx}, 'aasandha', this.value)" class="insurance-input" placeholder="Aasandha"></td>
+                    <td>MVR ${aasandhaCoverAmt.toFixed(2)}</td>
+                    <td>
+                        <input type="number" value="${primaryInsDisplay}" min="0" step="1" 
+                               onchange="updateServiceInsurance(${idx}, 'primary', this.value)" 
+                               class="insurance-input ${primaryInsDisabled ? 'disabled-input' : ''}"
+                               ${primaryInsDisabled ? 'disabled' : ''}
+                               placeholder="Primary Ins">
+                        ${isFullCover ? '<span style="font-size:8px;color:#146b3a;">100%</span>' : ''}
+                        ${!isCovered && !isFullCover ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
+                    </td>
+                    <td>
+                        <input type="number" value="${aasandhaAmount}" min="0" step="1" 
+                               onchange="updateServiceInsurance(${idx}, 'aasandha', this.value)" 
+                               class="insurance-input ${!isCovered || isFullCover ? 'disabled-input' : ''}"
+                               ${!isCovered || isFullCover ? 'disabled' : ''}
+                               placeholder="Aasandha">
+                        ${!isCovered ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
+                        ${isFullCover ? '<span style="font-size:8px;color:#146b3a;">N/A</span>' : ''}
+                    </td>
                     <td>MVR ${patientPay.toFixed(2)}</td>
                     <td><button class="remove-row" onclick="removeService(${idx})">Remove</button></td>
                 </tr>
             `;
         }).join('');
+        
+        // Update insurance coverage info
+        updateInsuranceCoverageInfo();
+    }
+    
+    function updateInsuranceCoverageInfo() {
+        const insuranceName = selectedPrimaryInsurance ? selectedPrimaryInsurance.name : '';
+        const isFullCover = isFullCoverInsurance(insuranceName);
+        const infoDiv = document.getElementById('insuranceCoverageInfo');
+        
+        if (!selectedPrimaryInsurance) {
+            infoDiv.style.display = 'none';
+            return;
+        }
+        
+        const coveredServices = selectedServices.filter(s => s.aasandhaCoverAmount > 0);
+        const nonCoveredServices = selectedServices.filter(s => s.aasandhaCoverAmount === 0);
+        
+        let infoHtml = `<strong>📋 Insurance: ${escapeHtml(insuranceName)}</strong><br>`;
+        
+        if (isFullCover) {
+            infoHtml += `✅ <strong>Full Coverage</strong> - Covers 100% of all services (${selectedServices.length} services)`;
+        } else {
+            infoHtml += `ℹ️ Covers only Aasandha-covered services (${coveredServices.length} of ${selectedServices.length} services)`;
+            if (nonCoveredServices.length > 0) {
+                infoHtml += `<br>⚠️ <span style="color:#dc3545;">${nonCoveredServices.length} service(s) not covered: ${nonCoveredServices.map(s => s.name).join(', ')}</span>`;
+            }
+        }
+        
+        infoDiv.innerHTML = infoHtml;
+        infoDiv.style.display = 'block';
     }
     
     window.updateServiceQty = (idx, val) => { 
         selectedServices[idx].qty = Math.max(1, parseInt(val) || 1); 
         const serviceTotal = selectedServices[idx].qty * selectedServices[idx].price;
-        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal);
+        const service = selectedServices[idx];
+        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
         selectedServices[idx].primaryInsuranceAmount = primaryAmount;
         selectedServices[idx].aasandhaAmount = aasandhaAmount;
         renderServices(); calculateBilling(); 
     };
+    
     window.updateServiceInsurance = (idx, type, val) => {
         const amount = Math.max(0, parseFloat(val) || 0);
         if (type === 'primary') selectedServices[idx].primaryInsuranceAmount = amount;
         else if (type === 'aasandha') selectedServices[idx].aasandhaAmount = amount;
         calculateBilling(); renderServices();
     };
+    
     window.removeService = (idx) => { selectedServices.splice(idx,1); renderServices(); calculateBilling(); };
     
     function addServiceFromDropdown() {
@@ -1380,13 +1558,17 @@
         const opt = select.selectedOptions[0];
         if (!opt || !opt.value) return;
         const price = parseFloat(opt.dataset.price);
+        const aasandhaCoverAmt = parseFloat(opt.dataset.aasandhaAmt) || 0;
         const serviceTotal = price;
-        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal);
+        const service = { name: opt.dataset.name, aasandhaCoverAmount: aasandhaCoverAmt };
+        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
+        
         selectedServices.push({
             id: Date.now(),
             name: opt.dataset.name,
             qty: 1,
             price: price,
+            aasandhaCoverAmount: aasandhaCoverAmt,
             primaryInsuranceAmount: primaryAmount,
             aasandhaAmount: aasandhaAmount
         });
@@ -1413,20 +1595,24 @@
             let remainingAfterDiscount = afterDiscount * weight;
             let primaryPortion = s.primaryInsuranceAmount || 0;
             let aasandhaPortion = s.aasandhaAmount || 0;
+            
             if (discPercent > 0 && serviceTotal > 0) {
                 const discountWeight = discAmount * (serviceTotal / subtotal);
                 if (primaryPortion > 0) primaryPortion = Math.max(0, primaryPortion - (primaryPortion / serviceTotal) * discountWeight);
                 if (aasandhaPortion > 0) aasandhaPortion = Math.max(0, aasandhaPortion - (aasandhaPortion / serviceTotal) * discountWeight);
                 remainingAfterDiscount = serviceTotal - discountWeight;
             }
+            
             primaryPortion = Math.min(primaryPortion, remainingAfterDiscount);
             remainingAfterDiscount -= primaryPortion;
             aasandhaPortion = Math.min(aasandhaPortion, remainingAfterDiscount);
             remainingAfterDiscount -= aasandhaPortion;
+            
             primaryInsuranceTotal += primaryPortion;
             aasandhaTotal += aasandhaPortion;
             patientTotal += Math.max(0, remainingAfterDiscount);
         }
+        
         currentPrimaryInsurancePayment = primaryInsuranceTotal;
         currentAasandhaPayment = aasandhaTotal;
         document.getElementById('insurancePayment').innerHTML = primaryInsuranceTotal.toFixed(2);
@@ -1442,27 +1628,17 @@
         let paidAmount = 0;
         let balance = 0;
         let changeDue = 0;
-        let paymentDisplay = '';
         
         if (selectedName === 'Cash') {
             cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
             paidAmount = cashGivenAmount;
             balance = patientPayable - paidAmount;
-            
-            if (balance > 0) {
-                paymentDisplay = `⚠️ Need MVR ${balance.toFixed(2)} more`;
-            } else {
-                changeDue = Math.abs(balance);
-                paymentDisplay = `✅ Change: MVR ${changeDue.toFixed(2)}`;
-            }
         } else if (selectedName) {
             paidAmount = patientPayable;
             balance = 0;
-            paymentDisplay = `✅ Paid: MVR ${paidAmount.toFixed(2)}`;
         } else {
             paidAmount = 0;
             balance = patientPayable;
-            paymentDisplay = '❌ Select payment method';
         }
         
         document.getElementById('amountPaidDisplay').innerHTML = paidAmount.toFixed(2);
@@ -1518,7 +1694,7 @@
         return true;
     }
     
-    // ========== SAVE MEMO TO FIRESTORE ==========
+    // ========== SAVE MEMO ==========
     async function saveToFirebase() {
         const patientId = document.getElementById('patientId').value.trim();
         const patientName = document.getElementById('patientName').value.trim();
@@ -1591,12 +1767,14 @@
         
         const insuranceArray = [];
         if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
+            const isFullCover = isFullCoverInsurance(selectedPrimaryInsurance.name);
             insuranceArray.push({
                 name: selectedPrimaryInsurance.name,
                 type: insuranceType,
                 value: insuranceType === "percent" ? selectedInsurancePercent : selectedInsuranceFixed,
                 amount: currentPrimaryInsurancePayment,
-                priority: "primary"
+                priority: "primary",
+                fullCover: isFullCover
             });
         }
         if (selectedPatient.isCitizen && currentAasandhaPayment > 0) {
@@ -1630,8 +1808,11 @@
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
             insurances: insuranceArray,
             services: selectedServices.map(s => ({
-                name: s.name, qty: s.qty, price: s.price,
+                name: s.name, 
+                qty: s.qty, 
+                price: s.price,
                 total: s.qty * s.price,
+                aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
                 primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
                 aasandhaAmount: s.aasandhaAmount || 0,
                 patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0))
@@ -1690,22 +1871,18 @@
     }
     
     // ========== EVENT LISTENERS ==========
-    // Patient Search Input
     document.getElementById('patientSearchInput').addEventListener('input', function(e) {
         clearTimeout(searchTimeout);
         const query = this.value;
-        
         if (query.length < 1) {
             document.getElementById('patientSearchResults').classList.remove('active');
             return;
         }
-        
         searchTimeout = setTimeout(() => {
             searchPatients(query);
         }, 300);
     });
     
-    // Close search results on outside click
     document.addEventListener('click', function(e) {
         const wrapper = document.querySelector('.patient-search-wrapper');
         if (wrapper && !wrapper.contains(e.target)) {
@@ -1713,14 +1890,12 @@
         }
     });
     
-    // Clear search when patient selected via other methods
     document.getElementById('patientSearchInput').addEventListener('blur', function() {
         setTimeout(() => {
             document.getElementById('patientSearchResults').classList.remove('active');
         }, 200);
     });
     
-    // Doctor select
     document.getElementById('doctorSelect').addEventListener('change', (e) => {
         const opt = e.target.selectedOptions[0];
         const doctor = doctorsList.find(d => d.id === opt.value);
@@ -1736,30 +1911,62 @@
     });
     
     document.getElementById('serviceSelectDropdown').addEventListener('change', (e) => { if (e.target.value) addServiceFromDropdown(); });
+    
     document.getElementById('otherInsuranceSelect').addEventListener('change', (e) => {
         const opt = e.target.selectedOptions[0];
         const insurance = insuranceList.find(i => i.id === opt.value);
         if (opt && opt.value && insurance) {
             selectedPrimaryInsurance = insurance;
             const defaultCoverage = insurance.defaultCoverage || 0;
-            if (insuranceType === 'percent' && defaultCoverage > 0) {
-                document.getElementById('otherInsurancePercent').value = defaultCoverage;
-                selectedInsurancePercent = defaultCoverage;
+            const isFullCover = isFullCoverInsurance(insurance.name);
+            
+            if (isFullCover) {
+                // Full cover insurance - set to 100%
+                document.getElementById('otherInsurancePercent').value = 100;
+                selectedInsurancePercent = 100;
+                document.getElementById('otherInsurancePercent').disabled = true;
+                document.getElementById('otherInsuranceFixed').disabled = true;
+            } else {
+                document.getElementById('otherInsurancePercent').disabled = false;
+                document.getElementById('otherInsuranceFixed').disabled = false;
+                if (insuranceType === 'percent' && defaultCoverage > 0) {
+                    document.getElementById('otherInsurancePercent').value = defaultCoverage;
+                    selectedInsurancePercent = defaultCoverage;
+                }
             }
+            
             const card = document.getElementById('selectedInsuranceCard');
             card.style.display = 'flex';
-            card.innerHTML = `<div><strong>${escapeHtml(insurance.name)} <span class="insurance-badge primary-insurance">Primary</span></strong></div>`;
+            const fullCoverBadge = isFullCover ? ' <span class="selected-badge full-cover">100% Full Cover</span>' : '';
+            card.innerHTML = `<div><strong>${escapeHtml(insurance.name)} <span class="insurance-badge primary-insurance">Primary</span>${fullCoverBadge}</strong></div>`;
+            
             if (selectedServices.length > 0) applyAutoCalculation();
-        } else { selectedPrimaryInsurance = null; document.getElementById('selectedInsuranceCard').style.display = 'none'; if (selectedServices.length > 0) applyAutoCalculation(); }
+        } else { 
+            selectedPrimaryInsurance = null; 
+            document.getElementById('selectedInsuranceCard').style.display = 'none';
+            document.getElementById('otherInsurancePercent').disabled = false;
+            document.getElementById('otherInsuranceFixed').disabled = false;
+            if (selectedServices.length > 0) applyAutoCalculation();
+        }
         calculateBilling();
     });
-    document.getElementById('otherInsurancePercent').addEventListener('input', (e) => { selectedInsurancePercent = parseFloat(e.target.value) || 0; if (selectedServices.length > 0) applyAutoCalculation(); calculateBilling(); });
-    document.getElementById('otherInsuranceFixed').addEventListener('input', (e) => { selectedInsuranceFixed = parseFloat(e.target.value) || 0; if (selectedServices.length > 0) applyAutoCalculation(); calculateBilling(); });
+    
+    document.getElementById('otherInsurancePercent').addEventListener('input', (e) => { 
+        selectedInsurancePercent = parseFloat(e.target.value) || 0; 
+        if (selectedServices.length > 0) applyAutoCalculation(); 
+        calculateBilling(); 
+    });
+    
+    document.getElementById('otherInsuranceFixed').addEventListener('input', (e) => { 
+        selectedInsuranceFixed = parseFloat(e.target.value) || 0; 
+        if (selectedServices.length > 0) applyAutoCalculation(); 
+        calculateBilling(); 
+    });
+    
     document.getElementById('discountTypeSelect').addEventListener('change', (e) => { selectedDiscountPercent = parseFloat(e.target.value) || 0; calculateBilling(); });
     document.getElementById('saveMemoBtn').onclick = saveToFirebase;
     document.getElementById('applyAutoCalcBtn').addEventListener('click', applyAutoCalculation);
     
-    // Payment Method Listeners
     document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
         const opt = e.target.selectedOptions[0];
         const selectedName = opt?.dataset?.name || '';
@@ -1788,6 +1995,7 @@
         if (selectedServices.length > 0) applyAutoCalculation();
         calculateBilling();
     };
+    
     document.getElementById('insuranceFixedBtn').onclick = () => {
         insuranceType = "fixed";
         document.getElementById('insuranceFixedBtn').classList.add('active');
@@ -1814,21 +2022,17 @@
         window.location.href = 'login.html';
     }
     
-    // ========== KEYBOARD SHORTCUT ==========
     document.addEventListener('keydown', function(e) {
-        // Ctrl+F or Ctrl+/ to focus search
         if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === '/')) {
             e.preventDefault();
             document.getElementById('patientSearchInput').focus();
         }
-        // Escape to clear search
         if (e.key === 'Escape') {
             document.getElementById('patientSearchResults').classList.remove('active');
             document.getElementById('patientSearchInput').blur();
         }
     });
     
-    // Initialization
     function waitForFirebase() {
         if (window.db) { loadAllData(); }
         else { setTimeout(waitForFirebase, 500); }

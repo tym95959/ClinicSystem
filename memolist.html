@@ -385,7 +385,7 @@
         return results;
     }
 
-    // Get memo heading based on first service
+    // Get memo heading - Consultation Memo or Service Memo
     function getMemoHeading(memo) {
         const services = memo.services || [];
         if (services.length === 0) return 'Service Memo';
@@ -398,8 +398,8 @@
             return 'Consultation Memo';
         }
         
-        // For other services, use the service name + "Memo"
-        return `${serviceName} Memo`;
+        // For all other services, show 'Service Memo'
+        return 'Service Memo';
     }
 
     // Format date to show only date (no time)

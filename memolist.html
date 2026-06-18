@@ -352,7 +352,6 @@
         
         insurances.forEach(ins => {
             let amount = ins.amount || 0;
-            // If amount is 0, try to get from billing
             if (amount === 0 && ins.priority === 'primary') {
                 amount = billing.primaryInsurancePayment || 0;
             }
@@ -366,7 +365,6 @@
             });
         });
         
-        // If no insurances but we have insurance payments in billing
         if (results.length === 0) {
             if (billing.primaryInsurancePayment > 0) {
                 results.push({
@@ -385,6 +383,39 @@
         }
         
         return results;
+    }
+
+    // Get memo heading based on first service
+    function getMemoHeading(memo) {
+        const services = memo.services || [];
+        if (services.length === 0) return 'Service Memo';
+        
+        const firstService = services[0];
+        const serviceName = firstService.name || '';
+        
+        // Check if it's a consultation
+        if (serviceName.toLowerCase().includes('consultation')) {
+            return 'Consultation Memo';
+        }
+        
+        // For other services, use the service name + "Memo"
+        return `${serviceName} Memo`;
+    }
+
+    // Format date to show only date (no time)
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d)) return dateStr;
+            return d.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch(e) {
+            return dateStr;
+        }
     }
 
     // Core filter logic
@@ -434,10 +465,10 @@
         }
         tbody.innerHTML = currentDisplayMemos.map((memo, idx) => {
             const memoId = memo.memoId || memo.id;
-            let dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
-            if (parseMemoDate(memo) && !memo.date) dateStr = parseMemoDate(memo).toLocaleString();
+            const dateObj = parseMemoDate(memo);
+            let dateStr = dateObj ? formatDate(dateObj) : 'N/A';
             const patientName = memo.patient?.name || 'Unknown';
-            const patientId = memo.patient?.id || '-';
+            const patientId = memo.patient?.id || memo.patient?.idNumber || memo.patient?.passportNumber || '-';
             const doctorName = memo.doctor?.name || '-';
             const subtotal = memo.billing?.subtotal || 0;
             const paid = memo.billing?.paid || 0;
@@ -463,13 +494,14 @@
         });
     }
 
-    // UPDATED PRINT FUNCTION - Redesigned layout
+    // UPDATED PRINT FUNCTION - Redesigned layout with dynamic heading
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) { alert("Please allow pop-ups to print."); return; }
 
         const memoId = memo.memoId || memo.id;
-        const dateStr = memo.date || (memo.timestamp ? (parseMemoDate(memo) ? parseMemoDate(memo).toLocaleString() : 'N/A') : 'N/A');
+        const dateObj = parseMemoDate(memo);
+        const dateStr = dateObj ? formatDate(dateObj) : 'N/A';
         const patient = memo.patient || {};
         const doctor = memo.doctor || {};
         const services = memo.services || [];
@@ -479,6 +511,9 @@
         
         // Calculate age
         const age = calculateAge(patient.dob);
+        
+        // Get dynamic memo heading
+        const memoHeading = getMemoHeading(memo);
         
         // Build insurance display
         let insuranceHtml = '';
@@ -514,7 +549,7 @@
         }
 
         const printContent = `<!DOCTYPE html>
-        <html><head><meta charset="UTF-8"><title>Hope Dental - Memo ${memoId}</title>
+        <html><head><meta charset="UTF-8"><title>Hope Dental - ${memoHeading} ${memoId}</title>
         <style>
             @page { size: A5; margin: 6mm; }
             body { font-family: 'Inter','Segoe UI',sans-serif; margin:0; padding:0; background:white; color:#1e2a36; font-size:10px; line-height:1.4; }
@@ -565,12 +600,12 @@
                 <p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p>
                 <p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p>
             </div>
-            <div class="memo-title">📄 CLINICAL MEMO / RECEIPT — #${escapeHtml(memoId)}</div>
+            <div class="memo-title">📄 ${escapeHtml(memoHeading)} — #${escapeHtml(memoId)}</div>
             
             <div class="info-grid">
                 <div class="info-left">
                     <div class="info-row"><span class="info-label">Patient Name:</span><span class="info-value">${escapeHtml(patient.name || '')}</span></div>
-                    <div class="info-row"><span class="info-label">ID Card No:</span><span class="info-value">${escapeHtml(patient.id || patient.idNumber || patient.nationalId || '')}</span></div>
+                    <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patient.id || patient.idNumber || patient.passportNumber || patient.nationalId || '')}</span></div>
                     <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patient.phone || '')}</span></div>
                     <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patient.nationality || '')}</span></div>
                     <div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${escapeHtml(patient.dob || '')} ${age !== 'N/A' ? `(Age: ${age})` : ''}</span></div>

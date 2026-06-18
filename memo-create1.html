@@ -1881,202 +1881,204 @@
     }
     
     // ========== SAVE MEMO ==========
-    async function saveToFirebase() {
-        const patientId = document.getElementById('patientId').value.trim();
-        const patientName = document.getElementById('patientName').value.trim();
-        const contactNo = document.getElementById('contactNo').value.trim();
-        const nationality = document.getElementById('patientNationality').value.trim();
-        const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
-        const dob = document.getElementById('patientDob').value.trim();
-        
-        if (!selectedPatient && patientId && patientName) {
-            selectedPatient = {
-                id: patientId,
-                name: patientName,
-                phone: contactNo,
-                nationality: nationality,
-                isCitizen: isCitizen,
-                dob: dob
-            };
-        }
-        
-        if (!selectedPatient) { 
-            showMessage("Please search and select a patient", "error"); 
-            return; 
-        }
-        if (!selectedDoctor) { 
-            showMessage("Please select a doctor", "error"); 
-            return; 
-        }
-        if (!selectedServices.length) { 
-            showMessage("Please add at least one service", "error"); 
-            return; 
-        }
-        
-        const selectedPaymentOption = document.getElementById('paymentMethodSelect');
-        const selectedPaymentId = selectedPaymentOption.value;
-        const selectedPaymentName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
-        
-        if (!selectedPaymentId) { showMessage("Please select a payment method", "error"); return; }
-        
-        const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML);
-        let paidAmount = 0;
-        let changeAmount = 0;
-        let paymentDetails = {};
-        
-        if (selectedPaymentName === 'Cash') {
-            cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
-            paidAmount = cashGivenAmount;
-            changeAmount = Math.max(0, paidAmount - patientPayable);
-            if (paidAmount < patientPayable) {
-                showMessage(`Cash given (MVR ${paidAmount.toFixed(2)}) is less than patient payable (MVR ${patientPayable.toFixed(2)})`, "error");
-                return;
-            }
-            paymentDetails = {
-                method: 'Cash',
-                methodId: selectedPaymentId,
-                givenAmount: paidAmount,
-                changeAmount: changeAmount,
-                patientPayable: patientPayable
-            };
-        } else {
-            paidAmount = patientPayable;
-            changeAmount = 0;
-            paymentDetails = {
-                method: selectedPaymentName,
-                methodId: selectedPaymentId,
-                givenAmount: paidAmount,
-                changeAmount: 0,
-                patientPayable: patientPayable
-            };
-        }
-        
-        const insuranceArray = [];
-        if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
-            const isFullCover = isFullCoverInsurance(selectedPrimaryInsurance.name);
-            insuranceArray.push({
-                name: selectedPrimaryInsurance.name,
-                type: insuranceType,
-                value: insuranceType === "percent" ? selectedInsurancePercent : selectedInsuranceFixed,
-                amount: currentPrimaryInsurancePayment,
-                priority: "primary",
-                fullCover: isFullCover
-            });
-        }
-        if (selectedPatient.isCitizen && currentAasandhaPayment > 0) {
-            insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
-        }
-        
-        // Get discount details
-        const { value: discountValue, type: discountTypeValue } = getDiscountValue();
-        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
-        let discountAmount = 0;
-        if (discountTypeValue === 'percent') {
-            discountAmount = (subtotal * discountValue) / 100;
-        } else {
-            discountAmount = Math.min(discountValue, subtotal);
-        }
-        
-        let memoNumber;
-        try {
-            memoNumber = await getNextMemoNumber();
-        } catch (err) {
-            showMessage("Failed to generate memo number: " + err.message, "error");
-            return;
-        }
-        const memoId = memoNumber.toString();
-        
-        const memoData = {
-            memoId: memoId,
-            date: new Date().toLocaleString(),
-            timestamp: new Date().toISOString(),
-            patient: {
-                id: selectedPatient.id || patientId || "",
-                name: selectedPatient.name || patientName || "",
-                phone: selectedPatient.phone || contactNo || "",
-                nationality: selectedPatient.nationality || nationality || "",
-                isCitizen: selectedPatient.isCitizen || isCitizen || false,
-                idNumber: selectedPatient.idNumber || patientId || "",
-                passportNumber: selectedPatient.passportNumber || "",
-                nationalId: selectedPatient.nationalId || "",
-                dob: selectedPatient.dob || dob || ""
-            },
-            doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
-            insurances: insuranceArray,
-            services: selectedServices.map(s => ({
-                code: s.code || '',
-                name: s.name, 
-                qty: s.qty, 
-                price: s.price,
-                total: s.qty * s.price,
-                aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
-                primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
-                aasandhaAmount: s.aasandhaAmount || 0,
-                patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0))
-            })),
-            discount: {
-                type: discountTypeValue,
-                value: discountValue,
-                amount: discountAmount,
-                mode: discountMode,
-                reason: discountMode === 'preset' ? 
-                    (document.getElementById('discountPresetSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None") : 
-                    "Custom Discount"
-            },
-            billing: {
-                subtotal: subtotal || 0,
-                afterDiscount: subtotal - discountAmount || 0,
-                primaryInsurancePayment: currentPrimaryInsurancePayment,
-                aasandhaPayment: currentAasandhaPayment,
-                totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
-                patientPayable: patientPayable || 0,
-                paid: paidAmount || 0,
-                change: changeAmount || 0,
-                balance: (patientPayable - paidAmount) || 0
-            },
-            payment: paymentDetails,
-            linkedAppointmentId: selectedAppointmentId || null,
-            status: "completed",
-            createdBy: JSON.parse(loggedInUser).username || "unknown",
-            createdAt: new Date().toISOString()
+    // ========== SAVE MEMO ==========
+async function saveToFirebase() {
+    const patientId = document.getElementById('patientId').value.trim();
+    const patientName = document.getElementById('patientName').value.trim();
+    const contactNo = document.getElementById('contactNo').value.trim();
+    const nationality = document.getElementById('patientNationality').value.trim();
+    const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
+    const dob = document.getElementById('patientDob').value.trim();
+    
+    if (!selectedPatient && patientId && patientName) {
+        selectedPatient = {
+            id: patientId,
+            name: patientName,
+            phone: contactNo,
+            nationality: nationality,
+            isCitizen: isCitizen,
+            dob: dob
         };
-        
-        try {
-            const saveBtn = document.getElementById('saveMemoBtn');
-            saveBtn.textContent = "⏳ Saving...";
-            saveBtn.disabled = true;
-            const docRef = await window.db.collection("memos").add(memoData);
-            memoData.firebaseId = docRef.id;
-            localStorage.setItem('printMemoData', JSON.stringify(memoData));
-            
-            if (selectedAppointmentId) {
-                const deleted = await deleteLinkedAppointment();
-                if (deleted) {
-                    showMessage("✅ Linked appointment deleted", "success");
-                    document.getElementById('appointmentBadge').style.display = 'none';
-                }
-            }
-            
-            savedMemoData = memoData;
-            showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
-            
-            // Redirect to memos list page after save
-            setTimeout(() => {
-                // Store the memo ID to auto-print
-                localStorage.setItem('autoPrintMemoId', memoId);
-                // Redirect to memos list
-                window.location.href = 'memos-list.html';
-            }, 1500);
-            
-        } catch (error) {
-            console.error(error);
-            showMessage("❌ Failed to save: " + error.message, "error");
-            const saveBtn = document.getElementById('saveMemoBtn');
-            saveBtn.textContent = "💾 Save Memo";
-            saveBtn.disabled = false;
-        }
     }
     
+    if (!selectedPatient) { 
+        showMessage("Please search and select a patient", "error"); 
+        return; 
+    }
+    if (!selectedDoctor) { 
+        showMessage("Please select a doctor", "error"); 
+        return; 
+    }
+    if (!selectedServices.length) { 
+        showMessage("Please add at least one service", "error"); 
+        return; 
+    }
+    
+    const selectedPaymentOption = document.getElementById('paymentMethodSelect');
+    const selectedPaymentId = selectedPaymentOption.value;
+    const selectedPaymentName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
+    
+    if (!selectedPaymentId) { showMessage("Please select a payment method", "error"); return; }
+    
+    const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML);
+    let paidAmount = 0;
+    let changeAmount = 0;
+    let paymentDetails = {};
+    
+    if (selectedPaymentName === 'Cash') {
+        cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
+        paidAmount = cashGivenAmount;
+        changeAmount = Math.max(0, paidAmount - patientPayable);
+        if (paidAmount < patientPayable) {
+            showMessage(`Cash given (MVR ${paidAmount.toFixed(2)}) is less than patient payable (MVR ${patientPayable.toFixed(2)})`, "error");
+            return;
+        }
+        paymentDetails = {
+            method: 'Cash',
+            methodId: selectedPaymentId,
+            givenAmount: paidAmount,
+            changeAmount: changeAmount,
+            patientPayable: patientPayable
+        };
+    } else {
+        paidAmount = patientPayable;
+        changeAmount = 0;
+        paymentDetails = {
+            method: selectedPaymentName,
+            methodId: selectedPaymentId,
+            givenAmount: paidAmount,
+            changeAmount: 0,
+            patientPayable: patientPayable
+        };
+    }
+    
+    const insuranceArray = [];
+    if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
+        const isFullCover = isFullCoverInsurance(selectedPrimaryInsurance.name);
+        insuranceArray.push({
+            name: selectedPrimaryInsurance.name,
+            type: insuranceType,
+            value: insuranceType === "percent" ? selectedInsurancePercent : selectedInsuranceFixed,
+            amount: currentPrimaryInsurancePayment,
+            priority: "primary",
+            fullCover: isFullCover
+        });
+    }
+    if (selectedPatient.isCitizen && currentAasandhaPayment > 0) {
+        insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
+    }
+    
+    // Get discount details
+    const { value: discountValue, type: discountTypeValue } = getDiscountValue();
+    const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+    let discountAmount = 0;
+    if (discountTypeValue === 'percent') {
+        discountAmount = (subtotal * discountValue) / 100;
+    } else {
+        discountAmount = Math.min(discountValue, subtotal);
+    }
+    
+    let memoNumber;
+    try {
+        memoNumber = await getNextMemoNumber();
+    } catch (err) {
+        showMessage("Failed to generate memo number: " + err.message, "error");
+        return;
+    }
+    const memoId = memoNumber.toString();
+    
+    const memoData = {
+        memoId: memoId,
+        date: new Date().toLocaleString(),
+        timestamp: new Date().toISOString(),
+        patient: {
+            id: selectedPatient.id || patientId || "",
+            name: selectedPatient.name || patientName || "",
+            phone: selectedPatient.phone || contactNo || "",
+            nationality: selectedPatient.nationality || nationality || "",
+            isCitizen: selectedPatient.isCitizen || isCitizen || false,
+            idNumber: selectedPatient.idNumber || patientId || "",
+            passportNumber: selectedPatient.passportNumber || "",
+            nationalId: selectedPatient.nationalId || "",
+            dob: selectedPatient.dob || dob || ""
+        },
+        doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
+        insurances: insuranceArray,
+        services: selectedServices.map(s => ({
+            code: s.code || '',
+            name: s.name, 
+            qty: s.qty, 
+            price: s.price,
+            total: s.qty * s.price,
+            aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
+            primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
+            aasandhaAmount: s.aasandhaAmount || 0,
+            patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0))
+        })),
+        discount: {
+            type: discountTypeValue,
+            value: discountValue,
+            amount: discountAmount,
+            mode: discountMode,
+            reason: discountMode === 'preset' ? 
+                (document.getElementById('discountPresetSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None") : 
+                "Custom Discount"
+        },
+        billing: {
+            subtotal: subtotal || 0,
+            afterDiscount: subtotal - discountAmount || 0,
+            primaryInsurancePayment: currentPrimaryInsurancePayment,
+            aasandhaPayment: currentAasandhaPayment,
+            totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
+            patientPayable: patientPayable || 0,
+            paid: paidAmount || 0,
+            change: changeAmount || 0,
+            balance: (patientPayable - paidAmount) || 0
+        },
+        payment: paymentDetails,
+        linkedAppointmentId: selectedAppointmentId || null,
+        status: "completed",
+        createdBy: JSON.parse(loggedInUser).username || "unknown",
+        createdAt: new Date().toISOString()
+    };
+    
+    try {
+        const saveBtn = document.getElementById('saveMemoBtn');
+        saveBtn.textContent = "⏳ Saving...";
+        saveBtn.disabled = true;
+        const docRef = await window.db.collection("memos").add(memoData);
+        memoData.firebaseId = docRef.id;
+        localStorage.setItem('printMemoData', JSON.stringify(memoData));
+        
+        if (selectedAppointmentId) {
+            const deleted = await deleteLinkedAppointment();
+            if (deleted) {
+                showMessage("✅ Linked appointment deleted", "success");
+                document.getElementById('appointmentBadge').style.display = 'none';
+            }
+        }
+        
+        savedMemoData = memoData;
+        showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
+        
+        // ========== REDIRECT TO PRINT-MEMO.HTML ==========
+        setTimeout(() => {
+            // Store the memo ID for printing
+            localStorage.setItem('autoPrintMemoId', memoId);
+            // Redirect directly to print-memo.html with the memo ID
+            window.location.href = `print-memo.html?memoId=${memoId}`;
+        }, 1500);
+        
+    } catch (error) {
+        console.error(error);
+        showMessage("❌ Failed to save: " + error.message, "error");
+        const saveBtn = document.getElementById('saveMemoBtn');
+        saveBtn.textContent = "💾 Save Memo";
+        saveBtn.disabled = false;
+    }
+}
+
+
     // ========== DISCOUNT EVENT LISTENERS ==========
     // Toggle between preset and custom discount
     document.getElementById('discountPresetBtn').addEventListener('click', function() {

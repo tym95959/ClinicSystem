@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Doctor Services Report</title>
+    <title>Hope Dental Care | Doctor Services Report</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -159,6 +159,10 @@
             gap: 8px;
         }
 
+        .btn-generate:hover {
+            background: #155a4a;
+        }
+
         .table-wrapper {
             background: white;
             border-radius: 24px;
@@ -221,6 +225,13 @@
             color: #8ba0b0;
             background: white;
             border-radius: 24px;
+        }
+
+        .empty-message i {
+            font-size: 42px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: block;
         }
 
         .summary-cards-section {
@@ -356,7 +367,7 @@
 <body>
 <div class="clinic-header">
     <div class="logo">
-        <h2><i class="fas fa-user-md"></i> Hope Dental · Doctor Services Report</h2>
+        <h2><i class="fas fa-user-md"></i> Hope Dental Care · Doctor Services Report</h2>
     </div>
     <div class="header-actions">
         <button class="btn-outline" onclick="window.location.href='clinicdash.html'"><i class="fas fa-arrow-left"></i> Dashboard</button>
@@ -381,20 +392,21 @@
             </select>
         </div>
         <div class="filter-group">
-            <button class="btn-generate" onclick="loadDoctorReport()"><i class="fas fa-sync-alt"></i> Generate Report</button>
+            <button class="btn-generate" onclick="loadDoctorReport()"><i class="fas fa-eye"></i> View Report</button>
         </div>
         <div class="filter-group">
-            <button class="btn-primary" onclick="printReport()"><i class="fas fa-print"></i> Print</button>
+            <button class="btn-primary" onclick="printReport()" id="printBtn" disabled><i class="fas fa-print"></i> Print</button>
         </div>
         <div class="filter-group">
-            <button class="btn-secondary" onclick="exportToCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+            <button class="btn-secondary" onclick="exportToCSV()" id="exportBtn" disabled><i class="fas fa-file-csv"></i> Export CSV</button>
         </div>
     </div>
 
     <div id="reportContainer">
         <div class="empty-message">
-            <i class="fas fa-stethoscope" style="font-size: 42px; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
-            Select a date range and click "Generate Report"
+            <i class="fas fa-stethoscope"></i>
+            <strong>No Report Generated</strong>
+            <p style="margin-top: 8px; font-size: 13px; color: #8ba0b0;">Select a date range and click <strong>"View Report"</strong> to see the data</p>
         </div>
     </div>
 </div>
@@ -420,6 +432,7 @@
 
     let currentReportData = [];
     let doctorsList = [];
+    let reportLoaded = false;
 
     // Load doctors for filter dropdown
     async function loadDoctorsList() {
@@ -454,6 +467,15 @@
             return;
         }
 
+        // Show loading state
+        document.getElementById('reportContainer').innerHTML = `
+            <div class="empty-message">
+                <i class="fas fa-spinner fa-spin" style="color: #1e6f5c;"></i>
+                <strong>Loading...</strong>
+                <p style="margin-top: 8px; font-size: 13px; color: #8ba0b0;">Fetching data for the selected period</p>
+            </div>
+        `;
+
         try {
             const startDateObj = new Date(startRaw);
             startDateObj.setHours(0,0,0,0);
@@ -468,6 +490,12 @@
             const memos = [];
             snapshot.forEach(doc => memos.push({ id: doc.id, ...doc.data() }));
             currentReportData = memos;
+            reportLoaded = true;
+            
+            // Enable print and export buttons
+            document.getElementById('printBtn').disabled = false;
+            document.getElementById('exportBtn').disabled = false;
+            
             renderDoctorReport(memos, startRaw, endRaw, doctorFilter);
         } catch (err) {
             console.error(err);
@@ -749,7 +777,7 @@
     }
 
     function exportToCSV() {
-        if (!currentReportData.length) {
+        if (!reportLoaded || !currentReportData.length) {
             alert('No data to export. Please generate report first.');
             return;
         }
@@ -807,6 +835,10 @@
     }
 
     function printReport() {
+        if (!reportLoaded) {
+            alert('Please generate a report first before printing.');
+            return;
+        }
         window.print();
     }
 
@@ -818,7 +850,7 @@
     function init() {
         if (window.db) {
             loadDoctorsList();
-            loadDoctorReport();
+            // Don't auto-load report - user must click "View Report"
         } else {
             setTimeout(init, 400);
         }

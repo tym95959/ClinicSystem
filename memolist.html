@@ -250,7 +250,7 @@
                     <input type="text" id="endDate" placeholder="Select end date" autocomplete="off">
                 </div>
                 <div class="filter-group search-group">
-                    <label><i class="fas fa-search"></i> Search (Memo ID / Patient Name / Patient ID)</label>
+                    <label><i class="fas fa-search"></i> Search (Memo ID / Patient Name / ID/Passport)</label>
                     <input type="text" id="searchInput" placeholder="e.g., #MEMO123 or John...">
                 </div>
                 <div class="action-buttons">
@@ -273,7 +273,7 @@
         <div style="overflow-x: auto;">
             <table class="memos-table">
                 <thead>
-                    <tr><th>Memo ID</th><th>Date</th><th>Patient Name</th><th>Patient ID</th><th>Doctor</th><th>Total (MVR)</th><th>Paid</th><th>Balance</th><th>Actions</th></tr>
+                    <tr><th>Memo ID</th><th>Date</th><th>Patient Name</th><th>ID/Passport</th><th>Doctor</th><th>Total (MVR)</th><th>Paid</th><th>Balance</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="memosTbody">
                     <tr class="empty-row"><td colspan="9">💡 Set your filters and click "Apply Filters" to view memos</td></tr>
@@ -322,6 +322,10 @@
             if (typeof memo.timestamp === 'object' && memo.timestamp.toDate) return memo.timestamp.toDate();
             if (typeof memo.timestamp === 'number') return new Date(memo.timestamp);
             if (typeof memo.timestamp === 'string') return new Date(memo.timestamp);
+        }
+        if (memo.createdAt) {
+            let p = new Date(memo.createdAt);
+            if (!isNaN(p)) return p;
         }
         return null;
     }
@@ -448,7 +452,7 @@
             filtered = filtered.filter(memo => {
                 const mid = (memo.memoId || '').toLowerCase();
                 const pname = (memo.patient?.name || '').toLowerCase();
-                const pid = (memo.patient?.id || '').toLowerCase();
+                const pid = (memo.patient?.id || memo.patient?.idNumber || memo.patient?.passportNumber || memo.patient?.nationalId || '').toLowerCase();
                 return mid.includes(query) || pname.includes(query) || pid.includes(query);
             });
         }
@@ -476,7 +480,7 @@
             const dateObj = parseMemoDate(memo);
             let dateStr = dateObj ? formatDate(dateObj) : 'N/A';
             const patientName = memo.patient?.name || 'Unknown';
-            const patientId = memo.patient?.id || memo.patient?.idNumber || memo.patient?.passportNumber || '-';
+            const patientId = memo.patient?.id || memo.patient?.idNumber || memo.patient?.passportNumber || memo.patient?.nationalId || '-';
             const doctorName = memo.doctor?.name || '-';
             const subtotal = memo.billing?.subtotal || 0;
             const paid = memo.billing?.paid || 0;
@@ -805,15 +809,40 @@
     }
 
     function setDatePreset(preset) {
-        const today = new Date(); today.setHours(0,0,0,0);
+        const today = new Date(); 
+        today.setHours(0,0,0,0);
         let start = null, end = null;
-        if (preset === 'today') { start = new Date(today); end = new Date(today); }
-        else if (preset === 'week') { const day = today.getDay(); const diff = (day === 0 ? 6 : day - 1); start = new Date(today); start.setDate(today.getDate() - diff); end = new Date(today); }
-        else if (preset === 'month') { start = new Date(today.getFullYear(), today.getMonth(), 1); end = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
-        else if (preset === 'all') { start = null; end = null; }
-        if (start && startPicker) document.getElementById('startDate').value = start.toISOString().slice(0,10);
-        if (end && endPicker) document.getElementById('endDate').value = end.toISOString().slice(0,10);
-        if (preset === 'all') { document.getElementById('startDate').value = ''; document.getElementById('endDate').value = ''; }
+        
+        if (preset === 'today') { 
+            // Set both start and end to today
+            start = new Date(today); 
+            end = new Date(today);
+        } else if (preset === 'week') { 
+            const day = today.getDay(); 
+            const diff = (day === 0 ? 6 : day - 1); 
+            start = new Date(today); 
+            start.setDate(today.getDate() - diff); 
+            end = new Date(today); 
+        } else if (preset === 'month') { 
+            start = new Date(today.getFullYear(), today.getMonth(), 1); 
+            end = new Date(today.getFullYear(), today.getMonth() + 1, 0); 
+        } else if (preset === 'all') { 
+            start = null; 
+            end = null; 
+        }
+        
+        if (start && startPicker) {
+            const formattedStart = start.toISOString().slice(0,10);
+            document.getElementById('startDate').value = formattedStart;
+        }
+        if (end && endPicker) {
+            const formattedEnd = end.toISOString().slice(0,10);
+            document.getElementById('endDate').value = formattedEnd;
+        }
+        if (preset === 'all') { 
+            document.getElementById('startDate').value = ''; 
+            document.getElementById('endDate').value = ''; 
+        }
         showMessage(`Preset "${preset}" applied to date fields. Click "Apply Filters" to see results.`, "info");
     }
 
@@ -822,7 +851,7 @@
         const tbody = document.getElementById('memosTbody');
         tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔄 Loading memo data...</td></tr>';
         try {
-            const snapshot = await window.db.collection("memos").orderBy("timestamp", "desc").get();
+            const snapshot = await window.db.collection("memos").orderBy("createdAt", "desc").get();
             allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             currentDisplayMemos = [];
             renderMemosTable();

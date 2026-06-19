@@ -268,6 +268,37 @@
             color: #8ba0b0;
         }
 
+        /* Datalist styling */
+        .nationality-wrapper {
+            position: relative;
+        }
+
+        .nationality-wrapper input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: 0.2s;
+            background: white;
+        }
+
+        .nationality-wrapper input:focus {
+            outline: none;
+            border-color: #0f6b8c;
+            box-shadow: 0 0 0 3px rgba(15, 107, 140, 0.1);
+        }
+
+        .nationality-wrapper datalist {
+            display: none;
+        }
+
+        .nationality-hint {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 16px;
@@ -326,10 +357,183 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Nationality <span class="required">*</span></label>
-                    <select id="nationality">
-                        <option value="Maldivian">Maldivian</option>
-                        <option value="Foreign">Foreign</option>
-                    </select>
+                    <div class="nationality-wrapper">
+                        <input type="text" id="nationality" list="nationalityList" placeholder="Start typing or select nationality..." autocomplete="off">
+                        <datalist id="nationalityList">
+                            <option value="Afghan">
+                            <option value="Albanian">
+                            <option value="Algerian">
+                            <option value="American">
+                            <option value="Andorran">
+                            <option value="Angolan">
+                            <option value="Argentine">
+                            <option value="Armenian">
+                            <option value="Australian">
+                            <option value="Austrian">
+                            <option value="Azerbaijani">
+                            <option value="Bahamian">
+                            <option value="Bahraini">
+                            <option value="Bangladeshi">
+                            <option value="Barbadian">
+                            <option value="Belarusian">
+                            <option value="Belgian">
+                            <option value="Belizean">
+                            <option value="Beninese">
+                            <option value="Bhutanese">
+                            <option value="Bolivian">
+                            <option value="Bosnian">
+                            <option value="Brazilian">
+                            <option value="British">
+                            <option value="Bruneian">
+                            <option value="Bulgarian">
+                            <option value="Burkinabe">
+                            <option value="Burmese">
+                            <option value="Burundian">
+                            <option value="Cambodian">
+                            <option value="Cameroonian">
+                            <option value="Canadian">
+                            <option value="Cape Verdean">
+                            <option value="Central African">
+                            <option value="Chadian">
+                            <option value="Chilean">
+                            <option value="Chinese">
+                            <option value="Colombian">
+                            <option value="Comorian">
+                            <option value="Congolese">
+                            <option value="Costa Rican">
+                            <option value="Croatian">
+                            <option value="Cuban">
+                            <option value="Cypriot">
+                            <option value="Czech">
+                            <option value="Danish">
+                            <option value="Djiboutian">
+                            <option value="Dominican">
+                            <option value="Dutch">
+                            <option value="Ecuadorian">
+                            <option value="Egyptian">
+                            <option value="Emirati">
+                            <option value="English">
+                            <option value="Equatorial Guinean">
+                            <option value="Eritrean">
+                            <option value="Estonian">
+                            <option value="Ethiopian">
+                            <option value="Fijian">
+                            <option value="Filipino">
+                            <option value="Finnish">
+                            <option value="French">
+                            <option value="Gabonese">
+                            <option value="Gambian">
+                            <option value="Georgian">
+                            <option value="German">
+                            <option value="Ghanaian">
+                            <option value="Greek">
+                            <option value="Grenadian">
+                            <option value="Guatemalan">
+                            <option value="Guinean">
+                            <option value="Guyanese">
+                            <option value="Haitian">
+                            <option value="Honduran">
+                            <option value="Hungarian">
+                            <option value="Icelandic">
+                            <option value="Indian">
+                            <option value="Indonesian">
+                            <option value="Iranian">
+                            <option value="Iraqi">
+                            <option value="Irish">
+                            <option value="Israeli">
+                            <option value="Italian">
+                            <option value="Ivorian">
+                            <option value="Jamaican">
+                            <option value="Japanese">
+                            <option value="Jordanian">
+                            <option value="Kazakh">
+                            <option value="Kenyan">
+                            <option value="Kuwaiti">
+                            <option value="Kyrgyz">
+                            <option value="Laotian">
+                            <option value="Latvian">
+                            <option value="Lebanese">
+                            <option value="Liberian">
+                            <option value="Libyan">
+                            <option value="Liechtensteiner">
+                            <option value="Lithuanian">
+                            <option value="Luxembourger">
+                            <option value="Macanese">
+                            <option value="Malagasy">
+                            <option value="Malawian">
+                            <option value="Malaysian">
+                            <option value="Maldivian">
+                            <option value="Malian">
+                            <option value="Maltese">
+                            <option value="Mauritian">
+                            <option value="Mexican">
+                            <option value="Moldovan">
+                            <option value="Monacan">
+                            <option value="Mongolian">
+                            <option value="Montenegrin">
+                            <option value="Moroccan">
+                            <option value="Mozambican">
+                            <option value="Namibian">
+                            <option value="Nepalese">
+                            <option value="New Zealander">
+                            <option value="Nicaraguan">
+                            <option value="Nigerian">
+                            <option value="North Korean">
+                            <option value="Norwegian">
+                            <option value="Omani">
+                            <option value="Pakistani">
+                            <option value="Palestinian">
+                            <option value="Panamanian">
+                            <option value="Papua New Guinean">
+                            <option value="Paraguayan">
+                            <option value="Peruvian">
+                            <option value="Polish">
+                            <option value="Portuguese">
+                            <option value="Qatari">
+                            <option value="Romanian">
+                            <option value="Russian">
+                            <option value="Rwandan">
+                            <option value="Saudi">
+                            <option value="Senegalese">
+                            <option value="Serbian">
+                            <option value="Seychellois">
+                            <option value="Sierra Leonean">
+                            <option value="Singaporean">
+                            <option value="Slovak">
+                            <option value="Slovenian">
+                            <option value="Somali">
+                            <option value="South African">
+                            <option value="South Korean">
+                            <option value="Spanish">
+                            <option value="Sri Lankan">
+                            <option value="Sudanese">
+                            <option value="Surinamese">
+                            <option value="Swazi">
+                            <option value="Swedish">
+                            <option value="Swiss">
+                            <option value="Syrian">
+                            <option value="Taiwanese">
+                            <option value="Tajik">
+                            <option value="Tanzanian">
+                            <option value="Thai">
+                            <option value="Togolese">
+                            <option value="Trinidadian">
+                            <option value="Tunisian">
+                            <option value="Turkish">
+                            <option value="Turkmen">
+                            <option value="Ugandan">
+                            <option value="Ukrainian">
+                            <option value="Uruguayan">
+                            <option value="Uzbek">
+                            <option value="Vatican">
+                            <option value="Venezuelan">
+                            <option value="Vietnamese">
+                            <option value="Yemeni">
+                            <option value="Zambian">
+                            <option value="Zimbabwean">
+                        </datalist>
+                        <div class="nationality-hint">💡 Type to search or select from the list. You can also type any custom nationality.</div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Date of Birth</label>
@@ -358,7 +562,7 @@
                 <input type="text" id="address" placeholder="Full address">
             </div>
 
-            <button type="submit" class="btn-primary" id="savePatientBtn" disabled>💾 Save Patient </button>
+            <button type="submit" class="btn-primary" id="savePatientBtn" disabled>💾 Save Patient</button>
         </form>
 
         <div id="messageBox" class="message"></div>
@@ -415,7 +619,7 @@
     // ========== GLOBALS ==========
     let allPatients = [];
     let firebaseReady = false;
-    let editMode = false;           // true when editing an existing patient
+    let editMode = false;
     let currentEditFirestoreId = null;
     
     // ========== HELPER FUNCTIONS ==========
@@ -467,7 +671,7 @@
         }
     }
     
-    // ========== DUPLICATE CHECKS (exclude current patient when editing) ==========
+    // ========== DUPLICATE CHECKS ==========
     async function checkDuplicateIdNumber(idNumber, excludeFirestoreId = null) {
         if (!idNumber) return false;
         let query = window.db.collection("patients").where("idNumber", "==", idNumber).limit(1);
@@ -492,7 +696,7 @@
         return true;
     }
     
-    function validateForm(name, idNumber, contactNo) {
+    function validateForm(name, idNumber, contactNo, nationality) {
         if (!name || name.trim() === '') {
             showMessage('❌ Please enter patient name', 'error');
             return false;
@@ -505,12 +709,16 @@
             showMessage('❌ Please enter contact number', 'error');
             return false;
         }
+        if (!nationality || nationality.trim() === '') {
+            showMessage('❌ Please enter or select nationality', 'error');
+            return false;
+        }
         return true;
     }
     
     function resetFormToAddMode() {
         document.getElementById('patientName').value = '';
-        document.getElementById('nationality').value = 'Maldivian';
+        document.getElementById('nationality').value = '';
         document.getElementById('dob').value = '';
         document.getElementById('idNumber').value = '';
         document.getElementById('contactNo').value = '';
@@ -527,7 +735,7 @@
     
     function populateFormForEdit(patient) {
         document.getElementById('patientName').value = patient.name || '';
-        document.getElementById('nationality').value = patient.nationality || 'Maldivian';
+        document.getElementById('nationality').value = patient.nationality || '';
         document.getElementById('dob').value = patient.dob || '';
         document.getElementById('idNumber').value = patient.idNumber || '';
         document.getElementById('contactNo').value = patient.contactNo || '';
@@ -540,7 +748,6 @@
         document.getElementById('cancelEditBtn').style.display = 'inline-block';
         const saveBtn = document.getElementById('savePatientBtn');
         saveBtn.innerHTML = '✏️ Update Patient';
-        // Scroll to form smoothly
         document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
     }
     
@@ -554,21 +761,20 @@
         }
         
         const name = document.getElementById('patientName').value.trim();
-        const nationality = document.getElementById('nationality').value;
+        const nationality = document.getElementById('nationality').value.trim();
         const dob = document.getElementById('dob').value;
         const idNumber = document.getElementById('idNumber').value.trim();
         const contactNo = document.getElementById('contactNo').value.trim();
         const email = document.getElementById('email').value.trim();
         const address = document.getElementById('address').value.trim();
         
-        if (!validateForm(name, idNumber, contactNo)) return;
+        if (!validateForm(name, idNumber, contactNo, nationality)) return;
         
         const saveBtn = document.getElementById('savePatientBtn');
         const originalText = saveBtn.textContent;
         saveBtn.textContent = '⏳ Validating...';
         saveBtn.disabled = true;
         
-        // Duplicate checks with exclusion for edit mode
         const excludeId = editMode ? currentEditFirestoreId : null;
         const idExists = await checkDuplicateIdNumber(idNumber, excludeId);
         if (idExists) {
@@ -589,12 +795,12 @@
         saveBtn.textContent = '⏳ Saving...';
         
         try {
-            const isCitizen = nationality === 'Maldivian';
+            // Check if Maldivian (for Aasandha eligibility)
+            const isCitizen = nationality.toLowerCase() === 'maldivian';
             const currentUser = JSON.parse(loggedInUser);
             const now = new Date().toISOString();
             
             if (editMode) {
-                // UPDATE existing patient
                 const updateData = {
                     name: name,
                     nationality: nationality,
@@ -610,9 +816,8 @@
                 await window.db.collection("patients").doc(currentEditFirestoreId).update(updateData);
                 showMessage(`✅ Patient "${name}" updated successfully.`, 'success');
                 resetFormToAddMode();
-                loadAllPatients(); // refresh list
+                loadAllPatients();
             } else {
-                // CREATE new patient
                 const patientId = await generatePatientId();
                 const patientData = {
                     id: patientId,
@@ -647,7 +852,7 @@
         showMessage('Edit cancelled. Form cleared.', 'info');
     });
     
-    // ========== LOAD & RENDER PATIENTS (with Edit + Delete) ==========
+    // ========== LOAD & RENDER PATIENTS ==========
     async function loadAllPatients() {
         if (!window.db) return;
         const tbody = document.getElementById('patientsList');
@@ -687,7 +892,6 @@
             </tr>
         `).join('');
         
-        // Attach Edit events
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const patientJson = btn.getAttribute('data-patient-json');
@@ -700,7 +904,6 @@
             });
         });
         
-        // Attach Delete events
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const firestoreId = btn.getAttribute('data-firestore-id');
@@ -717,12 +920,11 @@
         try {
             await window.db.collection("patients").doc(firestoreId).delete();
             showMessage(`🗑️ Patient "${patientName}" deleted successfully.`, 'success', 'listMessage');
-            // If currently editing a patient that was just deleted, reset form.
             if (editMode && currentEditFirestoreId === firestoreId) {
                 resetFormToAddMode();
                 showMessage('Deleted patient was in edit mode. Form cleared.', 'info');
             }
-            loadAllPatients(); // refresh
+            loadAllPatients();
         } catch (error) {
             console.error("Delete error:", error);
             showMessage(`❌ Failed to delete: ${error.message}`, 'error', 'listMessage');
@@ -804,17 +1006,17 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('dob').max = today;
         
-        const nationalitySelect = document.getElementById('nationality');
-        const idInput = document.getElementById('idNumber');
-        nationalitySelect.addEventListener('change', function(e) {
-            idInput.placeholder = e.target.value === 'Maldivian' 
-                ? 'e.g., A123456 (ID Card Number)' 
-                : 'e.g., N1234567 (Passport Number)';
-        });
-        nationalitySelect.dispatchEvent(new Event('change'));
-        
         document.getElementById('searchPatientInput').addEventListener('input', searchPatients);
         document.getElementById('refreshPatientsBtn').addEventListener('click', loadAllPatients);
+        
+        // Auto-detect nationality from input
+        const nationalityInput = document.getElementById('nationality');
+        nationalityInput.addEventListener('change', function() {
+            // When user selects or types, check if it's Maldivian
+            const val = this.value.trim().toLowerCase();
+            const isCitizen = val === 'maldivian';
+            // You could add a visual indicator here if needed
+        });
     }
     
     init();

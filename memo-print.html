@@ -623,6 +623,9 @@
         const patientContact = patient.phone || patient.contactNo || '';
         const patientNationality = patient.nationality || '';
         
+        // Build patient ID/Passport display
+        const patientIdDisplay = patient.id || patient.idNumber || patient.passportNumber || patient.nationalId || '';
+        
         // Build insurance display
         let insuranceHtml = '';
         if (insuranceCount > 0) {
@@ -755,7 +758,7 @@
                     <div class="info-grid">
                         <div class="info-left">
                             <div class="info-row"><span class="info-label">Patient Name:</span><span class="info-value">${escapeHtml(patient.name || '')}</span></div>
-                            <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patient.id || patient.idNumber || patient.passportNumber || patient.nationalId || '')}</span></div>
+                            <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patientIdDisplay || '')}</span></div>
                             <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patientContact)}</span></div>
                             <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patientNationality)}</span></div>
                             <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${escapeHtml(fullAddress || 'N/A')}</span></div>

@@ -819,7 +819,77 @@
         } catch(e) { return dateStr; }
     }
     
-    // ========== UPDATED PRINT FUNCTION - Redesigned Memo Layout ==========
+    // Calculate age from DOB
+    function calculateAge(dob) {
+        if (!dob) return 'N/A';
+        try {
+            const birthDate = new Date(dob);
+            if (isNaN(birthDate)) return 'N/A';
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        } catch(e) {
+            return 'N/A';
+        }
+    }
+
+    // Get active insurances with amounts > 0
+    function getActiveInsurances(memo) {
+        const insurances = memo.insurances || [];
+        const billing = memo.billing || {};
+        const results = [];
+        insurances.forEach(ins => {
+            let amount = ins.amount || 0;
+            if (amount === 0 && ins.priority === 'primary') {
+                amount = billing.primaryInsurancePayment || 0;
+            }
+            if (amount === 0 && ins.priority === 'secondary') {
+                amount = billing.aasandhaPayment || 0;
+            }
+            if (amount > 0) {
+                results.push({
+                    name: ins.name || 'Insurance',
+                    amount: amount,
+                    priority: ins.priority || 'primary'
+                });
+            }
+        });
+        if (results.length === 0) {
+            if (billing.primaryInsurancePayment > 0) {
+                results.push({
+                    name: 'Primary Insurance',
+                    amount: billing.primaryInsurancePayment,
+                    priority: 'primary'
+                });
+            }
+            if (billing.aasandhaPayment > 0) {
+                results.push({
+                    name: 'Aasandha',
+                    amount: billing.aasandhaPayment,
+                    priority: 'secondary'
+                });
+            }
+        }
+        return results;
+    }
+
+    // Get memo heading
+    function getMemoHeading(memo) {
+        const services = memo.services || [];
+        if (services.length === 0) return 'Service Memo';
+        const firstService = services[0];
+        const serviceName = firstService.name || '';
+        if (serviceName.toLowerCase().includes('consultation')) {
+            return 'Consultation Memo';
+        }
+        return 'Service Memo';
+    }
+
+    // ========== UPDATED PRINT FUNCTION - With full address, service discounts, payment method, created by ==========
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) { alert("Please allow pop-ups to print."); return; }
@@ -836,78 +906,23 @@
         const services = memo.services || [];
         const discount = memo.discount || {};
         const billing = memo.billing || {};
+        const activeInsurances = getActiveInsurances(memo);
+        const insuranceCount = activeInsurances.length;
+        const paymentMethod = memo.payment?.method || 'N/A';
+        const createdBy = memo.createdBy || 'Unknown';
+        const serviceDiscounts = memo.serviceDiscounts || {};
         
-        // Calculate age from DOB
-        function calculateAge(dob) {
-            if (!dob) return 'N/A';
-            try {
-                const birthDate = new Date(dob);
-                if (isNaN(birthDate)) return 'N/A';
-                const today = new Date();
-                let age = today.getFullYear() - birthDate.getFullYear();
-                const m = today.getMonth() - birthDate.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                    age--;
-                }
-                return age;
-            } catch(e) {
-                return 'N/A';
-            }
-        }
+        // Calculate age
         const age = calculateAge(patient.dob);
         
-        // Get active insurances with amounts > 0
-        function getActiveInsurances() {
-            const insurances = memo.insurances || [];
-            const results = [];
-            insurances.forEach(ins => {
-                let amount = ins.amount || 0;
-                if (amount === 0 && ins.priority === 'primary') {
-                    amount = billing.primaryInsurancePayment || 0;
-                }
-                if (amount === 0 && ins.priority === 'secondary') {
-                    amount = billing.aasandhaPayment || 0;
-                }
-                if (amount > 0) {
-                    results.push({
-                        name: ins.name || 'Insurance',
-                        amount: amount,
-                        priority: ins.priority || 'primary'
-                    });
-                }
-            });
-            if (results.length === 0) {
-                if (billing.primaryInsurancePayment > 0) {
-                    results.push({
-                        name: 'Primary Insurance',
-                        amount: billing.primaryInsurancePayment,
-                        priority: 'primary'
-                    });
-                }
-                if (billing.aasandhaPayment > 0) {
-                    results.push({
-                        name: 'Aasandha',
-                        amount: billing.aasandhaPayment,
-                        priority: 'secondary'
-                    });
-                }
-            }
-            return results;
-        }
-        const activeInsurances = getActiveInsurances();
-        const insuranceCount = activeInsurances.length;
+        // Get dynamic memo heading
+        const memoHeading = getMemoHeading(memo);
         
-        // Get memo heading
-        function getMemoHeading() {
-            if (services.length === 0) return 'Service Memo';
-            const firstService = services[0];
-            const serviceName = firstService.name || '';
-            if (serviceName.toLowerCase().includes('consultation')) {
-                return 'Consultation Memo';
-            }
-            return 'Service Memo';
-        }
-        const memoHeading = getMemoHeading();
+        // Build full patient address
+        const fullAddress = patient.address ? 
+            `${escapeHtml(patient.address)}` : '';
+        const patientContact = patient.phone || patient.contactNo || '';
+        const patientNationality = patient.nationality || '';
         
         // Build insurance display
         let insuranceHtml = '';
@@ -924,73 +939,87 @@
             </div>`;
         }
         
-        // Build services table with dynamic columns
+        // Build services table with dynamic columns and show service discounts
         let servicesHtml = '';
         if (services.length > 0) {
             let headerHtml = '';
             let rowHtml = '';
             
             if (insuranceCount === 0) {
-                // No insurance - 5 columns: Code, Service, Qty, Price, Total
+                // No insurance - 6 columns: Code, Service, Qty, Price, Discount, Total
                 headerHtml = `<tr>
-                    <th style="text-align:center; width:12%;">Code</th>
-                    <th style="text-align:left; width:40%;">Service</th>
-                    <th style="text-align:center; width:10%;">Qty</th>
-                    <th style="text-align:right; width:19%;">Price</th>
-                    <th style="text-align:right; width:19%;">Total</th>
+                    <th style="text-align:center; width:10%;">Code</th>
+                    <th style="text-align:left; width:32%;">Service</th>
+                    <th style="text-align:center; width:8%;">Qty</th>
+                    <th style="text-align:right; width:15%;">Price</th>
+                    <th style="text-align:right; width:15%;">Discount</th>
+                    <th style="text-align:right; width:20%;">Total</th>
                 </tr>`;
                 
                 services.forEach(s => {
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
                     rowHtml += `<tr>
                         <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
                         <td style="text-align:left;">${escapeHtml(s.name)}</td>
                         <td style="text-align:center;">${s.qty}</td>
                         <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
                         <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
                     </tr>`;
                 });
                 
             } else if (insuranceCount === 1) {
-                // Single insurance - 6 columns: Code, Service, Qty, Price, Insurance, Total
+                // Single insurance - 7 columns: Code, Service, Qty, Price, Insurance, Discount, Total
                 const insName = activeInsurances[0].name || 'Insurance';
                 headerHtml = `<tr>
-                    <th style="text-align:center; width:12%;">Code</th>
-                    <th style="text-align:left; width:32%;">Service</th>
-                    <th style="text-align:center; width:8%;">Qty</th>
-                    <th style="text-align:right; width:16%;">Price</th>
-                    <th style="text-align:right; width:16%;">${escapeHtml(insName)}</th>
-                    <th style="text-align:right; width:16%;">Total</th>
+                    <th style="text-align:center; width:10%;">Code</th>
+                    <th style="text-align:left; width:26%;">Service</th>
+                    <th style="text-align:center; width:7%;">Qty</th>
+                    <th style="text-align:right; width:13%;">Price</th>
+                    <th style="text-align:right; width:13%;">${escapeHtml(insName)}</th>
+                    <th style="text-align:right; width:13%;">Discount</th>
+                    <th style="text-align:right; width:18%;">Total</th>
                 </tr>`;
                 
                 services.forEach(s => {
                     const insAmount = s.primaryInsuranceAmount || s.aasandhaAmount || 0;
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
                     rowHtml += `<tr>
                         <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
                         <td style="text-align:left;">${escapeHtml(s.name)}</td>
                         <td style="text-align:center;">${s.qty}</td>
                         <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
                         <td style="text-align:right;">MVR ${insAmount.toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
                         <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
                     </tr>`;
                 });
                 
             } else {
-                // Dual insurance - 7 columns: Code, Service, Qty, Price, Insurance1, Insurance2, Total
+                // Dual insurance - 8 columns: Code, Service, Qty, Price, Insurance1, Insurance2, Discount, Total
                 const ins1Name = activeInsurances[0]?.name || 'Insurance';
                 const ins2Name = activeInsurances[1]?.name || 'Aasandha';
                 headerHtml = `<tr>
-                    <th style="text-align:center; width:12%;">Code</th>
-                    <th style="text-align:left; width:26%;">Service</th>
-                    <th style="text-align:center; width:7%;">Qty</th>
-                    <th style="text-align:right; width:13%;">Price</th>
-                    <th style="text-align:right; width:14%;">${escapeHtml(ins1Name)}</th>
-                    <th style="text-align:right; width:14%;">${escapeHtml(ins2Name)}</th>
-                    <th style="text-align:right; width:14%;">Total</th>
+                    <th style="text-align:center; width:9%;">Code</th>
+                    <th style="text-align:left; width:22%;">Service</th>
+                    <th style="text-align:center; width:6%;">Qty</th>
+                    <th style="text-align:right; width:11%;">Price</th>
+                    <th style="text-align:right; width:12%;">${escapeHtml(ins1Name)}</th>
+                    <th style="text-align:right; width:12%;">${escapeHtml(ins2Name)}</th>
+                    <th style="text-align:right; width:12%;">Discount</th>
+                    <th style="text-align:right; width:16%;">Total</th>
                 </tr>`;
                 
                 services.forEach(s => {
                     const ins1Amount = s.primaryInsuranceAmount || 0;
                     const ins2Amount = s.aasandhaAmount || 0;
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
                     rowHtml += `<tr>
                         <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
                         <td style="text-align:left;">${escapeHtml(s.name)}</td>
@@ -998,6 +1027,7 @@
                         <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
                         <td style="text-align:right;">MVR ${ins1Amount.toFixed(2)}</td>
                         <td style="text-align:right;">MVR ${ins2Amount.toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
                         <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
                     </tr>`;
                 });
@@ -1049,10 +1079,12 @@
             .totals-row.total { font-weight:800; font-size:11px; border-top:2px solid #0f5c7a; margin-top:3px; padding-top:3px; }
             .totals-row.total .label { color:#0a2f44; }
             .totals-row.total .value { color:#0f5c7a; }
+            .created-by { text-align:center; font-size:7px; color:#8ba0b0; margin-top:4px; }
             
             .footer { text-align:center; font-size:7px; color:#8ba0b0; border-top:1px solid #ddd; padding-top:6px; margin-top:8px; }
             .non-refundable { text-align:center; font-size:9px; font-weight:700; color:#b91c1c; margin-top:4px; padding:4px; border:1px dashed #b91c1c; border-radius:6px; background:#fff5f5; letter-spacing:0.5px; }
             .no-services { background:#f9f9f9; padding:15px; text-align:center; border-radius:6px; font-style:italic; font-size:9px; }
+            .payment-method-box { background:#e8f0fe; padding:4px 8px; border-radius:6px; margin:4px 0; font-size:8px; display:flex; justify-content:space-between; }
             @media print { body { margin:0; padding:0; } .no-print { display:none; } }
         </style>
         </head><body>
@@ -1072,8 +1104,9 @@
                 <div class="info-left">
                     <div class="info-row"><span class="info-label">Patient Name:</span><span class="info-value">${escapeHtml(patient.name || '')}</span></div>
                     <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patient.id || patient.idNumber || patient.passportNumber || patient.nationalId || '')}</span></div>
-                    <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patient.phone || '')}</span></div>
-                    <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patient.nationality || '')}</span></div>
+                    <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patientContact)}</span></div>
+                    <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patientNationality)}</span></div>
+                    <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${escapeHtml(fullAddress || 'N/A')}</span></div>
                     <div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${escapeHtml(patient.dob || '')} ${age !== 'N/A' ? `(Age: ${age})` : ''}</span></div>
                 </div>
                 <div class="info-right">
@@ -1091,7 +1124,8 @@
             <div class="totals-grid">
                 <div class="totals-left">
                     <div class="totals-row"><span class="label">Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
-                    <div class="totals-row"><span class="label">Discount (${discount.percent || 0}%):</span><span>- MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                    <div class="totals-row"><span class="label">Global Discount (${discount.percent || 0}%):</span><span>- MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                    <div class="totals-row"><span class="label">Service Discounts:</span><span>- MVR ${(serviceDiscounts.total || 0).toFixed(2)}</span></div>
                     <div class="totals-row"><span class="label">After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
                     <div class="totals-row"><span class="label">Total Patient Payable:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
                 </div>
@@ -1103,6 +1137,12 @@
                         <span class="value">MVR ${(billing.patientPayable || 0).toFixed(2)}</span>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Payment Method and Created By - placed near patient payable -->
+            <div class="payment-method-box" style="margin-top: 6px;">
+                <span>💳 Payment Method: <strong>${escapeHtml(paymentMethod)}</strong></span>
+                <span>👤 Created by: <strong>${escapeHtml(createdBy)}</strong></span>
             </div>
             
             <div style="text-align:center; font-size:9px; padding:4px; background:#f4f9fe; border-radius:6px; margin:4px 0;">
@@ -1275,7 +1315,8 @@
                 <p><strong>Name:</strong> ${escapeHtml(memo.patient?.name)}<br>
                 <strong>Phone:</strong> ${escapeHtml(memo.patient?.phone)}<br>
                 <strong>ID Number:</strong> ${escapeHtml(memo.patient?.idNumber)}<br>
-                <strong>Aasandha Eligible:</strong> ${memo.patient?.isCitizen ? 'Yes' : 'No'}</p>
+                <strong>Aasandha Eligible:</strong> ${memo.patient?.isCitizen ? 'Yes' : 'No'}<br>
+                <strong>Address:</strong> ${escapeHtml(memo.patient?.address || 'N/A')}</p>
             </div>
             <div style="margin-bottom:15px;">
                 <h4>👨‍⚕️ Doctor Information</h4>
@@ -1285,11 +1326,12 @@
             <div style="margin-bottom:15px;">
                 <h4>📋 Services</h4>
                 <table class="services-table">
-                    <thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Primary Ins</th><th>Aasandha</th><th>Total</th></tr></thead>
+                    <thead><tr><th>Service</th><th>Qty</th><th>Price</th><th>Primary Ins</th><th>Aasandha</th><th>Discount</th><th>Total</th></tr></thead>
                     <tbody>${(memo.services||[]).map(s => `<tr>
                         <td>${escapeHtml(s.name)}</td><td>${s.qty}</td><td>MVR ${s.price}</td>
                         <td>MVR ${(s.primaryInsuranceAmount||0).toFixed(2)}</td>
                         <td>MVR ${(s.aasandhaAmount||0).toFixed(2)}</td>
+                        <td>${(s.discountPercent||0) > 0 ? `${s.discountPercent}% (-MVR ${(s.discountAmount||0).toFixed(2)})` : '—'}</td>
                         <td>MVR ${(s.total||s.qty*s.price).toFixed(2)}</td>
                     </tr>`).join('')}</tbody>
                 </table>
@@ -1302,6 +1344,7 @@
                 <div class="total-card payable-card"><label>Patient Payable</label><div class="value">MVR ${(memo.billing?.patientPayable||0).toFixed(2)}</div></div>
                 <div class="total-card"><label>Paid</label><div class="value">MVR ${(memo.billing?.paid||0).toFixed(2)}</div></div>
                 <div class="total-card"><label>Balance</label><div class="value">MVR ${Math.abs(memo.billing?.balance||0).toFixed(2)}</div></div>
+                <div class="total-card"><label>Payment Method</label><div class="value">${escapeHtml(memo.payment?.method || 'N/A')}</div></div>
             </div>
             ${memo.notes ? `<div><strong>Notes:</strong><br>${escapeHtml(memo.notes)}</div>` : ''}
             <div style="font-size:11px;color:#8ba0b0;margin-top:15px;">Created by: ${escapeHtml(memo.createdBy)}</div>
@@ -1404,6 +1447,7 @@
                 <div class="form-group"><label>Patient ID Number</label><input type="text" id="editPatientIdNumber" value="${escapeHtml(memo.patient?.idNumber || '')}"></div>
                 <div class="form-group"><label>Nationality</label><input type="text" id="editPatientNationality" value="${escapeHtml(memo.patient?.nationality || '')}"></div>
                 <div class="form-group"><label>Aasandha Eligible</label><select id="editPatientIsCitizen"><option value="false">No</option><option value="true" ${memo.patient?.isCitizen ? 'selected' : ''}>Yes</option></select></div>
+                <div class="form-group"><label>Address</label><input type="text" id="editPatientAddress" value="${escapeHtml(memo.patient?.address || '')}"></div>
                 <div class="form-group"><label>Doctor Name</label><input type="text" id="editDoctorName" value="${escapeHtml(memo.doctor?.name || '')}"></div>
                 <div class="form-group"><label>Doctor Speciality</label><input type="text" id="editDoctorSpeciality" value="${escapeHtml(memo.doctor?.speciality || '')}"></div>
             </div>
@@ -1414,6 +1458,7 @@
             </div>
             <div class="form-group"><label>Discount %</label><input type="number" id="editDiscountPercent" step="1" value="${editDiscountPercent}"></div>
             <div class="form-group"><label>Amount Paid (MVR)</label><input type="number" id="editPaidAmount" step="0.01" value="${memo.billing?.paid || 0}"></div>
+            <div class="form-group"><label>Payment Method</label><input type="text" id="editPaymentMethod" value="${escapeHtml(memo.payment?.method || '')}"></div>
             <div class="form-group"><label>Notes</label><textarea id="editNotes" rows="2">${escapeHtml(memo.notes || '')}</textarea></div>
             <div class="totals-grid">
                 <div class="total-card"><label>Subtotal</label><div class="value" id="editSubtotal">0.00</div></div>
@@ -1446,25 +1491,33 @@
         editServices.forEach(s => { primaryTotal += s.primaryInsuranceAmount || 0; secondaryTotal += s.aasandhaAmount || 0; });
         const patientPayable = Math.max(0, afterDiscount - primaryTotal - secondaryTotal);
         const paidAmount = parseFloat(document.getElementById('editPaidAmount').value) || 0;
+        const paymentMethod = document.getElementById('editPaymentMethod').value || '';
         const updatedData = {
             patient: {
-                name: patientName, phone: document.getElementById('editPatientPhone').value,
+                name: patientName, 
+                phone: document.getElementById('editPatientPhone').value,
                 idNumber: document.getElementById('editPatientIdNumber').value,
                 nationality: document.getElementById('editPatientNationality').value,
+                address: document.getElementById('editPatientAddress').value,
                 isCitizen: document.getElementById('editPatientIsCitizen').value === 'true'
             },
             doctor: { name: document.getElementById('editDoctorName').value, speciality: document.getElementById('editDoctorSpeciality').value },
             services: editServices.map(s => ({
                 name: s.name, qty: s.qty, price: s.price, total: s.qty * s.price,
-                primaryInsuranceAmount: s.primaryInsuranceAmount || 0, aasandhaAmount: s.aasandhaAmount || 0
+                primaryInsuranceAmount: s.primaryInsuranceAmount || 0, 
+                aasandhaAmount: s.aasandhaAmount || 0,
+                discountPercent: 0,
+                discountAmount: 0
             })),
             discount: { percent: discountPercent, reason: "Manual Edit", amount: discountAmount },
             billing: {
                 subtotal, afterDiscount, primaryInsurancePayment: primaryTotal, aasandhaPayment: secondaryTotal,
                 totalInsurancePayment: primaryTotal + secondaryTotal, patientPayable, paid: paidAmount, balance: patientPayable - paidAmount
             },
+            payment: { method: paymentMethod },
             notes: document.getElementById('editNotes').value,
-            updatedAt: new Date().toISOString(), updatedBy: user.username
+            updatedAt: new Date().toISOString(), 
+            updatedBy: user.username
         };
         await firestoreDB.collection("memos").doc(currentEditMemoId).update(updatedData);
         alert("Memo updated successfully!");

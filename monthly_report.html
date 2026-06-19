@@ -359,7 +359,7 @@
 <body>
 <div class="clinic-header">
     <div class="logo">
-        <h2><i class="fas fa-chart-line"></i> Hope Dental Care · Monthly Financial Report</h2>
+        <h2><i class="fas fa-chart-line"></i> Hope Dental Care· Monthly Financial Report</h2>
     </div>
     <div class="header-actions">
         <button class="btn-outline" onclick="window.location.href='clinicdash.html'"><i class="fas fa-arrow-left"></i> Dashboard</button>
@@ -496,9 +496,33 @@
             }
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
             const paidAmount = billing.paid || 0;
-            let payType = billing.paymentMethod || (billing.cashAmount ? 'Cash' : (billing.cardAmount ? 'Card' : 'Unknown'));
-            if (!payType && paidAmount > 0) payType = 'Cash';
-            if (!payType) payType = '—';
+            
+            // ========== FIX: GET PAYMENT METHOD FROM MULTIPLE LOCATIONS ==========
+            let payType = '—';
+            
+            // 1. Check payment.method (from the payment object)
+            if (memo.payment && memo.payment.method) {
+                payType = memo.payment.method;
+            } 
+            // 2. Check billing.paymentMethod
+            else if (billing.paymentMethod) {
+                payType = billing.paymentMethod;
+            }
+            // 3. Check if there's a payment method in the billing object
+            else if (memo.billing && memo.billing.paymentMethod) {
+                payType = memo.billing.paymentMethod;
+            }
+            // 4. Check for cash/card amounts
+            else if (billing.cashAmount && billing.cashAmount > 0) {
+                payType = 'Cash';
+            }
+            else if (billing.cardAmount && billing.cardAmount > 0) {
+                payType = 'Card';
+            }
+            // 5. Check if paid amount exists but no payment method specified
+            else if (paidAmount > 0) {
+                payType = 'Cash'; // Default to Cash if paid but method not specified
+            }
             
             if (paidAmount > 0 && payType !== '—') {
                 if (!payTypeTotals[payType]) payTypeTotals[payType] = { amount: 0, count: 0 };
@@ -701,9 +725,16 @@
             if (!serviceDesc) serviceDesc = '—';
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
             const paidAmount = billing.paid || 0;
-            let payType = billing.paymentMethod || (billing.cashAmount ? 'Cash' : (billing.cardAmount ? 'Card' : 'Unknown'));
-            if (!payType && paidAmount > 0) payType = 'Cash';
-            if (!payType) payType = '—';
+            
+            // FIX: Get payment method from multiple locations
+            let payType = '—';
+            if (memo.payment && memo.payment.method) {
+                payType = memo.payment.method;
+            } else if (billing.paymentMethod) {
+                payType = billing.paymentMethod;
+            } else if (paidAmount > 0) {
+                payType = 'Cash';
+            }
             
             let primaryName = '—', primaryAmt = 0, secondaryName = '—', secondaryAmt = 0;
             const insurances = memo.insurances || [];

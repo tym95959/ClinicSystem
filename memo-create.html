@@ -292,7 +292,6 @@
             min-width: 200px;
         }
 
-        /* Service Search Styles */
         .service-search-wrapper {
             position: relative;
         }
@@ -468,6 +467,42 @@
 
         .remove-row:hover {
             background: #ffc9c9;
+        }
+
+        /* Service Discount Button & Input */
+        .service-discount-toggle {
+            background: none;
+            border: 1px solid #cbdde9;
+            padding: 2px 6px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 9px;
+            color: #0f5c7a;
+            transition: 0.2s;
+        }
+
+        .service-discount-toggle:hover {
+            background: #e0f2fe;
+        }
+
+        .service-discount-toggle.active {
+            background: #f0ad4e;
+            color: white;
+            border-color: #f0ad4e;
+        }
+
+        .service-discount-input {
+            width: 55px;
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid #cbdde9;
+            text-align: center;
+            font-size: 9px;
+            display: none;
+        }
+
+        .service-discount-input.show {
+            display: inline-block;
         }
 
         .billing-highlight {
@@ -668,24 +703,6 @@
             box-shadow: 0 0 0 3px rgba(240, 173, 78, 0.2);
         }
 
-        .discount-type-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 9px;
-            font-weight: 600;
-        }
-
-        .discount-type-badge.percentage {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .discount-type-badge.fixed {
-            background: #cce5ff;
-            color: #004085;
-        }
-
         .action-buttons {
             display: flex;
             justify-content: flex-end;
@@ -803,6 +820,17 @@
             margin-right: 4px;
         }
 
+        .service-discount-badge {
+            background: #fff3cd;
+            color: #856404;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 8px;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 4px;
+        }
+
         @media (max-width: 640px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -896,6 +924,7 @@
             <input type="hidden" id="patientNationality" value="">
             <input type="hidden" id="patientIsCitizen" value="">
             <input type="hidden" id="patientDob" value="">
+            <input type="hidden" id="patientAddress" value="">
             
             <!-- Doctor Dropdown -->
             <div class="input-group">
@@ -955,12 +984,13 @@
                         <th>Aasandha Cover</th>
                         <th>Primary Ins.<br><span style="font-weight:normal;">(MVR)</span></th>
                         <th>Aasandha<br><span style="font-weight:normal;">(MVR)</span></th>
+                        <th>Discount</th>
                         <th>Patient Pay</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody id="servicesTbody">
-                    <tr><td colspan="10" style="text-align:center; padding:20px;">Search and select a service to add</td></tr>
+                    <tr><td colspan="11" style="text-align:center; padding:20px;">Search and select a service to add</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1058,12 +1088,13 @@
     if (!loggedInUser) {
         window.location.href = 'login.html';
     }
+    let currentUser = null;
     try {
-        const user = JSON.parse(loggedInUser);
+        currentUser = JSON.parse(loggedInUser);
         const header = document.querySelector('.clinic-header');
         const userSpan = document.createElement('div');
         userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
-        userSpan.innerHTML = `👤 ${user.name || user.username} (${user.level})`;
+        userSpan.innerHTML = `👤 ${currentUser.name || currentUser.username} (${currentUser.level})`;
         header.insertBefore(userSpan, header.children[1]);
     } catch(e) {}
     
@@ -1215,6 +1246,7 @@
         document.getElementById('patientNationality').value = patient.nationality || '';
         document.getElementById('patientIsCitizen').value = patient.isCitizen || false;
         document.getElementById('patientDob').value = patient.dob || '';
+        document.getElementById('patientAddress').value = patient.address || '';
         
         document.getElementById('patientSearchInput').value = `${patient.name} (${displayId})`;
         document.getElementById('patientSearchResults').classList.remove('active');
@@ -1229,6 +1261,7 @@
                 ID/Passport: ${escapeHtml(displayId)}<br>
                 📞 ${escapeHtml(patient.phone || patient.contactNo || '')}
                 ${patient.nationality ? `<br>🌍 ${escapeHtml(patient.nationality)}` : ''}
+                ${patient.address ? `<br>📍 ${escapeHtml(patient.address)}` : ''}
             </div>
             <div>
                 <span class="selected-badge ${badgeClass}">${badgeText}</span>
@@ -1292,7 +1325,6 @@
             `;
             
             div.addEventListener('click', () => {
-                // Add service directly from search result
                 addService(s);
                 document.getElementById('serviceSearchInput').value = '';
                 document.getElementById('serviceSearchResults').classList.remove('active');
@@ -1337,12 +1369,36 @@
             price: price,
             aasandhaCoverAmount: aasandhaCoverAmt,
             primaryInsuranceAmount: primaryAmount,
-            aasandhaAmount: aasandhaAmount
+            aasandhaAmount: aasandhaAmount,
+            discountPercent: 0,
+            discountAmount: 0,
+            showDiscount: false
         });
         
         renderServices();
         calculateBilling();
         showMessage(`Added ${service.name}`, "success");
+    }
+    
+    // ========== SERVICE DISCOUNT FUNCTIONS ==========
+    function toggleServiceDiscount(idx) {
+        selectedServices[idx].showDiscount = !selectedServices[idx].showDiscount;
+        if (!selectedServices[idx].showDiscount) {
+            selectedServices[idx].discountPercent = 0;
+            selectedServices[idx].discountAmount = 0;
+        }
+        renderServices();
+        calculateBilling();
+    }
+    
+    function updateServiceDiscount(idx, value) {
+        const discount = parseFloat(value) || 0;
+        selectedServices[idx].discountPercent = discount;
+        // Calculate discount amount based on service total
+        const serviceTotal = selectedServices[idx].qty * selectedServices[idx].price;
+        selectedServices[idx].discountAmount = (serviceTotal * discount) / 100;
+        renderServices();
+        calculateBilling();
     }
     
     // ========== SEQUENTIAL MEMO NUMBER GENERATOR ==========
@@ -1791,7 +1847,7 @@
     function renderServices() {
         const tbody = document.getElementById('servicesTbody');
         if (!selectedServices.length) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:16px;">No services added. Search and select a service to add</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:16px;">No services added. Search and select a service to add</td></tr>';
             return;
         }
         
@@ -1804,7 +1860,13 @@
             const isCovered = aasandhaCoverAmt > 0;
             const primaryInsAmount = s.primaryInsuranceAmount || 0;
             const aasandhaAmount = s.aasandhaAmount || 0;
-            const patientPay = Math.max(0, serviceTotal - primaryInsAmount - aasandhaAmount);
+            
+            // Calculate service discount
+            const serviceDiscountPercent = s.discountPercent || 0;
+            const serviceDiscountAmount = (serviceTotal * serviceDiscountPercent) / 100;
+            const totalAfterServiceDiscount = serviceTotal - serviceDiscountAmount;
+            
+            const patientPay = Math.max(0, totalAfterServiceDiscount - primaryInsAmount - aasandhaAmount);
             
             const coverBadgeClass = isCovered ? 'covered' : 'not-covered';
             const coverBadgeText = isCovered ? `✅ MVR ${aasandhaCoverAmt}` : '❌ Not Covered';
@@ -1820,6 +1882,11 @@
             }
             
             const codeDisplay = s.code ? `<span class="service-code-badge">${escapeHtml(s.code)}</span>` : '';
+            const discountBadge = serviceDiscountPercent > 0 ? 
+                `<span class="service-discount-badge">-${serviceDiscountPercent}%</span>` : '';
+            
+            const discountInputClass = s.showDiscount ? 'show' : '';
+            const toggleBtnClass = s.showDiscount ? 'active' : '';
             
             return `
                 <tr>
@@ -1827,6 +1894,7 @@
                     <td>
                         <strong>${escapeHtml(s.name)}</strong>
                         <span class="service-cover-badge ${coverBadgeClass}">${coverBadgeText}</span>
+                        ${discountBadge}
                     </td>
                     <td><input type="number" value="${s.qty}" min="1" step="1" onchange="updateServiceQty(${idx}, this.value)" class="qty-input"></td>
                     <td>MVR ${s.price}</td>
@@ -1849,6 +1917,15 @@
                                placeholder="Aasandha">
                         ${!isCovered ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
                         ${isFullCover ? '<span style="font-size:8px;color:#146b3a;">N/A</span>' : ''}
+                    </td>
+                    <td>
+                        <button class="service-discount-toggle ${toggleBtnClass}" onclick="toggleServiceDiscount(${idx})" title="Toggle service discount">
+                            <i class="fas fa-tag"></i>
+                        </button>
+                        <input type="number" value="${serviceDiscountPercent}" min="0" max="100" step="1" 
+                               onchange="updateServiceDiscount(${idx}, this.value)" 
+                               class="service-discount-input ${discountInputClass}" 
+                               placeholder="%">
                     </td>
                     <td>MVR ${patientPay.toFixed(2)}</td>
                     <td><button class="remove-row" onclick="removeService(${idx})">Remove</button></td>
@@ -1895,6 +1972,9 @@
         const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
         selectedServices[idx].primaryInsuranceAmount = primaryAmount;
         selectedServices[idx].aasandhaAmount = aasandhaAmount;
+        // Recalculate service discount
+        const discountPercent = selectedServices[idx].discountPercent || 0;
+        selectedServices[idx].discountAmount = (serviceTotal * discountPercent) / 100;
         renderServices(); calculateBilling(); 
     };
     
@@ -1910,28 +1990,41 @@
     function calculateBilling() {
         const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
         
+        // Calculate service-level discounts
+        let totalServiceDiscount = 0;
+        selectedServices.forEach(s => {
+            const serviceTotal = s.qty * s.price;
+            const discountPercent = s.discountPercent || 0;
+            totalServiceDiscount += (serviceTotal * discountPercent) / 100;
+        });
+        
+        // Global discount (preset or custom)
         const { value, type } = getDiscountValue();
-        let discAmount = 0;
+        let globalDiscAmount = 0;
         if (type === 'percent') {
-            discAmount = (subtotal * value) / 100;
+            globalDiscAmount = (subtotal * value) / 100;
         } else {
-            discAmount = Math.min(value, subtotal);
+            globalDiscAmount = Math.min(value, subtotal);
         }
         
-        let afterDiscount = subtotal - discAmount;
+        // Total discount = service discounts + global discount
+        const totalDiscAmount = totalServiceDiscount + globalDiscAmount;
+        let afterDiscount = subtotal - totalDiscAmount;
+        
         document.getElementById('subtotalAmount').innerHTML = subtotal.toFixed(2);
         document.getElementById('totalAfterDiscount').innerHTML = afterDiscount.toFixed(2);
         
         let primaryInsuranceTotal = 0, aasandhaTotal = 0, patientTotal = 0;
         for (let s of selectedServices) {
             const serviceTotal = s.qty * s.price;
+            const serviceDiscount = (serviceTotal * (s.discountPercent || 0)) / 100;
             const weight = subtotal > 0 ? serviceTotal / subtotal : 0;
             let remainingAfterDiscount = afterDiscount * weight;
             let primaryPortion = s.primaryInsuranceAmount || 0;
             let aasandhaPortion = s.aasandhaAmount || 0;
             
-            if (discAmount > 0 && serviceTotal > 0 && subtotal > 0) {
-                const discountWeight = discAmount * (serviceTotal / subtotal);
+            if (totalDiscAmount > 0 && serviceTotal > 0 && subtotal > 0) {
+                const discountWeight = totalDiscAmount * (serviceTotal / subtotal);
                 if (primaryPortion > 0) primaryPortion = Math.max(0, primaryPortion - (primaryPortion / serviceTotal) * discountWeight);
                 if (aasandhaPortion > 0) aasandhaPortion = Math.max(0, aasandhaPortion - (aasandhaPortion / serviceTotal) * discountWeight);
                 remainingAfterDiscount = serviceTotal - discountWeight;
@@ -2037,6 +2130,7 @@
         const nationality = document.getElementById('patientNationality').value.trim();
         const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
         const dob = document.getElementById('patientDob').value.trim();
+        const address = document.getElementById('patientAddress').value.trim();
         
         if (!selectedPatient && patientId && patientName) {
             selectedPatient = {
@@ -2045,7 +2139,8 @@
                 phone: contactNo,
                 nationality: nationality,
                 isCitizen: isCitizen,
-                dob: dob
+                dob: dob,
+                address: address
             };
         }
         
@@ -2116,14 +2211,22 @@
             insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
         }
         
+        // Get global discount details
         const { value: discountValue, type: discountTypeValue } = getDiscountValue();
         const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
-        let discountAmount = 0;
+        let globalDiscountAmount = 0;
         if (discountTypeValue === 'percent') {
-            discountAmount = (subtotal * discountValue) / 100;
+            globalDiscountAmount = (subtotal * discountValue) / 100;
         } else {
-            discountAmount = Math.min(discountValue, subtotal);
+            globalDiscountAmount = Math.min(discountValue, subtotal);
         }
+        
+        // Calculate service-level discounts total
+        let serviceDiscountTotal = 0;
+        selectedServices.forEach(s => {
+            const serviceTotal = s.qty * s.price;
+            serviceDiscountTotal += (serviceTotal * (s.discountPercent || 0)) / 100;
+        });
         
         let memoNumber;
         try {
@@ -2147,7 +2250,8 @@
                 idNumber: selectedPatient.idNumber || patientId || "",
                 passportNumber: selectedPatient.passportNumber || "",
                 nationalId: selectedPatient.nationalId || "",
-                dob: selectedPatient.dob || dob || ""
+                dob: selectedPatient.dob || dob || "",
+                address: selectedPatient.address || address || ""
             },
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
             insurances: insuranceArray,
@@ -2160,20 +2264,30 @@
                 aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
                 primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
                 aasandhaAmount: s.aasandhaAmount || 0,
-                patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0))
+                discountPercent: s.discountPercent || 0,
+                discountAmount: (s.qty * s.price * (s.discountPercent || 0)) / 100,
+                patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0) - ((s.qty * s.price * (s.discountPercent || 0)) / 100))
             })),
             discount: {
                 type: discountTypeValue,
                 value: discountValue,
-                amount: discountAmount,
+                amount: globalDiscountAmount,
                 mode: discountMode,
                 reason: discountMode === 'preset' ? 
                     (document.getElementById('discountPresetSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None") : 
                     "Custom Discount"
             },
+            serviceDiscounts: {
+                total: serviceDiscountTotal,
+                services: selectedServices.map(s => ({
+                    name: s.name,
+                    percent: s.discountPercent || 0,
+                    amount: (s.qty * s.price * (s.discountPercent || 0)) / 100
+                }))
+            },
             billing: {
                 subtotal: subtotal || 0,
-                afterDiscount: subtotal - discountAmount || 0,
+                afterDiscount: subtotal - globalDiscountAmount - serviceDiscountTotal || 0,
                 primaryInsurancePayment: currentPrimaryInsurancePayment,
                 aasandhaPayment: currentAasandhaPayment,
                 totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
@@ -2185,7 +2299,7 @@
             payment: paymentDetails,
             linkedAppointmentId: selectedAppointmentId || null,
             status: "completed",
-            createdBy: JSON.parse(loggedInUser).username || "unknown",
+            createdBy: currentUser ? currentUser.username || "unknown" : "unknown",
             createdAt: new Date().toISOString()
         };
         

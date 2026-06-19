@@ -148,6 +148,9 @@
             align-items: center;
             gap: 8px;
         }
+        .btn-generate:hover {
+            background: #155a4a;
+        }
 
         /* Table */
         .table-wrapper {
@@ -205,6 +208,12 @@
             color: #8ba0b0;
             background: white;
             border-radius: 24px;
+        }
+        .empty-message i {
+            font-size: 42px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: block;
         }
 
         /* Cards at bottom */
@@ -290,11 +299,45 @@
             color: #7891a3;
         }
 
+        .doctor-stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .doctor-stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 16px 20px;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-left: 5px solid #2c6e8f;
+        }
+        .doctor-stat-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c6e8f;
+            margin-bottom: 6px;
+        }
+        .doctor-stat-card .stat-value {
+            font-size: 20px;
+        }
+        .doctor-stat-card .stat-sub {
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+        .doctor-stat-card .stat-detail {
+            font-size: 11px;
+            color: #5d7182;
+            margin-top: 4px;
+        }
+
         @media print {
             .clinic-header, .filter-card, .btn-outline, .btn-primary, .btn-secondary, .btn-generate {
                 display: none !important;
             }
-            .table-wrapper, .stat-card, .insurance-grid, .payment-grid {
+            .table-wrapper, .stat-card, .insurance-grid, .payment-grid, .doctor-stat-card {
                 border: 1px solid #ccc !important;
                 box-shadow: none;
             }
@@ -319,8 +362,8 @@
         <h2><i class="fas fa-chart-line"></i> Hope Dental · Monthly Financial Report</h2>
     </div>
     <div class="header-actions">
-        <button class="btn-outline" onclick="window.location.href='reports.html'"><i class="fas fa-arrow-left"></i> Reports</button>
-        
+        <button class="btn-outline" onclick="window.location.href='clinicdash.html'"><i class="fas fa-arrow-left"></i> Dashboard</button>
+        <button class="btn-primary" onclick="window.location.href='memo-management.html'"><i class="fas fa-file-invoice"></i> Memos</button>
     </div>
 </div>
 
@@ -335,20 +378,21 @@
             <input type="date" id="endDate">
         </div>
         <div class="filter-group">
-            <button class="btn-generate" onclick="loadMonthlyReport()"><i class="fas fa-sync-alt"></i> Generate Report</button>
+            <button class="btn-generate" onclick="loadMonthlyReport()"><i class="fas fa-eye"></i> View Report</button>
         </div>
         <div class="filter-group">
-            <button class="btn-primary" onclick="printReport()"><i class="fas fa-print"></i> Print</button>
+            <button class="btn-primary" onclick="printReport()" id="printBtn" disabled><i class="fas fa-print"></i> Print</button>
         </div>
         <div class="filter-group">
-            <button class="btn-secondary" onclick="exportToCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+            <button class="btn-secondary" onclick="exportToCSV()" id="exportBtn" disabled><i class="fas fa-file-csv"></i> Export CSV</button>
         </div>
     </div>
 
     <div id="reportContainer">
         <div class="empty-message">
-            <i class="fas fa-chart-simple" style="font-size: 42px; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
-            Select a date range and click "Generate Report"
+            <i class="fas fa-chart-simple"></i>
+            <strong>No Report Generated</strong>
+            <p style="margin-top: 8px; font-size: 13px; color: #8ba0b0;">Select a date range and click <strong>"View Report"</strong> to see the data</p>
         </div>
     </div>
 </div>
@@ -373,6 +417,7 @@
     document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
     let currentReportData = [];
+    let reportLoaded = false;
 
     async function loadMonthlyReport() {
         const startRaw = document.getElementById('startDate').value;
@@ -385,6 +430,15 @@
             setTimeout(() => loadMonthlyReport(), 400);
             return;
         }
+
+        // Show loading state
+        document.getElementById('reportContainer').innerHTML = `
+            <div class="empty-message">
+                <i class="fas fa-spinner fa-spin" style="color: #1e6f5c;"></i>
+                <strong>Loading...</strong>
+                <p style="margin-top: 8px; font-size: 13px; color: #8ba0b0;">Fetching data for the selected period</p>
+            </div>
+        `;
 
         try {
             const startDateObj = new Date(startRaw);
@@ -400,6 +454,12 @@
             const memos = [];
             snapshot.forEach(doc => memos.push({ id: doc.id, ...doc.data() }));
             currentReportData = memos;
+            reportLoaded = true;
+            
+            // Enable print and export buttons
+            document.getElementById('printBtn').disabled = false;
+            document.getElementById('exportBtn').disabled = false;
+            
             renderMonthlyReport(memos, startRaw, endRaw);
         } catch (err) {
             console.error(err);
@@ -416,12 +476,13 @@
         let totalRevenue = 0, totalPaid = 0, totalDiscount = 0;
         const insuranceCompanyTotals = {};
         const payTypeTotals = {};
+        const doctorTotals = {};
         const rows = [];
 
         memos.forEach(memo => {
             const billing = memo.billing || {};
             const services = memo.services || [];
-            const doctor = memo.doctor?.name || 'N/A';
+            const doctorName = memo.doctor?.name || 'Unknown';
             const patientName = memo.patient?.name || 'N/A';
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
             
@@ -449,6 +510,22 @@
             totalRevenue += totalBill;
             totalPaid += paidAmount;
             totalDiscount += discount;
+
+            // Doctor totals
+            if (!doctorTotals[doctorName]) {
+                doctorTotals[doctorName] = { 
+                    revenue: 0, 
+                    paid: 0, 
+                    visits: 0,
+                    insuranceAmount: 0,
+                    patientPayable: 0
+                };
+            }
+            doctorTotals[doctorName].revenue += totalBill;
+            doctorTotals[doctorName].paid += paidAmount;
+            doctorTotals[doctorName].visits++;
+            doctorTotals[doctorName].insuranceAmount += (billing.totalInsurancePayment || 0);
+            doctorTotals[doctorName].patientPayable += (billing.patientPayable || 0);
 
             let primaryName = '—', primaryAmount = 0;
             let secondaryName = '—', secondaryAmount = 0;
@@ -493,7 +570,7 @@
             rows.push({
                 date: visitDate,
                 patient: patientName,
-                doctor: doctor,
+                doctor: doctorName,
                 service: serviceDesc,
                 price: totalBill,
                 primaryName: primaryName,
@@ -534,6 +611,23 @@
             `;
         }).join('');
 
+        // Build doctor summary cards
+        const sortedDoctors = Object.keys(doctorTotals).sort();
+        const doctorCardsHtml = sortedDoctors.map(doc => {
+            const data = doctorTotals[doc];
+            const docCollectionRate = data.revenue > 0 ? ((data.paid / data.revenue) * 100).toFixed(1) : 0;
+            return `
+                <div class="doctor-stat-card">
+                    <h4><i class="fas fa-user-md"></i> Dr. ${escapeHtml(doc)}</h4>
+                    <div class="stat-value">MVR ${data.revenue.toFixed(2)}</div>
+                    <div class="stat-detail">💰 Collected: MVR ${data.paid.toFixed(2)} (${docCollectionRate}%)</div>
+                    <div class="stat-detail">🏥 Insurance: MVR ${data.insuranceAmount.toFixed(2)}</div>
+                    <div class="stat-detail">👤 Patient Payable: MVR ${data.patientPayable.toFixed(2)}</div>
+                    <div class="stat-sub">📋 ${data.visits} visit(s)</div>
+                </div>
+            `;
+        }).join('');
+
         // Final HTML: Table first, then all summary cards at the bottom
         const html = `
             <div class="table-wrapper">
@@ -545,22 +639,28 @@
                         ${rows.map(r => `
                             <tr>
                                 <td>${r.date}</td>
-                                <td>${escapeHtml(r.patient)}</strong></td>
-                                <td>${escapeHtml(r.doctor)}</strong></td>
+                                <td><strong>${escapeHtml(r.patient)}</strong></td>
+                                <td><strong>${escapeHtml(r.doctor)}</strong></td>
                                 <td style="max-width:220px; white-space:normal;">${escapeHtml(r.service.substring(0, 100))}${r.service.length > 100 ? '…' : ''}</td>
-                                <td>MVR ${r.price.toFixed(2)}</strong></td>
-                                <td><span class="badge-pri">${escapeHtml(r.primaryName)}</span></strong></td>
-                                <td>MVR ${r.primaryAmt.toFixed(2)}</strong></td>
-                                <td><span class="badge-sec">${escapeHtml(r.secondaryName)}</span></strong></td>
-                                <td>MVR ${r.secondaryAmt.toFixed(2)}</strong></td>
-                                <td>MVR ${r.paid.toFixed(2)}</strong></td>
-                                <td>${escapeHtml(r.payType)}</strong></td>
+                                <td><strong>MVR ${r.price.toFixed(2)}</strong></td>
+                                <td><span class="badge-pri">${escapeHtml(r.primaryName)}</span></td>
+                                <td>MVR ${r.primaryAmt.toFixed(2)}</td>
+                                <td><span class="badge-sec">${escapeHtml(r.secondaryName)}</span></td>
+                                <td>MVR ${r.secondaryAmt.toFixed(2)}</td>
+                                <td><strong>MVR ${r.paid.toFixed(2)}</strong></td>
+                                <td>${escapeHtml(r.payType)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
             </div>
             <div class="summary-cards-section">
+                <!-- Doctor Summary Cards -->
+                <div class="insurance-grid">
+                    <div class="section-title"><i class="fas fa-user-md"></i> Doctor Performance Summary</div>
+                    <div class="doctor-stats-row">${doctorCardsHtml || '<div class="empty-message">No doctor data available</div>'}</div>
+                </div>
+
                 <div class="stats-row">
                     <div class="stat-card"><h4><i class="fas fa-chart-line"></i> Total Revenue (After Disc)</h4><div class="stat-value">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-sub">${memos.length} visits</div></div>
                     <div class="stat-card"><h4><i class="fas fa-hand-holding-usd"></i> Amount Collected</h4><div class="stat-value">MVR ${totalPaid.toFixed(2)}</div><div class="stat-sub">Collection rate: ${collectionRate}%</div></div>
@@ -582,7 +682,7 @@
     }
 
     function exportToCSV() {
-        if (!currentReportData.length) {
+        if (!reportLoaded || !currentReportData.length) {
             alert('No data to export. Please generate report first.');
             return;
         }
@@ -639,6 +739,10 @@
     }
 
     function printReport() {
+        if (!reportLoaded) {
+            alert('Please generate a report first before printing.');
+            return;
+        }
         window.print();
     }
 
@@ -647,20 +751,9 @@
         return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
     }
 
-    function logout() {
-        localStorage.removeItem('loggedInUser');
-        sessionStorage.clear();
-        window.location.href = 'login.html';
-    }
-
-    function waitForFirebase() {
-        if (window.db) {
-            loadMonthlyReport();
-        } else {
-            setTimeout(waitForFirebase, 400);
-        }
-    }
-    waitForFirebase();
+    // Initialize - show empty state, don't auto-load
+    // The page now shows the empty message by default
+    // User must click "View Report" to load data
 </script>
 </body>
 </html>

@@ -36,6 +36,7 @@
         .patient-badge { background: #f0f6fc; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .patient-badge .name { font-weight: 700; font-size: 16px; color: #0a2f44; }
         .patient-badge .id { font-size: 12px; color: #5f7f9a; }
+        .patient-badge .detail { font-size: 12px; color: #5f7f9a; }
         
         .certificate-item {
             background: #f8fbfe;
@@ -74,10 +75,22 @@
         
         .empty-state { text-align: center; padding: 40px 20px; color: #8ba0b0; }
         .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+        .empty-state .sub-text { font-size: 13px; margin-top: 8px; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 24px; border-radius: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        
+        .no-patient-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .no-patient-warning i { font-size: 32px; color: #856404; margin-bottom: 10px; display: block; }
+        .no-patient-warning p { color: #856404; font-size: 14px; }
         
         /* ====== MEDICAL CERTIFICATE PRINT STYLES ====== */
         .mc-print-header {
@@ -201,9 +214,18 @@
     <div class="card">
         <div class="card-title">📋 Issued Medical Certificates</div>
         
-        <div id="patientBadge" class="patient-badge">
-            <div><span class="name" id="patientName">Loading...</span> <span class="id" id="patientId"></span></div>
-            <div><span id="patientPhone"></span></div>
+        <div id="patientBadge" class="patient-badge" style="display: none;">
+            <div><span class="name" id="patientName"></span> <span class="id" id="patientId"></span></div>
+            <div><span class="detail" id="patientPhone"></span></div>
+        </div>
+        
+        <div id="noPatientWarning" class="no-patient-warning" style="display: none;">
+            <i class="fas fa-user-circle"></i>
+            <p><strong>No patient selected</strong></p>
+            <p style="font-size: 13px; margin-top: 5px;">Please go to the Doctor Portal and select a patient first.</p>
+            <button onclick="window.location.href='doctor-portal.html'" class="btn-primary" style="margin-top: 12px; font-size: 12px; padding: 8px 20px;">
+                <i class="fas fa-arrow-left"></i> Go to Doctor Portal
+            </button>
         </div>
         
         <div id="certificateList"><div class="empty-state"><i class="fas fa-file-medical-alt"></i><p>No medical certificates found</p></div></div>
@@ -277,23 +299,125 @@
             }); 
         }
 
-        // ========== LOAD SELECTED PATIENT ==========
-        function loadSelectedPatient() {
+        function getDisplayId(patient) {
+            if (!patient) return 'N/A';
+            if (patient.idNumber && patient.idNumber.trim() !== '') {
+                return patient.idNumber;
+            }
+            if (patient.passportNumber && patient.passportNumber.trim() !== '') {
+                return patient.passportNumber;
+            }
+            if (patient.nationalId && patient.nationalId.trim() !== '') {
+                return patient.nationalId;
+            }
+            if (patient.id && patient.id.trim() !== '') {
+                return patient.id;
+            }
+            return 'N/A';
+        }
+
+        function calculateAge(dob) { 
+            if (!dob) return 'N/A'; 
+            var birthDate = new Date(dob); 
+            if (isNaN(birthDate.getTime())) return 'Invalid'; 
+            var today = new Date(); 
+            var age = today.getFullYear() - birthDate.getFullYear(); 
+            var m = today.getMonth() - birthDate.getMonth(); 
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; 
+            return age; 
+        }
+
+        // ========== GET PATIENT FROM URL OR SESSION ==========
+        function getPatientFromUrl() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var patientId = urlParams.get('patientId');
+            
+            if (patientId) {
+                console.log('Patient ID from URL:', patientId);
+                return patientId;
+            }
+            return null;
+        }
+
+        async function loadPatientFromFirestore(patientId) {
+            if (!firestoreDB || !patientId) return null;
+            try {
+                var doc = await firestoreDB.collection("patients").doc(patientId).get();
+                if (doc.exists) {
+                    return { id: doc.id, ...doc.data() };
+                }
+                return null;
+            } catch(e) {
+                console.error('Error loading patient:', e);
+                return null;
+            }
+        }
+
+        function loadPatientFromSession() {
             var patientData = sessionStorage.getItem('selectedPatient');
             if (patientData) {
                 try {
-                    selectedPatient = JSON.parse(patientData);
-                    document.getElementById('patientName').textContent = selectedPatient.name || 'Unknown';
-                    document.getElementById('patientId').textContent = '(' + (selectedPatient.id || 'N/A') + ')';
-                    document.getElementById('patientPhone').textContent = '📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A');
-                    loadCertificates();
-                } catch(e) { console.error(e); }
+                    return JSON.parse(patientData);
+                } catch(e) {
+                    console.warn('Error parsing patient from session:', e);
+                }
             }
+            return null;
+        }
+
+        // ========== LOAD SELECTED PATIENT ==========
+        async function loadSelectedPatient() {
+            var patientId = getPatientFromUrl();
+            var patient = null;
+            
+            // First try to get patient from URL
+            if (patientId) {
+                patient = await loadPatientFromFirestore(patientId);
+                if (patient) {
+                    console.log('Patient loaded from Firestore:', patient.name);
+                }
+            }
+            
+            // If not found in Firestore, try session
+            if (!patient) {
+                patient = loadPatientFromSession();
+                if (patient) {
+                    console.log('Patient loaded from session:', patient.name);
+                }
+            }
+            
+            // If still no patient, show warning
+            if (!patient) {
+                document.getElementById('noPatientWarning').style.display = 'block';
+                document.getElementById('patientBadge').style.display = 'none';
+                document.getElementById('certificateList').innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>No patient selected</p><div class="sub-text">Please go back to the Doctor Portal and select a patient.</div></div>';
+                return;
+            }
+            
+            selectedPatient = patient;
+            
+            // Update badge
+            var badge = document.getElementById('patientBadge');
+            badge.style.display = 'flex';
+            document.getElementById('patientName').textContent = patient.name || 'Unknown';
+            document.getElementById('patientId').textContent = '(' + getDisplayId(patient) + ')';
+            document.getElementById('patientPhone').textContent = '📞 ' + (patient.phone || patient.contactNo || 'N/A');
+            document.getElementById('noPatientWarning').style.display = 'none';
+            
+            // Save to session for consistency
+            sessionStorage.setItem('selectedPatient', JSON.stringify(patient));
+            sessionStorage.setItem('selectedPatientId', patient.id || '');
+            
+            // Load certificates for this patient
+            await loadCertificates();
         }
 
         // ========== LOAD CERTIFICATES ==========
         async function loadCertificates() {
-            if (!selectedPatient || !firestoreDB) return;
+            if (!selectedPatient || !firestoreDB) {
+                document.getElementById('certificateList').innerHTML = '<div class="empty-state"><i class="fas fa-file-medical-alt"></i><p>No patient selected</p></div>';
+                return;
+            }
             try {
                 var snapshot = await firestoreDB.collection("medicalCertificates")
                     .where("patientId", "==", selectedPatient.id)
@@ -377,7 +501,7 @@
             }
         }
 
-        // ========== PRINT CERTIFICATE - MATCHING PDF FORMAT ==========
+        // ========== PRINT CERTIFICATE ==========
         window.printCertificate = function(id) {
             var cert = null;
             for (var i = 0; i < certificatesArray.length; i++) {
@@ -392,6 +516,11 @@
         };
 
         function printMC(cert) {
+            if (!selectedPatient) {
+                alert('No patient selected.');
+                return;
+            }
+            
             var win = window.open('', '_blank');
             win.document.write('<!DOCTYPE html><html><head><title>Medical Certificate - Hope Dental Care</title><style>');
             win.document.write('body { font-family: "Times New Roman", serif; padding: 1.2cm; max-width: 800px; margin: 0 auto; }');
@@ -415,7 +544,7 @@
             win.document.write('.mc-logo { max-height: 60px; width: auto; }');
             win.document.write('</style></head><body>');
             
-            // Header - Matching PDF
+            // Header
             win.document.write('<div class="mc-header">');
             win.document.write('<img src="hope1.png" alt="Hope Dental Care" class="mc-logo" onerror="this.style.display=\'none\';">');
             win.document.write('<h1>HOPE DENTAL CARE</h1>');
@@ -426,8 +555,11 @@
             // Title
             win.document.write('<div class="mc-title">MEDICAL CERTIFICATE</div>');
             
-            // Certificate Table - Matching PDF format
+            // Certificate Table
             win.document.write('<table class="mc-table">');
+            
+            var displayId = getDisplayId(selectedPatient);
+            var age = calculateAge(selectedPatient.dob);
             
             // Row 1: Patient No, Date
             win.document.write('<tr><td class="label">Patient No:</td><td class="value">' + escapeHtml(selectedPatient.id || 'N/A') + '</td><td class="label">Date:</td><td class="value">' + new Date(cert.issuedAt).toLocaleDateString() + '</td></tr>');
@@ -436,10 +568,10 @@
             win.document.write('<tr><td class="label">Name:</td><td class="value">' + escapeHtml(selectedPatient.name) + '</td><td class="label">Memo No:</td><td class="value">' + (cert.memoId || 'N/A') + '</td></tr>');
             
             // Row 3: Address, Age
-            win.document.write('<tr><td class="label">Address:</td><td class="value">' + escapeHtml(selectedPatient.address || 'N/A') + '</td><td class="label">Age:</td><td class="value">' + (selectedPatient.age || 'N/A') + '</td></tr>');
+            win.document.write('<tr><td class="label">Address:</td><td class="value">' + escapeHtml(selectedPatient.address || 'N/A') + '</td><td class="label">Age:</td><td class="value">' + age + '</td></tr>');
             
             // Row 4: Sex, National ID No
-            win.document.write('<tr><td class="label">Sex:</td><td class="value">' + (selectedPatient.gender || 'N/A') + '</td><td class="label">National ID No:</td><td class="value">' + escapeHtml(selectedPatient.idNumber || selectedPatient.nationalId || 'N/A') + '</td></tr>');
+            win.document.write('<tr><td class="label">Sex:</td><td class="value">' + (selectedPatient.gender || 'N/A') + '</td><td class="label">National ID No:</td><td class="value">' + escapeHtml(displayId) + '</td></tr>');
             
             // Row 5: Type of Medical Leave
             win.document.write('<tr><td class="label" colspan="2">Type of Medical Leave</td><td class="label" colspan="2">Type of leave: MEDICAL</td></tr>');
@@ -485,9 +617,15 @@
         }
 
         function printCurrentCertificate() {
-            if (!selectedPatient) { alert("Select a patient first."); return; }
+            if (!selectedPatient) { 
+                alert("No patient selected. Please select a patient first."); 
+                return; 
+            }
             var diagnosisSummary = document.getElementById('certDiagnosis').value.trim();
-            if (!diagnosisSummary) { alert("Enter diagnosis summary before printing."); return; }
+            if (!diagnosisSummary) { 
+                alert("Enter diagnosis summary before printing."); 
+                return; 
+            }
             
             var cert = {
                 diagnosisSummary: diagnosisSummary,
@@ -502,11 +640,20 @@
 
         // ========== SAVE CERTIFICATE ==========
         async function saveCertificate() {
-            if (!selectedPatient) { alert("No patient selected."); return; }
-            if (!firestoreDB) { alert("Firebase not ready."); return; }
+            if (!selectedPatient) { 
+                alert("No patient selected. Please select a patient first."); 
+                return; 
+            }
+            if (!firestoreDB) { 
+                alert("Firebase not ready."); 
+                return; 
+            }
             
             var diagnosisSummary = document.getElementById('certDiagnosis').value.trim();
-            if (!diagnosisSummary) { alert("Please enter a diagnosis summary."); return; }
+            if (!diagnosisSummary) { 
+                alert("Please enter a diagnosis summary."); 
+                return; 
+            }
             
             try {
                 await firestoreDB.collection("medicalCertificates").add({

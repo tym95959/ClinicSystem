@@ -207,7 +207,7 @@
         return 'Service Memo';
     }
 
-    // ========== REDESIGNED PRINT FUNCTION ==========
+    // ========== UPDATED PRINT FUNCTION - With full address, service discounts, payment method, created by ==========
     function openPrintWindow(memo) {
         const memoId = memo.memoId || memo.id;
         const dateObj = parseMemoDate(memo);
@@ -221,6 +221,18 @@
         const insuranceCount = activeInsurances.length;
         const age = calculateAge(patient.dob);
         const memoHeading = getMemoHeading(memo);
+        const paymentMethod = memo.payment?.method || 'N/A';
+        const createdBy = memo.createdBy || 'Unknown';
+        const serviceDiscounts = memo.serviceDiscounts || {};
+        
+        // Build full patient address
+        const fullAddress = patient.address ? 
+            `${escapeHtml(patient.address)}` : '';
+        const patientContact = patient.phone || patient.contactNo || '';
+        const patientNationality = patient.nationality || '';
+        
+        // Build patient ID/Passport display
+        const patientIdDisplay = patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || '';
         
         // Build insurance display
         let insuranceHtml = '';
@@ -237,73 +249,87 @@
             </div>`;
         }
         
-        // Build services table with dynamic columns
+        // Build services table with dynamic columns and show service discounts
         let servicesHtml = '';
         if (services.length > 0) {
             let headerHtml = '';
             let rowHtml = '';
             
             if (insuranceCount === 0) {
-                // No insurance - 5 columns: Code, Service, Qty, Price, Total
+                // No insurance - 6 columns: Code, Service, Qty, Price, Discount, Total
                 headerHtml = `<tr>
-                    <th style="text-align:center; width:12%;">Code</th>
-                    <th style="text-align:left; width:40%;">Service</th>
-                    <th style="text-align:center; width:10%;">Qty</th>
-                    <th style="text-align:right; width:19%;">Price</th>
-                    <th style="text-align:right; width:19%;">Total</th>
+                    <th style="text-align:center; width:10%;">Code</th>
+                    <th style="text-align:left; width:32%;">Service</th>
+                    <th style="text-align:center; width:8%;">Qty</th>
+                    <th style="text-align:right; width:15%;">Price</th>
+                    <th style="text-align:right; width:15%;">Discount</th>
+                    <th style="text-align:right; width:20%;">Total</th>
                 </tr>`;
                 
                 services.forEach(s => {
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
                     rowHtml += `<tr>
                         <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
                         <td style="text-align:left;">${escapeHtml(s.name)}</td>
                         <td style="text-align:center;">${s.qty}</td>
                         <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
-                        <td style="text-align:right;">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
                     </tr>`;
                 });
                 
             } else if (insuranceCount === 1) {
-                // Single insurance - 6 columns: Code, Service, Qty, Price, Insurance, Total
+                // Single insurance - 7 columns: Code, Service, Qty, Price, Insurance, Discount, Total
                 const insName = activeInsurances[0].name || 'Insurance';
                 headerHtml = `<tr>
-                    <th style="text-align:center; width:12%;">Code</th>
-                    <th style="text-align:left; width:32%;">Service</th>
-                    <th style="text-align:center; width:8%;">Qty</th>
-                    <th style="text-align:right; width:16%;">Price</th>
-                    <th style="text-align:right; width:16%;">${escapeHtml(insName)}</th>
-                    <th style="text-align:right; width:16%;">Total</th>
+                    <th style="text-align:center; width:10%;">Code</th>
+                    <th style="text-align:left; width:26%;">Service</th>
+                    <th style="text-align:center; width:7%;">Qty</th>
+                    <th style="text-align:right; width:13%;">Price</th>
+                    <th style="text-align:right; width:13%;">${escapeHtml(insName)}</th>
+                    <th style="text-align:right; width:13%;">Discount</th>
+                    <th style="text-align:right; width:18%;">Total</th>
                 </tr>`;
                 
                 services.forEach(s => {
                     const insAmount = s.primaryInsuranceAmount || s.aasandhaAmount || 0;
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
                     rowHtml += `<tr>
                         <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
                         <td style="text-align:left;">${escapeHtml(s.name)}</td>
                         <td style="text-align:center;">${s.qty}</td>
                         <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
                         <td style="text-align:right;">MVR ${insAmount.toFixed(2)}</td>
-                        <td style="text-align:right;">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
                     </tr>`;
                 });
                 
             } else {
-                // Dual insurance - 7 columns: Code, Service, Qty, Price, Insurance1, Insurance2, Total
+                // Dual insurance - 8 columns: Code, Service, Qty, Price, Insurance1, Insurance2, Discount, Total
                 const ins1Name = activeInsurances[0]?.name || 'Insurance';
                 const ins2Name = activeInsurances[1]?.name || 'Aasandha';
                 headerHtml = `<tr>
-                    <th style="text-align:center; width:12%;">Code</th>
-                    <th style="text-align:left; width:26%;">Service</th>
-                    <th style="text-align:center; width:7%;">Qty</th>
-                    <th style="text-align:right; width:13%;">Price</th>
-                    <th style="text-align:right; width:14%;">${escapeHtml(ins1Name)}</th>
-                    <th style="text-align:right; width:14%;">${escapeHtml(ins2Name)}</th>
-                    <th style="text-align:right; width:14%;">Total</th>
+                    <th style="text-align:center; width:9%;">Code</th>
+                    <th style="text-align:left; width:22%;">Service</th>
+                    <th style="text-align:center; width:6%;">Qty</th>
+                    <th style="text-align:right; width:11%;">Price</th>
+                    <th style="text-align:right; width:12%;">${escapeHtml(ins1Name)}</th>
+                    <th style="text-align:right; width:12%;">${escapeHtml(ins2Name)}</th>
+                    <th style="text-align:right; width:12%;">Discount</th>
+                    <th style="text-align:right; width:16%;">Total</th>
                 </tr>`;
                 
                 services.forEach(s => {
                     const ins1Amount = s.primaryInsuranceAmount || 0;
                     const ins2Amount = s.aasandhaAmount || 0;
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
                     rowHtml += `<tr>
                         <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
                         <td style="text-align:left;">${escapeHtml(s.name)}</td>
@@ -311,7 +337,8 @@
                         <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
                         <td style="text-align:right;">MVR ${ins1Amount.toFixed(2)}</td>
                         <td style="text-align:right;">MVR ${ins2Amount.toFixed(2)}</td>
-                        <td style="text-align:right;">MVR ${(s.total || s.qty * s.price).toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
                     </tr>`;
                 });
             }
@@ -522,6 +549,22 @@
                     color: #0f5c7a;
                 }
                 
+                .payment-method-box {
+                    background: #e8f0fe;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    margin: 4px 0;
+                    font-size: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                .created-by {
+                    text-align: center;
+                    font-size: 7px;
+                    color: #8ba0b0;
+                    margin-top: 4px;
+                }
+                
                 .footer {
                     text-align: center;
                     font-size: 7px;
@@ -575,9 +618,9 @@
                 <div class="header">
                     <div class="logo-container">
                         <img src="hope1.png" alt="Hope Dental Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                        <div style="display:none; font-size:24px; font-weight:bold; color:#0a2f44;">Hope Dental Care</div>
+                        <div style="display:none; font-size:24px; font-weight:bold; color:#0a2f44;">Hope Dental</div>
                     </div>
-                    <h1>Hope Dental Care</h1>
+                    <h1>Hope Dental Clinic</h1>
                     <p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p>
                     <p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p>
                 </div>
@@ -586,9 +629,10 @@
                 <div class="info-grid">
                     <div class="info-left">
                         <div class="info-row"><span class="info-label">Patient Name:</span><span class="info-value">${escapeHtml(patient.name || '')}</span></div>
-                        <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patient.idNumber || patient.passportNumber || patient.nationalId || '')}</span></div>
-                        <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patient.phone || '')}</span></div>
-                        <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patient.nationality || '')}</span></div>
+                        <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patientIdDisplay)}</span></div>
+                        <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patientContact)}</span></div>
+                        <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patientNationality)}</span></div>
+                        <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${escapeHtml(fullAddress || 'N/A')}</span></div>
                         <div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${escapeHtml(patient.dob || '')} ${age !== 'N/A' ? `(Age: ${age})` : ''}</span></div>
                     </div>
                     <div class="info-right">
@@ -606,7 +650,8 @@
                 <div class="totals-grid">
                     <div class="totals-left">
                         <div class="totals-row"><span class="label">Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
-                        <div class="totals-row"><span class="label">Discount (${discount.percent || 0}%):</span><span>- MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span class="label">Global Discount (${discount.percent || 0}%):</span><span>- MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                        <div class="totals-row"><span class="label">Service Discounts:</span><span>- MVR ${(serviceDiscounts.total || 0).toFixed(2)}</span></div>
                         <div class="totals-row"><span class="label">After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
                         <div class="totals-row"><span class="label">Total Patient Payable:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
                     </div>
@@ -620,6 +665,12 @@
                     </div>
                 </div>
                 
+                <!-- Payment Method and Created By - placed near patient payable -->
+                <div class="payment-method-box" style="margin-top: 6px;">
+                    <span>💳 Payment Method: <strong>${escapeHtml(paymentMethod)}</strong></span>
+                    <span>👤 Created by: <strong>${escapeHtml(createdBy)}</strong></span>
+                </div>
+                
                 <div style="text-align:center; font-size:9px; padding:4px; background:#f4f9fe; border-radius:6px; margin:4px 0;">
                     ${(billing.balance || 0) > 0 ? `⚖️ BALANCE DUE: MVR ${(billing.balance || 0).toFixed(2)}` : 
                       (billing.balance || 0) < 0 ? `💰 CHANGE DUE: MVR ${Math.abs(billing.balance || 0).toFixed(2)}` : 
@@ -628,7 +679,7 @@
                 
                 <div class="non-refundable">⚠️ THIS MEMO IS NOT REFUNDABLE ⚠️</div>
                 
-                <div class="footer">Thank you for choosing Hope Dental Care.<br>This is a computer-generated receipt. Valid without signature.</div>
+                <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt. Valid without signature.</div>
                 
                 <div class="no-print" style="text-align:center; margin-top:10px;">
                     <button onclick="window.print();" style="padding:5px 14px; background:#0a2f44; color:white; border:none; border-radius:30px; font-size:10px; cursor:pointer;">🖨️ Print</button>

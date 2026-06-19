@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental  | Clinical Memo</title>
+    <title>Hope Dental | Clinical Memo</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <style>
@@ -23,14 +25,15 @@
         }
 
         .clinic-header {
-            background: #0a2f44;
-            color: white;
+            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
+            color: #004d4d;
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .logo h2 {
@@ -40,7 +43,7 @@
             gap: 6px;
         }
 
-        .back-btn, .print-btn {
+        .back-btn {
             background: #1e4a6e;
             border: none;
             color: white;
@@ -51,18 +54,21 @@
             font-size: 11px;
         }
 
-        .print-btn {
-            background: #146b3a;
-        }
-
-        .print-btn:hover {
-            background: #0f5c2e;
+        .back-btn:hover {
+            background: #2a5f89;
         }
 
         .memo-container {
             max-width: 800px;
             margin: 20px auto;
             padding: 0 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         /* Memo Card - Printable Area */
@@ -76,185 +82,260 @@
         .memo-header {
             background: linear-gradient(135deg, #0a2f44 0%, #0f5c7a 100%);
             color: white;
-            padding: 24px;
+            padding: 20px;
             text-align: center;
         }
 
+        .memo-header .logo-container {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .memo-header .logo-container img {
+            max-height: 60px;
+            width: auto;
+        }
+
         .memo-header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 20px;
+            margin-bottom: 2px;
         }
 
         .memo-header p {
-            font-size: 11px;
+            font-size: 9px;
             opacity: 0.9;
         }
 
-        .memo-id {
+        .memo-title {
+            text-align: center;
             background: rgba(255,255,255,0.2);
-            display: inline-block;
-            padding: 4px 12px;
+            padding: 4px;
             border-radius: 20px;
+            margin: 8px 0 4px;
+            font-weight: bold;
             font-size: 11px;
-            margin-top: 10px;
         }
 
         .memo-body {
-            padding: 24px;
-        }
-
-        .info-section {
-            margin-bottom: 24px;
-            border-bottom: 1px solid #e2eaf0;
-            padding-bottom: 16px;
-        }
-
-        .info-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #0a2f44;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-left: 3px solid #0f5c7a;
-            padding-left: 10px;
+            padding: 20px 24px;
         }
 
         .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
         }
 
-        .info-item {
-            font-size: 12px;
+        .info-left {
+            flex: 1;
+            background: #f8fafd;
+            padding: 8px 12px;
+            border-radius: 8px;
         }
 
-        .info-item label {
+        .info-right {
+            flex: 1;
+            background: #f8fafd;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 10px;
+            border-bottom: 1px dotted #e9edf2;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
             font-weight: 600;
-            color: #1f5e7e;
+            color: #0a2f44;
+        }
+
+        .info-value {
+            color: #1e2a36;
+        }
+
+        .insurance-box {
+            background: #fff8e7;
+            padding: 6px 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #f0c674;
+        }
+
+        .insurance-box .ins-title {
+            font-weight: 600;
+            font-size: 10px;
+            color: #0a2f44;
             display: block;
             margin-bottom: 3px;
-            font-size: 10px;
         }
 
-        .info-item span {
-            color: #1e2f3e;
+        .insurance-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 6px;
+            font-size: 10px;
+            background: white;
+            margin: 2px 0;
+            border-radius: 4px;
+        }
+
+        .insurance-item .ins-name {
+            font-weight: 500;
+        }
+
+        .insurance-item .ins-amount {
+            font-weight: 600;
+            color: #0f5c7a;
         }
 
         .services-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
-            margin-top: 10px;
+            font-size: 10px;
+            margin: 8px 0;
         }
 
         .services-table th {
             background: #f4f9fe;
-            padding: 10px 8px;
+            padding: 5px 4px;
             text-align: left;
-            font-weight: 600;
-            color: #1f5e7e;
-            border-bottom: 2px solid #e2eaf0;
+            border-bottom: 2px solid #d0dfe8;
+            font-size: 8px;
+            font-weight: 700;
+            color: #0a2f44;
         }
 
         .services-table td {
-            padding: 8px;
-            border-bottom: 1px solid #eef3fa;
-            color: #1e2f3e;
+            padding: 4px;
+            border-bottom: 1px solid #e9edf2;
+            font-size: 9px;
         }
 
         .services-table tr:last-child td {
             border-bottom: none;
         }
 
-        .insurance-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: 600;
+        .right {
+            text-align: right;
         }
 
-        .primary-insurance {
-            background: #0f5c7a;
-            color: white;
-        }
-
-        .secondary-insurance {
-            background: #146b3a;
-            color: white;
-        }
-
-        .billing-summary {
-            background: #f8fbfe;
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
-        }
-
-        .billing-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 12px;
-            border-bottom: 1px solid #e2eaf0;
-        }
-
-        .billing-row:last-child {
-            border-bottom: none;
-        }
-
-        .billing-row.total {
-            font-weight: 700;
-            font-size: 16px;
-            color: #0a2f44;
-            border-top: 2px solid #e2eaf0;
-            margin-top: 5px;
-            padding-top: 10px;
-        }
-
-        .billing-row.payable {
-            background: #e0f2fe;
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: 700;
-            color: #0f5c7a;
-        }
-
-        .signature-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px dashed #cbdde9;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .signature-line {
+        .center {
             text-align: center;
         }
 
-        .signature-line p {
-            font-size: 10px;
-            color: #8ba0b0;
-            margin-bottom: 30px;
+        .code-badge {
+            background: #e8f0fe;
+            color: #0f5c7a;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 7px;
+            font-family: monospace;
+            font-weight: 600;
         }
 
-        .signature-line .line {
-            width: 150px;
-            border-top: 1px solid #1e2f3e;
-            margin-top: 5px;
+        .totals-grid {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .totals-left {
+            flex: 1;
+            background: #f0f9ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #0f5c7a;
+        }
+
+        .totals-right {
+            flex: 1;
+            background: #f0f9ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #0f5c7a;
+        }
+
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 10px;
+            border-bottom: 1px dotted #d0dfe8;
+        }
+
+        .totals-row:last-child {
+            border-bottom: none;
+        }
+
+        .totals-row.total {
+            font-weight: 800;
+            font-size: 12px;
+            border-top: 2px solid #0f5c7a;
+            margin-top: 4px;
+            padding-top: 4px;
+        }
+
+        .totals-row.total .label {
+            color: #0a2f44;
+        }
+
+        .totals-row.total .value {
+            color: #0f5c7a;
+        }
+
+        .payment-method-box {
+            background: #e8f0fe;
+            padding: 5px 10px;
+            border-radius: 6px;
+            margin: 6px 0;
+            font-size: 9px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .non-refundable {
+            text-align: center;
+            font-size: 9px;
+            font-weight: 700;
+            color: #b91c1c;
+            margin-top: 6px;
+            padding: 4px;
+            border: 1px dashed #b91c1c;
+            border-radius: 6px;
+            background: #fff5f5;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 7px;
+            color: #8ba0b0;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
+            margin-top: 10px;
+        }
+
+        .no-services {
+            background: #f9f9f9;
+            padding: 15px;
+            text-align: center;
+            border-radius: 6px;
+            font-style: italic;
+            font-size: 9px;
         }
 
         .footer-note {
             background: #fafdff;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
             color: #8ba0b0;
             border-top: 1px solid #eef3fa;
         }
@@ -271,20 +352,13 @@
             color: #b91c1c;
         }
 
-        .action-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
         @media print {
             body {
                 background: white;
                 padding: 0;
                 margin: 0;
             }
-            .clinic-header, .action-buttons, .back-btn, .print-btn {
+            .clinic-header, .action-buttons, .back-btn {
                 display: none;
             }
             .memo-container {
@@ -296,7 +370,6 @@
                 border-radius: 0;
             }
             .memo-header {
-                background: #0a2f44;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
@@ -305,10 +378,42 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            .billing-summary {
-                background: #f8fbfe;
+            .totals-left, .totals-right {
+                background: #f0f9ff;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+            }
+            .info-left, .info-right {
+                background: #f8fafd;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .insurance-box {
+                background: #fff8e7;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .payment-method-box {
+                background: #e8f0fe;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .non-refundable {
+                background: #fff5f5;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .info-grid, .totals-grid {
+                flex-direction: column;
+            }
+            .memo-body {
+                padding: 12px;
+            }
+            .services-table {
+                font-size: 8px;
             }
         }
     </style>
@@ -316,11 +421,11 @@
 <body>
 <div class="clinic-header">
     <div class="logo">
-        <h2>🏥 Hope Dental  · Clinical Memo</h2>
+        <h2>🏥 Hope Dental · Clinical Memo</h2>
     </div>
     <div>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
-        <button class="print-btn" onclick="printMemo()">🖨️ Print Memo</button>
+        <button class="back-btn" onclick="window.print()" style="background:#146b3a;">🖨️ Print</button>
         <button class="back-btn" onclick="window.location.href='memo-create.html'">📝 New Memo</button>
     </div>
 </div>
@@ -356,9 +461,80 @@
             try {
                 const data = JSON.parse(stored);
                 if (data && data.firebaseId) return data.firebaseId;
+                if (data && data.memoId) return data.memoId;
             } catch(e) {}
         }
         return null;
+    }
+    
+    // Calculate age from DOB
+    function calculateAge(dob) {
+        if (!dob) return 'N/A';
+        try {
+            const birthDate = new Date(dob);
+            if (isNaN(birthDate)) return 'N/A';
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        } catch(e) {
+            return 'N/A';
+        }
+    }
+
+    // Get active insurances with amounts > 0
+    function getActiveInsurances(memo) {
+        const insurances = memo.insurances || [];
+        const billing = memo.billing || {};
+        const results = [];
+        insurances.forEach(ins => {
+            let amount = ins.amount || 0;
+            if (amount === 0 && ins.priority === 'primary') {
+                amount = billing.primaryInsurancePayment || 0;
+            }
+            if (amount === 0 && ins.priority === 'secondary') {
+                amount = billing.aasandhaPayment || 0;
+            }
+            if (amount > 0) {
+                results.push({
+                    name: ins.name || 'Insurance',
+                    amount: amount,
+                    priority: ins.priority || 'primary'
+                });
+            }
+        });
+        if (results.length === 0) {
+            if (billing.primaryInsurancePayment > 0) {
+                results.push({
+                    name: 'Primary Insurance',
+                    amount: billing.primaryInsurancePayment,
+                    priority: 'primary'
+                });
+            }
+            if (billing.aasandhaPayment > 0) {
+                results.push({
+                    name: 'Aasandha',
+                    amount: billing.aasandhaPayment,
+                    priority: 'secondary'
+                });
+            }
+        }
+        return results;
+    }
+
+    // Get memo heading
+    function getMemoHeading(memo) {
+        const services = memo.services || [];
+        if (services.length === 0) return 'Service Memo';
+        const firstService = services[0];
+        const serviceName = firstService.name || '';
+        if (serviceName.toLowerCase().includes('consultation')) {
+            return 'Consultation Memo';
+        }
+        return 'Service Memo';
     }
     
     // Load memo from Firebase
@@ -385,13 +561,23 @@
         }
         
         try {
-            const docRef = await window.db.collection("memos").doc(memoId).get();
+            // Try by document ID first
+            let docRef = await window.db.collection("memos").doc(memoId).get();
             if (docRef.exists) {
                 memoData = { id: docRef.id, ...docRef.data() };
                 renderMemo();
-            } else {
-                document.getElementById('memoContent').innerHTML = '<div class="error">❌ Memo not found in database.</div>';
+                return;
             }
+            
+            // Try by memoId field
+            const querySnapshot = await window.db.collection("memos").where("memoId", "==", memoId).get();
+            if (!querySnapshot.empty) {
+                memoData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
+                renderMemo();
+                return;
+            }
+            
+            document.getElementById('memoContent').innerHTML = '<div class="error">❌ Memo not found in database.</div>';
         } catch (error) {
             console.error("Error loading memo:", error);
             document.getElementById('memoContent').innerHTML = '<div class="error">❌ Error loading memo: ' + error.message + '</div>';
@@ -407,203 +593,236 @@
         const patient = memoData.patient || {};
         const doctor = memoData.doctor || {};
         const services = memoData.services || [];
-        const insurances = memoData.insurances || [];
         const billing = memoData.billing || {};
         const discount = memoData.discount || {};
+        const createdBy = memoData.createdBy || 'Unknown';
+        const paymentMethod = memoData.payment?.method || 'N/A';
+        const memoId = memoData.memoId || memoData.id || 'N/A';
+        const serviceDiscounts = memoData.serviceDiscounts || {};
         
-        // Find primary and secondary insurance
-        const primaryInsurance = insurances.find(i => i.priority === 'primary') || insurances.find(i => i.type !== 'government');
-        const aasandhaInsurance = insurances.find(i => i.name === 'Aasandha' || i.type === 'government');
+        // Calculate age
+        const age = calculateAge(patient.dob);
         
-        const subtotal = billing.subtotal || services.reduce((sum, s) => sum + (s.qty * s.price), 0);
-        const afterDiscount = billing.afterDiscount || subtotal - (discount.amount || 0);
-        const primaryAmount = billing.primaryInsurancePayment || billing.insurancePayment || 0;
-        const aasandhaAmount = billing.aasandhaPayment || 0;
-        const patientPayable = billing.patientPayable || (afterDiscount - primaryAmount - aasandhaAmount);
-        const paidAmount = billing.paid || 0;
-        const balance = billing.balance || (patientPayable - paidAmount);
+        // Get active insurances
+        const activeInsurances = getActiveInsurances(memoData);
+        const insuranceCount = activeInsurances.length;
         
-        const memoDate = memoData.createdAt ? new Date(memoData.createdAt).toLocaleString() : new Date().toLocaleString();
+        // Get memo heading
+        const memoHeading = getMemoHeading(memoData);
+        
+        // Format date
+        const dateObj = memoData.createdAt ? new Date(memoData.createdAt) : new Date();
+        const dateStr = dateObj.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+        
+        // Build full patient address
+        const fullAddress = patient.address || '';
+        const patientContact = patient.phone || patient.contactNo || '';
+        const patientNationality = patient.nationality || '';
+        
+        // Build insurance display
+        let insuranceHtml = '';
+        if (insuranceCount > 0) {
+            insuranceHtml = activeInsurances.map(ins => {
+                return `<div class="insurance-item">
+                    <span class="ins-name">${escapeHtml(ins.name)}</span>
+                    <span class="ins-amount">MVR ${(ins.amount || 0).toFixed(2)}</span>
+                </div>`;
+            }).join('');
+            insuranceHtml = `<div class="insurance-box">
+                <span class="ins-title">🏥 Insurance Coverage</span>
+                ${insuranceHtml}
+            </div>`;
+        }
+        
+        // Build services table with dynamic columns
+        let servicesHtml = '';
+        if (services.length > 0) {
+            let headerHtml = '';
+            let rowHtml = '';
+            
+            if (insuranceCount === 0) {
+                // No insurance - 6 columns: Code, Service, Qty, Price, Discount, Total
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:10%;">Code</th>
+                    <th style="text-align:left; width:32%;">Service</th>
+                    <th style="text-align:center; width:8%;">Qty</th>
+                    <th style="text-align:right; width:15%;">Price</th>
+                    <th style="text-align:right; width:15%;">Discount</th>
+                    <th style="text-align:right; width:20%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+            } else if (insuranceCount === 1) {
+                // Single insurance - 7 columns: Code, Service, Qty, Price, Insurance, Discount, Total
+                const insName = activeInsurances[0].name || 'Insurance';
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:10%;">Code</th>
+                    <th style="text-align:left; width:26%;">Service</th>
+                    <th style="text-align:center; width:7%;">Qty</th>
+                    <th style="text-align:right; width:13%;">Price</th>
+                    <th style="text-align:right; width:13%;">${escapeHtml(insName)}</th>
+                    <th style="text-align:right; width:13%;">Discount</th>
+                    <th style="text-align:right; width:18%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    const insAmount = s.primaryInsuranceAmount || s.aasandhaAmount || 0;
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${insAmount.toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+            } else {
+                // Dual insurance - 8 columns: Code, Service, Qty, Price, Insurance1, Insurance2, Discount, Total
+                const ins1Name = activeInsurances[0]?.name || 'Insurance';
+                const ins2Name = activeInsurances[1]?.name || 'Aasandha';
+                headerHtml = `<tr>
+                    <th style="text-align:center; width:9%;">Code</th>
+                    <th style="text-align:left; width:22%;">Service</th>
+                    <th style="text-align:center; width:6%;">Qty</th>
+                    <th style="text-align:right; width:11%;">Price</th>
+                    <th style="text-align:right; width:12%;">${escapeHtml(ins1Name)}</th>
+                    <th style="text-align:right; width:12%;">${escapeHtml(ins2Name)}</th>
+                    <th style="text-align:right; width:12%;">Discount</th>
+                    <th style="text-align:right; width:16%;">Total</th>
+                </tr>`;
+                
+                services.forEach(s => {
+                    const ins1Amount = s.primaryInsuranceAmount || 0;
+                    const ins2Amount = s.aasandhaAmount || 0;
+                    const discountAmt = s.discountAmount || 0;
+                    const discountPercent = s.discountPercent || 0;
+                    const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
+                    rowHtml += `<tr>
+                        <td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td>
+                        <td style="text-align:left;">${escapeHtml(s.name)}</td>
+                        <td style="text-align:center;">${s.qty}</td>
+                        <td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${ins1Amount.toFixed(2)}</td>
+                        <td style="text-align:right;">MVR ${ins2Amount.toFixed(2)}</td>
+                        <td style="text-align:right;">${discountDisplay}</td>
+                        <td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            
+            servicesHtml = `<table class="services-table"><thead>${headerHtml}</thead><tbody>${rowHtml}</tbody></table>`;
+        } else {
+            servicesHtml = '<div class="no-services">No services recorded.</div>';
+        }
         
         const html = `
             <div class="memo-card">
                 <div class="memo-header">
-                    <h1>🏥 Hope Dental CLINIC</h1>
-                    <p>Clinical Treatment Memo / Invoice</p>
-                    <div class="memo-id">Memo #: ${memoData.memoId || memoData.id || 'N/A'}</div>
-                    <div class="memo-id">Date: ${memoDate}</div>
+                    <div class="logo-container">
+                        <img src="hope1.png" alt="Hope Dental Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display:none; font-size:20px; font-weight:bold;">Hope Dental</div>
+                    </div>
+                    <h1>Hope Dental Clinic</h1>
+                    <p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p>
+                    <p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p>
+                    <div class="memo-title">📄 ${escapeHtml(memoHeading)} — #${escapeHtml(memoId)}</div>
                 </div>
                 
                 <div class="memo-body">
-                    <!-- Patient Information -->
-                    <div class="info-section">
-                        <div class="info-title">👤 PATIENT INFORMATION</div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Full Name</label>
-                                <span>${escapeHtml(patient.name || 'N/A')}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Patient ID</label>
-                                <span>${escapeHtml(patient.id || 'N/A')}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Contact Number</label>
-                                <span>${escapeHtml(patient.phone || 'N/A')}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Nationality</label>
-                                <span>${escapeHtml(patient.nationality || 'N/A')}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>ID Number</label>
-                                <span>${escapeHtml(patient.idNumber || 'N/A')}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Date of Birth</label>
-                                <span>${escapeHtml(patient.dob || 'N/A')}</span>
-                            </div>
+                    <!-- Patient & Doctor Information -->
+                    <div class="info-grid">
+                        <div class="info-left">
+                            <div class="info-row"><span class="info-label">Patient Name:</span><span class="info-value">${escapeHtml(patient.name || '')}</span></div>
+                            <div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patient.id || patient.idNumber || patient.passportNumber || patient.nationalId || '')}</span></div>
+                            <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patientContact)}</span></div>
+                            <div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patientNationality)}</span></div>
+                            <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${escapeHtml(fullAddress || 'N/A')}</span></div>
+                            <div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${escapeHtml(patient.dob || '')} ${age !== 'N/A' ? `(Age: ${age})` : ''}</span></div>
                         </div>
-                    </div>
-                    
-                    <!-- Doctor Information -->
-                    <div class="info-section">
-                        <div class="info-title">👨‍⚕️ DOCTOR INFORMATION</div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Doctor Name</label>
-                                <span>${escapeHtml(doctor.name || 'N/A')}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Speciality</label>
-                                <span>${escapeHtml(doctor.speciality || 'N/A')}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Insurance Information -->
-                    <div class="info-section">
-                        <div class="info-title">🏥 INSURANCE DETAILS</div>
-                        <div class="info-grid">
-                            ${primaryInsurance ? `
-                            <div class="info-item">
-                                <label>Primary Insurance</label>
-                                <span>${escapeHtml(primaryInsurance.name)} <span class="insurance-badge primary-insurance">Primary</span></span>
-                                <span style="display:block; font-size:10px;">Coverage: ${primaryInsurance.coverage || (primaryInsurance.value + (primaryInsurance.type === 'percent' ? '%' : ' MVR'))}</span>
-                            </div>
-                            ` : '<div class="info-item"><label>Primary Insurance</label><span>None</span></div>'}
-                            ${aasandhaInsurance ? `
-                            <div class="info-item">
-                                <label>Secondary Insurance</label>
-                                <span>Aasandha <span class="insurance-badge secondary-insurance">Secondary</span></span>
-                            </div>
-                            ` : ''}
-                            ${patient.isCitizen ? '<div class="info-item"><label>Aasandha Status</label><span>✅ Eligible (Maldivian Citizen)</span></div>' : '<div class="info-item"><label>Aasandha Status</label><span>❌ Not Eligible (Foreigner)</span></div>'}
+                        <div class="info-right">
+                            <div class="info-row"><span class="info-label">Date:</span><span class="info-value">${escapeHtml(dateStr)}</span></div>
+                            <div class="info-row"><span class="info-label">Memo No:</span><span class="info-value">${escapeHtml(memoId)}</span></div>
+                            <div class="info-row"><span class="info-label">Doctor:</span><span class="info-value">${escapeHtml(doctor.name || '')} ${doctor.speciality ? `(${escapeHtml(doctor.speciality)})` : ''}</span></div>
+                            <div class="info-row"><span class="info-label">Insurance:</span><span class="info-value" style="font-size:8px;">${activeInsurances.map(i => escapeHtml(i.name)).join(' + ')}</span></div>
+                            <div class="info-row"><span class="info-label">Payment:</span><span class="info-value">${escapeHtml(paymentMethod)}</span></div>
                         </div>
                     </div>
                     
                     <!-- Services Table -->
-                    <div class="info-section">
-                        <div class="info-title">💊 SERVICES PROVIDED</div>
-                        <table class="services-table">
-                            <thead>
-                                <tr><th>Service</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
-                            </thead>
-                            <tbody>
-                                ${services.map(s => `
-                                    <tr>
-                                        <td>${escapeHtml(s.name)}</td>
-                                        <td>${s.qty}</td>
-                                        <td>MVR ${parseFloat(s.price).toFixed(2)}</td>
-                                        <td>MVR ${(s.qty * s.price).toFixed(2)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                    ${servicesHtml}
+                    
+                    <!-- Insurance Coverage -->
+                    ${insuranceHtml}
+                    
+                    <!-- Payment Method and Created By -->
+                    <div class="payment-method-box">
+                        <span>💳 Payment Method: <strong>${escapeHtml(paymentMethod)}</strong></span>
+                        <span>👤 Created by: <strong>${escapeHtml(createdBy)}</strong></span>
                     </div>
                     
-                    <!-- Billing Summary -->
-                    <div class="billing-summary">
-                        <div class="billing-row">
-                            <span>Subtotal</span>
-                            <span>MVR ${subtotal.toFixed(2)}</span>
+                    <!-- Totals -->
+                    <div class="totals-grid">
+                        <div class="totals-left">
+                            <div class="totals-row"><span class="label">Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div>
+                            <div class="totals-row"><span class="label">Global Discount (${discount.percent || 0}%):</span><span>- MVR ${(discount.amount || 0).toFixed(2)}</span></div>
+                            <div class="totals-row"><span class="label">Service Discounts:</span><span>- MVR ${(serviceDiscounts.total || 0).toFixed(2)}</span></div>
+                            <div class="totals-row"><span class="label">After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div>
+                            <div class="totals-row"><span class="label">Total Patient Payable:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div>
                         </div>
-                        ${discount.percent > 0 ? `
-                        <div class="billing-row">
-                            <span>Discount (${discount.percent}% - ${discount.reason || 'N/A'})</span>
-                            <span>- MVR ${(discount.amount || 0).toFixed(2)}</span>
-                        </div>
-                        ` : ''}
-                        <div class="billing-row">
-                            <span>After Discount</span>
-                            <span>MVR ${afterDiscount.toFixed(2)}</span>
-                        </div>
-                        ${primaryAmount > 0 ? `
-                        <div class="billing-row">
-                            <span>Primary Insurance Coverage</span>
-                            <span>- MVR ${primaryAmount.toFixed(2)}</span>
-                        </div>
-                        ` : ''}
-                        ${aasandhaAmount > 0 ? `
-                        <div class="billing-row">
-                            <span>Aasandha Coverage (Secondary)</span>
-                            <span>- MVR ${aasandhaAmount.toFixed(2)}</span>
-                        </div>
-                        ` : ''}
-                        <div class="billing-row total payable">
-                            <span>💰 PATIENT PAYABLE</span>
-                            <span>MVR ${patientPayable.toFixed(2)}</span>
-                        </div>
-                        <div class="billing-row">
-                            <span>Amount Paid</span>
-                            <span>MVR ${paidAmount.toFixed(2)}</span>
-                        </div>
-                        <div class="billing-row total">
-                            <span>${balance >= 0 ? '⚖️ BALANCE DUE' : '💰 CHANGE DUE'}</span>
-                            <span style="color: ${balance >= 0 ? '#b91c1c' : '#146b3a'}">MVR ${Math.abs(balance).toFixed(2)}</span>
+                        <div class="totals-right">
+                            <div class="totals-row"><span class="label">Total Insurance Paid:</span><span>MVR ${(billing.totalInsurancePayment || 0).toFixed(2)}</span></div>
+                            <div class="totals-row"><span class="label">Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div>
+                            <div class="totals-row total">
+                                <span class="label">💰 PATIENT PAYABLE:</span>
+                                <span class="value">MVR ${(billing.patientPayable || 0).toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Signature Section -->
-                    <div class="signature-section">
-                        <div class="signature-line">
-                            <p>Patient/Guardian Signature</p>
-                            <div class="line"></div>
-                        </div>
-                        <div class="signature-line">
-                            <p>Doctor Signature</p>
-                            <div class="line"></div>
-                        </div>
-                        <div class="signature-line">
-                            <p>Clinic Stamp</p>
-                            <div class="line"></div>
-                        </div>
+                    <!-- Balance Status -->
+                    <div style="text-align:center; font-size:9px; padding:4px; background:#f4f9fe; border-radius:6px; margin:6px 0;">
+                        ${(billing.balance || 0) > 0 ? `⚖️ BALANCE DUE: MVR ${(billing.balance || 0).toFixed(2)}` : 
+                          (billing.balance || 0) < 0 ? `💰 CHANGE DUE: MVR ${Math.abs(billing.balance || 0).toFixed(2)}` : 
+                          '✅ PAID IN FULL'}
                     </div>
-                </div>
-                
-                <div class="footer-note">
-                    <p>This is a computer-generated document. Valid with authorized signature.</p>
-                    <p>For any queries, please contact reception at +960 XXX-XXXX</p>
-                    <p>Thank you for choosing Hope Dental Clinic</p>
+                    
+                    <!-- Non-Refundable Notice -->
+                    <div class="non-refundable">⚠️ THIS MEMO IS NOT REFUNDABLE ⚠️</div>
+                    
+                    <!-- Footer -->
+                    <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt. Valid without signature.</div>
                 </div>
             </div>
         `;
         
         document.getElementById('memoContent').innerHTML = html;
-        
-        // Clear localStorage after displaying
-        if (localStorage.getItem('printMemoData')) {
-            // Keep it for refresh, but don't clear immediately
-        }
     }
     
     function escapeHtml(str) {
         if (!str) return '';
         return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
-    }
-    
-    function printMemo() {
-        window.print();
     }
     
     // Load memo on page load

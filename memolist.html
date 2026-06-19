@@ -502,7 +502,7 @@
         });
     }
 
-    // UPDATED PRINT FUNCTION - With full address, service discounts, payment method, created by
+    // UPDATED PRINT FUNCTION - Payment method moved near patient payable
     function printMemo(memo) {
         const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
         if (!printWindow) { alert("Please allow pop-ups to print."); return; }
@@ -724,18 +724,12 @@
                     <div class="info-row"><span class="info-label">Memo No:</span><span class="info-value">${escapeHtml(memoId)}</span></div>
                     <div class="info-row"><span class="info-label">Doctor:</span><span class="info-value">${escapeHtml(doctor.name || '')} ${doctor.speciality ? `(${escapeHtml(doctor.speciality)})` : ''}</span></div>
                     <div class="info-row"><span class="info-label">Insurance:</span><span class="info-value" style="font-size:8px;">${activeInsurances.map(i => escapeHtml(i.name)).join(' + ')}</span></div>
-                    <div class="info-row"><span class="info-label">Payment:</span><span class="info-value">${escapeHtml(paymentMethod)}</span></div>
                 </div>
             </div>
             
             ${servicesHtml}
             
             ${insuranceHtml}
-            
-            <div class="payment-method-box">
-                <span>💳 Payment Method: <strong>${escapeHtml(paymentMethod)}</strong></span>
-                <span>👤 Created by: <strong>${escapeHtml(createdBy)}</strong></span>
-            </div>
             
             <div class="totals-grid">
                 <div class="totals-left">
@@ -755,6 +749,12 @@
                 </div>
             </div>
             
+            <!-- Payment Method and Created By - placed near patient payable -->
+            <div class="payment-method-box" style="margin-top: 6px;">
+                <span>💳 Payment Method: <strong>${escapeHtml(paymentMethod)}</strong></span>
+                <span>👤 Created by: <strong>${escapeHtml(createdBy)}</strong></span>
+            </div>
+            
             <div style="text-align:center; font-size:9px; padding:4px; background:#f4f9fe; border-radius:6px; margin:4px 0;">
                 ${(billing.balance || 0) > 0 ? `⚖️ BALANCE DUE: MVR ${(billing.balance || 0).toFixed(2)}` : 
                   (billing.balance || 0) < 0 ? `💰 CHANGE DUE: MVR ${Math.abs(billing.balance || 0).toFixed(2)}` : 
@@ -763,7 +763,6 @@
             
             <div class="non-refundable">⚠️ THIS MEMO IS NOT REFUNDABLE ⚠️</div>
             
-            <div class="created-by">Created by: ${escapeHtml(createdBy)}</div>
             <div class="footer">Thank you for choosing Hope Dental.<br>This is a computer-generated receipt. Valid without signature.</div>
             
             <div class="no-print" style="text-align:center; margin-top:10px;">

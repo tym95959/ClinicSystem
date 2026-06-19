@@ -102,11 +102,12 @@
         
         .rx-bismillah {
             text-align: center;
-            font-family: 'Traditional Arabic', 'Times New Roman', serif;
-            font-size: 20px;
-            color: #1a2c3e;
+            font-family: 'Traditional Arabic', 'Amiri', 'Times New Roman', serif;
+            font-size: 22px;
+            color: #0a2f44;
             margin-bottom: 8px;
             font-weight: 700;
+            letter-spacing: 1px;
         }
         
         .rx-header {
@@ -119,38 +120,38 @@
         .rx-header .logo-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+        }
+        .rx-header .logo-left .logo-img {
+            max-height: 55px;
+            width: auto;
         }
         .rx-header .logo-left .hope {
             font-family: 'Times New Roman', serif;
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 700;
             color: #2e7d32;
             letter-spacing: 1px;
         }
         .rx-header .logo-left .dental {
             font-family: 'Times New Roman', serif;
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 700;
             color: #0f5c7a;
             letter-spacing: 1px;
         }
         .rx-header .logo-left .care {
             font-family: 'Times New Roman', serif;
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 700;
             color: #0f5c7a;
             letter-spacing: 1px;
         }
         .rx-header .logo-right {
-            font-family: 'MV Boli', 'Traditional Arabic', serif;
-            font-size: 18px;
+            font-family: 'Faruma', 'MV Boli', 'Traditional Arabic', serif;
+            font-size: 20px;
             color: #2e7d32;
             font-weight: 700;
-        }
-        .rx-header .logo-img {
-            max-height: 40px;
-            width: auto;
         }
         
         .rx-divider {
@@ -166,10 +167,10 @@
             margin: 6px 0 12px 0;
         }
         .rx-title-row .rx-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
             color: #0a2f44;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
             text-transform: uppercase;
             font-family: 'Times New Roman', serif;
         }
@@ -194,22 +195,19 @@
         .rx-patient-row .rx-label {
             font-weight: 700;
             color: #0a2f44;
-            min-width: 100px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-size: 13px;
         }
         .rx-patient-row .rx-value {
-            flex: 1;
             color: #1a2c3e;
             font-weight: 500;
             padding: 2px 5px;
             font-size: 14px;
+            margin-right: 25px;
         }
         .rx-patient-row .rx-value-sm {
-            min-width: 80px;
             padding: 2px 5px;
-            margin-right: 20px;
             font-size: 14px;
         }
         .rx-patient-row .rx-label-sm {
@@ -219,9 +217,12 @@
             text-transform: uppercase;
             font-size: 13px;
         }
+        .rx-patient-row .rx-spacer {
+            margin-right: 25px;
+        }
         
         .rx-rx-symbol {
-            font-size: 32px;
+            font-size: 34px;
             font-weight: 700;
             color: #0a2f44;
             padding: 8px 0 4px 0;
@@ -248,9 +249,6 @@
             color: #1a2c3e;
             font-size: 14px;
             padding: 1px 0;
-        }
-        .rx-medication-area .med-item .med-detail .icon {
-            margin-right: 6px;
         }
         
         .rx-doctor-row {
@@ -311,7 +309,7 @@
             .prescription-item { flex-direction: column; text-align: center; }
             .rx-header { flex-wrap: wrap; justify-content: center; gap: 5px; }
             .rx-title-row { flex-direction: column; align-items: flex-start; gap: 4px; }
-            .rx-patient-row { flex-wrap: wrap; }
+            .rx-patient-row { flex-wrap: wrap; gap: 3px; }
             .rx-doctor-row .rx-doctor .sign-line { width: 100%; }
         }
     </style>
@@ -591,7 +589,7 @@
             }
         }
 
-        // ========== PRINT PRESCRIPTION - MATCHING TEMPLATE ==========
+        // ========== PRINT PRESCRIPTION ==========
         window.printPrescription = function(id) {
             var presc = null;
             for (var i = 0; i < prescriptionsArray.length; i++) {
@@ -620,27 +618,28 @@
             win.document.write('.rx-container { max-width: 100%; }');
             
             // Template styles
-            win.document.write('.rx-bismillah { text-align: center; font-family: "Traditional Arabic","Times New Roman",serif; font-size: 20px; color: #1a2c3e; margin-bottom: 8px; font-weight: 700; }');
+            win.document.write('.rx-bismillah { text-align: center; font-family: "Traditional Arabic","Amiri","Times New Roman",serif; font-size: 22px; color: #0a2f44; margin-bottom: 8px; font-weight: 700; letter-spacing: 1px; }');
             win.document.write('.rx-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 5px; margin-bottom: 3px; }');
-            win.document.write('.rx-header .logo-left { display: flex; align-items: center; gap: 8px; }');
-            win.document.write('.rx-header .logo-left .hope { font-family: "Times New Roman",serif; font-size: 22px; font-weight: 700; color: #2e7d32; letter-spacing: 1px; }');
-            win.document.write('.rx-header .logo-left .dental { font-family: "Times New Roman",serif; font-size: 22px; font-weight: 700; color: #0f5c7a; letter-spacing: 1px; }');
-            win.document.write('.rx-header .logo-left .care { font-family: "Times New Roman",serif; font-size: 22px; font-weight: 700; color: #0f5c7a; letter-spacing: 1px; }');
-            win.document.write('.rx-header .logo-right { font-family: "MV Boli","Traditional Arabic",serif; font-size: 18px; color: #2e7d32; font-weight: 700; }');
-            win.document.write('.rx-header .logo-img { max-height: 40px; width: auto; }');
+            win.document.write('.rx-header .logo-left { display: flex; align-items: center; gap: 10px; }');
+            win.document.write('.rx-header .logo-left .logo-img { max-height: 55px; width: auto; }');
+            win.document.write('.rx-header .logo-left .hope { font-family: "Times New Roman",serif; font-size: 26px; font-weight: 700; color: #2e7d32; letter-spacing: 1px; }');
+            win.document.write('.rx-header .logo-left .dental { font-family: "Times New Roman",serif; font-size: 26px; font-weight: 700; color: #0f5c7a; letter-spacing: 1px; }');
+            win.document.write('.rx-header .logo-left .care { font-family: "Times New Roman",serif; font-size: 26px; font-weight: 700; color: #0f5c7a; letter-spacing: 1px; }');
+            win.document.write('.rx-header .logo-right { font-family: "Faruma","MV Boli","Traditional Arabic",serif; font-size: 20px; color: #2e7d32; font-weight: 700; }');
             win.document.write('.rx-divider { border: none; border-top: 1px solid #1a2c3e; margin: 2px 0 10px 0; }');
             win.document.write('.rx-title-row { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 12px 0; }');
-            win.document.write('.rx-title-row .rx-title { font-size: 20px; font-weight: 700; color: #0a2f44; letter-spacing: 3px; text-transform: uppercase; font-family: "Times New Roman",serif; }');
+            win.document.write('.rx-title-row .rx-title { font-size: 22px; font-weight: 700; color: #0a2f44; letter-spacing: 4px; text-transform: uppercase; font-family: "Times New Roman",serif; }');
             win.document.write('.rx-title-row .rx-date { font-size: 13px; font-weight: 600; color: #0a2f44; }');
             win.document.write('.rx-title-row .rx-date .date-value { font-weight: 400; color: #1a2c3e; }');
             
             win.document.write('.rx-patient-row { display: flex; align-items: baseline; margin: 5px 0; padding: 2px 0; font-size: 14px; font-family: "Times New Roman",serif; }');
-            win.document.write('.rx-patient-row .rx-label { font-weight: 700; color: #0a2f44; min-width: 100px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; }');
-            win.document.write('.rx-patient-row .rx-value { flex: 1; color: #1a2c3e; font-weight: 500; padding: 2px 5px; font-size: 14px; }');
-            win.document.write('.rx-patient-row .rx-value-sm { min-width: 80px; padding: 2px 5px; margin-right: 20px; font-size: 14px; }');
+            win.document.write('.rx-patient-row .rx-label { font-weight: 700; color: #0a2f44; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; }');
+            win.document.write('.rx-patient-row .rx-value { color: #1a2c3e; font-weight: 500; padding: 2px 5px; font-size: 14px; margin-right: 25px; }');
+            win.document.write('.rx-patient-row .rx-value-sm { padding: 2px 5px; font-size: 14px; }');
             win.document.write('.rx-patient-row .rx-label-sm { font-weight: 700; color: #0a2f44; margin-right: 5px; text-transform: uppercase; font-size: 13px; }');
+            win.document.write('.rx-patient-row .rx-spacer { margin-right: 25px; }');
             
-            win.document.write('.rx-rx-symbol { font-size: 32px; font-weight: 700; color: #0a2f44; padding: 8px 0 4px 0; font-family: "Times New Roman",serif; }');
+            win.document.write('.rx-rx-symbol { font-size: 34px; font-weight: 700; color: #0a2f44; padding: 8px 0 4px 0; font-family: "Times New Roman",serif; }');
             win.document.write('.rx-medication-area { min-height: 160px; padding: 8px 0; margin: 2px 0; }');
             win.document.write('.rx-medication-area .med-item { padding: 5px 0; font-size: 14px; font-family: "Times New Roman",serif; }');
             win.document.write('.rx-medication-area .med-item .med-name { font-weight: 700; color: #0a2f44; font-size: 16px; }');
@@ -660,7 +659,7 @@
             
             win.document.write('<div class="rx-container">');
             
-            // Bismillah
+            // Bismillah - Dark Blue
             win.document.write('<div class="rx-bismillah">بِسْمِ ٱللهِ ٱلرَّحْمَٰنِ ٱلرَّحِيْمِ</div>');
             
             // Header with logo and Dhivehi
@@ -683,16 +682,15 @@
             win.document.write('<span class="rx-date">DATE: <span class="date-value">' + today + '</span></span>');
             win.document.write('</div>');
             
-            // Patient fields - without lines
+            // Patient fields - all in one line
             win.document.write('<div class="rx-patient-row">');
             win.document.write('<span class="rx-label">PATIENT:</span>');
             win.document.write('<span class="rx-value">' + escapeHtml(selectedPatient.name) + '</span>');
-            win.document.write('</div>');
-            
-            win.document.write('<div class="rx-patient-row">');
+            win.document.write('<span class="rx-spacer"></span>');
             win.document.write('<span class="rx-label-sm">AGE:</span>');
             win.document.write('<span class="rx-value-sm">' + age + '</span>');
-            win.document.write('<span class="rx-label-sm" style="margin-left:20px;">ID CARD NO:</span>');
+            win.document.write('<span class="rx-spacer"></span>');
+            win.document.write('<span class="rx-label-sm">ID CARD NO:</span>');
             win.document.write('<span class="rx-value-sm" style="flex:1;">' + escapeHtml(displayId) + '</span>');
             win.document.write('</div>');
             

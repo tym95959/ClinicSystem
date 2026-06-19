@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Medical Certificate - Hope Dental</title>
+    <title>Medical Certificate - Hope Dental Care</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -79,9 +79,112 @@
         .modal-content { background: white; padding: 24px; border-radius: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
         
+        /* ====== MEDICAL CERTIFICATE PRINT STYLES ====== */
+        .mc-print-header {
+            text-align: center;
+            border-bottom: 2px solid #0a2f44;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+        .mc-print-header h1 {
+            color: #0a2f44;
+            font-size: 26px;
+            margin: 5px 0;
+            letter-spacing: 1px;
+        }
+        .mc-print-header .sub {
+            color: #5f7f9a;
+            font-size: 12px;
+            margin: 2px 0;
+        }
+        .mc-print-header .contact {
+            color: #5f7f9a;
+            font-size: 11px;
+        }
+        .mc-print-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #0a2f44;
+            margin: 15px 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .mc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        .mc-table td {
+            padding: 8px 10px;
+            border: 1px solid #1e2a36;
+            vertical-align: middle;
+        }
+        .mc-table .label {
+            font-weight: 600;
+            color: #0a2f44;
+            background: #f8fbfe;
+            width: 35%;
+        }
+        .mc-table .value {
+            width: 65%;
+        }
+        .mc-table .value-input {
+            min-height: 30px;
+            padding: 4px 8px;
+        }
+        .mc-diagnosis-box {
+            min-height: 80px;
+            padding: 8px;
+            line-height: 1.6;
+        }
+        .mc-footer {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+        }
+        .mc-doctor-sign {
+            text-align: right;
+        }
+        .mc-doctor-sign .name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .mc-doctor-sign .title {
+            font-size: 12px;
+            color: #666;
+        }
+        .mc-doctor-sign .sign-line {
+            margin-top: 20px;
+            border-top: 1px solid #1e2a36;
+            width: 200px;
+            display: inline-block;
+        }
+        .mc-stamp {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #0a2f44;
+            border: 1px dashed #0a2f44;
+            padding: 6px 15px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+        .mc-note {
+            font-size: 11px;
+            color: #8ba0b0;
+            margin-top: 8px;
+        }
+        
         @media (max-width: 768px) {
             .patient-badge { flex-direction: column; text-align: center; }
             .certificate-item { flex-direction: column; text-align: center; }
+            .mc-table td { display: block; width: 100%; border: none; border-bottom: 1px solid #ddd; }
+            .mc-table .label { background: #f0f6fc; font-weight: 700; }
+            .mc-doctor-sign .sign-line { width: 100%; }
         }
     </style>
 </head>
@@ -274,7 +377,7 @@
             }
         }
 
-        // ========== PRINT CERTIFICATE ==========
+        // ========== PRINT CERTIFICATE - MATCHING PDF FORMAT ==========
         window.printCertificate = function(id) {
             var cert = null;
             for (var i = 0; i < certificatesArray.length; i++) {
@@ -285,26 +388,101 @@
             }
             if (!cert) return;
             
+            printMC(cert);
+        };
+
+        function printMC(cert) {
             var win = window.open('', '_blank');
-            win.document.write('<!DOCTYPE html><html><head><title>Medical Certificate - Hope Dental Clinic</title><style>body { font-family: "Times New Roman", serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; } .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; } .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; } .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; } .header img { height: 70px; margin-bottom: 10px; } .certificate-title { text-align: center; font-size: 24px; font-weight: bold; color: #0a2f44; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px; } .certificate-box { border: 2px solid #0a2f44; padding: 25px; margin: 20px 0; border-radius: 8px; min-height: 200px; } .info-row { display: flex; margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #eee; } .info-label { font-weight: bold; width: 150px; color: #0a2f44; } .info-value { flex: 1; } .diagnosis-text { font-size: 16px; line-height: 1.6; margin: 15px 0; padding: 10px; background: #f8fbfe; border-radius: 8px; } .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; } .doctor-signature { text-align: right; } .doctor-signature .name { font-weight: bold; font-size: 16px; } .doctor-signature .title { color: #666; font-size: 12px; } .stamp-area { text-align: center; margin: 20px 0; } .stamp-area .stamp { font-size: 14px; color: #0a2f44; border: 2px solid #0a2f44; padding: 8px 20px; border-radius: 50px; display: inline-block; }</style></head><body>');
-            win.document.write('<div class="header"><img src="hope1.png" alt="Hope Dental Clinic"><h1>Hope Dental Clinic</h1><p>📞 +960 123-4567 | 📧 info@hopedental.mv</p><p>🏥 Malé, Republic of Maldives</p></div>');
-            win.document.write('<div class="certificate-title">Medical Certificate</div>');
-            win.document.write('<div class="certificate-box"><div class="info-row"><div class="info-label">Patient Name:</div><div class="info-value">' + escapeHtml(selectedPatient.name) + '</div></div>');
-            win.document.write('<div class="info-row"><div class="info-label">Date of Issue:</div><div class="info-value">' + new Date(cert.issuedAt).toLocaleDateString() + '</div></div>');
-            win.document.write('<div class="info-row"><div class="info-label">Attending Doctor:</div><div class="info-value">Dr. ' + escapeHtml(currentDoctor.name) + '</div></div>');
-            win.document.write('<div class="diagnosis-text"><strong>Diagnosis:</strong><br>' + escapeHtml(cert.diagnosisSummary) + '</div>');
-            if (cert.recommendedRest) {
-                win.document.write('<div class="info-row"><div class="info-label">Recommended Rest:</div><div class="info-value"><strong>' + escapeHtml(cert.recommendedRest) + '</strong></div></div>');
-            }
-            if (cert.remarks) {
-                win.document.write('<div class="info-row"><div class="info-label">Remarks:</div><div class="info-value">' + escapeHtml(cert.remarks) + '</div></div>');
-            }
-            win.document.write('</div><div class="stamp-area"><div class="stamp">🔄 This certificate is valid for the period specified</div></div>');
-            win.document.write('<div class="footer"><div style="font-size: 12px; color: #666;"><p>📋 This certificate is issued for medical purposes</p><p>⚠️ Please present this certificate to your employer/insurance provider</p></div><div class="doctor-signature"><div class="name">Dr. ' + escapeHtml(currentDoctor.name) + '</div><div class="title">' + escapeHtml(currentDoctor.speciality) + '</div><div style="margin-top: 15px;">_________________________</div><div style="font-size: 12px; color: #666;">Signature &amp; Clinic Stamp</div></div></div>');
-            win.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };<\/script>');
+            win.document.write('<!DOCTYPE html><html><head><title>Medical Certificate - Hope Dental Care</title><style>');
+            win.document.write('body { font-family: "Times New Roman", serif; padding: 1.2cm; max-width: 800px; margin: 0 auto; }');
+            win.document.write('.mc-header { text-align: center; border-bottom: 2px solid #0a2f44; padding-bottom: 10px; margin-bottom: 12px; }');
+            win.document.write('.mc-header h1 { color: #0a2f44; font-size: 26px; margin: 3px 0; letter-spacing: 1px; }');
+            win.document.write('.mc-header .sub { color: #5f7f9a; font-size: 11px; margin: 2px 0; }');
+            win.document.write('.mc-header .contact { color: #5f7f9a; font-size: 10px; }');
+            win.document.write('.mc-title { text-align: center; font-size: 20px; font-weight: 700; color: #0a2f44; margin: 12px 0; letter-spacing: 3px; text-transform: uppercase; }');
+            win.document.write('.mc-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }');
+            win.document.write('.mc-table td { padding: 6px 8px; border: 1px solid #1e2a36; vertical-align: middle; }');
+            win.document.write('.mc-table .label { font-weight: 600; color: #0a2f44; background: #f8fbfe; width: 35%; }');
+            win.document.write('.mc-table .value { width: 65%; }');
+            win.document.write('.mc-diagnosis { min-height: 60px; padding: 6px; line-height: 1.6; }');
+            win.document.write('.mc-footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: flex-end; }');
+            win.document.write('.mc-doctor { text-align: right; }');
+            win.document.write('.mc-doctor .name { font-weight: 700; font-size: 14px; }');
+            win.document.write('.mc-doctor .title { font-size: 11px; color: #666; }');
+            win.document.write('.mc-doctor .sign-line { margin-top: 15px; border-top: 1px solid #1e2a36; width: 180px; display: inline-block; }');
+            win.document.write('.mc-stamp { text-align: center; margin: 8px 0; font-size: 11px; color: #0a2f44; border: 1px dashed #0a2f44; padding: 4px 12px; border-radius: 50px; display: inline-block; }');
+            win.document.write('.mc-note { font-size: 10px; color: #8ba0b0; margin-top: 6px; }');
+            win.document.write('.mc-logo { max-height: 60px; width: auto; }');
+            win.document.write('</style></head><body>');
+            
+            // Header - Matching PDF
+            win.document.write('<div class="mc-header">');
+            win.document.write('<img src="hope1.png" alt="Hope Dental Care" class="mc-logo" onerror="this.style.display=\'none\';">');
+            win.document.write('<h1>HOPE DENTAL CARE</h1>');
+            win.document.write('<div class="sub">H. Fairy Palace, Abadhah ufaa hingun, Male\', Maldives</div>');
+            win.document.write('<div class="contact">Tel: +960 3001516, +960 7951515 | hopedentalcaremv@gmail.com</div>');
+            win.document.write('</div>');
+            
+            // Title
+            win.document.write('<div class="mc-title">MEDICAL CERTIFICATE</div>');
+            
+            // Certificate Table - Matching PDF format
+            win.document.write('<table class="mc-table">');
+            
+            // Row 1: Patient No, Date
+            win.document.write('<tr><td class="label">Patient No:</td><td class="value">' + escapeHtml(selectedPatient.id || 'N/A') + '</td><td class="label">Date:</td><td class="value">' + new Date(cert.issuedAt).toLocaleDateString() + '</td></tr>');
+            
+            // Row 2: Name, Memo No
+            win.document.write('<tr><td class="label">Name:</td><td class="value">' + escapeHtml(selectedPatient.name) + '</td><td class="label">Memo No:</td><td class="value">' + (cert.memoId || 'N/A') + '</td></tr>');
+            
+            // Row 3: Address, Age
+            win.document.write('<tr><td class="label">Address:</td><td class="value">' + escapeHtml(selectedPatient.address || 'N/A') + '</td><td class="label">Age:</td><td class="value">' + (selectedPatient.age || 'N/A') + '</td></tr>');
+            
+            // Row 4: Sex, National ID No
+            win.document.write('<tr><td class="label">Sex:</td><td class="value">' + (selectedPatient.gender || 'N/A') + '</td><td class="label">National ID No:</td><td class="value">' + escapeHtml(selectedPatient.idNumber || selectedPatient.nationalId || 'N/A') + '</td></tr>');
+            
+            // Row 5: Type of Medical Leave
+            win.document.write('<tr><td class="label" colspan="2">Type of Medical Leave</td><td class="label" colspan="2">Type of leave: MEDICAL</td></tr>');
+            
+            // Row 6: No of Days, Certified Duration
+            win.document.write('<tr><td class="label">No of Days:</td><td class="value">' + escapeHtml(cert.recommendedRest || 'N/A') + '</td><td class="label">Certified Duration: (From)</td><td class="value">' + new Date(cert.issuedAt).toLocaleDateString() + '</td></tr>');
+            
+            // Row 7: Diagnosis
+            win.document.write('<tr><td class="label">Diagnosis:</td><td class="value" colspan="3"><div class="mc-diagnosis">' + escapeHtml(cert.diagnosisSummary) + '</div></td></tr>');
+            
+            // Row 8: Remarks
+            win.document.write('<tr><td class="label">Remarks:</td><td class="value" colspan="3">' + escapeHtml(cert.remarks || '—') + '</td></tr>');
+            
+            // Row 9: Doctor, Signature
+            win.document.write('<tr><td class="label">Doctor:</td><td class="value">Dr. ' + escapeHtml(currentDoctor.name) + ' (' + escapeHtml(currentDoctor.speciality || 'General') + ')</td><td class="label">Signature:</td><td class="value" style="text-align: right;">_________________________</td></tr>');
+            
+            win.document.write('</table>');
+            
+            // Stamp and Notes
+            win.document.write('<div style="text-align: center; margin-top: 10px;">');
+            win.document.write('<div class="mc-stamp">🔄 This certificate is valid for the period specified</div>');
+            win.document.write('</div>');
+            
+            // Footer
+            win.document.write('<div class="mc-footer">');
+            win.document.write('<div style="font-size: 10px; color: #666;">');
+            win.document.write('<p>📋 This certificate is issued for medical purposes</p>');
+            win.document.write('<p>⚠️ Please present this certificate to your employer/insurance provider</p>');
+            win.document.write('</div>');
+            win.document.write('<div class="mc-doctor">');
+            win.document.write('<div class="name">Dr. ' + escapeHtml(currentDoctor.name) + '</div>');
+            win.document.write('<div class="title">' + escapeHtml(currentDoctor.speciality || 'General Practitioner') + '</div>');
+            win.document.write('<div class="sign-line"></div>');
+            win.document.write('<div style="font-size: 10px; color: #666; margin-top: 2px;">Signature &amp; Clinic Stamp</div>');
+            win.document.write('</div>');
+            win.document.write('</div>');
+            
+            win.document.write('<div class="mc-note">This is a computer-generated document. Valid without signature.  |  © Hope Dental Care</div>');
+            
+            win.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1500); };<\/script>');
             win.document.write('</body></html>');
             win.document.close();
-        };
+        }
 
         function printCurrentCertificate() {
             if (!selectedPatient) { alert("Select a patient first."); return; }
@@ -315,28 +493,11 @@
                 diagnosisSummary: diagnosisSummary,
                 recommendedRest: document.getElementById('certRestDays').value,
                 remarks: document.getElementById('certRemarks').value,
-                issuedAt: new Date().toISOString()
+                issuedAt: new Date().toISOString(),
+                memoId: 'N/A'
             };
             
-            var win = window.open('', '_blank');
-            win.document.write('<!DOCTYPE html><html><head><title>Medical Certificate - Hope Dental Clinic</title><style>body { font-family: "Times New Roman", serif; padding: 1.5cm; max-width: 800px; margin: 0 auto; } .header { text-align: center; border-bottom: 3px solid #0a2f44; padding-bottom: 15px; margin-bottom: 20px; } .header h1 { color: #0a2f44; font-size: 28px; margin: 5px 0; } .header p { color: #5f7f9a; margin: 2px 0; font-size: 14px; } .header img { height: 70px; margin-bottom: 10px; } .certificate-title { text-align: center; font-size: 24px; font-weight: bold; color: #0a2f44; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px; } .certificate-box { border: 2px solid #0a2f44; padding: 25px; margin: 20px 0; border-radius: 8px; min-height: 200px; } .info-row { display: flex; margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #eee; } .info-label { font-weight: bold; width: 150px; color: #0a2f44; } .info-value { flex: 1; } .diagnosis-text { font-size: 16px; line-height: 1.6; margin: 15px 0; padding: 10px; background: #f8fbfe; border-radius: 8px; } .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; } .doctor-signature { text-align: right; } .doctor-signature .name { font-weight: bold; font-size: 16px; } .doctor-signature .title { color: #666; font-size: 12px; } .stamp-area { text-align: center; margin: 20px 0; } .stamp-area .stamp { font-size: 14px; color: #0a2f44; border: 2px solid #0a2f44; padding: 8px 20px; border-radius: 50px; display: inline-block; }</style></head><body>');
-            win.document.write('<div class="header"><img src="hope1.png" alt="Hope Dental Clinic"><h1>Hope Dental Clinic</h1><p>📞 +960 123-4567 | 📧 info@hopedental.mv</p><p>🏥 Malé, Republic of Maldives</p></div>');
-            win.document.write('<div class="certificate-title">Medical Certificate</div>');
-            win.document.write('<div class="certificate-box"><div class="info-row"><div class="info-label">Patient Name:</div><div class="info-value">' + escapeHtml(selectedPatient.name) + '</div></div>');
-            win.document.write('<div class="info-row"><div class="info-label">Date of Issue:</div><div class="info-value">' + new Date().toLocaleDateString() + '</div></div>');
-            win.document.write('<div class="info-row"><div class="info-label">Attending Doctor:</div><div class="info-value">Dr. ' + escapeHtml(currentDoctor.name) + '</div></div>');
-            win.document.write('<div class="diagnosis-text"><strong>Diagnosis:</strong><br>' + escapeHtml(cert.diagnosisSummary) + '</div>');
-            if (cert.recommendedRest) {
-                win.document.write('<div class="info-row"><div class="info-label">Recommended Rest:</div><div class="info-value"><strong>' + escapeHtml(cert.recommendedRest) + '</strong></div></div>');
-            }
-            if (cert.remarks) {
-                win.document.write('<div class="info-row"><div class="info-label">Remarks:</div><div class="info-value">' + escapeHtml(cert.remarks) + '</div></div>');
-            }
-            win.document.write('</div><div class="stamp-area"><div class="stamp">🔄 This certificate is valid for the period specified</div></div>');
-            win.document.write('<div class="footer"><div style="font-size: 12px; color: #666;"><p>📋 This certificate is issued for medical purposes</p><p>⚠️ Please present this certificate to your employer/insurance provider</p></div><div class="doctor-signature"><div class="name">Dr. ' + escapeHtml(currentDoctor.name) + '</div><div class="title">' + escapeHtml(currentDoctor.speciality) + '</div><div style="margin-top: 15px;">_________________________</div><div style="font-size: 12px; color: #666;">Signature &amp; Clinic Stamp</div></div></div>');
-            win.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1000); };<\/script>');
-            win.document.write('</body></html>');
-            win.document.close();
+            printMC(cert);
         }
 
         // ========== SAVE CERTIFICATE ==========

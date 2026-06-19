@@ -284,10 +284,116 @@
             display: flex;
             gap: 8px;
             margin-bottom: 12px;
+            flex-wrap: wrap;
         }
 
         .add-service-row .input-group {
             flex: 1;
+            min-width: 200px;
+        }
+
+        /* Service Search Styles */
+        .service-search-wrapper {
+            position: relative;
+        }
+
+        .service-search-input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 2px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .service-search-input:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+            outline: none;
+        }
+
+        .service-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a9aa8;
+            font-size: 14px;
+        }
+
+        .service-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #0f5c7a;
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            margin-top: -2px;
+        }
+
+        .service-search-results.active {
+            display: block;
+        }
+
+        .service-search-result-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f4f9;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .service-search-result-item:hover {
+            background: #f0f8ff;
+        }
+
+        .service-search-result-item .service-name {
+            font-weight: 600;
+            color: #0a2f44;
+            font-size: 13px;
+        }
+
+        .service-search-result-item .service-code {
+            font-size: 11px;
+            color: #0f5c7a;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .service-search-result-item .service-price {
+            font-size: 11px;
+            color: #6c7a89;
+        }
+
+        .service-search-result-item .service-badge {
+            background: #d4edda;
+            color: #155724;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .service-search-result-item .service-badge.not-covered {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .service-search-empty {
+            padding: 20px;
+            text-align: center;
+            color: #8a9aa8;
+            font-size: 13px;
         }
 
         .services-table {
@@ -732,6 +838,9 @@
             .discount-custom-input {
                 flex-wrap: wrap;
             }
+            .service-search-results {
+                max-height: 200px;
+            }
         }
     </style>
 </head>
@@ -823,10 +932,14 @@
         
         <div class="add-service-row">
             <div class="input-group">
-                <label>Select Service (auto-add)</label>
-                <select id="serviceSelectDropdown">
-                    <option value="">-- Loading services... --</option>
-                </select>
+                <label>🔍 Search Service (Name or Code)</label>
+                <div class="service-search-wrapper">
+                    <i class="fas fa-search service-search-icon"></i>
+                    <input type="text" id="serviceSearchInput" class="service-search-input" placeholder="Type to search services by name or code..." autocomplete="off">
+                    <div id="serviceSearchResults" class="service-search-results">
+                        <div class="service-search-empty">Start typing to search services...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -847,7 +960,7 @@
                     </tr>
                 </thead>
                 <tbody id="servicesTbody">
-                    <tr><td colspan="10" style="text-align:center; padding:20px;">Select a service from dropdown to add</td></tr>
+                    <tr><td colspan="10" style="text-align:center; padding:20px;">Search and select a service to add</td></tr>
                 </tbody>
             </table>
         </div>
@@ -969,8 +1082,8 @@
     let selectedPrimaryInsurance = null;
     let selectedDiscountPercent = 0;
     let selectedDiscountFixed = 0;
-    let discountType = "percent"; // "percent" or "fixed"
-    let discountMode = "preset"; // "preset" or "custom"
+    let discountType = "percent";
+    let discountMode = "preset";
     let selectedInsurancePercent = 0;
     let selectedInsuranceFixed = 0;
     let insuranceType = "percent";
@@ -980,6 +1093,7 @@
     let selectedPaymentMethod = null;
     let cashGivenAmount = 0;
     let searchTimeout = null;
+    let serviceSearchTimeout = null;
     let savedMemoData = null;
     
     // Insurance names that cover 100% of all services
@@ -1127,6 +1241,108 @@
         }
         calculateBilling();
         showMessage(`✅ Patient selected: ${patient.name}`, "success");
+    }
+    
+    // ========== SERVICE SEARCH FUNCTIONALITY ==========
+    function searchServices(query) {
+        if (!query || query.length < 1) {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+            return;
+        }
+        
+        const resultsContainer = document.getElementById('serviceSearchResults');
+        const lowerQuery = query.toLowerCase().trim();
+        
+        const results = servicesList.filter(s => {
+            const name = (s.name || '').toLowerCase();
+            const code = (s.code || '').toLowerCase();
+            return name.includes(lowerQuery) || code.includes(lowerQuery);
+        });
+        
+        resultsContainer.innerHTML = '';
+        
+        if (results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="service-search-empty">
+                    <i class="fas fa-plus-circle" style="margin-right: 8px;"></i>
+                    No services found. Please check the service name or code.
+                </div>
+            `;
+            resultsContainer.classList.add('active');
+            return;
+        }
+        
+        const displayResults = results.slice(0, 10);
+        displayResults.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'service-search-result-item';
+            const isCovered = s.aasandhaCoverAmount > 0;
+            const badgeClass = isCovered ? '' : 'not-covered';
+            const badgeText = isCovered ? '✅ Aasandha' : '❌ No Cover';
+            
+            div.innerHTML = `
+                <div>
+                    <div class="service-name">${escapeHtml(s.name)}</div>
+                    <div class="service-code">${escapeHtml(s.code || '—')}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="service-price">MVR ${s.price}</div>
+                    <span class="service-badge ${badgeClass}">${badgeText}</span>
+                </div>
+            `;
+            
+            div.addEventListener('click', () => {
+                // Add service directly from search result
+                addService(s);
+                document.getElementById('serviceSearchInput').value = '';
+                document.getElementById('serviceSearchResults').classList.remove('active');
+            });
+            
+            div.addEventListener('mouseenter', () => {
+                div.style.background = '#e0f2fe';
+            });
+            div.addEventListener('mouseleave', () => {
+                div.style.background = 'transparent';
+            });
+            
+            resultsContainer.appendChild(div);
+        });
+        
+        if (results.length > 10) {
+            const moreDiv = document.createElement('div');
+            moreDiv.className = 'service-search-empty';
+            moreDiv.style.padding = '8px';
+            moreDiv.style.fontSize = '11px';
+            moreDiv.style.color = '#8a9aa8';
+            moreDiv.textContent = `+ ${results.length - 10} more services...`;
+            resultsContainer.appendChild(moreDiv);
+        }
+        
+        resultsContainer.classList.add('active');
+    }
+    
+    function addService(service) {
+        const price = service.price;
+        const aasandhaCoverAmt = service.aasandhaCoverAmount || 0;
+        const code = service.code || '';
+        const serviceTotal = price;
+        const svc = { name: service.name, aasandhaCoverAmount: aasandhaCoverAmt };
+        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, svc);
+        
+        selectedServices.push({
+            id: Date.now(),
+            code: code,
+            name: service.name,
+            qty: 1,
+            price: price,
+            aasandhaCoverAmount: aasandhaCoverAmt,
+            primaryInsuranceAmount: primaryAmount,
+            aasandhaAmount: aasandhaAmount
+        });
+        
+        renderServices();
+        calculateBilling();
+        showMessage(`Added ${service.name}`, "success");
     }
     
     // ========== SEQUENTIAL MEMO NUMBER GENERATOR ==========
@@ -1377,38 +1593,9 @@
         }
         
         if (apt.serviceId || apt.serviceName) {
-            const serviceSelect = document.getElementById('serviceSelectDropdown');
-            let serviceFound = false;
-            for (let i = 0; i < serviceSelect.options.length; i++) {
-                const opt = serviceSelect.options[i];
-                if ((apt.serviceId && opt.value === apt.serviceId) || (apt.serviceName && opt.text.includes(apt.serviceName))) {
-                    serviceSelect.selectedIndex = i;
-                    serviceFound = true;
-                    break;
-                }
-            }
-            if (serviceFound) {
-                addServiceFromDropdown();
-            } else if (apt.serviceName) {
-                const service = servicesList.find(s => s.name === apt.serviceName);
-                if (service) {
-                    const price = service.price;
-                    const serviceTotal = price;
-                    const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
-                    selectedServices.push({
-                        id: Date.now(),
-                        code: service.code || '',
-                        name: service.name,
-                        qty: 1,
-                        price: price,
-                        aasandhaCoverAmount: service.aasandhaCoverAmount || 0,
-                        primaryInsuranceAmount: primaryAmount,
-                        aasandhaAmount: aasandhaAmount
-                    });
-                    renderServices();
-                    calculateBilling();
-                    showMessage(`Added service: ${service.name} from appointment`, "success");
-                }
+            const service = servicesList.find(s => s.id === apt.serviceId || s.name === apt.serviceName);
+            if (service) {
+                addService(service);
             }
         }
         
@@ -1457,16 +1644,7 @@
                     aasandhaCoverAmount: data.aasandhaCoverAmount || 0 
                 };
             });
-            const serviceSelect = document.getElementById('serviceSelectDropdown');
-            if (servicesList.length === 0) serviceSelect.innerHTML = '<option value="">-- No Services Found --</option>';
-            else {
-                serviceSelect.innerHTML = '<option value="">-- Select Service --</option>';
-                servicesList.forEach(s => {
-                    const coverBadge = s.aasandhaCoverAmount > 0 ? '✅' : '❌';
-                    const codeDisplay = s.code ? `[${s.code}] ` : '';
-                    serviceSelect.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-code="${s.code || ''}" data-price="${s.price}" data-aasandha-amt="${s.aasandhaCoverAmount}">${codeDisplay}${s.name} - MVR ${s.price} ${coverBadge}</option>`;
-                });
-            }
+            console.log(`Loaded ${servicesList.length} services`);
         } catch (error) { console.error(error); }
     }
     
@@ -1606,7 +1784,6 @@
         displayAmount.textContent = `- MVR ${discountAmount.toFixed(2)}`;
         displayAmount.style.color = discountAmount > 0 ? '#d9534f' : '#0a2f44';
         
-        // Update hidden fields for billing
         selectedDiscountPercent = type === 'percent' ? value : 0;
         selectedDiscountFixed = type === 'fixed' ? value : 0;
     }
@@ -1614,7 +1791,7 @@
     function renderServices() {
         const tbody = document.getElementById('servicesTbody');
         if (!selectedServices.length) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:16px;">No services added. Select from dropdown to add</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:16px;">No services added. Search and select a service to add</td></tr>';
             return;
         }
         
@@ -1730,37 +1907,9 @@
     
     window.removeService = (idx) => { selectedServices.splice(idx,1); renderServices(); calculateBilling(); };
     
-    function addServiceFromDropdown() {
-        const select = document.getElementById('serviceSelectDropdown');
-        const opt = select.selectedOptions[0];
-        if (!opt || !opt.value) return;
-        const price = parseFloat(opt.dataset.price);
-        const aasandhaCoverAmt = parseFloat(opt.dataset.aasandhaAmt) || 0;
-        const code = opt.dataset.code || '';
-        const serviceTotal = price;
-        const service = { name: opt.dataset.name, aasandhaCoverAmount: aasandhaCoverAmt };
-        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
-        
-        selectedServices.push({
-            id: Date.now(),
-            code: code,
-            name: opt.dataset.name,
-            qty: 1,
-            price: price,
-            aasandhaCoverAmount: aasandhaCoverAmt,
-            primaryInsuranceAmount: primaryAmount,
-            aasandhaAmount: aasandhaAmount
-        });
-        select.value = "";
-        renderServices();
-        calculateBilling();
-        showMessage(`Added ${opt.dataset.name}`, "success");
-    }
-    
     function calculateBilling() {
         const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
         
-        // Calculate discount
         const { value, type } = getDiscountValue();
         let discAmount = 0;
         if (type === 'percent') {
@@ -1881,206 +2030,199 @@
     }
     
     // ========== SAVE MEMO ==========
-    // ========== SAVE MEMO ==========
-async function saveToFirebase() {
-    const patientId = document.getElementById('patientId').value.trim();
-    const patientName = document.getElementById('patientName').value.trim();
-    const contactNo = document.getElementById('contactNo').value.trim();
-    const nationality = document.getElementById('patientNationality').value.trim();
-    const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
-    const dob = document.getElementById('patientDob').value.trim();
-    
-    if (!selectedPatient && patientId && patientName) {
-        selectedPatient = {
-            id: patientId,
-            name: patientName,
-            phone: contactNo,
-            nationality: nationality,
-            isCitizen: isCitizen,
-            dob: dob
-        };
-    }
-    
-    if (!selectedPatient) { 
-        showMessage("Please search and select a patient", "error"); 
-        return; 
-    }
-    if (!selectedDoctor) { 
-        showMessage("Please select a doctor", "error"); 
-        return; 
-    }
-    if (!selectedServices.length) { 
-        showMessage("Please add at least one service", "error"); 
-        return; 
-    }
-    
-    const selectedPaymentOption = document.getElementById('paymentMethodSelect');
-    const selectedPaymentId = selectedPaymentOption.value;
-    const selectedPaymentName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
-    
-    if (!selectedPaymentId) { showMessage("Please select a payment method", "error"); return; }
-    
-    const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML);
-    let paidAmount = 0;
-    let changeAmount = 0;
-    let paymentDetails = {};
-    
-    if (selectedPaymentName === 'Cash') {
-        cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
-        paidAmount = cashGivenAmount;
-        changeAmount = Math.max(0, paidAmount - patientPayable);
-        if (paidAmount < patientPayable) {
-            showMessage(`Cash given (MVR ${paidAmount.toFixed(2)}) is less than patient payable (MVR ${patientPayable.toFixed(2)})`, "error");
+    async function saveToFirebase() {
+        const patientId = document.getElementById('patientId').value.trim();
+        const patientName = document.getElementById('patientName').value.trim();
+        const contactNo = document.getElementById('contactNo').value.trim();
+        const nationality = document.getElementById('patientNationality').value.trim();
+        const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
+        const dob = document.getElementById('patientDob').value.trim();
+        
+        if (!selectedPatient && patientId && patientName) {
+            selectedPatient = {
+                id: patientId,
+                name: patientName,
+                phone: contactNo,
+                nationality: nationality,
+                isCitizen: isCitizen,
+                dob: dob
+            };
+        }
+        
+        if (!selectedPatient) { 
+            showMessage("Please search and select a patient", "error"); 
+            return; 
+        }
+        if (!selectedDoctor) { 
+            showMessage("Please select a doctor", "error"); 
+            return; 
+        }
+        if (!selectedServices.length) { 
+            showMessage("Please add at least one service", "error"); 
+            return; 
+        }
+        
+        const selectedPaymentOption = document.getElementById('paymentMethodSelect');
+        const selectedPaymentId = selectedPaymentOption.value;
+        const selectedPaymentName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
+        
+        if (!selectedPaymentId) { showMessage("Please select a payment method", "error"); return; }
+        
+        const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML);
+        let paidAmount = 0;
+        let changeAmount = 0;
+        let paymentDetails = {};
+        
+        if (selectedPaymentName === 'Cash') {
+            cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
+            paidAmount = cashGivenAmount;
+            changeAmount = Math.max(0, paidAmount - patientPayable);
+            if (paidAmount < patientPayable) {
+                showMessage(`Cash given (MVR ${paidAmount.toFixed(2)}) is less than patient payable (MVR ${patientPayable.toFixed(2)})`, "error");
+                return;
+            }
+            paymentDetails = {
+                method: 'Cash',
+                methodId: selectedPaymentId,
+                givenAmount: paidAmount,
+                changeAmount: changeAmount,
+                patientPayable: patientPayable
+            };
+        } else {
+            paidAmount = patientPayable;
+            changeAmount = 0;
+            paymentDetails = {
+                method: selectedPaymentName,
+                methodId: selectedPaymentId,
+                givenAmount: paidAmount,
+                changeAmount: 0,
+                patientPayable: patientPayable
+            };
+        }
+        
+        const insuranceArray = [];
+        if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
+            const isFullCover = isFullCoverInsurance(selectedPrimaryInsurance.name);
+            insuranceArray.push({
+                name: selectedPrimaryInsurance.name,
+                type: insuranceType,
+                value: insuranceType === "percent" ? selectedInsurancePercent : selectedInsuranceFixed,
+                amount: currentPrimaryInsurancePayment,
+                priority: "primary",
+                fullCover: isFullCover
+            });
+        }
+        if (selectedPatient.isCitizen && currentAasandhaPayment > 0) {
+            insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
+        }
+        
+        const { value: discountValue, type: discountTypeValue } = getDiscountValue();
+        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        let discountAmount = 0;
+        if (discountTypeValue === 'percent') {
+            discountAmount = (subtotal * discountValue) / 100;
+        } else {
+            discountAmount = Math.min(discountValue, subtotal);
+        }
+        
+        let memoNumber;
+        try {
+            memoNumber = await getNextMemoNumber();
+        } catch (err) {
+            showMessage("Failed to generate memo number: " + err.message, "error");
             return;
         }
-        paymentDetails = {
-            method: 'Cash',
-            methodId: selectedPaymentId,
-            givenAmount: paidAmount,
-            changeAmount: changeAmount,
-            patientPayable: patientPayable
-        };
-    } else {
-        paidAmount = patientPayable;
-        changeAmount = 0;
-        paymentDetails = {
-            method: selectedPaymentName,
-            methodId: selectedPaymentId,
-            givenAmount: paidAmount,
-            changeAmount: 0,
-            patientPayable: patientPayable
-        };
-    }
-    
-    const insuranceArray = [];
-    if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
-        const isFullCover = isFullCoverInsurance(selectedPrimaryInsurance.name);
-        insuranceArray.push({
-            name: selectedPrimaryInsurance.name,
-            type: insuranceType,
-            value: insuranceType === "percent" ? selectedInsurancePercent : selectedInsuranceFixed,
-            amount: currentPrimaryInsurancePayment,
-            priority: "primary",
-            fullCover: isFullCover
-        });
-    }
-    if (selectedPatient.isCitizen && currentAasandhaPayment > 0) {
-        insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
-    }
-    
-    // Get discount details
-    const { value: discountValue, type: discountTypeValue } = getDiscountValue();
-    const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
-    let discountAmount = 0;
-    if (discountTypeValue === 'percent') {
-        discountAmount = (subtotal * discountValue) / 100;
-    } else {
-        discountAmount = Math.min(discountValue, subtotal);
-    }
-    
-    let memoNumber;
-    try {
-        memoNumber = await getNextMemoNumber();
-    } catch (err) {
-        showMessage("Failed to generate memo number: " + err.message, "error");
-        return;
-    }
-    const memoId = memoNumber.toString();
-    
-    const memoData = {
-        memoId: memoId,
-        date: new Date().toLocaleString(),
-        timestamp: new Date().toISOString(),
-        patient: {
-            id: selectedPatient.id || patientId || "",
-            name: selectedPatient.name || patientName || "",
-            phone: selectedPatient.phone || contactNo || "",
-            nationality: selectedPatient.nationality || nationality || "",
-            isCitizen: selectedPatient.isCitizen || isCitizen || false,
-            idNumber: selectedPatient.idNumber || patientId || "",
-            passportNumber: selectedPatient.passportNumber || "",
-            nationalId: selectedPatient.nationalId || "",
-            dob: selectedPatient.dob || dob || ""
-        },
-        doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
-        insurances: insuranceArray,
-        services: selectedServices.map(s => ({
-            code: s.code || '',
-            name: s.name, 
-            qty: s.qty, 
-            price: s.price,
-            total: s.qty * s.price,
-            aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
-            primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
-            aasandhaAmount: s.aasandhaAmount || 0,
-            patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0))
-        })),
-        discount: {
-            type: discountTypeValue,
-            value: discountValue,
-            amount: discountAmount,
-            mode: discountMode,
-            reason: discountMode === 'preset' ? 
-                (document.getElementById('discountPresetSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None") : 
-                "Custom Discount"
-        },
-        billing: {
-            subtotal: subtotal || 0,
-            afterDiscount: subtotal - discountAmount || 0,
-            primaryInsurancePayment: currentPrimaryInsurancePayment,
-            aasandhaPayment: currentAasandhaPayment,
-            totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
-            patientPayable: patientPayable || 0,
-            paid: paidAmount || 0,
-            change: changeAmount || 0,
-            balance: (patientPayable - paidAmount) || 0
-        },
-        payment: paymentDetails,
-        linkedAppointmentId: selectedAppointmentId || null,
-        status: "completed",
-        createdBy: JSON.parse(loggedInUser).username || "unknown",
-        createdAt: new Date().toISOString()
-    };
-    
-    try {
-        const saveBtn = document.getElementById('saveMemoBtn');
-        saveBtn.textContent = "⏳ Saving...";
-        saveBtn.disabled = true;
-        const docRef = await window.db.collection("memos").add(memoData);
-        memoData.firebaseId = docRef.id;
-        localStorage.setItem('printMemoData', JSON.stringify(memoData));
+        const memoId = memoNumber.toString();
         
-        if (selectedAppointmentId) {
-            const deleted = await deleteLinkedAppointment();
-            if (deleted) {
-                showMessage("✅ Linked appointment deleted", "success");
-                document.getElementById('appointmentBadge').style.display = 'none';
+        const memoData = {
+            memoId: memoId,
+            date: new Date().toLocaleString(),
+            timestamp: new Date().toISOString(),
+            patient: {
+                id: selectedPatient.id || patientId || "",
+                name: selectedPatient.name || patientName || "",
+                phone: selectedPatient.phone || contactNo || "",
+                nationality: selectedPatient.nationality || nationality || "",
+                isCitizen: selectedPatient.isCitizen || isCitizen || false,
+                idNumber: selectedPatient.idNumber || patientId || "",
+                passportNumber: selectedPatient.passportNumber || "",
+                nationalId: selectedPatient.nationalId || "",
+                dob: selectedPatient.dob || dob || ""
+            },
+            doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
+            insurances: insuranceArray,
+            services: selectedServices.map(s => ({
+                code: s.code || '',
+                name: s.name, 
+                qty: s.qty, 
+                price: s.price,
+                total: s.qty * s.price,
+                aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
+                primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
+                aasandhaAmount: s.aasandhaAmount || 0,
+                patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0))
+            })),
+            discount: {
+                type: discountTypeValue,
+                value: discountValue,
+                amount: discountAmount,
+                mode: discountMode,
+                reason: discountMode === 'preset' ? 
+                    (document.getElementById('discountPresetSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None") : 
+                    "Custom Discount"
+            },
+            billing: {
+                subtotal: subtotal || 0,
+                afterDiscount: subtotal - discountAmount || 0,
+                primaryInsurancePayment: currentPrimaryInsurancePayment,
+                aasandhaPayment: currentAasandhaPayment,
+                totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
+                patientPayable: patientPayable || 0,
+                paid: paidAmount || 0,
+                change: changeAmount || 0,
+                balance: (patientPayable - paidAmount) || 0
+            },
+            payment: paymentDetails,
+            linkedAppointmentId: selectedAppointmentId || null,
+            status: "completed",
+            createdBy: JSON.parse(loggedInUser).username || "unknown",
+            createdAt: new Date().toISOString()
+        };
+        
+        try {
+            const saveBtn = document.getElementById('saveMemoBtn');
+            saveBtn.textContent = "⏳ Saving...";
+            saveBtn.disabled = true;
+            const docRef = await window.db.collection("memos").add(memoData);
+            memoData.firebaseId = docRef.id;
+            localStorage.setItem('printMemoData', JSON.stringify(memoData));
+            
+            if (selectedAppointmentId) {
+                const deleted = await deleteLinkedAppointment();
+                if (deleted) {
+                    showMessage("✅ Linked appointment deleted", "success");
+                    document.getElementById('appointmentBadge').style.display = 'none';
+                }
             }
+            
+            savedMemoData = memoData;
+            showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
+            
+            setTimeout(() => {
+                localStorage.setItem('autoPrintMemoId', memoId);
+                window.location.href = `print-memo.html?memoId=${memoId}`;
+            }, 1500);
+            
+        } catch (error) {
+            console.error(error);
+            showMessage("❌ Failed to save: " + error.message, "error");
+            const saveBtn = document.getElementById('saveMemoBtn');
+            saveBtn.textContent = "💾 Save Memo";
+            saveBtn.disabled = false;
         }
-        
-        savedMemoData = memoData;
-        showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
-        
-        // ========== REDIRECT TO PRINT-MEMO.HTML ==========
-        setTimeout(() => {
-            // Store the memo ID for printing
-            localStorage.setItem('autoPrintMemoId', memoId);
-            // Redirect directly to print-memo.html with the memo ID
-            window.location.href = `print-memo.html?memoId=${memoId}`;
-        }, 1500);
-        
-    } catch (error) {
-        console.error(error);
-        showMessage("❌ Failed to save: " + error.message, "error");
-        const saveBtn = document.getElementById('saveMemoBtn');
-        saveBtn.textContent = "💾 Save Memo";
-        saveBtn.disabled = false;
     }
-}
-
-
+    
     // ========== DISCOUNT EVENT LISTENERS ==========
-    // Toggle between preset and custom discount
     document.getElementById('discountPresetBtn').addEventListener('click', function() {
         discountMode = 'preset';
         document.getElementById('discountPresetBtn').classList.add('active');
@@ -2099,7 +2241,6 @@ async function saveToFirebase() {
         calculateBilling();
     });
     
-    // Toggle between percentage and fixed for custom discount
     document.getElementById('discountPercentBtn').addEventListener('click', function() {
         discountType = 'percent';
         document.getElementById('discountPercentBtn').classList.add('active');
@@ -2118,7 +2259,6 @@ async function saveToFirebase() {
         calculateBilling();
     });
     
-    // Preset discount change
     document.getElementById('discountPresetSelect').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const type = selectedOption?.dataset?.type || 'percent';
@@ -2130,9 +2270,34 @@ async function saveToFirebase() {
         calculateBilling();
     });
     
-    // Custom discount value change
     document.getElementById('customDiscountValue').addEventListener('input', function() {
         calculateBilling();
+    });
+    
+    // ========== SERVICE SEARCH EVENT LISTENERS ==========
+    document.getElementById('serviceSearchInput').addEventListener('input', function(e) {
+        clearTimeout(serviceSearchTimeout);
+        const query = this.value;
+        if (query.length < 1) {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+            return;
+        }
+        serviceSearchTimeout = setTimeout(() => {
+            searchServices(query);
+        }, 300);
+    });
+    
+    document.addEventListener('click', function(e) {
+        const wrapper = document.querySelector('.service-search-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+        }
+    });
+    
+    document.getElementById('serviceSearchInput').addEventListener('blur', function() {
+        setTimeout(() => {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+        }, 200);
     });
     
     // ========== EVENT LISTENERS ==========
@@ -2174,8 +2339,6 @@ async function saveToFirebase() {
             `;
         } else { selectedDoctor = null; document.getElementById('selectedDoctorCard').style.display = 'none'; }
     });
-    
-    document.getElementById('serviceSelectDropdown').addEventListener('change', (e) => { if (e.target.value) addServiceFromDropdown(); });
     
     document.getElementById('otherInsuranceSelect').addEventListener('change', (e) => {
         const opt = e.target.selectedOptions[0];

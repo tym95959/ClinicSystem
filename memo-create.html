@@ -13,6 +13,7 @@
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <style>
+        /* ====== ALL EXISTING STYLES REMAIN ====== */
         * {
             margin: 0;
             padding: 0;
@@ -80,6 +81,10 @@
             margin-bottom: 12px;
             border-left: 3px solid #0f5c7a;
             padding-left: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .form-grid {
@@ -395,6 +400,69 @@
             font-size: 13px;
         }
 
+        /* ====== MOST USED SERVICES STYLES ====== */
+        .most-used-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8fbfe;
+            border-radius: 12px;
+            border: 1px solid #e2eaf0;
+        }
+
+        .most-used-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #1f5e7e;
+            margin-right: 6px;
+        }
+
+        .most-used-btn {
+            background: white;
+            border: 1px solid #cbdde9;
+            padding: 3px 10px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            color: #0a2f44;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .most-used-btn:hover {
+            background: #e0f2fe;
+            border-color: #0f5c7a;
+            transform: translateY(-1px);
+        }
+
+        .most-used-btn .code-tag {
+            font-size: 8px;
+            color: #0f5c7a;
+            font-family: monospace;
+            background: #e8f0fe;
+            padding: 0px 4px;
+            border-radius: 4px;
+        }
+
+        .most-used-btn .price-tag {
+            font-size: 8px;
+            color: #6c7a89;
+        }
+
+        .most-used-empty {
+            font-size: 10px;
+            color: #8ba0b0;
+            font-style: italic;
+        }
+
+        /* ====== EXISTING SERVICES TABLE STYLES ====== */
         .services-table {
             width: 100%;
             border-collapse: collapse;
@@ -469,7 +537,6 @@
             background: #ffc9c9;
         }
 
-        /* Service Discount Button & Input */
         .service-discount-toggle {
             background: none;
             border: 1px solid #cbdde9;
@@ -869,6 +936,13 @@
             .service-search-results {
                 max-height: 200px;
             }
+            .most-used-services {
+                padding: 6px 10px;
+            }
+            .most-used-btn {
+                font-size: 9px;
+                padding: 2px 8px;
+            }
         }
     </style>
 </head>
@@ -970,6 +1044,12 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- ====== MOST USED SERVICES QUICK SELECT ====== -->
+        <div class="most-used-services" id="mostUsedServices">
+            <span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>
+            <span class="most-used-empty">Loading most used services...</span>
         </div>
 
         <div style="overflow-x: auto;">
@@ -1126,6 +1206,7 @@
     let searchTimeout = null;
     let serviceSearchTimeout = null;
     let savedMemoData = null;
+    let mostUsedServices = [];
     
     // Insurance names that cover 100% of all services
     const FULL_COVER_INSURANCES = ['MNDF', 'POLICE', 'MNDF Insurance', 'POLICE Insurance'];
@@ -1156,6 +1237,93 @@
     
     function isAasandhaCovered(service) {
         return service && service.aasandhaCoverAmount > 0;
+    }
+    
+    // ========== MOST USED SERVICES ==========
+    async function loadMostUsedServices() {
+        if (!window.db) return;
+        try {
+            // Get all memos
+            const snapshot = await window.db.collection("memos").get();
+            const memos = snapshot.docs.map(doc => doc.data());
+            
+            // Count service usage
+            const serviceCount = {};
+            memos.forEach(memo => {
+                const services = memo.services || [];
+                services.forEach(s => {
+                    const key = s.name;
+                    if (serviceCount[key]) {
+                        serviceCount[key].count += 1;
+                    } else {
+                        serviceCount[key] = {
+                            name: s.name,
+                            code: s.code || '',
+                            price: s.price || 0,
+                            count: 1
+                        };
+                    }
+                });
+            });
+            
+            // Sort by count descending and get top 5
+            const sorted = Object.values(serviceCount).sort((a, b) => b.count - a.count);
+            mostUsedServices = sorted.slice(0, 5);
+            
+            renderMostUsedServices();
+        } catch (error) {
+            console.error("Error loading most used services:", error);
+            document.getElementById('mostUsedServices').innerHTML = `
+                <span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>
+                <span class="most-used-empty">Unable to load most used services</span>
+            `;
+        }
+    }
+    
+    function renderMostUsedServices() {
+        const container = document.getElementById('mostUsedServices');
+        if (mostUsedServices.length === 0) {
+            container.innerHTML = `
+                <span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>
+                <span class="most-used-empty">No services used yet. Start adding services!</span>
+            `;
+            return;
+        }
+        
+        let html = `<span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>`;
+        mostUsedServices.forEach(s => {
+            const codeDisplay = s.code ? `<span class="code-tag">${escapeHtml(s.code)}</span>` : '';
+            html += `
+                <button class="most-used-btn" data-service-name="${escapeHtml(s.name)}" data-service-price="${s.price}" data-service-code="${escapeHtml(s.code || '')}" onclick="addMostUsedService(this)">
+                    ${escapeHtml(s.name)} ${codeDisplay}
+                    <span class="price-tag">MVR ${s.price}</span>
+                </button>
+            `;
+        });
+        container.innerHTML = html;
+    }
+    
+    function addMostUsedService(btn) {
+        const name = btn.getAttribute('data-service-name');
+        const price = parseFloat(btn.getAttribute('data-service-price'));
+        const code = btn.getAttribute('data-service-code') || '';
+        
+        // Find the full service in servicesList
+        const service = servicesList.find(s => s.name === name);
+        if (service) {
+            addService(service);
+        } else {
+            // If not found in servicesList, create a temporary service
+            const tempService = {
+                id: Date.now(),
+                code: code,
+                name: name,
+                price: price,
+                aasandhaCoverAmount: 0,
+                aasandhaCovered: false
+            };
+            addService(tempService);
+        }
     }
     
     // ========== PATIENT SEARCH FUNCTIONALITY ==========
@@ -1394,7 +1562,6 @@
     function updateServiceDiscount(idx, value) {
         const discount = parseFloat(value) || 0;
         selectedServices[idx].discountPercent = discount;
-        // Calculate discount amount based on service total
         const serviceTotal = selectedServices[idx].qty * selectedServices[idx].price;
         selectedServices[idx].discountAmount = (serviceTotal * discount) / 100;
         renderServices();
@@ -1734,6 +1901,8 @@
     async function loadAllData() {
         if (!window.db) { setTimeout(loadAllData, 500); return; }
         await Promise.all([loadPatients(), loadDoctors(), loadServices(), loadInsurance(), loadDiscounts(), loadAppointments(), loadPaymentMethods()]);
+        // Load most used services after services are loaded
+        await loadMostUsedServices();
         showMessage(`Loaded ${patientsList.length} patients, ${doctorsList.length} doctors, ${servicesList.length} services`, "success");
     }
     
@@ -1861,7 +2030,6 @@
             const primaryInsAmount = s.primaryInsuranceAmount || 0;
             const aasandhaAmount = s.aasandhaAmount || 0;
             
-            // Calculate service discount
             const serviceDiscountPercent = s.discountPercent || 0;
             const serviceDiscountAmount = (serviceTotal * serviceDiscountPercent) / 100;
             const totalAfterServiceDiscount = serviceTotal - serviceDiscountAmount;
@@ -1972,7 +2140,6 @@
         const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
         selectedServices[idx].primaryInsuranceAmount = primaryAmount;
         selectedServices[idx].aasandhaAmount = aasandhaAmount;
-        // Recalculate service discount
         const discountPercent = selectedServices[idx].discountPercent || 0;
         selectedServices[idx].discountAmount = (serviceTotal * discountPercent) / 100;
         renderServices(); calculateBilling(); 
@@ -1990,7 +2157,6 @@
     function calculateBilling() {
         const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
         
-        // Calculate service-level discounts
         let totalServiceDiscount = 0;
         selectedServices.forEach(s => {
             const serviceTotal = s.qty * s.price;
@@ -1998,7 +2164,6 @@
             totalServiceDiscount += (serviceTotal * discountPercent) / 100;
         });
         
-        // Global discount (preset or custom)
         const { value, type } = getDiscountValue();
         let globalDiscAmount = 0;
         if (type === 'percent') {
@@ -2007,7 +2172,6 @@
             globalDiscAmount = Math.min(value, subtotal);
         }
         
-        // Total discount = service discounts + global discount
         const totalDiscAmount = totalServiceDiscount + globalDiscAmount;
         let afterDiscount = subtotal - totalDiscAmount;
         
@@ -2211,7 +2375,6 @@
             insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
         }
         
-        // Get global discount details
         const { value: discountValue, type: discountTypeValue } = getDiscountValue();
         const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
         let globalDiscountAmount = 0;
@@ -2221,7 +2384,6 @@
             globalDiscountAmount = Math.min(discountValue, subtotal);
         }
         
-        // Calculate service-level discounts total
         let serviceDiscountTotal = 0;
         selectedServices.forEach(s => {
             const serviceTotal = s.qty * s.price;

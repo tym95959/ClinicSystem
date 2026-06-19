@@ -568,6 +568,9 @@
             if (patient.nationalId && patient.nationalId.trim() !== '') {
                 return patient.nationalId;
             }
+            if (patient.id && patient.id.trim() !== '') {
+                return patient.id;
+            }
             return 'N/A';
         }
 
@@ -1093,22 +1096,59 @@
             }
         });
 
+        // ========== SAVE PATIENT SESSION ==========
+        function savePatientSession(patient) {
+            if (patient) {
+                sessionStorage.setItem('selectedPatient', JSON.stringify(patient));
+                sessionStorage.setItem('selectedPatientId', patient.id || '');
+                console.log('Patient saved to session:', patient.name, patient.id);
+            }
+        }
+
+        // ========== RESTORE PATIENT SESSION ==========
+        function restorePatientSession() {
+            var patientData = sessionStorage.getItem('selectedPatient');
+            if (patientData) {
+                try {
+                    var patient = JSON.parse(patientData);
+                    console.log('Patient restored from session:', patient.name, patient.id);
+                    return patient;
+                } catch(e) {
+                    console.warn('Error restoring patient session:', e);
+                }
+            }
+            return null;
+        }
+
         // ========== SHOW/HIDE PATIENT DETAILS ==========
         function showPatientDetails(patient, appointment, memo) {
+            if (!patient) {
+                selectedPatient = null;
+                selectedAppointment = null;
+                selectedMemo = null;
+                
+                var container = document.getElementById('patientInfoContainer');
+                var emptyState = document.getElementById('emptyPatientState');
+                var quickActions = document.getElementById('quickActions');
+                
+                container.innerHTML = '';
+                if (emptyState) emptyState.style.display = 'block';
+                if (quickActions) quickActions.style.display = 'none';
+                sessionStorage.removeItem('selectedPatient');
+                sessionStorage.removeItem('selectedPatientId');
+                return;
+            }
+            
             selectedPatient = patient;
             selectedAppointment = appointment || null;
             selectedMemo = memo || null;
             
+            // Save to session for other pages
+            savePatientSession(patient);
+            
             var emptyState = document.getElementById('emptyPatientState');
             var quickActions = document.getElementById('quickActions');
             var container = document.getElementById('patientInfoContainer');
-            
-            if (!selectedPatient) {
-                if (emptyState) emptyState.style.display = 'block';
-                if (quickActions) quickActions.style.display = 'none';
-                container.innerHTML = '';
-                return;
-            }
             
             if (emptyState) emptyState.style.display = 'none';
             if (quickActions) quickActions.style.display = 'grid';
@@ -1122,21 +1162,25 @@
             
             var todayStr = getTodayDate();
             
-            var snapshot = await firestoreDB.collection("appointments")
-                .where("doctorId", "==", currentUser.id)
-                .where("date", "==", todayStr)
-                .get(); 
-            
-            todayAppointments = []; 
-            snapshot.forEach(function(doc) { 
-                todayAppointments.push({ id: doc.id, ...doc.data() }); 
-            });
-            todayAppointments.sort(function(a, b) { 
-                var timeA = a.startTime || a.time || '00:00';
-                var timeB = b.startTime || b.time || '00:00';
-                return timeA.localeCompare(timeB);
-            });
-            renderTodayAppointments(); 
+            try {
+                var snapshot = await firestoreDB.collection("appointments")
+                    .where("doctorId", "==", currentUser.id)
+                    .where("date", "==", todayStr)
+                    .get(); 
+                
+                todayAppointments = []; 
+                snapshot.forEach(function(doc) { 
+                    todayAppointments.push({ id: doc.id, ...doc.data() }); 
+                });
+                todayAppointments.sort(function(a, b) { 
+                    var timeA = a.startTime || a.time || '00:00';
+                    var timeB = b.startTime || b.time || '00:00';
+                    return timeA.localeCompare(timeB);
+                });
+                renderTodayAppointments(); 
+            } catch(e) {
+                console.warn('Error loading appointments:', e);
+            }
         }
         
         function renderTodayAppointments() { 
@@ -1195,15 +1239,19 @@
         // ========== LOAD ALL MEMOS ==========
         async function loadAllMemos() { 
             if (!firestoreDB) return; 
-            var snapshot = await firestoreDB.collection("memos")
-                .where("doctor.id", "==", currentUser.id)
-                .get(); 
-            allMemos = []; 
-            snapshot.forEach(function(doc) { 
-                allMemos.push({ id: doc.id, ...doc.data() }); 
-            }); 
-            allMemos.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }); 
-            renderAllMemos(); 
+            try {
+                var snapshot = await firestoreDB.collection("memos")
+                    .where("doctor.id", "==", currentUser.id)
+                    .get(); 
+                allMemos = []; 
+                snapshot.forEach(function(doc) { 
+                    allMemos.push({ id: doc.id, ...doc.data() }); 
+                }); 
+                allMemos.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }); 
+                renderAllMemos(); 
+            } catch(e) {
+                console.warn('Error loading memos:', e);
+            }
         }
         
         function renderAllMemos() { 
@@ -1251,13 +1299,16 @@
             selectedMemo = memo; 
             selectedAppointment = null; 
             var patient = null; 
-            for (var i = 0; i < patientsList.length; i++) { 
-                if (patientsList[i].id === memo.patient?.id) { 
-                    patient = patientsList[i]; 
-                    break; 
+            if (memo.patient) {
+                // Try to find full patient in patientsList
+                for (var i = 0; i < patientsList.length; i++) { 
+                    if (patientsList[i].id === memo.patient.id) { 
+                        patient = patientsList[i]; 
+                        break; 
+                    } 
                 } 
-            } 
-            if (!patient) patient = memo.patient; 
+                if (!patient) patient = memo.patient; 
+            }
             showPatientDetails(patient, null, memo);
         }
 
@@ -1267,31 +1318,40 @@
             selectedMemo = null; 
             
             var patient = null; 
-            for (var i = 0; i < patientsList.length; i++) { 
-                if (patientsList[i].id === apt.patientId) { 
-                    patient = patientsList[i]; 
-                    break; 
+            if (apt.patientId) {
+                // Try to find full patient in patientsList
+                for (var i = 0; i < patientsList.length; i++) { 
+                    if (patientsList[i].id === apt.patientId) { 
+                        patient = patientsList[i]; 
+                        break; 
+                    } 
                 } 
-            } 
-            if (!patient && apt.patientId) patient = { 
-                id: apt.patientId, 
-                name: apt.patientName, 
-                phone: apt.contact,
-                idNumber: apt.idNumber,
-                passportNumber: apt.passportNumber,
-                nationalId: apt.nationalId
-            }; 
+                if (!patient) { 
+                    patient = { 
+                        id: apt.patientId, 
+                        name: apt.patientName, 
+                        phone: apt.contact,
+                        idNumber: apt.idNumber,
+                        passportNumber: apt.passportNumber,
+                        nationalId: apt.nationalId
+                    }; 
+                }
+            }
             showPatientDetails(patient, apt, null);
         }
 
         // ========== LOAD PATIENTS ==========
         async function loadPatients() { 
             if (!firestoreDB) return; 
-            var snapshot = await firestoreDB.collection("patients").get(); 
-            patientsList = []; 
-            snapshot.forEach(function(doc) { 
-                patientsList.push({ id: doc.id, ...doc.data() }); 
-            }); 
+            try {
+                var snapshot = await firestoreDB.collection("patients").get(); 
+                patientsList = []; 
+                snapshot.forEach(function(doc) { 
+                    patientsList.push({ id: doc.id, ...doc.data() }); 
+                }); 
+            } catch(e) {
+                console.warn('Error loading patients:', e);
+            }
         }
         
         var searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
@@ -1338,10 +1398,10 @@
                         } 
                     } 
                     if (patient) { 
-                        showPatientDetails(patient, null, null);
                         var displayId = getDisplayId(patient);
                         searchInput.value = patient.name + ' (🪪 ' + displayId + ')'; 
                         suggestionsDiv.innerHTML = ''; 
+                        showPatientDetails(patient, null, null);
                     } 
                 }); 
             } 
@@ -1349,18 +1409,11 @@
         
         searchInput.addEventListener('input', function(e) { renderPatientSuggestions(e.target.value); });
 
-        // ========== SAVE PATIENT SESSION ==========
-        function savePatientSession() {
-            if (selectedPatient) {
-                sessionStorage.setItem('selectedPatient', JSON.stringify(selectedPatient));
-                sessionStorage.setItem('selectedPatientId', selectedPatient.id);
-            }
-        }
-
-        // ========== DISPLAY PATIENT INFO (NO PRICES) ==========
+        // ========== DISPLAY PATIENT INFO ==========
         function displayPatientInfo() {
             var container = document.getElementById('patientInfoContainer');
             if (!selectedPatient) {
+                container.innerHTML = '';
                 return;
             }
             
@@ -1415,6 +1468,44 @@
                 '</div>' +
                 extraHtml +
             '</div>';
+        }
+
+        // ========== UPDATE QUICK ACTION LINKS WITH PATIENT ID ==========
+        function updateQuickActionLinks() {
+            if (!selectedPatient) return;
+            
+            var patientId = selectedPatient.id || '';
+            var links = document.querySelectorAll('.quick-action-card');
+            
+            for (var i = 0; i < links.length; i++) {
+                var link = links[i];
+                var href = link.getAttribute('href');
+                if (href && !href.includes('?')) {
+                    link.setAttribute('href', href + '?patientId=' + encodeURIComponent(patientId));
+                } else if (href && href.includes('?')) {
+                    // Replace or add patientId parameter
+                    var baseUrl = href.split('?')[0];
+                    var existingParams = href.split('?')[1] || '';
+                    var params = {};
+                    if (existingParams) {
+                        var pairs = existingParams.split('&');
+                        for (var j = 0; j < pairs.length; j++) {
+                            var pair = pairs[j].split('=');
+                            if (pair.length === 2) {
+                                params[pair[0]] = pair[1];
+                            }
+                        }
+                    }
+                    params.patientId = encodeURIComponent(patientId);
+                    var newParams = [];
+                    for (var key in params) {
+                        if (params.hasOwnProperty(key)) {
+                            newParams.push(key + '=' + params[key]);
+                        }
+                    }
+                    link.setAttribute('href', baseUrl + '?' + newParams.join('&'));
+                }
+            }
         }
 
         // ========== NEXT PATIENT ==========
@@ -1481,6 +1572,8 @@
             } catch(e) { console.warn(e); }
             sessionStorage.removeItem('doctorSession');
             localStorage.removeItem('currentDoctor');
+            sessionStorage.removeItem('selectedPatient');
+            sessionStorage.removeItem('selectedPatientId');
             window.location.href = 'login.html';
         });
 
@@ -1521,13 +1614,26 @@
             await loadAllMemos();
             listenOnlineReception();
             
-            // Clear any saved patient from session - start fresh
-            sessionStorage.removeItem('selectedPatient');
-            sessionStorage.removeItem('selectedPatientId');
-            selectedPatient = null;
+            // Check if there's a patient session from another page
+            var restoredPatient = restorePatientSession();
+            if (restoredPatient) {
+                selectedPatient = restoredPatient;
+                showPatientDetails(selectedPatient, null, null);
+                updateQuickActionLinks();
+            }
             
             if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
         }
+        
+        // Override showPatientDetails to also update quick action links
+        var originalShowPatientDetails = showPatientDetails;
+        showPatientDetails = function(patient, appointment, memo) {
+            originalShowPatientDetails(patient, appointment, memo);
+            if (patient) {
+                updateQuickActionLinks();
+            }
+        };
+        
         init();
     })();
 </script>

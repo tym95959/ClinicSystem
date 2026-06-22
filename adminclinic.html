@@ -105,6 +105,25 @@
             color: #6c757d;
             margin-top: 4px;
         }
+        .free-badge {
+            background: #17a2b8;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 6px;
+        }
+        .price-hint {
+            font-size: 10px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        .price-hint .free-note {
+            color: #17a2b8;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -205,9 +224,12 @@
         <div class="code-hint">Unique code for this service (e.g., CONS-001, EXTR-002)</div>
     </div>
     <div class="input-group"><label>Service Name *</label><input type="text" id="serviceName" placeholder="e.g., Consultation"></div>
-    <div class="input-group"><label>Price (MVR) *</label><input type="number" id="servicePrice" step="10" placeholder="550"></div>
+    <div class="input-group"><label>Price (MVR) *</label>
+        <input type="number" id="servicePrice" step="10" placeholder="550" min="0">
+        <div class="price-hint">Enter <span class="free-note">0</span> for free services (e.g., Follow up / Free Consultation)</div>
+    </div>
     <div class="input-group"><label><input type="checkbox" id="serviceAasandhaCovered"> Aasandha Covered</label></div>
-    <div class="input-group"><label>Aasandha Cover Amount (MVR)</label><input type="number" id="serviceAasandhaAmount" step="10" placeholder="200"></div>
+    <div class="input-group"><label>Aasandha Cover Amount (MVR)</label><input type="number" id="serviceAasandhaAmount" step="10" placeholder="200" min="0"></div>
     <div class="modal-buttons"><button class="btn-primary" id="saveServiceBtn">Save</button><button class="btn-danger" id="cancelServiceBtn">Cancel</button></div>
 </div></div>
 
@@ -374,16 +396,19 @@
             const tbody = document.getElementById('servicesList');
             if (!tbody) return;
             if (services.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No services</td></tr>'; return; }
-            tbody.innerHTML = services.map(s => `
+            tbody.innerHTML = services.map(s => {
+                const isFree = s.price === 0;
+                const freeBadge = isFree ? '<span class="free-badge">🎯 FREE</span>' : '';
+                return `
                 <tr>
                     <td><span class="code-badge">${escapeHtml(s.code || 'N/A')}</span></td>
-                    <td><strong>${escapeHtml(s.name)}</strong></td>
-                    <td>MVR ${s.price}</td>
+                    <td><strong>${escapeHtml(s.name)}</strong> ${freeBadge}</td>
+                    <td>${isFree ? 'FREE' : `MVR ${s.price}`}</td>
                     <td>${s.aasandhaCovered ? '✅ Yes' : '❌ No'}</td>
                     <td>${s.aasandhaCovered ? `MVR ${s.aasandhaCoverAmount}` : '—'}</td>
                     <td><button class="btn-sm" onclick="window.editService('${s.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteService('${s.id}')">🗑️ Delete</button></td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
         
         function renderDoctors() {
@@ -504,12 +529,18 @@
             
             if (!code) { showMessage('servicesMessage', 'Service Code is required', 'error'); return; }
             if (!name) { showMessage('servicesMessage', 'Service Name is required', 'error'); return; }
-            if (isNaN(price) || price <= 0) { showMessage('servicesMessage', 'Valid price required', 'error'); return; }
+            if (isNaN(price) || price < 0) { showMessage('servicesMessage', 'Valid price required (0 or higher)', 'error'); return; }
             
             // Check for duplicate code (excluding current edit)
             const duplicate = services.find(s => s.code === code && s.id !== currentEditId);
             if (duplicate) {
                 showMessage('servicesMessage', `Service code "${code}" already exists!`, 'error');
+                return;
+            }
+            
+            // Validate Aasandha amount
+            if (aasandhaCovered && (isNaN(aasandhaCoverAmount) || aasandhaCoverAmount < 0)) {
+                showMessage('servicesMessage', 'Valid Aasandha cover amount required (0 or higher)', 'error');
                 return;
             }
             

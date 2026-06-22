@@ -558,6 +558,11 @@
             border-color: #f0ad4e;
         }
 
+        .service-discount-toggle:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .service-discount-input {
             width: 55px;
             padding: 3px;
@@ -570,6 +575,11 @@
 
         .service-discount-input.show {
             display: inline-block;
+        }
+
+        .service-discount-input:disabled {
+            background: #f0f4f9;
+            cursor: not-allowed;
         }
 
         .billing-highlight {
@@ -873,6 +883,11 @@
         .service-cover-badge.not-covered {
             background: #f8d7da;
             color: #721c24;
+        }
+
+        .service-cover-badge.free-badge {
+            background: #17a2b8;
+            color: white;
         }
 
         .service-code-badge {
@@ -1293,10 +1308,11 @@
         let html = `<span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>`;
         mostUsedServices.forEach(s => {
             const codeDisplay = s.code ? `<span class="code-tag">${escapeHtml(s.code)}</span>` : '';
+            const priceDisplay = s.price === 0 ? '🎯 FREE' : `MVR ${s.price}`;
             html += `
                 <button class="most-used-btn" data-service-name="${escapeHtml(s.name)}" data-service-price="${s.price}" data-service-code="${escapeHtml(s.code || '')}" onclick="addMostUsedService(this)">
                     ${escapeHtml(s.name)} ${codeDisplay}
-                    <span class="price-tag">MVR ${s.price}</span>
+                    <span class="price-tag">${priceDisplay}</span>
                 </button>
             `;
         });
@@ -1318,7 +1334,7 @@
                 id: Date.now(),
                 code: code,
                 name: name,
-                price: price,
+                price: price || 0,
                 aasandhaCoverAmount: 0,
                 aasandhaCovered: false
             };
@@ -1478,16 +1494,18 @@
             const div = document.createElement('div');
             div.className = 'service-search-result-item';
             const isCovered = s.aasandhaCoverAmount > 0;
+            const isFree = s.price === 0;
             const badgeClass = isCovered ? '' : 'not-covered';
             const badgeText = isCovered ? '✅ Aasandha' : '❌ No Cover';
+            const freeBadge = isFree ? '🎯 FREE' : '';
             
             div.innerHTML = `
                 <div>
-                    <div class="service-name">${escapeHtml(s.name)}</div>
+                    <div class="service-name">${escapeHtml(s.name)} ${freeBadge}</div>
                     <div class="service-code">${escapeHtml(s.code || '—')}</div>
                 </div>
                 <div style="text-align:right;">
-                    <div class="service-price">MVR ${s.price}</div>
+                    <div class="service-price">${isFree ? 'FREE' : `MVR ${s.price}`}</div>
                     <span class="service-badge ${badgeClass}">${badgeText}</span>
                 </div>
             `;
@@ -1522,10 +1540,13 @@
     }
     
     function addService(service) {
-        const price = service.price;
+        // Allow services with price 0 (e.g., Follow up / Free Consultation)
+        const price = service.price || 0;
         const aasandhaCoverAmt = service.aasandhaCoverAmount || 0;
         const code = service.code || '';
-        const serviceTotal = price;
+        const serviceTotal = price; // This will be 0 for free services
+        
+        // Calculate insurance (will be 0 for free services)
         const svc = { name: service.name, aasandhaCoverAmount: aasandhaCoverAmt };
         const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, svc);
         
@@ -1540,16 +1561,22 @@
             aasandhaAmount: aasandhaAmount,
             discountPercent: 0,
             discountAmount: 0,
-            showDiscount: false
+            showDiscount: false,
+            isFreeService: price === 0  // Mark free services
         });
         
         renderServices();
         calculateBilling();
-        showMessage(`Added ${service.name}`, "success");
+        showMessage(`Added ${service.name}${price === 0 ? ' (Free)' : ''}`, "success");
     }
     
     // ========== SERVICE DISCOUNT FUNCTIONS ==========
     function toggleServiceDiscount(idx) {
+        // Don't allow discount on free services
+        if (selectedServices[idx].isFreeService) {
+            showMessage("Discount cannot be applied to free services", "info");
+            return;
+        }
         selectedServices[idx].showDiscount = !selectedServices[idx].showDiscount;
         if (!selectedServices[idx].showDiscount) {
             selectedServices[idx].discountPercent = 0;
@@ -1560,6 +1587,10 @@
     }
     
     function updateServiceDiscount(idx, value) {
+        // Don't allow discount on free services
+        if (selectedServices[idx].isFreeService) {
+            return;
+        }
         const discount = parseFloat(value) || 0;
         selectedServices[idx].discountPercent = discount;
         const serviceTotal = selectedServices[idx].qty * selectedServices[idx].price;
@@ -1862,13 +1893,18 @@
                     id: doc.id, 
                     code: data.code || '',
                     name: data.name, 
-                    price: data.price, 
+                    price: data.price || 0,  // Ensure 0 is preserved for free services
                     aasandhaCovered: data.aasandhaCovered || false, 
                     aasandhaCoverAmount: data.aasandhaCoverAmount || 0 
                 };
             });
-            console.log(`Loaded ${servicesList.length} services`);
-        } catch (error) { console.error(error); }
+            console.log(`Loaded ${servicesList.length} services (including free services)`);
+            // Re-render most used services with zero-priced services included
+            await loadMostUsedServices();
+        } catch (error) { 
+            console.error(error); 
+            showMessage("Error loading services: " + error.message, "error");
+        }
     }
     
     async function loadInsurance() {
@@ -1901,8 +1937,6 @@
     async function loadAllData() {
         if (!window.db) { setTimeout(loadAllData, 500); return; }
         await Promise.all([loadPatients(), loadDoctors(), loadServices(), loadInsurance(), loadDiscounts(), loadAppointments(), loadPaymentMethods()]);
-        // Load most used services after services are loaded
-        await loadMostUsedServices();
         showMessage(`Loaded ${patientsList.length} patients, ${doctorsList.length} doctors, ${servicesList.length} services`, "success");
     }
     
@@ -2025,6 +2059,7 @@
         
         tbody.innerHTML = selectedServices.map((s, idx) => {
             const serviceTotal = s.qty * s.price;
+            const isFree = s.price === 0;
             const aasandhaCoverAmt = s.aasandhaCoverAmount || 0;
             const isCovered = aasandhaCoverAmt > 0;
             const primaryInsAmount = s.primaryInsuranceAmount || 0;
@@ -2049,9 +2084,14 @@
                 primaryInsDisabled = true;
             }
             
+            // For free services, disable inputs and show appropriate labels
+            const isDisabled = isFree ? 'disabled' : '';
+            const disabledClass = isFree ? 'disabled-input' : '';
+            
             const codeDisplay = s.code ? `<span class="service-code-badge">${escapeHtml(s.code)}</span>` : '';
             const discountBadge = serviceDiscountPercent > 0 ? 
                 `<span class="service-discount-badge">-${serviceDiscountPercent}%</span>` : '';
+            const freeBadge = isFree ? `<span class="service-cover-badge free-badge">🎯 FREE</span>` : '';
             
             const discountInputClass = s.showDiscount ? 'show' : '';
             const toggleBtnClass = s.showDiscount ? 'active' : '';
@@ -2061,41 +2101,50 @@
                     <td>${codeDisplay}</td>
                     <td>
                         <strong>${escapeHtml(s.name)}</strong>
+                        ${freeBadge}
                         <span class="service-cover-badge ${coverBadgeClass}">${coverBadgeText}</span>
                         ${discountBadge}
                     </td>
-                    <td><input type="number" value="${s.qty}" min="1" step="1" onchange="updateServiceQty(${idx}, this.value)" class="qty-input"></td>
-                    <td>MVR ${s.price}</td>
-                    <td>MVR ${serviceTotal.toFixed(2)}</td>
-                    <td>MVR ${aasandhaCoverAmt.toFixed(2)}</td>
+                    <td>
+                        <input type="number" value="${s.qty}" min="1" step="1" 
+                               onchange="updateServiceQty(${idx}, this.value)" 
+                               class="qty-input" ${isDisabled}>
+                    </td>
+                    <td>${isFree ? 'FREE' : `MVR ${s.price}`}</td>
+                    <td>${isFree ? 'FREE' : `MVR ${serviceTotal.toFixed(2)}`}</td>
+                    <td>${isFree ? 'N/A' : `MVR ${aasandhaCoverAmt.toFixed(2)}`}</td>
                     <td>
                         <input type="number" value="${primaryInsDisplay}" min="0" step="1" 
                                onchange="updateServiceInsurance(${idx}, 'primary', this.value)" 
-                               class="insurance-input ${primaryInsDisabled ? 'disabled-input' : ''}"
-                               ${primaryInsDisabled ? 'disabled' : ''}
+                               class="insurance-input ${primaryInsDisabled || isFree ? 'disabled-input' : ''}"
+                               ${primaryInsDisabled || isFree ? 'disabled' : ''}
                                placeholder="Primary Ins">
                         ${isFullCover ? '<span style="font-size:8px;color:#146b3a;">100%</span>' : ''}
-                        ${!isCovered && !isFullCover ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
+                        ${!isCovered && !isFullCover && !isFree ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
+                        ${isFree ? '<span style="font-size:8px;color:#17a2b8;">Free</span>' : ''}
                     </td>
                     <td>
                         <input type="number" value="${aasandhaAmount}" min="0" step="1" 
                                onchange="updateServiceInsurance(${idx}, 'aasandha', this.value)" 
-                               class="insurance-input ${!isCovered || isFullCover ? 'disabled-input' : ''}"
-                               ${!isCovered || isFullCover ? 'disabled' : ''}
+                               class="insurance-input ${!isCovered || isFullCover || isFree ? 'disabled-input' : ''}"
+                               ${!isCovered || isFullCover || isFree ? 'disabled' : ''}
                                placeholder="Aasandha">
-                        ${!isCovered ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
-                        ${isFullCover ? '<span style="font-size:8px;color:#146b3a;">N/A</span>' : ''}
+                        ${!isCovered && !isFree ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
+                        ${isFullCover && !isFree ? '<span style="font-size:8px;color:#146b3a;">N/A</span>' : ''}
+                        ${isFree ? '<span style="font-size:8px;color:#17a2b8;">Free</span>' : ''}
                     </td>
                     <td>
-                        <button class="service-discount-toggle ${toggleBtnClass}" onclick="toggleServiceDiscount(${idx})" title="Toggle service discount">
+                        <button class="service-discount-toggle ${toggleBtnClass}" 
+                                onclick="toggleServiceDiscount(${idx})" 
+                                title="Toggle service discount" ${isFree ? 'disabled' : ''}>
                             <i class="fas fa-tag"></i>
                         </button>
                         <input type="number" value="${serviceDiscountPercent}" min="0" max="100" step="1" 
                                onchange="updateServiceDiscount(${idx}, this.value)" 
                                class="service-discount-input ${discountInputClass}" 
-                               placeholder="%">
+                               placeholder="%" ${isFree ? 'disabled' : ''}>
                     </td>
-                    <td>MVR ${patientPay.toFixed(2)}</td>
+                    <td>${isFree ? 'FREE' : `MVR ${patientPay.toFixed(2)}`}</td>
                     <td><button class="remove-row" onclick="removeService(${idx})">Remove</button></td>
                 </tr>
             `;
@@ -2116,7 +2165,8 @@
         }
         
         const coveredServices = selectedServices.filter(s => s.aasandhaCoverAmount > 0);
-        const nonCoveredServices = selectedServices.filter(s => s.aasandhaCoverAmount === 0);
+        const nonCoveredServices = selectedServices.filter(s => s.aasandhaCoverAmount === 0 && s.price > 0);
+        const freeServices = selectedServices.filter(s => s.price === 0);
         
         let infoHtml = `<strong>📋 Insurance: ${escapeHtml(insuranceName)}</strong><br>`;
         
@@ -2126,6 +2176,9 @@
             infoHtml += `ℹ️ Covers only Aasandha-covered services (${coveredServices.length} of ${selectedServices.length} services)`;
             if (nonCoveredServices.length > 0) {
                 infoHtml += `<br>⚠️ <span style="color:#dc3545;">${nonCoveredServices.length} service(s) not covered: ${nonCoveredServices.map(s => s.name).join(', ')}</span>`;
+            }
+            if (freeServices.length > 0) {
+                infoHtml += `<br>🎯 <span style="color:#17a2b8;">${freeServices.length} free service(s): ${freeServices.map(s => s.name).join(', ')}</span>`;
             }
         }
         
@@ -2155,10 +2208,15 @@
     window.removeService = (idx) => { selectedServices.splice(idx,1); renderServices(); calculateBilling(); };
     
     function calculateBilling() {
-        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        // Filter paid services for subtotal calculation
+        const paidServices = selectedServices.filter(s => s.price > 0);
+        const freeServices = selectedServices.filter(s => s.price === 0);
+        
+        // Calculate subtotal only from paid services
+        const subtotal = paidServices.reduce((s, i) => s + (i.qty * i.price), 0);
         
         let totalServiceDiscount = 0;
-        selectedServices.forEach(s => {
+        paidServices.forEach(s => {
             const serviceTotal = s.qty * s.price;
             const discountPercent = s.discountPercent || 0;
             totalServiceDiscount += (serviceTotal * discountPercent) / 100;
@@ -2179,7 +2237,9 @@
         document.getElementById('totalAfterDiscount').innerHTML = afterDiscount.toFixed(2);
         
         let primaryInsuranceTotal = 0, aasandhaTotal = 0, patientTotal = 0;
-        for (let s of selectedServices) {
+        
+        // Process paid services
+        for (let s of paidServices) {
             const serviceTotal = s.qty * s.price;
             const serviceDiscount = (serviceTotal * (s.discountPercent || 0)) / 100;
             const weight = subtotal > 0 ? serviceTotal / subtotal : 0;
@@ -2204,11 +2264,28 @@
             patientTotal += Math.max(0, remainingAfterDiscount);
         }
         
+        // Free services don't add to any payment
+        // They just show as FREE in the display
+        
         currentPrimaryInsurancePayment = primaryInsuranceTotal;
         currentAasandhaPayment = aasandhaTotal;
         document.getElementById('insurancePayment').innerHTML = primaryInsuranceTotal.toFixed(2);
         document.getElementById('aasandhaPayment').innerHTML = aasandhaTotal.toFixed(2);
         document.getElementById('patientPayAmount').innerHTML = patientTotal.toFixed(2);
+        
+        // Show free services info
+        if (freeServices.length > 0) {
+            const infoDiv = document.getElementById('insuranceCoverageInfo');
+            if (infoDiv && infoDiv.style.display !== 'none') {
+                const freeInfo = document.createElement('div');
+                freeInfo.style.marginTop = '8px';
+                freeInfo.style.fontSize = '10px';
+                freeInfo.style.color = '#17a2b8';
+                freeInfo.innerHTML = `🎯 ${freeServices.length} free service(s): ${freeServices.map(s => s.name).join(', ')}`;
+                infoDiv.appendChild(freeInfo);
+            }
+        }
+        
         updatePaymentDisplay(patientTotal);
         updateDiscountDisplay();
     }
@@ -2423,6 +2500,7 @@
                 qty: s.qty, 
                 price: s.price,
                 total: s.qty * s.price,
+                isFreeService: s.price === 0,
                 aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
                 primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
                 aasandhaAmount: s.aasandhaAmount || 0,

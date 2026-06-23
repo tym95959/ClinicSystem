@@ -154,7 +154,7 @@
         }
         .rx-header .logo-right {
             font-family: 'Faruma', 'MV Boli', 'Traditional Arabic', serif;
-            font-size: 14px;    /* smaller Dhivehi */
+            font-size: 14px;
             color: #2e7d32;
             font-weight: 700;
             text-align: right;
@@ -163,7 +163,7 @@
         .rx-bismillah {
             text-align: center;
             font-family: 'Traditional Arabic', 'Amiri', 'Times New Roman', serif;
-            font-size: 15px;    /* smaller Arabic */
+            font-size: 15px;
             color: #0a2f44;
             margin-bottom: 3px;
             font-weight: 700;
@@ -176,10 +176,12 @@
             margin: 2px 0 5px 0;
         }
 
+        /* Title row: PRESCRIPTION on left, DATE on left as well */
         .rx-title-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: baseline;
+            gap: 20px;
             margin: 2px 0 4px 0;
         }
         .rx-title-row .rx-title {
@@ -206,7 +208,7 @@
             align-items: baseline;
             flex-wrap: wrap;
             gap: 0 5px;
-            margin: 2px 0 8px 0;  /* extra bottom margin for spacing */
+            margin: 2px 0 8px 0;
             padding: 2px 0;
             font-size: 11px;
             font-family: 'Times New Roman', serif;
@@ -246,13 +248,13 @@
             font-size: 26px;
             font-weight: 700;
             color: #0a2f44;
-            padding: 4px 0 2px 0;  /* extra top padding for spacing */
+            padding: 4px 0 2px 0;
             font-family: 'Times New Roman', serif;
         }
 
         .rx-medication-area {
             min-height: 80px;
-            padding: 6px 0 3px 0;  /* extra top padding for spacing */
+            padding: 6px 0 3px 0;
             margin: 0px 0;
             flex: 1 0 auto;
         }
@@ -669,7 +671,7 @@
             
             html += '<hr class="rx-divider">';
             
-            // Title + Date
+            // Title + Date - both on LEFT side
             html += '<div class="rx-title-row">';
             html += '<span class="rx-title">PRESCRIPTION</span>';
             html += '<span class="rx-date">DATE: <span class="date-value">' + today + '</span></span>';

@@ -174,7 +174,7 @@
             padding-bottom: 4px;
         }
 
-        /* Two column layout: Patient Info (left) | Date & Memo (right) */
+        /* Two column layout: Patient Info (left) | Date & Memo (right) - NO UNDERLINES */
         .mc-info-row {
             display: flex;
             gap: 20px;
@@ -188,29 +188,34 @@
             color: #0a2f44;
             font-size: 9px;
             text-transform: uppercase;
+            display: inline-block;
+            min-width: 70px;
         }
         .mc-info-col .value {
             color: #1a2c3e;
             font-weight: 500;
             font-size: 10px;
             padding: 1px 0;
+            display: inline-block;
         }
         .mc-info-col .field-row {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
             padding: 2px 0;
-            border-bottom: 0.5px dotted #e2eaf0;
-        }
-        .mc-info-col .field-row:last-child {
-            border-bottom: none;
         }
 
-        /* Type of Medical Leave - full width box */
+        /* TYPE OF MEDICAL LEAVE - heading style */
+        .mc-leave-heading {
+            font-weight: 700;
+            color: #0a2f44;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin: 6px 0 4px 0;
+            letter-spacing: 0.5px;
+        }
+
         .mc-leave-box {
             border: 1px solid #1a2c3e;
             padding: 6px 10px;
-            margin: 6px 0 8px 0;
+            margin: 2px 0 8px 0;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -644,16 +649,18 @@
             // Title
             win.document.write('.mc-title-left { text-align: left; font-size: 18px; font-weight: 700; color: #0a2f44; letter-spacing: 2px; text-transform: uppercase; font-family: "Times New Roman",serif; margin: 6px 0 8px 0; border-bottom: 1px solid #1a2c3e; padding-bottom: 4px; }');
             
-            // Two column layout
+            // Two column layout - NO UNDERLINES
             win.document.write('.mc-info-row { display: flex; gap: 20px; margin-bottom: 6px; }');
             win.document.write('.mc-info-col { flex: 1; }');
-            win.document.write('.mc-info-col .label { font-weight: 700; color: #0a2f44; font-size: 9px; text-transform: uppercase; }');
-            win.document.write('.mc-info-col .value { color: #1a2c3e; font-weight: 500; font-size: 10px; padding: 1px 0; }');
-            win.document.write('.mc-info-col .field-row { display: flex; align-items: baseline; gap: 4px; padding: 2px 0; border-bottom: 0.5px dotted #e2eaf0; }');
-            win.document.write('.mc-info-col .field-row:last-child { border-bottom: none; }');
+            win.document.write('.mc-info-col .label { font-weight: 700; color: #0a2f44; font-size: 9px; text-transform: uppercase; display: inline-block; min-width: 70px; }');
+            win.document.write('.mc-info-col .value { color: #1a2c3e; font-weight: 500; font-size: 10px; padding: 1px 0; display: inline-block; }');
+            win.document.write('.mc-info-col .field-row { padding: 2px 0; }');
+            
+            // TYPE OF MEDICAL LEAVE - heading
+            win.document.write('.mc-leave-heading { font-weight: 700; color: #0a2f44; font-size: 11px; text-transform: uppercase; margin: 6px 0 4px 0; letter-spacing: 0.5px; }');
             
             // Leave box
-            win.document.write('.mc-leave-box { border: 1px solid #1a2c3e; padding: 6px 10px; margin: 6px 0 8px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; background: #fafcfe; }');
+            win.document.write('.mc-leave-box { border: 1px solid #1a2c3e; padding: 6px 10px; margin: 2px 0 8px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; background: #fafcfe; }');
             win.document.write('.mc-leave-box .leave-label { font-weight: 700; color: #0a2f44; font-size: 9px; text-transform: uppercase; }');
             win.document.write('.mc-leave-box .leave-value { color: #1a2c3e; font-size: 10px; font-weight: 500; }');
             win.document.write('.mc-leave-box .leave-separator { color: #8ba0b0; font-size: 8px; }');
@@ -697,7 +704,7 @@
             // Title
             win.document.write('<div class="mc-title-left">MEDICAL CERTIFICATE</div>');
             
-            // Two column: Patient Info (left) | Date & Memo (right)
+            // Two column: Patient Info (left) | Date & Memo (right) - NO UNDERLINES
             var displayId = getDisplayId(selectedPatient);
             var age = calculateAge(selectedPatient.dob);
             var certDate = new Date(cert.issuedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -720,13 +727,13 @@
             win.document.write('</div>');
             win.document.write('</div>');
             
+            // TYPE OF MEDICAL LEAVE - Heading
+            win.document.write('<div class="mc-leave-heading">TYPE OF MEDICAL LEAVE</div>');
+            
             // Type of Medical Leave - full width box
             win.document.write('<div class="mc-leave-box">');
-            win.document.write('<span class="leave-label">Type of Medical Leave:</span>');
-            win.document.write('<span class="leave-value">MEDICAL</span>');
-            win.document.write('<span class="leave-separator">|</span>');
             win.document.write('<span class="leave-label">Type of leave:</span>');
-            win.document.write('<span class="leave-value">SICK LEAVE</span>');
+            win.document.write('<span class="leave-value">MEDICAL</span>');
             win.document.write('<span class="leave-separator">|</span>');
             win.document.write('<span class="leave-label">No of Days:</span>');
             win.document.write('<span class="leave-value">' + escapeHtml(cert.recommendedRest || 'N/A') + '</span>');

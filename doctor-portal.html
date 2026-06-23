@@ -343,15 +343,26 @@
                 return yyyy + '-' + mm + '-' + dd;
             }
 
-            // ===== FIXED: CONVERT ANY DATE TO STRING =====
+            // ===== FIXED: CONVERT ANY DATE TO YYYY-MM-DD =====
             function toDateString(dateValue) {
                 if (!dateValue) return null;
-                if (typeof dateValue === 'string') return dateValue;
-                if (dateValue.toDate) { // Firestore Timestamp
+                // If it's a string, try to parse it as a date
+                if (typeof dateValue === 'string') {
+                    // Try to parse the string as a date
+                    var d = new Date(dateValue);
+                    if (!isNaN(d.getTime())) {
+                        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                    }
+                    // If parsing fails, return the string as-is (fallback)
+                    return dateValue;
+                }
+                // Firestore Timestamp
+                if (dateValue.toDate) {
                     var d = dateValue.toDate();
                     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                 }
-                if (typeof dateValue === 'object' && dateValue.seconds) { // another timestamp format
+                // Object with seconds (e.g., from Firebase Realtime DB)
+                if (typeof dateValue === 'object' && dateValue.seconds) {
                     var d = new Date(dateValue.seconds * 1000);
                     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                 }

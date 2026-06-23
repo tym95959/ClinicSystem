@@ -454,7 +454,7 @@
 <div class="clinic-header">
     <div class="logo"><h2>📋 Patient History</h2></div>
     <div>
-        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboardl</button>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
         <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
     </div>
 </div>
@@ -549,23 +549,39 @@
 
 <script>
     (function() {
-        // ========== AUTH ==========
+        // ========== AUTH - SUPPORTS BOTH DOCTOR AND RECEPTION ==========
+        // Try doctor session first, then reception session, then fallback
+        var userData = null;
+        var loggedInUser = localStorage.getItem('loggedInUser');
         var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-        if (!doctorSession) { 
-            window.location.href = 'login.html'; 
+        
+        if (doctorSession) {
+            try {
+                userData = JSON.parse(doctorSession);
+                userData.userType = 'doctor';
+            } catch(e) {}
+        }
+        
+        if (!userData && loggedInUser) {
+            try {
+                userData = JSON.parse(loggedInUser);
+                userData.userType = 'reception';
+            } catch(e) {}
+        }
+        
+        // Check if user is logged in
+        if (!userData || !userData.id) {
+            // If no user data, redirect to login
+            window.location.href = 'login.html';
             return;
         }
-        var currentDoctor = null;
-        try { 
-            currentDoctor = JSON.parse(doctorSession); 
-        } catch(e) { 
-            window.location.href = 'login.html'; 
-            return;
-        }
-        if (!currentDoctor || !currentDoctor.id) { 
-            window.location.href = 'login.html'; 
-            return;
-        }
+
+        var currentUser = {
+            id: userData.id || userData.username,
+            name: userData.name || userData.username || 'User',
+            role: userData.level || userData.role || 'Staff',
+            type: userData.userType || 'staff'
+        };
 
         var firestoreDB = null;
         var patientsList = [];
@@ -1028,8 +1044,10 @@
 
         // ========== LOGOUT ==========
         document.getElementById('logoutBtn').addEventListener('click', function() {
+            // Clear both session and local storage
             sessionStorage.removeItem('doctorSession');
             localStorage.removeItem('currentDoctor');
+            localStorage.removeItem('loggedInUser');
             sessionStorage.removeItem('selectedPatient');
             sessionStorage.removeItem('selectedPatientId');
             window.location.href = 'login.html';

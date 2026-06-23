@@ -16,7 +16,7 @@
     <script src="firebase-config.js">
     </script>
     <style>
-        /* ===== ALL EXISTING STYLES (unchanged) ===== */
+        /* ===== ALL STYLES (unchanged) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
         body { background: #eef2f7; min-height: 100vh; }
         .clinic-header { background: #0a2f44; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -81,52 +81,12 @@
         .banner-inactive { background: #f8d7da; color: #721c24; border-color: #dc3545; }
         .banner-viewonly { background: #fff3cd; color: #856404; border-color: #ffc107; }
         .memo-status-banner i { font-size: 18px; }
-
-        /* ===== NEW CONSULTATION AREA STYLES ===== */
-        .consultation-area {
-            margin: 0 20px 16px 20px;
-        }
-        .consult-btn {
-            background: #0f5c7a;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .consult-btn:hover {
-            background: #1a6f8f;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(15,92,122,0.3);
-        }
-        .consult-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .consulted-status {
-            background: #d4edda;
-            color: #155724;
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-            font-weight: 600;
-            display: none;
-            border-left: 4px solid #28a745;
-        }
-        .consulted-status i {
-            margin-right: 6px;
-        }
-
-        /* ===== REST OF STYLES (chat, notifications, etc.) ===== */
+        .consultation-area { margin: 0 20px 16px 20px; }
+        .consult-btn { background: #0f5c7a; color: white; border: none; padding: 12px; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .consult-btn:hover { background: #1a6f8f; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15,92,122,0.3); }
+        .consult-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .consulted-status { background: #d4edda; color: #155724; padding: 12px; border-radius: 12px; text-align: center; font-weight: 600; display: none; border-left: 4px solid #28a745; }
+        .consulted-status i { margin-right: 6px; }
         .notification-toast { position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 20px; border-radius: 14px; box-shadow: 0 5px 25px rgba(0,0,0,0.35); z-index: 9999; display: flex; align-items: center; gap: 12px; animation: slideInRight 0.4s ease; cursor: pointer; max-width: 380px; border-left: 4px solid #ffc107; }
         @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
@@ -232,7 +192,6 @@
 
                 <div id="memoStatusBannerContainer"></div>
 
-                <!-- ===== NEW: CONSULTATION AREA ===== -->
                 <div class="consultation-area" id="consultationArea" style="display: none;">
                     <button class="consult-btn" id="consultBtn">
                         <i class="fas fa-stethoscope"></i> Start Consultation
@@ -384,42 +343,51 @@
                 return yyyy + '-' + mm + '-' + dd;
             }
 
-            // ===== CHECK IF MEMO EXISTS FOR A PATIENT ON A GIVEN DATE =====
-            function checkMemoExists(patientId, appointmentDate) {
-                if (!allMemos.length) return { exists: false, memoId: null, memoNumber: null };
+            // ===== CHECK IF MEMO EXISTS (UPDATED: checks both allMemos and patientMemos) =====
+            function memoExistsForPatientAndDate(patientId, dateStr) {
+                // Check allMemos (current doctor)
                 for (var i = 0; i < allMemos.length; i++) {
                     var memo = allMemos[i];
-                    if (memo.patient && memo.patient.id === patientId && memo.date === appointmentDate) {
-                        return { exists: true, memoId: memo.memoId || memo.id, memoNumber: memo.memoId || 'N/A' };
+                    if (memo.patient && memo.patient.id === patientId && memo.date === dateStr) {
+                        return true;
                     }
                 }
-                return { exists: false, memoId: null, memoNumber: null };
+                // Check patientMemos (all doctors)
+                for (var j = 0; j < patientMemos.length; j++) {
+                    var memo = patientMemos[j];
+                    if (memo.patient && memo.patient.id === patientId && memo.date === dateStr) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
-            // ===== GET MEMO STATUS =====
+            // ===== GET MEMO STATUS (UPDATED) =====
             function getMemoStatus(patientId, appointmentDate) {
                 var cacheKey = patientId + '_' + (appointmentDate || '');
                 if (memoStatusCache[cacheKey]) return memoStatusCache[cacheKey];
 
-                if (appointmentDate) {
-                    var result = checkMemoExists(patientId, appointmentDate);
-                    var status = result.exists ? 'active' : 'inactive';
-                    memoStatusCache[cacheKey] = status;
-                    return status;
-                }
-
-                var today = getTodayDate();
-                var hasTodayMemo = checkMemoExists(patientId, today).exists;
-                if (hasTodayMemo) {
+                var dateToCheck = appointmentDate || getTodayDate();
+                var hasMemo = memoExistsForPatientAndDate(patientId, dateToCheck);
+                if (hasMemo) {
                     memoStatusCache[cacheKey] = 'active';
                     return 'active';
                 }
 
+                // Check if there is any past memo (any date)
                 var hasPastMemo = false;
                 for (var i = 0; i < allMemos.length; i++) {
                     if (allMemos[i].patient && allMemos[i].patient.id === patientId) {
                         hasPastMemo = true;
                         break;
+                    }
+                }
+                if (!hasPastMemo) {
+                    for (var j = 0; j < patientMemos.length; j++) {
+                        if (patientMemos[j].patient && patientMemos[j].patient.id === patientId) {
+                            hasPastMemo = true;
+                            break;
+                        }
                     }
                 }
                 if (hasPastMemo) {
@@ -431,7 +399,7 @@
                 return 'inactive';
             }
 
-            // ========== PLAY SOUND, BADGES, CHAT (same as original) ==========
+            // ========== PLAY SOUND, BADGES, CHAT (unchanged) ==========
             function playNotificationSound() {
                 try {
                     if (!notificationSound) {
@@ -549,7 +517,7 @@
                 }, 6000);
             }
 
-            // ========== CHAT FUNCTIONS ==========
+            // ========== CHAT FUNCTIONS (unchanged) ==========
             function getChatId(u1, u2) {
                 var sorted = [u1, u2].sort();
                 return 'chat_' + sorted[0] + '_' + sorted[1];
@@ -989,7 +957,6 @@
                     return;
                 }
 
-                // Determine if there is an appointment or memo to consult
                 var target = selectedAppointment || selectedMemo;
                 if (!target) {
                     area.style.display = 'none';
@@ -998,7 +965,6 @@
 
                 area.style.display = 'block';
 
-                // Check if already consulted
                 var consulted = false;
                 if (selectedAppointment) {
                     consulted = selectedAppointment.consulted === true;
@@ -1017,7 +983,6 @@
                 }
             }
 
-            // ===== HANDLE CONSULT BUTTON CLICK =====
             async function handleConsult() {
                 if (!selectedPatient || (!selectedAppointment && !selectedMemo)) {
                     alert('No appointment or memo selected to consult.');
@@ -1039,19 +1004,14 @@
                         consultedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
-                    // Update local objects
                     if (selectedAppointment) {
                         selectedAppointment.consulted = true;
                     } else if (selectedMemo) {
                         selectedMemo.consulted = true;
                     }
 
-                    // Refresh UI
                     await updateConsultationUI();
-
-                    // Refresh the appointment list to update "next" logic
                     await loadTodayAppointments();
-
                     alert('Consultation marked as completed.');
 
                 } catch (error) {
@@ -1095,8 +1055,6 @@
 
                 updateMemoStatusUI(patient, appointment);
                 displayPatientInfo();
-
-                // Update consultation UI
                 await updateConsultationUI();
             }
 
@@ -1136,17 +1094,12 @@
                     var apt = todayAppointments[i];
                     var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt
                             .passportNumber, nationalId: apt.nationalId });
-                    var memoInfo = checkMemoExists(apt.patientId, apt.date);
-                    var statusText = memoInfo.exists ? '📄 Memo #' + memoInfo.memoNumber : '⏳ No Memo';
+                    var memoInfo = memoExistsForPatientAndDate(apt.patientId, apt.date) ? { exists: true, memoNumber: 'found' } :
+                        { exists: false };
+                    var statusText = memoInfo.exists ? '📄 Memo' : '⏳ No Memo';
                     var statusClass = memoInfo.exists ? 'status-done' : 'status-pending';
                     var isNext = false;
-                    // Next patient: not consulted AND (no memo OR memo exists but not consulted? We'll define next as not consulted)
-                    // Actually we want next patient to be the first unconsulted appointment with a memo (or without?).
-                    // Better: next patient = first appointment that is not consulted AND has a memo (or we can skip those without memo? 
-                    // We'll keep original logic but add consultation check.
-                    // For simplicity, we keep original "next" logic (first without memo) but we can enhance.
-                    // We'll add a consulted badge if apt.consulted === true
-                    if (i === 0 && !memoInfo.exists && !apt.consulted) { isNext = true; }
+                    if (i === 0 && !apt.consulted && !memoInfo.exists) { isNext = true; }
                     var nextBadge = isNext ? '<span class="next-badge">▶ Next</span>' : '';
                     var timeDisplay = apt.startTime ? apt.startTime : (apt.time || 'N/A');
                     var consultedBadge = apt.consulted ? ' <span style="background:#d4edda;color:#155724;font-size:9px;padding:2px 8px;border-radius:20px;font-weight:600;">✅ Consulted</span>' :
@@ -1362,10 +1315,9 @@
                 var extraHtml = '';
 
                 if (selectedAppointment) {
-                    var memoInfo = checkMemoExists(selectedPatient.id, selectedAppointment.date);
-                    var memoStatus = memoInfo.exists ? '✅ Memo Completed (# ' + memoInfo.memoNumber + ')' :
-                        '⏳ No Memo Yet';
-                    var memoColor = memoInfo.exists ? '#27ae60' : '#ffc107';
+                    var hasMemo = memoExistsForPatientAndDate(selectedPatient.id, selectedAppointment.date);
+                    var memoStatus = hasMemo ? '✅ Memo Completed' : '⏳ No Memo Yet';
+                    var memoColor = hasMemo ? '#27ae60' : '#ffc107';
                     extraHtml = '<div style="margin-top:12px;padding:12px;background:#e8f0fe;border-radius:12px;">' +
                         '<p><strong>📋 Appointment:</strong> ' + (selectedAppointment.date || 'N/A') + ' at ' + (
                             selectedAppointment.startTime || selectedAppointment.time || 'N/A') + '</p>' +
@@ -1489,15 +1441,12 @@
                     alert('No appointments for today.');
                     return;
                 }
-                // Find first appointment that is NOT consulted AND has no memo (or we can adjust)
-                // We'll skip consulted ones and those with memo already.
                 var nextAppointment = null;
                 for (var i = 0; i < todayAppointments.length; i++) {
                     var apt = todayAppointments[i];
-                    // Skip if already consulted
                     if (apt.consulted) continue;
-                    var memoInfo = checkMemoExists(apt.patientId, apt.date);
-                    if (!memoInfo.exists) {
+                    var hasMemo = memoExistsForPatientAndDate(apt.patientId, apt.date);
+                    if (!hasMemo) {
                         nextAppointment = apt;
                         break;
                     }
@@ -1563,8 +1512,6 @@
                 });
             }
             document.getElementById('nextPatientBtn').addEventListener('click', selectNextPatient);
-
-            // Consult button
             document.getElementById('consultBtn').addEventListener('click', handleConsult);
 
             // ========== INIT ==========
@@ -1591,7 +1538,6 @@
                 if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
             }
 
-            // Override showPatientDetails to also update quick action links
             var originalShowPatientDetails = showPatientDetails;
             showPatientDetails = function(patient, appointment, memo) {
                 originalShowPatientDetails(patient, appointment, memo);

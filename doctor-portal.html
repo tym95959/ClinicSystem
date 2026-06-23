@@ -16,7 +16,7 @@
     <script src="firebase-config.js">
     </script>
     <style>
-        /* ... (all styles remain the same as provided) ... */
+        /* (All styles remain unchanged – same as provided) */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
         body { background: #eef2f7; min-height: 100vh; }
         .clinic-header { background: #0a2f44; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -81,7 +81,6 @@
         .banner-inactive { background: #f8d7da; color: #721c24; border-color: #dc3545; }
         .banner-viewonly { background: #fff3cd; color: #856404; border-color: #ffc107; }
         .memo-status-banner i { font-size: 18px; }
-        /* Notification toast & chat styles (same as original) */
         .notification-toast { position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 20px; border-radius: 14px; box-shadow: 0 5px 25px rgba(0,0,0,0.35); z-index: 9999; display: flex; align-items: center; gap: 12px; animation: slideInRight 0.4s ease; cursor: pointer; max-width: 380px; border-left: 4px solid #ffc107; }
         @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
@@ -276,7 +275,6 @@
             var onlineStaffData = [];
             var heartbeatInterval = null;
             var unreadCounts = {};
-            var shownNotifications = new Set();
             var chatMessagesCache = {};
             var totalUnread = 0;
             var notificationSound = null;
@@ -342,28 +340,28 @@
                 return { exists: false, memoId: null, memoNumber: null };
             }
 
-            // ===== GET MEMO STATUS =====
+            // ===== GET MEMO STATUS (UPDATED) =====
             function getMemoStatus(patientId, appointmentDate) {
                 var cacheKey = patientId + '_' + (appointmentDate || '');
                 if (memoStatusCache[cacheKey]) return memoStatusCache[cacheKey];
 
-                // If we have an appointment date, check specifically for that date
+                // If an appointment date is provided, check memo for that date
                 if (appointmentDate) {
                     var result = checkMemoExists(patientId, appointmentDate);
-                    var status = result.exists ? 'inactive' : 'active';
+                    var status = result.exists ? 'active' : 'inactive'; // active if memo exists for that date
                     memoStatusCache[cacheKey] = status;
                     return status;
                 }
 
-                // No appointment date: check if there's a memo for today
+                // No appointment date: check for today
                 var today = getTodayDate();
                 var hasTodayMemo = checkMemoExists(patientId, today).exists;
                 if (hasTodayMemo) {
-                    memoStatusCache[cacheKey] = 'inactive';
-                    return 'inactive';
+                    memoStatusCache[cacheKey] = 'active';
+                    return 'active';
                 }
 
-                // Check if patient has any past memos
+                // Check if patient has any past memos (any date)
                 var hasPastMemo = false;
                 for (var i = 0; i < allMemos.length; i++) {
                     if (allMemos[i].patient && allMemos[i].patient.id === patientId) {
@@ -376,9 +374,9 @@
                     return 'viewonly';
                 }
 
-                // No memos at all → active (can create)
-                memoStatusCache[cacheKey] = 'active';
-                return 'active';
+                // No memos at all
+                memoStatusCache[cacheKey] = 'inactive';
+                return 'inactive';
             }
 
             // ========== PLAY SOUND, BADGES, CHAT (same as original) ==========
@@ -499,7 +497,7 @@
                 }, 6000);
             }
 
-            // ========== CHAT FUNCTIONS (abbreviated for brevity, same as original) ==========
+            // ========== CHAT FUNCTIONS ==========
             function getChatId(u1, u2) {
                 var sorted = [u1, u2].sort();
                 return 'chat_' + sorted[0] + '_' + sorted[1];
@@ -832,7 +830,7 @@
                 }
             }
 
-            // ===== UPDATE MEMO STATUS UI =====
+            // ===== UPDATE MEMO STATUS UI (UPDATED) =====
             function updateMemoStatusUI(patient, appointment) {
                 var bannerContainer = document.getElementById('memoStatusBannerContainer');
                 if (!patient) {
@@ -850,23 +848,23 @@
                     case 'active':
                         statusLabel = '🟢 Active Memo (Today)';
                         statusClass = 'banner-active';
-                        icon = '<i class="fas fa-pen-fancy"></i>';
-                        description =
-                        'You can create new prescriptions and medical certificates for this patient.';
-                        break;
-                    case 'inactive':
-                        statusLabel = '🔒 Memo Completed (Today)';
-                        statusClass = 'banner-inactive';
                         icon = '<i class="fas fa-check-circle"></i>';
                         description =
-                        'A memo already exists for today. You can only view and print existing prescriptions and certificates.';
+                        'A memo exists for today. You can create new prescriptions and medical certificates.';
+                        break;
+                    case 'inactive':
+                        statusLabel = '🔴 No Memo on Record';
+                        statusClass = 'banner-inactive';
+                        icon = '<i class="fas fa-exclamation-circle"></i>';
+                        description =
+                        'No memo exists for this patient. You cannot create new documents.';
                         break;
                     case 'viewonly':
                         statusLabel = '📄 View Only (Past Memos)';
                         statusClass = 'banner-viewonly';
                         icon = '<i class="fas fa-eye"></i>';
                         description =
-                        'No active treatment session. You can view and print existing prescriptions and certificates.';
+                        'No active memo today, but past memos exist. You can view and print existing prescriptions and certificates.';
                         break;
                     default:
                         statusLabel = '—';
@@ -895,20 +893,20 @@
                     certTag.textContent = '✏️ Create';
                     certTag.className = 'memo-status-tag tag-active';
                     certSub.textContent = 'Issue new certificate';
-                } else if (status === 'inactive') {
-                    prescTag.textContent = '🔒 View Only';
-                    prescTag.className = 'memo-status-tag tag-inactive';
-                    prescSub.textContent = 'View & print existing';
-                    certTag.textContent = '🔒 View Only';
-                    certTag.className = 'memo-status-tag tag-inactive';
-                    certSub.textContent = 'View & print existing';
-                } else {
+                } else if (status === 'viewonly') {
                     prescTag.textContent = '👁️ View Only';
                     prescTag.className = 'memo-status-tag tag-viewonly';
                     prescSub.textContent = 'View & print existing';
                     certTag.textContent = '👁️ View Only';
                     certTag.className = 'memo-status-tag tag-viewonly';
                     certSub.textContent = 'View & print existing';
+                } else { // inactive
+                    prescTag.textContent = '🚫 No Memo';
+                    prescTag.className = 'memo-status-tag tag-inactive';
+                    prescSub.textContent = 'No documents to create';
+                    certTag.textContent = '🚫 No Memo';
+                    certTag.className = 'memo-status-tag tag-inactive';
+                    certSub.textContent = 'No documents to create';
                 }
 
                 // Update links with memo status

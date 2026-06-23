@@ -38,6 +38,22 @@
         .patient-badge .id { font-size: 12px; color: #5f7f9a; }
         .patient-badge .detail { font-size: 12px; color: #5f7f9a; }
         
+        .memo-status-banner {
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid;
+            margin-bottom: 16px;
+        }
+        .status-active { background: #d4edda; color: #155724; border-color: #28a745; }
+        .status-inactive { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+        .status-viewonly { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .memo-status-banner i { font-size: 18px; }
+        
         .certificate-item {
             background: #f8fbfe;
             border-radius: 12px;
@@ -328,6 +344,8 @@
             <div><span class="detail" id="patientPhone"></span></div>
         </div>
         
+        <div id="memoStatusBanner" style="display: none;"></div>
+        
         <div id="noPatientWarning" class="no-patient-warning" style="display: none;">
             <i class="fas fa-user-circle"></i>
             <p><strong>No patient selected</strong></p>
@@ -340,23 +358,28 @@
         <div id="certificateList"><div class="empty-state"><i class="fas fa-file-medical-alt"></i><p>No medical certificates found</p></div></div>
     </div>
     
-    <div class="card">
+    <div class="card" id="createCertificateCard">
         <div class="card-title">📜 Issue New Medical Certificate</div>
-        <div class="form-group">
-            <label>Diagnosis Summary *</label>
-            <textarea id="certDiagnosis" rows="2" placeholder="Brief diagnosis summary"></textarea>
+        <div id="createFormMessage" style="display: none; padding: 12px; background: #fff3cd; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #ffc107;">
+            <i class="fas fa-info-circle"></i> <span id="createFormMessageText"></span>
         </div>
-        <div class="form-group">
-            <label>Recommended Rest (days)</label>
-            <input type="text" id="certRestDays" placeholder="e.g., 3 days">
-        </div>
-        <div class="form-group">
-            <label>Additional Remarks</label>
-            <textarea id="certRemarks" rows="2" placeholder="Any extra instructions"></textarea>
-        </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-primary" id="saveCertificateBtn"><i class="fas fa-save"></i> Issue Certificate</button>
-            <button class="btn-success" id="printCertificateFormBtn"><i class="fas fa-print"></i> Print Certificate</button>
+        <div id="createFormFields">
+            <div class="form-group">
+                <label>Diagnosis Summary *</label>
+                <textarea id="certDiagnosis" rows="2" placeholder="Brief diagnosis summary"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Recommended Rest (days)</label>
+                <input type="text" id="certRestDays" placeholder="e.g., 3 days">
+            </div>
+            <div class="form-group">
+                <label>Additional Remarks</label>
+                <textarea id="certRemarks" rows="2" placeholder="Any extra instructions"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-primary" id="saveCertificateBtn"><i class="fas fa-save"></i> Issue Certificate</button>
+                <button class="btn-success" id="printCertificateFormBtn"><i class="fas fa-print"></i> Print Certificate</button>
+            </div>
         </div>
     </div>
 </div>
@@ -396,6 +419,7 @@
         var selectedPatient = null;
         var certificatesArray = [];
         var currentEditItem = null;
+        var memoStatus = 'inactive';
 
         // ========== HELPER FUNCTIONS ==========
         function escapeHtml(str) { 
@@ -439,13 +463,7 @@
         // ========== GET PATIENT FROM URL OR SESSION ==========
         function getPatientFromUrl() {
             var urlParams = new URLSearchParams(window.location.search);
-            var patientId = urlParams.get('patientId');
-            
-            if (patientId) {
-                console.log('Patient ID from URL:', patientId);
-                return patientId;
-            }
-            return null;
+            return urlParams.get('patientId') || null;
         }
 
         async function loadPatientFromFirestore(patientId) {
@@ -479,23 +497,14 @@
             var patientId = getPatientFromUrl();
             var patient = null;
             
-            // First try to get patient from URL
             if (patientId) {
                 patient = await loadPatientFromFirestore(patientId);
-                if (patient) {
-                    console.log('Patient loaded from Firestore:', patient.name);
-                }
             }
             
-            // If not found in Firestore, try session
             if (!patient) {
                 patient = loadPatientFromSession();
-                if (patient) {
-                    console.log('Patient loaded from session:', patient.name);
-                }
             }
             
-            // If still no patient, show warning
             if (!patient) {
                 document.getElementById('noPatientWarning').style.display = 'block';
                 document.getElementById('patientBadge').style.display = 'none';
@@ -513,12 +522,59 @@
             document.getElementById('patientPhone').textContent = '📞 ' + (patient.phone || patient.contactNo || 'N/A');
             document.getElementById('noPatientWarning').style.display = 'none';
             
-            // Save to session for consistency
+            // Get memoStatus from URL
+            var urlParams = new URLSearchParams(window.location.search);
+            memoStatus = urlParams.get('memoStatus') || 'inactive';
+            updateMemoStatusUI();
+            
+            // Save to session
             sessionStorage.setItem('selectedPatient', JSON.stringify(patient));
             sessionStorage.setItem('selectedPatientId', patient.id || '');
             
-            // Load certificates for this patient
             await loadCertificates();
+        }
+
+        // ========== UPDATE MEMO STATUS UI ==========
+        function updateMemoStatusUI() {
+            var banner = document.getElementById('memoStatusBanner');
+            var formMessage = document.getElementById('createFormMessage');
+            var formMessageText = document.getElementById('createFormMessageText');
+            var createFormFields = document.getElementById('createFormFields');
+            var createCard = document.getElementById('createCertificateCard');
+            
+            banner.style.display = 'block';
+            var statusLabel = '', statusClass = '', icon = '', description = '';
+            
+            switch (memoStatus) {
+                case 'active':
+                    statusLabel = '🟢 Active Memo (Today)';
+                    statusClass = 'status-active';
+                    icon = '<i class="fas fa-check-circle"></i>';
+                    description = 'You can issue new medical certificates for this patient.';
+                    createFormFields.style.display = 'block';
+                    formMessage.style.display = 'none';
+                    break;
+                case 'viewonly':
+                    statusLabel = '📄 View Only (Past Memos)';
+                    statusClass = 'status-viewonly';
+                    icon = '<i class="fas fa-eye"></i>';
+                    description = 'No active memo today. You can only view and print existing certificates.';
+                    createFormFields.style.display = 'none';
+                    formMessage.style.display = 'block';
+                    formMessageText.textContent = '🔒 Certificate creation is disabled because no active memo exists for today. You can still view and print existing certificates.';
+                    break;
+                default: // inactive
+                    statusLabel = '🔴 No Memo on Record';
+                    statusClass = 'status-inactive';
+                    icon = '<i class="fas fa-exclamation-circle"></i>';
+                    description = 'No memo exists for this patient. You cannot create new certificates.';
+                    createFormFields.style.display = 'none';
+                    formMessage.style.display = 'block';
+                    formMessageText.textContent = '🚫 Certificate creation is disabled because no memo exists for this patient. You can still view and print existing certificates.';
+                    break;
+            }
+            
+            banner.innerHTML = '<div class="memo-status-banner ' + statusClass + '">' + icon + '<div><strong>' + statusLabel + '</strong><br><span style="font-weight:400;font-size:12px;">' + description + '</span></div></div>';
         }
 
         // ========== LOAD CERTIFICATES ==========
@@ -620,7 +676,6 @@
                 }
             }
             if (!cert) return;
-            
             printMC(cert);
         };
 
@@ -808,6 +863,10 @@
             if (!selectedPatient) { 
                 alert("No patient selected. Please select a patient first."); 
                 return; 
+            }
+            if (memoStatus !== 'active') {
+                alert("You cannot create a new certificate because the memo is not active for today.");
+                return;
             }
             if (!firestoreDB) { 
                 alert("Firebase not ready."); 

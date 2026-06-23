@@ -16,879 +16,124 @@
     <script src="firebase-config.js">
     </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, sans-serif;
-        }
-        body {
-            background: #eef2f7;
-            min-height: 100vh;
-        }
-
-        .clinic-header {
-            background: #0a2f44;
-            color: white;
-            padding: 12px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-        .logo h2 {
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .doctor-info {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 20px;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .online-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            background: #2ecc71;
-            padding: 4px 10px;
-            border-radius: 20px;
-            color: white;
-        }
-        .logout-btn {
-            background: #c63d2f;
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.2s;
-        }
-        .logout-btn:hover {
-            background: #a52a1f;
-            transform: translateY(-1px);
-        }
-
-        .dashboard-container {
-            max-width: 1600px;
-            margin: 20px auto;
-            padding: 0 20px;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .appointments-panel {
-            flex: 1.2;
-            min-width: 350px;
-            background: white;
-            border-radius: 20px;
-            border: 1px solid #e2eaf0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 100px);
-        }
-
-        .panel-header {
-            background: #f4f9fe;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e2eaf0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .panel-header h3 {
-            font-size: 16px;
-            color: #0a2f44;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .panel-header .next-patient-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .panel-header .next-patient-btn:hover {
-            background: #219a52;
-        }
-
-        .list-tabs {
-            display: flex;
-            gap: 5px;
-            background: #f4f9fe;
-            padding: 0 12px;
-            border-bottom: 1px solid #e2eaf0;
-            overflow-x: auto;
-        }
-        .list-tab {
-            background: none;
-            border: none;
-            padding: 10px 16px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            color: #5f7f9a;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-        .list-tab.active-list {
-            color: #0f5c7a;
-            border-bottom: 2px solid #0f5c7a;
-            background: white;
-            margin-bottom: -1px;
-        }
-
-        .appointments-list,
-        .memos-list,
-        .patients-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            display: none;
-        }
-        .appointments-list.active-list,
-        .memos-list.active-list,
-        .patients-list.active-list {
-            display: block;
-        }
-
-        .appointment-card,
-        .memo-card {
-            background: #f8fbfe;
-            border-radius: 16px;
-            padding: 14px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            border-left: 3px solid #cbdde9;
-            position: relative;
-        }
-        .appointment-card:hover,
-        .memo-card:hover {
-            background: #e8f0fe;
-            transform: translateX(3px);
-        }
-        .appointment-card.selected,
-        .memo-card.selected {
-            background: #e0f2fe;
-            border-left-color: #0f5c7a;
-        }
-
-        .appointment-time,
-        .memo-date {
-            font-size: 12px;
-            font-weight: 700;
-            color: #0f5c7a;
-            margin-bottom: 6px;
-        }
-        .appointment-patient,
-        .memo-patient {
-            font-size: 14px;
-            font-weight: 600;
-            color: #0a2f44;
-        }
-        .appointment-details,
-        .memo-details {
-            font-size: 11px;
-            color: #5f7f9a;
-            margin-top: 5px;
-        }
-
-        .status-badge {
-            font-size: 9px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-        .status-done {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .status-upcoming {
-            background: #cce5ff;
-            color: #004085;
-        }
-
-        .next-badge {
-            background: #28a745;
-            color: white;
-            font-size: 9px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            margin-left: 8px;
-            font-weight: 600;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.6;
-            }
-        }
-
-        .patient-search-area {
-            padding: 12px;
-            background: #f8fbfe;
-            border-bottom: 1px solid #e2eaf0;
-        }
-        .patient-search-input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1.5px solid #e2eaf0;
-            border-radius: 30px;
-            font-size: 13px;
-            outline: none;
-        }
-        .patient-search-input:focus {
-            border-color: #0f5c7a;
-        }
-        .patient-suggestions {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 8px;
-        }
-        .suggestion-item {
-            padding: 10px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: 0.1s;
-            border-bottom: 1px solid #e2eaf0;
-        }
-        .suggestion-item:hover {
-            background: #e0f2fe;
-        }
-
-        .detail-panel {
-            flex: 2;
-            min-width: 550px;
-            background: white;
-            border-radius: 20px;
-            border: 1px solid #e2eaf0;
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 100px);
-        }
-
-        .patient-detail-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .patient-detail-area .empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            color: #8ba0b0;
-        }
-        .patient-detail-area .empty-state i {
-            font-size: 48px;
-            opacity: 0.3;
-            margin-bottom: 15px;
-        }
-
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            padding: 20px;
-        }
-        .quick-action-card {
-            background: #f8fbfe;
-            border: 1px solid #e2eaf0;
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-            color: #0a2f44;
-            position: relative;
-        }
-        .quick-action-card:hover {
-            background: #e0f2fe;
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-        .quick-action-card i {
-            font-size: 28px;
-            color: #0f5c7a;
-            margin-bottom: 10px;
-            display: block;
-        }
-        .quick-action-card h4 {
-            font-size: 13px;
-            margin-bottom: 5px;
-        }
-        .quick-action-card p {
-            font-size: 10px;
-            color: #5f7f9a;
-        }
-        .quick-action-card .memo-status-tag {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 8px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .tag-active {
-            background: #d4edda;
-            color: #155724;
-        }
-        .tag-inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .tag-viewonly {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .patient-info-card {
-            background: #f0f6fc;
-            border-radius: 16px;
-            padding: 16px;
-            margin: 0 20px 20px 20px;
-        }
-        .patient-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0a2f44;
-        }
-        .patient-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 8px;
-            font-size: 12px;
-            color: #5f7f9a;
-        }
-
-        .memo-number-badge {
-            background: #0f5c7a;
-            color: white;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .insurance-badge {
-            background: #e0f2fe;
-            color: #0f5c7a;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .empty-list {
-            text-align: center;
-            color: #8ba0b0;
-            padding: 40px;
-            font-size: 12px;
-        }
-        .empty-list i {
-            font-size: 36px;
-            opacity: 0.3;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .memo-service-item {
-            background: #f8fbfe;
-            padding: 6px 10px;
-            border-radius: 8px;
-            margin: 4px 0;
-            font-size: 12px;
-            border-left: 2px solid #0f5c7a;
-        }
-
-        /* ===== MEMO STATUS BANNER ===== */
-        .memo-status-banner {
-            margin: 0 20px 12px 20px;
-            padding: 10px 16px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-left: 4px solid;
-        }
-        .banner-active {
-            background: #d4edda;
-            color: #155724;
-            border-color: #28a745;
-        }
-        .banner-inactive {
-            background: #f8d7da;
-            color: #721c24;
-            border-color: #dc3545;
-        }
-        .banner-viewonly {
-            background: #fff3cd;
-            color: #856404;
-            border-color: #ffc107;
-        }
-        .memo-status-banner i {
-            font-size: 18px;
-        }
-
-        /* ========== NOTIFICATION TOAST ========== */
-        .notification-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
-            color: white;
-            padding: 14px 20px;
-            border-radius: 14px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.35);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideInRight 0.4s ease;
-            cursor: pointer;
-            max-width: 380px;
-            border-left: 4px solid #ffc107;
-        }
-        @keyframes slideInRight {
-            from {
-                transform: translateX(120%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(120%);
-                opacity: 0;
-            }
-        }
-        .notification-toast .close-toast {
-            margin-left: 10px;
-            cursor: pointer;
-            opacity: 0.7;
-            font-size: 16px;
-        }
-        .notification-toast .close-toast:hover {
-            opacity: 1;
-        }
-        .notification-toast .msg-preview {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-top: 2px;
-        }
-        .notification-toast .sender-name {
-            font-weight: 700;
-            font-size: 14px;
-        }
-        .notification-toast .time-stamp {
-            font-size: 9px;
-            opacity: 0.6;
-            margin-top: 2px;
-        }
-        .notification-toast .toast-icon {
-            font-size: 24px;
-            background: rgba(255, 255, 255, 0.15);
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-        }
-
-        .unread-badge {
-            background: #ff4757;
-            color: white;
-            border-radius: 20px;
-            padding: 2px 8px;
-            font-size: 10px;
-            margin-left: 6px;
-            animation: pulse 1.5s infinite;
-            font-weight: 700;
-        }
-        .total-unread-badge {
-            position: fixed;
-            bottom: 90px;
-            right: 24px;
-            background: #ff4757;
-            color: white;
-            border-radius: 50px;
-            padding: 6px 14px;
-            font-size: 12px;
-            font-weight: 700;
-            z-index: 999;
-            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
-            display: none;
-            animation: pulse 1.5s infinite;
-            cursor: pointer;
-            border: 2px solid white;
-        }
-
-        /* ========== CHAT STYLES ========== */
-        .chat-panel {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 380px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s;
-            z-index: 1000;
-            border: 1px solid rgba(15, 92, 122, 0.2);
-            overflow: hidden;
-            max-height: 600px;
-        }
-        .chat-panel.minimized {
-            width: auto;
-            cursor: pointer;
-            max-height: 60px;
-        }
-        .chat-panel.minimized .chat-header {
-            border-radius: 20px;
-        }
-        .chat-panel.minimized .staff-list,
-        .chat-panel.minimized .chat-messages,
-        .chat-panel.minimized .chat-input-area,
-        .chat-panel.minimized .staff-list-title,
-        .chat-panel.minimized .typing-indicator,
-        .chat-panel.minimized .delete-all-btn {
-            display: none;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
-            color: white;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            user-select: none;
-        }
-        .chat-header i {
-            font-size: 1.2rem;
-        }
-        .chat-header h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            flex: 1;
-        }
-        .chat-badge {
-            background: #ff4757;
-            color: white;
-            border-radius: 40px;
-            padding: 3px 10px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        .minimize-icon {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 4px 8px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-
-        .staff-list-title {
-            font-size: 10px;
-            color: #0f5c7a;
-            padding: 10px 14px 4px;
-            font-weight: 600;
-            background: #f8fbfe;
-            border-bottom: 1px solid #e2eaf0;
-        }
-        .staff-list {
-            background: #f8fbfe;
-            padding: 8px 12px;
-            max-height: 200px;
-            overflow-y: auto;
-            border-bottom: 1px solid #e2eaf0;
-        }
-        .staff-tab {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            margin: 5px 0;
-            border-radius: 14px;
-            cursor: pointer;
-            background: white;
-            border: 1px solid #e2eaf0;
-            transition: all 0.2s;
-        }
-        .staff-tab.active-staff {
-            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
-            color: white;
-        }
-        .staff-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #0f5c7a;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .active-staff .staff-avatar {
-            background: rgba(255, 255, 255, 0.25);
-            color: white;
-        }
-        .staff-info {
-            flex: 1;
-        }
-        .staff-name {
-            font-weight: 700;
-            font-size: 13px;
-            color: #0a2f44;
-        }
-        .staff-role {
-            font-size: 10px;
-            color: #5f7f9a;
-            margin-top: 2px;
-        }
-        .online-indicator {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 9px;
-            color: #4caf50;
-            background: #e8f5e9;
-            padding: 3px 8px;
-            border-radius: 20px;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            background: #fefefe;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 350px;
-            min-height: 300px;
-        }
-        .message {
-            display: flex;
-            flex-direction: column;
-            max-width: 88%;
-            animation: slideIn 0.2s ease;
-        }
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .message.doctor {
-            align-self: flex-end;
-        }
-        .message.reception {
-            align-self: flex-start;
-        }
-        .message-bubble {
-            padding: 8px 14px;
-            border-radius: 18px;
-            font-size: 12px;
-            line-height: 1.4;
-            word-break: break-word;
-        }
-        .message.doctor .message-bubble {
-            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        .message.reception .message-bubble {
-            background: #eef2f7;
-            color: #1a2c3e;
-            border-bottom-left-radius: 4px;
-        }
-        .message-meta {
-            font-size: 9px;
-            margin-top: 4px;
-            padding: 0 6px;
-            color: #8ba0b0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .delete-msg {
-            font-size: 9px;
-            color: #ff4757;
-            cursor: pointer;
-            margin-left: 8px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .message:hover .delete-msg {
-            opacity: 1;
-        }
-
-        .typing-indicator {
-            font-size: 10px;
-            color: #0f5c7a;
-            padding: 8px 16px;
-            font-style: italic;
-            background: #f8fbfe;
-            border-top: 1px solid #e2eaf0;
-        }
-        .chat-input-area {
-            padding: 12px;
-            background: white;
-            border-top: 1px solid #e2eaf0;
-            display: flex;
-            gap: 10px;
-        }
-        .chat-input-area input {
-            flex: 1;
-            border: 1.5px solid #e2eaf0;
-            border-radius: 30px;
-            padding: 10px 16px;
-            font-size: 12px;
-            outline: none;
-        }
-        .chat-input-area input:focus {
-            border-color: #0f5c7a;
-        }
-        .chat-input-area button {
-            background: #0f5c7a;
-            border: none;
-            color: white;
-            padding: 0 20px;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .chat-input-area button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .delete-all-btn {
-            background: #ff4757;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            cursor: pointer;
-            margin: 8px 12px;
-        }
-        .online-dot-chat {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #4caf50;
-            display: inline-block;
-            animation: pulseOnline 1.5s infinite;
-        }
-        @keyframes pulseOnline {
-            0% {
-                opacity: 0.5;
-                transform: scale(0.8);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @media (max-width: 700px) {
-            .chat-panel {
-                width: 320px;
-                right: 16px;
-                bottom: 16px;
-            }
-            .tab-btn {
-                padding: 8px 12px;
-                font-size: 11px;
-            }
-            .notification-toast {
-                max-width: 300px;
-                right: 10px;
-                top: 10px;
-                padding: 12px 16px;
-            }
-            .total-unread-badge {
-                right: 16px;
-                bottom: 80px;
-            }
-        }
-        @media (max-width: 480px) {
-            .chat-panel {
-                width: 280px;
-                right: 10px;
-                bottom: 10px;
-            }
-            .notification-toast {
-                max-width: 260px;
-                right: 8px;
-                top: 8px;
-                padding: 10px 12px;
-            }
-            .total-unread-badge {
-                right: 10px;
-                bottom: 70px;
-                font-size: 10px;
-                padding: 4px 10px;
-            }
-        }
+        /* ... (all styles remain the same as provided) ... */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #eef2f7; min-height: 100vh; }
+        .clinic-header { background: #0a2f44; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .doctor-info { background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .online-status { display: flex; align-items: center; gap: 6px; font-size: 11px; background: #2ecc71; padding: 4px 10px; border-radius: 20px; color: white; }
+        .logout-btn { background: #c63d2f; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .logout-btn:hover { background: #a52a1f; transform: translateY(-1px); }
+        .dashboard-container { max-width: 1600px; margin: 20px auto; padding: 0 20px; display: flex; gap: 20px; flex-wrap: wrap; }
+        .appointments-panel { flex: 1.2; min-width: 350px; background: white; border-radius: 20px; border: 1px solid #e2eaf0; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 100px); }
+        .panel-header { background: #f4f9fe; padding: 15px 20px; border-bottom: 1px solid #e2eaf0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .panel-header h3 { font-size: 16px; color: #0a2f44; display: flex; align-items: center; gap: 8px; }
+        .panel-header .next-patient-btn { background: #27ae60; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: 0.2s; }
+        .panel-header .next-patient-btn:hover { background: #219a52; }
+        .list-tabs { display: flex; gap: 5px; background: #f4f9fe; padding: 0 12px; border-bottom: 1px solid #e2eaf0; overflow-x: auto; }
+        .list-tab { background: none; border: none; padding: 10px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: #5f7f9a; transition: 0.2s; white-space: nowrap; }
+        .list-tab.active-list { color: #0f5c7a; border-bottom: 2px solid #0f5c7a; background: white; margin-bottom: -1px; }
+        .appointments-list, .memos-list, .patients-list { flex: 1; overflow-y: auto; padding: 12px; display: none; }
+        .appointments-list.active-list, .memos-list.active-list, .patients-list.active-list { display: block; }
+        .appointment-card, .memo-card { background: #f8fbfe; border-radius: 16px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; border-left: 3px solid #cbdde9; position: relative; }
+        .appointment-card:hover, .memo-card:hover { background: #e8f0fe; transform: translateX(3px); }
+        .appointment-card.selected, .memo-card.selected { background: #e0f2fe; border-left-color: #0f5c7a; }
+        .appointment-time, .memo-date { font-size: 12px; font-weight: 700; color: #0f5c7a; margin-bottom: 6px; }
+        .appointment-patient, .memo-patient { font-size: 14px; font-weight: 600; color: #0a2f44; }
+        .appointment-details, .memo-details { font-size: 11px; color: #5f7f9a; margin-top: 5px; }
+        .status-badge { font-size: 9px; padding: 2px 8px; border-radius: 20px; font-weight: 600; margin-left: 8px; }
+        .status-done { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-upcoming { background: #cce5ff; color: #004085; }
+        .next-badge { background: #28a745; color: white; font-size: 9px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-weight: 600; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .patient-search-area { padding: 12px; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
+        .patient-search-input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 30px; font-size: 13px; outline: none; }
+        .patient-search-input:focus { border-color: #0f5c7a; }
+        .patient-suggestions { max-height: 300px; overflow-y: auto; margin-top: 8px; }
+        .suggestion-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: 0.1s; border-bottom: 1px solid #e2eaf0; }
+        .suggestion-item:hover { background: #e0f2fe; }
+        .detail-panel { flex: 2; min-width: 550px; background: white; border-radius: 20px; border: 1px solid #e2eaf0; display: flex; flex-direction: column; height: calc(100vh - 100px); }
+        .patient-detail-area { flex: 1; display: flex; flex-direction: column; }
+        .patient-detail-area .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: #8ba0b0; }
+        .patient-detail-area .empty-state i { font-size: 48px; opacity: 0.3; margin-bottom: 15px; }
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; padding: 20px; }
+        .quick-action-card { background: #f8fbfe; border: 1px solid #e2eaf0; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; text-decoration: none; color: #0a2f44; position: relative; }
+        .quick-action-card:hover { background: #e0f2fe; transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .quick-action-card i { font-size: 28px; color: #0f5c7a; margin-bottom: 10px; display: block; }
+        .quick-action-card h4 { font-size: 13px; margin-bottom: 5px; }
+        .quick-action-card p { font-size: 10px; color: #5f7f9a; }
+        .quick-action-card .memo-status-tag { position: absolute; top: 8px; right: 8px; font-size: 8px; padding: 2px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+        .tag-active { background: #d4edda; color: #155724; }
+        .tag-inactive { background: #f8d7da; color: #721c24; }
+        .tag-viewonly { background: #fff3cd; color: #856404; }
+        .patient-info-card { background: #f0f6fc; border-radius: 16px; padding: 16px; margin: 0 20px 20px 20px; }
+        .patient-name { font-size: 18px; font-weight: 700; color: #0a2f44; }
+        .patient-meta { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px; font-size: 12px; color: #5f7f9a; }
+        .memo-number-badge { background: #0f5c7a; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .insurance-badge { background: #e0f2fe; color: #0f5c7a; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .empty-list { text-align: center; color: #8ba0b0; padding: 40px; font-size: 12px; }
+        .empty-list i { font-size: 36px; opacity: 0.3; margin-bottom: 10px; display: block; }
+        .memo-service-item { background: #f8fbfe; padding: 6px 10px; border-radius: 8px; margin: 4px 0; font-size: 12px; border-left: 2px solid #0f5c7a; }
+        .memo-status-banner { margin: 0 20px 12px 20px; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; border-left: 4px solid; }
+        .banner-active { background: #d4edda; color: #155724; border-color: #28a745; }
+        .banner-inactive { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+        .banner-viewonly { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .memo-status-banner i { font-size: 18px; }
+        /* Notification toast & chat styles (same as original) */
+        .notification-toast { position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 20px; border-radius: 14px; box-shadow: 0 5px 25px rgba(0,0,0,0.35); z-index: 9999; display: flex; align-items: center; gap: 12px; animation: slideInRight 0.4s ease; cursor: pointer; max-width: 380px; border-left: 4px solid #ffc107; }
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+        .notification-toast .close-toast { margin-left: 10px; cursor: pointer; opacity: 0.7; font-size: 16px; }
+        .notification-toast .close-toast:hover { opacity: 1; }
+        .notification-toast .msg-preview { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+        .notification-toast .sender-name { font-weight: 700; font-size: 14px; }
+        .notification-toast .time-stamp { font-size: 9px; opacity: 0.6; margin-top: 2px; }
+        .notification-toast .toast-icon { font-size: 24px; background: rgba(255,255,255,0.15); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .unread-badge { background: #ff4757; color: white; border-radius: 20px; padding: 2px 8px; font-size: 10px; margin-left: 6px; animation: pulse 1.5s infinite; font-weight: 700; }
+        .total-unread-badge { position: fixed; bottom: 90px; right: 24px; background: #ff4757; color: white; border-radius: 50px; padding: 6px 14px; font-size: 12px; font-weight: 700; z-index: 999; box-shadow: 0 4px 15px rgba(255,71,87,0.4); display: none; animation: pulse 1.5s infinite; cursor: pointer; border: 2px solid white; }
+        .chat-panel { position: fixed; bottom: 24px; right: 24px; width: 380px; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; transition: all 0.3s; z-index: 1000; border: 1px solid rgba(15,92,122,0.2); overflow: hidden; max-height: 600px; }
+        .chat-panel.minimized { width: auto; cursor: pointer; max-height: 60px; }
+        .chat-panel.minimized .chat-header { border-radius: 20px; }
+        .chat-panel.minimized .staff-list, .chat-panel.minimized .chat-messages, .chat-panel.minimized .chat-input-area, .chat-panel.minimized .staff-list-title, .chat-panel.minimized .typing-indicator, .chat-panel.minimized .delete-all-btn { display: none; }
+        .chat-header { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 18px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+        .chat-header i { font-size: 1.2rem; }
+        .chat-header h3 { font-size: 0.95rem; font-weight: 600; flex: 1; }
+        .chat-badge { background: #ff4757; color: white; border-radius: 40px; padding: 3px 10px; font-size: 10px; font-weight: bold; }
+        .minimize-icon { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+        .staff-list-title { font-size: 10px; color: #0f5c7a; padding: 10px 14px 4px; font-weight: 600; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
+        .staff-list { background: #f8fbfe; padding: 8px 12px; max-height: 200px; overflow-y: auto; border-bottom: 1px solid #e2eaf0; }
+        .staff-tab { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 5px 0; border-radius: 14px; cursor: pointer; background: white; border: 1px solid #e2eaf0; transition: all 0.2s; }
+        .staff-tab.active-staff { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; }
+        .staff-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0f5c7a; font-weight: bold; font-size: 16px; }
+        .active-staff .staff-avatar { background: rgba(255,255,255,0.25); color: white; }
+        .staff-info { flex: 1; }
+        .staff-name { font-weight: 700; font-size: 13px; color: #0a2f44; }
+        .staff-role { font-size: 10px; color: #5f7f9a; margin-top: 2px; }
+        .online-indicator { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #4caf50; background: #e8f5e9; padding: 3px 8px; border-radius: 20px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #fefefe; display: flex; flex-direction: column; gap: 12px; max-height: 350px; min-height: 300px; }
+        .message { display: flex; flex-direction: column; max-width: 88%; animation: slideIn 0.2s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .message.doctor { align-self: flex-end; }
+        .message.reception { align-self: flex-start; }
+        .message-bubble { padding: 8px 14px; border-radius: 18px; font-size: 12px; line-height: 1.4; word-break: break-word; }
+        .message.doctor .message-bubble { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; border-bottom-right-radius: 4px; }
+        .message.reception .message-bubble { background: #eef2f7; color: #1a2c3e; border-bottom-left-radius: 4px; }
+        .message-meta { font-size: 9px; margin-top: 4px; padding: 0 6px; color: #8ba0b0; display: flex; justify-content: space-between; align-items: center; }
+        .delete-msg { font-size: 9px; color: #ff4757; cursor: pointer; margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
+        .message:hover .delete-msg { opacity: 1; }
+        .typing-indicator { font-size: 10px; color: #0f5c7a; padding: 8px 16px; font-style: italic; background: #f8fbfe; border-top: 1px solid #e2eaf0; }
+        .chat-input-area { padding: 12px; background: white; border-top: 1px solid #e2eaf0; display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; border: 1.5px solid #e2eaf0; border-radius: 30px; padding: 10px 16px; font-size: 12px; outline: none; }
+        .chat-input-area input:focus { border-color: #0f5c7a; }
+        .chat-input-area button { background: #0f5c7a; border: none; color: white; padding: 0 20px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 12px; }
+        .chat-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .delete-all-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin: 8px 12px; }
+        .online-dot-chat { width: 6px; height: 6px; border-radius: 50%; background-color: #4caf50; display: inline-block; animation: pulseOnline 1.5s infinite; }
+        @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+        @media (max-width: 700px) { .chat-panel { width: 320px; right: 16px; bottom: 16px; } .notification-toast { max-width: 300px; right: 10px; top: 10px; padding: 12px 16px; } .total-unread-badge { right: 16px; bottom: 80px; } }
+        @media (max-width: 480px) { .chat-panel { width: 280px; right: 10px; bottom: 10px; } .notification-toast { max-width: 260px; right: 8px; top: 8px; padding: 10px 12px; } .total-unread-badge { right: 10px; bottom: 70px; font-size: 10px; padding: 4px 10px; } }
     </style>
 </head>
 <body>
@@ -902,7 +147,6 @@
         </div>
     </div>
 
-    <!-- ===== TOTAL UNREAD BADGE ===== -->
     <div class="total-unread-badge" id="totalUnreadBadge" onclick="openChatAndShowUnread()">
         <i class="fas fa-comment-dots"></i> <span id="totalUnreadCount">0</span> new
     </div>
@@ -941,7 +185,6 @@
                     </div>
                 </div>
 
-                <!-- ===== MEMO STATUS BANNER (dynamic) ===== -->
                 <div id="memoStatusBannerContainer"></div>
 
                 <div class="quick-actions" id="quickActions" style="display: none;">
@@ -960,14 +203,12 @@
                         <h4>Diagnosis & Treatment</h4>
                         <p>Add diagnosis and treatment plans</p>
                     </a>
-                    <!-- PRESCRIPTIONS -->
                     <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions">
                         <i class="fas fa-prescription"></i>
                         <h4>Prescriptions</h4>
                         <p id="prescriptionSubText">Issue prescriptions</p>
                         <span class="memo-status-tag" id="prescriptionTag">—</span>
                     </a>
-                    <!-- MEDICAL CERTIFICATE -->
                     <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate">
                         <i class="fas fa-file-medical-alt"></i>
                         <h4>Medical Certificate</h4>
@@ -979,7 +220,6 @@
         </div>
     </div>
 
-    <!-- ===== CHAT PANEL ===== -->
     <div class="chat-panel minimized" id="chatPanel">
         <div class="chat-header" id="chatHeader">
             <i class="fas fa-comment-dots"></i>
@@ -1027,8 +267,6 @@
                 selectedMemo = null,
                 selectedPatient = null;
             var patientMemos = [];
-
-            // ===== MEMO STATUS CACHE =====
             var memoStatusCache = {};
 
             // ========== CHAT VARIABLES ==========
@@ -1104,17 +342,7 @@
                 return { exists: false, memoId: null, memoNumber: null };
             }
 
-            // ===== CHECK IF PATIENT HAS A MEMO FOR TODAY =====
-            function hasMemoForToday(patientId) {
-                var today = getTodayDate();
-                var result = checkMemoExists(patientId, today);
-                return result.exists;
-            }
-
-            // ===== GET MEMO STATUS FOR A PATIENT =====
-            // Returns: 'active'  → no memo for today's appointment → can CREATE
-            //          'inactive' → memo exists for today → can only VIEW/PRINT
-            //          'viewonly' → no appointment today, but has past memos → can VIEW/PRINT
+            // ===== GET MEMO STATUS =====
             function getMemoStatus(patientId, appointmentDate) {
                 var cacheKey = patientId + '_' + (appointmentDate || '');
                 if (memoStatusCache[cacheKey]) return memoStatusCache[cacheKey];
@@ -1129,7 +357,7 @@
 
                 // No appointment date: check if there's a memo for today
                 var today = getTodayDate();
-                var hasTodayMemo = hasMemoForToday(patientId);
+                var hasTodayMemo = checkMemoExists(patientId, today).exists;
                 if (hasTodayMemo) {
                     memoStatusCache[cacheKey] = 'inactive';
                     return 'inactive';
@@ -1153,7 +381,7 @@
                 return 'active';
             }
 
-            // ========== PLAY SOUND ==========
+            // ========== PLAY SOUND, BADGES, CHAT (same as original) ==========
             function playNotificationSound() {
                 try {
                     if (!notificationSound) {
@@ -1165,7 +393,6 @@
                 } catch (e) {}
             }
 
-            // ========== UPDATE UNREAD BADGES ==========
             function updateAllBadges() {
                 totalUnread = 0;
                 for (var key in unreadCounts) {
@@ -1228,7 +455,6 @@
                 }
             };
 
-            // ========== SHOW NOTIFICATION TOAST ==========
             function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
                 unreadCounts[senderId] = (unreadCounts[senderId] || 0) + 1;
                 updateAllBadges();
@@ -1273,7 +499,7 @@
                 }, 6000);
             }
 
-            // ========== CHAT FUNCTIONS ==========
+            // ========== CHAT FUNCTIONS (abbreviated for brevity, same as original) ==========
             function getChatId(u1, u2) {
                 var sorted = [u1, u2].sort();
                 return 'chat_' + sorted[0] + '_' + sorted[1];
@@ -1320,7 +546,6 @@
                 if (heartbeatInterval) clearInterval(heartbeatInterval);
             }
 
-            // ========== LISTEN FOR ONLINE RECEPTION ==========
             function listenOnlineReception() {
                 if (!realtimeDB) return;
                 if (onlineListener) { onlineListener.off();
@@ -1355,7 +580,6 @@
                 });
             }
 
-            // ========== SETUP MESSAGE LISTENERS FOR ALL STAFF ==========
             function setupMessageListeners() {
                 if (!realtimeDB) return;
                 for (var key in allMessageListeners) {
@@ -1426,7 +650,6 @@
                 }
             }
 
-            // ========== SELECT STAFF FOR CHAT ==========
             function selectStaffForChat(staff) {
                 selectedStaff = staff;
                 document.getElementById('chatInput').disabled = false;
@@ -1609,7 +832,7 @@
                 }
             }
 
-            // ===== UPDATE MEMO STATUS BANNER & QUICK ACTION TAGS =====
+            // ===== UPDATE MEMO STATUS UI =====
             function updateMemoStatusUI(patient, appointment) {
                 var bannerContainer = document.getElementById('memoStatusBannerContainer');
                 if (!patient) {
@@ -1625,21 +848,21 @@
 
                 switch (status) {
                     case 'active':
-                        statusLabel = '🟢 Active Memo';
+                        statusLabel = '🟢 Active Memo (Today)';
                         statusClass = 'banner-active';
                         icon = '<i class="fas fa-pen-fancy"></i>';
                         description =
                         'You can create new prescriptions and medical certificates for this patient.';
                         break;
                     case 'inactive':
-                        statusLabel = '🔒 Memo Completed';
+                        statusLabel = '🔒 Memo Completed (Today)';
                         statusClass = 'banner-inactive';
                         icon = '<i class="fas fa-check-circle"></i>';
                         description =
-                        'A memo already exists for this appointment. You can only view and print existing prescriptions and certificates.';
+                        'A memo already exists for today. You can only view and print existing prescriptions and certificates.';
                         break;
                     case 'viewonly':
-                        statusLabel = '📄 View Only';
+                        statusLabel = '📄 View Only (Past Memos)';
                         statusClass = 'banner-viewonly';
                         icon = '<i class="fas fa-eye"></i>';
                         description =
@@ -1693,14 +916,12 @@
                 var certLink = document.getElementById('btnCertificate');
                 var patientId = patient.id || '';
 
-                // Prescriptions link
                 var prescHref = 'prescriptions.html?patientId=' + encodeURIComponent(patientId) + '&memoStatus=' + status;
                 if (appointment && appointment.date) {
                     prescHref += '&appointmentDate=' + encodeURIComponent(appointment.date);
                 }
                 prescLink.setAttribute('href', prescHref);
 
-                // Certificate link
                 var certHref = 'medical-certificate.html?patientId=' + encodeURIComponent(patientId) + '&memoStatus=' +
                     status;
                 if (appointment && appointment.date) {
@@ -1741,9 +962,7 @@
                 if (emptyState) emptyState.style.display = 'none';
                 if (quickActions) quickActions.style.display = 'grid';
 
-                // Update memo status UI
                 updateMemoStatusUI(patient, appointment);
-
                 displayPatientInfo();
             }
 

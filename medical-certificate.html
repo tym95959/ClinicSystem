@@ -92,112 +92,216 @@
         .no-patient-warning i { font-size: 32px; color: #856404; margin-bottom: 10px; display: block; }
         .no-patient-warning p { color: #856404; font-size: 14px; }
         
-        /* ====== MEDICAL CERTIFICATE PRINT STYLES ====== */
-        .mc-print-header {
-            text-align: center;
-            border-bottom: 2px solid #0a2f44;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
+        /* ====== MEDICAL CERTIFICATE PRINT STYLES - A5 LANDSCAPE ====== */
+        @page {
+            size: A5 landscape;
+            margin: 0.5cm 0.6cm;
         }
-        .mc-print-header h1 {
-            color: #0a2f44;
-            font-size: 26px;
-            margin: 5px 0;
-            letter-spacing: 1px;
+
+        .mc-print-container {
+            font-family: 'Times New Roman', Times, serif;
+            padding: 0.2cm 0.3cm;
+            max-width: 100%;
+            background: white;
+            font-size: 10px;
+            line-height: 1.25;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
-        .mc-print-header .sub {
-            color: #5f7f9a;
-            font-size: 12px;
-            margin: 2px 0;
+
+        .mc-print-container * {
+            font-size: inherit;
+            line-height: inherit;
         }
-        .mc-print-header .contact {
-            color: #5f7f9a;
-            font-size: 11px;
-        }
-        .mc-print-title {
-            text-align: center;
-            font-size: 22px;
-            font-weight: 700;
-            color: #0a2f44;
-            margin: 15px 0;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-        .mc-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 13px;
-        }
-        .mc-table td {
-            padding: 8px 10px;
-            border: 1px solid #1e2a36;
-            vertical-align: middle;
-        }
-        .mc-table .label {
-            font-weight: 600;
-            color: #0a2f44;
-            background: #f8fbfe;
-            width: 35%;
-        }
-        .mc-table .value {
-            width: 65%;
-        }
-        .mc-table .value-input {
-            min-height: 30px;
-            padding: 4px 8px;
-        }
-        .mc-diagnosis-box {
-            min-height: 80px;
-            padding: 8px;
-            line-height: 1.6;
-        }
-        .mc-footer {
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
+
+        /* Top section: Arabic center, Logo right, Address left */
+        .mc-top-section {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+            position: relative;
         }
-        .mc-doctor-sign {
+
+        .mc-address-left {
+            text-align: left;
+            font-size: 9px;
+            color: #0a2f44;
+            line-height: 1.3;
+            padding-top: 2px;
+        }
+        .mc-address-left .clinic-name {
+            font-weight: 700;
+            font-size: 11px;
+            color: #0a2f44;
+        }
+        .mc-address-left .contact-info {
+            color: #5f7f9a;
+            font-size: 8px;
+        }
+
+        .mc-arabic-center {
+            text-align: center;
+            font-family: 'Traditional Arabic', 'Amiri', 'Times New Roman', serif;
+            font-size: 13px;
+            color: #0a2f44;
+            font-weight: 700;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .mc-logo-right {
             text-align: right;
         }
-        .mc-doctor-sign .name {
-            font-weight: 700;
-            font-size: 15px;
+        .mc-logo-right .logo-img {
+            max-height: 40px;
+            width: auto;
         }
-        .mc-doctor-sign .title {
-            font-size: 12px;
+
+        /* Title: MEDICAL CERTIFICATE on left */
+        .mc-title-left {
+            text-align: left;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0a2f44;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: 'Times New Roman', serif;
+            margin: 6px 0 8px 0;
+            border-bottom: 1px solid #1a2c3e;
+            padding-bottom: 4px;
+        }
+
+        /* Two column layout: Patient Info (left) | Date & Memo (right) */
+        .mc-info-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 6px;
+        }
+        .mc-info-col {
+            flex: 1;
+        }
+        .mc-info-col .label {
+            font-weight: 700;
+            color: #0a2f44;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+        .mc-info-col .value {
+            color: #1a2c3e;
+            font-weight: 500;
+            font-size: 10px;
+            padding: 1px 0;
+        }
+        .mc-info-col .field-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            padding: 2px 0;
+            border-bottom: 0.5px dotted #e2eaf0;
+        }
+        .mc-info-col .field-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Type of Medical Leave - full width box */
+        .mc-leave-box {
+            border: 1px solid #1a2c3e;
+            padding: 6px 10px;
+            margin: 6px 0 8px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 20px;
+            background: #fafcfe;
+        }
+        .mc-leave-box .leave-label {
+            font-weight: 700;
+            color: #0a2f44;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+        .mc-leave-box .leave-value {
+            color: #1a2c3e;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .mc-leave-box .leave-separator {
+            color: #8ba0b0;
+            font-size: 8px;
+        }
+
+        /* Diagnosis and Remarks */
+        .mc-diagnosis-section {
+            margin: 6px 0;
+        }
+        .mc-diagnosis-section .section-label {
+            font-weight: 700;
+            color: #0a2f44;
+            font-size: 9px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        .mc-diagnosis-section .section-value {
+            border: 1px solid #1a2c3e;
+            padding: 6px 8px;
+            min-height: 40px;
+            font-size: 10px;
+            color: #1a2c3e;
+            background: #fafcfe;
+        }
+
+        /* Doctor and Signature row */
+        .mc-doctor-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #1a2c3e;
+        }
+        .mc-doctor-left {
+            text-align: left;
+        }
+        .mc-doctor-left .doc-name {
+            font-weight: 700;
+            font-size: 11px;
+            color: #0a2f44;
+        }
+        .mc-doctor-left .doc-title {
+            font-size: 9px;
             color: #666;
         }
-        .mc-doctor-sign .sign-line {
-            margin-top: 20px;
-            border-top: 1px solid #1e2a36;
-            width: 200px;
-            display: inline-block;
+        .mc-doctor-right {
+            text-align: right;
         }
-        .mc-stamp {
+        .mc-doctor-right .sign-line {
+            border-top: 1px solid #1a2c3e;
+            width: 140px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .mc-doctor-right .sign-label {
+            font-size: 8px;
+            color: #666;
+            margin-top: 1px;
+        }
+
+        .mc-footer-note {
             text-align: center;
-            margin: 10px 0;
-            font-size: 12px;
-            color: #0a2f44;
-            border: 1px dashed #0a2f44;
-            padding: 6px 15px;
-            border-radius: 50px;
-            display: inline-block;
-        }
-        .mc-note {
-            font-size: 11px;
+            font-size: 7.5px;
             color: #8ba0b0;
-            margin-top: 8px;
+            margin-top: 6px;
+            border-top: 0.5px solid #ddd;
+            padding-top: 4px;
         }
-        
-        @media (max-width: 768px) {
-            .patient-badge { flex-direction: column; text-align: center; }
-            .certificate-item { flex-direction: column; text-align: center; }
-            .mc-table td { display: block; width: 100%; border: none; border-bottom: 1px solid #ddd; }
-            .mc-table .label { background: #f0f6fc; font-weight: 700; }
-            .mc-doctor-sign .sign-line { width: 100%; }
+
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .clinic-header, .container, .card, .no-patient-warning, .modal, .patient-badge, .certificate-actions, .btn-group { display: none !important; }
+            .mc-print-container { display: flex !important; margin: 0 auto; padding: 0.2cm 0.3cm; min-height: 100vh; }
         }
     </style>
 </head>
@@ -523,93 +627,147 @@
             
             var win = window.open('', '_blank');
             win.document.write('<!DOCTYPE html><html><head><title>Medical Certificate - Hope Dental Care</title><style>');
-            win.document.write('body { font-family: "Times New Roman", serif; padding: 1.2cm; max-width: 800px; margin: 0 auto; }');
-            win.document.write('.mc-header { text-align: center; border-bottom: 2px solid #0a2f44; padding-bottom: 10px; margin-bottom: 12px; }');
-            win.document.write('.mc-header h1 { color: #0a2f44; font-size: 26px; margin: 3px 0; letter-spacing: 1px; }');
-            win.document.write('.mc-header .sub { color: #5f7f9a; font-size: 11px; margin: 2px 0; }');
-            win.document.write('.mc-header .contact { color: #5f7f9a; font-size: 10px; }');
-            win.document.write('.mc-title { text-align: center; font-size: 20px; font-weight: 700; color: #0a2f44; margin: 12px 0; letter-spacing: 3px; text-transform: uppercase; }');
-            win.document.write('.mc-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }');
-            win.document.write('.mc-table td { padding: 6px 8px; border: 1px solid #1e2a36; vertical-align: middle; }');
-            win.document.write('.mc-table .label { font-weight: 600; color: #0a2f44; background: #f8fbfe; width: 35%; }');
-            win.document.write('.mc-table .value { width: 65%; }');
-            win.document.write('.mc-diagnosis { min-height: 60px; padding: 6px; line-height: 1.6; }');
-            win.document.write('.mc-footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: flex-end; }');
-            win.document.write('.mc-doctor { text-align: right; }');
-            win.document.write('.mc-doctor .name { font-weight: 700; font-size: 14px; }');
-            win.document.write('.mc-doctor .title { font-size: 11px; color: #666; }');
-            win.document.write('.mc-doctor .sign-line { margin-top: 15px; border-top: 1px solid #1e2a36; width: 180px; display: inline-block; }');
-            win.document.write('.mc-stamp { text-align: center; margin: 8px 0; font-size: 11px; color: #0a2f44; border: 1px dashed #0a2f44; padding: 4px 12px; border-radius: 50px; display: inline-block; }');
-            win.document.write('.mc-note { font-size: 10px; color: #8ba0b0; margin-top: 6px; }');
-            win.document.write('.mc-logo { max-height: 60px; width: auto; }');
+            win.document.write('@page { size: A5 landscape; margin: 0.5cm 0.6cm; }');
+            win.document.write('body { font-family: "Times New Roman", Times, serif; padding: 0.2cm 0.3cm; max-width: 100%; background: white; font-size: 10px; line-height: 1.25; margin: 0; }');
+            win.document.write('.mc-print-container { max-width: 100%; display: flex; flex-direction: column; min-height: 100vh; }');
+            win.document.write('.mc-print-container * { font-size: inherit; line-height: inherit; }');
+            
+            // Top section styles
+            win.document.write('.mc-top-section { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; position: relative; }');
+            win.document.write('.mc-address-left { text-align: left; font-size: 9px; color: #0a2f44; line-height: 1.3; padding-top: 2px; }');
+            win.document.write('.mc-address-left .clinic-name { font-weight: 700; font-size: 11px; color: #0a2f44; }');
+            win.document.write('.mc-address-left .contact-info { color: #5f7f9a; font-size: 8px; }');
+            win.document.write('.mc-arabic-center { text-align: center; font-family: "Traditional Arabic","Amiri","Times New Roman",serif; font-size: 13px; color: #0a2f44; font-weight: 700; position: absolute; left: 50%; transform: translateX(-50%); }');
+            win.document.write('.mc-logo-right { text-align: right; }');
+            win.document.write('.mc-logo-right .logo-img { max-height: 40px; width: auto; }');
+            
+            // Title
+            win.document.write('.mc-title-left { text-align: left; font-size: 18px; font-weight: 700; color: #0a2f44; letter-spacing: 2px; text-transform: uppercase; font-family: "Times New Roman",serif; margin: 6px 0 8px 0; border-bottom: 1px solid #1a2c3e; padding-bottom: 4px; }');
+            
+            // Two column layout
+            win.document.write('.mc-info-row { display: flex; gap: 20px; margin-bottom: 6px; }');
+            win.document.write('.mc-info-col { flex: 1; }');
+            win.document.write('.mc-info-col .label { font-weight: 700; color: #0a2f44; font-size: 9px; text-transform: uppercase; }');
+            win.document.write('.mc-info-col .value { color: #1a2c3e; font-weight: 500; font-size: 10px; padding: 1px 0; }');
+            win.document.write('.mc-info-col .field-row { display: flex; align-items: baseline; gap: 4px; padding: 2px 0; border-bottom: 0.5px dotted #e2eaf0; }');
+            win.document.write('.mc-info-col .field-row:last-child { border-bottom: none; }');
+            
+            // Leave box
+            win.document.write('.mc-leave-box { border: 1px solid #1a2c3e; padding: 6px 10px; margin: 6px 0 8px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; background: #fafcfe; }');
+            win.document.write('.mc-leave-box .leave-label { font-weight: 700; color: #0a2f44; font-size: 9px; text-transform: uppercase; }');
+            win.document.write('.mc-leave-box .leave-value { color: #1a2c3e; font-size: 10px; font-weight: 500; }');
+            win.document.write('.mc-leave-box .leave-separator { color: #8ba0b0; font-size: 8px; }');
+            
+            // Diagnosis
+            win.document.write('.mc-diagnosis-section { margin: 6px 0; }');
+            win.document.write('.mc-diagnosis-section .section-label { font-weight: 700; color: #0a2f44; font-size: 9px; text-transform: uppercase; margin-bottom: 2px; }');
+            win.document.write('.mc-diagnosis-section .section-value { border: 1px solid #1a2c3e; padding: 6px 8px; min-height: 40px; font-size: 10px; color: #1a2c3e; background: #fafcfe; }');
+            
+            // Doctor row
+            win.document.write('.mc-doctor-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; padding-top: 8px; border-top: 1px solid #1a2c3e; }');
+            win.document.write('.mc-doctor-left { text-align: left; }');
+            win.document.write('.mc-doctor-left .doc-name { font-weight: 700; font-size: 11px; color: #0a2f44; }');
+            win.document.write('.mc-doctor-left .doc-title { font-size: 9px; color: #666; }');
+            win.document.write('.mc-doctor-right { text-align: right; }');
+            win.document.write('.mc-doctor-right .sign-line { border-top: 1px solid #1a2c3e; width: 140px; display: inline-block; margin-top: 4px; }');
+            win.document.write('.mc-doctor-right .sign-label { font-size: 8px; color: #666; margin-top: 1px; }');
+            
+            // Footer
+            win.document.write('.mc-footer-note { text-align: center; font-size: 7.5px; color: #8ba0b0; margin-top: 6px; border-top: 0.5px solid #ddd; padding-top: 4px; }');
+            
+            win.document.write('@media print { body { margin: 0; padding: 0; } .mc-print-container { padding: 0.2cm 0.3cm; min-height: 100vh; } }');
             win.document.write('</style></head><body>');
             
-            // Header
-            win.document.write('<div class="mc-header">');
-            win.document.write('<img src="hope1.png" alt="Hope Dental Care" class="mc-logo" onerror="this.style.display=\'none\';">');
-            win.document.write('<h1>HOPE DENTAL CARE</h1>');
-            win.document.write('<div class="sub">H. Fairy Palace, Abadhah ufaa hingun, Male\', Maldives</div>');
-            win.document.write('<div class="contact">Tel: +960 3001516, +960 7951515 | hopedentalcaremv@gmail.com</div>');
+            win.document.write('<div class="mc-print-container">');
+            
+            // TOP SECTION: Arabic center, Address left, Logo right
+            win.document.write('<div class="mc-top-section">');
+            win.document.write('<div class="mc-address-left">');
+            win.document.write('<div class="clinic-name">HOPE DENTAL CARE</div>');
+            win.document.write('<div>H. Fairy Palace, Abadhah Ufaa Hingun</div>');
+            win.document.write('<div class="contact-info">Tel: +960 3001516, +960 7951515</div>');
+            win.document.write('<div class="contact-info">Email: hopedentalcaremv@gmail.com</div>');
+            win.document.write('</div>');
+            win.document.write('<div class="mc-arabic-center">بِسْمِ ٱللهِ ٱلرَّحْمَٰنِ ٱلرَّحِيْمِ</div>');
+            win.document.write('<div class="mc-logo-right">');
+            win.document.write('<img src="hope1.png" alt="Hope Dental Care" class="logo-img" onerror="this.style.display=\'none\';">');
+            win.document.write('</div>');
             win.document.write('</div>');
             
             // Title
-            win.document.write('<div class="mc-title">MEDICAL CERTIFICATE</div>');
+            win.document.write('<div class="mc-title-left">MEDICAL CERTIFICATE</div>');
             
-            // Certificate Table
-            win.document.write('<table class="mc-table">');
-            
+            // Two column: Patient Info (left) | Date & Memo (right)
             var displayId = getDisplayId(selectedPatient);
             var age = calculateAge(selectedPatient.dob);
+            var certDate = new Date(cert.issuedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
             
-            // Row 1: Patient No, Date
-            win.document.write('<tr><td class="label">Patient No:</td><td class="value">' + escapeHtml(selectedPatient.id || 'N/A') + '</td><td class="label">Date:</td><td class="value">' + new Date(cert.issuedAt).toLocaleDateString() + '</td></tr>');
+            win.document.write('<div class="mc-info-row">');
+            // Left column - Patient Info
+            win.document.write('<div class="mc-info-col">');
+            win.document.write('<div class="field-row"><span class="label">Patient Name:</span><span class="value">' + escapeHtml(selectedPatient.name) + '</span></div>');
+            win.document.write('<div class="field-row"><span class="label">Patient No:</span><span class="value">' + escapeHtml(selectedPatient.id || 'N/A') + '</span></div>');
+            win.document.write('<div class="field-row"><span class="label">Address:</span><span class="value">' + escapeHtml(selectedPatient.address || 'N/A') + '</span></div>');
+            win.document.write('<div class="field-row"><span class="label">Sex:</span><span class="value">' + (selectedPatient.gender || 'N/A') + '</span></div>');
+            win.document.write('<div class="field-row"><span class="label">Age:</span><span class="value">' + age + '</span></div>');
+            win.document.write('<div class="field-row"><span class="label">National ID No:</span><span class="value">' + escapeHtml(displayId) + '</span></div>');
+            win.document.write('</div>');
             
-            // Row 2: Name, Memo No
-            win.document.write('<tr><td class="label">Name:</td><td class="value">' + escapeHtml(selectedPatient.name) + '</td><td class="label">Memo No:</td><td class="value">' + (cert.memoId || 'N/A') + '</td></tr>');
+            // Right column - Date and Memo
+            win.document.write('<div class="mc-info-col">');
+            win.document.write('<div class="field-row"><span class="label">Date:</span><span class="value">' + certDate + '</span></div>');
+            win.document.write('<div class="field-row"><span class="label">Memo No:</span><span class="value">' + (cert.memoId || 'N/A') + '</span></div>');
+            win.document.write('</div>');
+            win.document.write('</div>');
             
-            // Row 3: Address, Age
-            win.document.write('<tr><td class="label">Address:</td><td class="value">' + escapeHtml(selectedPatient.address || 'N/A') + '</td><td class="label">Age:</td><td class="value">' + age + '</td></tr>');
+            // Type of Medical Leave - full width box
+            win.document.write('<div class="mc-leave-box">');
+            win.document.write('<span class="leave-label">Type of Medical Leave:</span>');
+            win.document.write('<span class="leave-value">MEDICAL</span>');
+            win.document.write('<span class="leave-separator">|</span>');
+            win.document.write('<span class="leave-label">Type of leave:</span>');
+            win.document.write('<span class="leave-value">SICK LEAVE</span>');
+            win.document.write('<span class="leave-separator">|</span>');
+            win.document.write('<span class="leave-label">No of Days:</span>');
+            win.document.write('<span class="leave-value">' + escapeHtml(cert.recommendedRest || 'N/A') + '</span>');
+            win.document.write('<span class="leave-separator">|</span>');
+            win.document.write('<span class="leave-label">Certified From:</span>');
+            win.document.write('<span class="leave-value">' + certDate + '</span>');
+            win.document.write('<span class="leave-separator">|</span>');
+            win.document.write('<span class="leave-label">To:</span>');
+            win.document.write('<span class="leave-value">' + certDate + '</span>');
+            win.document.write('</div>');
             
-            // Row 4: Sex, National ID No
-            win.document.write('<tr><td class="label">Sex:</td><td class="value">' + (selectedPatient.gender || 'N/A') + '</td><td class="label">National ID No:</td><td class="value">' + escapeHtml(displayId) + '</td></tr>');
+            // Diagnosis
+            win.document.write('<div class="mc-diagnosis-section">');
+            win.document.write('<div class="section-label">Diagnosis:</div>');
+            win.document.write('<div class="section-value">' + escapeHtml(cert.diagnosisSummary) + '</div>');
+            win.document.write('</div>');
             
-            // Row 5: Type of Medical Leave
-            win.document.write('<tr><td class="label" colspan="2">Type of Medical Leave</td><td class="label" colspan="2">Type of leave: MEDICAL</td></tr>');
+            // Remarks
+            win.document.write('<div class="mc-diagnosis-section">');
+            win.document.write('<div class="section-label">Remarks:</div>');
+            win.document.write('<div class="section-value">' + (cert.remarks ? escapeHtml(cert.remarks) : '—') + '</div>');
+            win.document.write('</div>');
             
-            // Row 6: No of Days, Certified Duration
-            win.document.write('<tr><td class="label">No of Days:</td><td class="value">' + escapeHtml(cert.recommendedRest || 'N/A') + '</td><td class="label">Certified Duration: (From)</td><td class="value">' + new Date(cert.issuedAt).toLocaleDateString() + '</td></tr>');
-            
-            // Row 7: Diagnosis
-            win.document.write('<tr><td class="label">Diagnosis:</td><td class="value" colspan="3"><div class="mc-diagnosis">' + escapeHtml(cert.diagnosisSummary) + '</div></td></tr>');
-            
-            // Row 8: Remarks
-            win.document.write('<tr><td class="label">Remarks:</td><td class="value" colspan="3">' + escapeHtml(cert.remarks || '—') + '</td></tr>');
-            
-            // Row 9: Doctor, Signature
-            win.document.write('<tr><td class="label">Doctor:</td><td class="value">Dr. ' + escapeHtml(currentDoctor.name) + ' (' + escapeHtml(currentDoctor.speciality || 'General') + ')</td><td class="label">Signature:</td><td class="value" style="text-align: right;">_________________________</td></tr>');
-            
-            win.document.write('</table>');
-            
-            // Stamp and Notes
-            win.document.write('<div style="text-align: center; margin-top: 10px;">');
-            win.document.write('<div class="mc-stamp">🔄 This certificate is valid for the period specified</div>');
+            // Doctor and Signature row
+            win.document.write('<div class="mc-doctor-row">');
+            win.document.write('<div class="mc-doctor-left">');
+            win.document.write('<div class="doc-name">Dr. ' + escapeHtml(currentDoctor.name) + '</div>');
+            win.document.write('<div class="doc-title">' + escapeHtml(currentDoctor.speciality || 'General Practitioner') + '</div>');
+            win.document.write('</div>');
+            win.document.write('<div class="mc-doctor-right">');
+            win.document.write('<div class="sign-line"></div>');
+            win.document.write('<div class="sign-label">Doctor Signature</div>');
+            win.document.write('</div>');
             win.document.write('</div>');
             
             // Footer
-            win.document.write('<div class="mc-footer">');
-            win.document.write('<div style="font-size: 10px; color: #666;">');
-            win.document.write('<p>📋 This certificate is issued for medical purposes</p>');
-            win.document.write('<p>⚠️ Please present this certificate to your employer/insurance provider</p>');
-            win.document.write('</div>');
-            win.document.write('<div class="mc-doctor">');
-            win.document.write('<div class="name">Dr. ' + escapeHtml(currentDoctor.name) + '</div>');
-            win.document.write('<div class="title">' + escapeHtml(currentDoctor.speciality || 'General Practitioner') + '</div>');
-            win.document.write('<div class="sign-line"></div>');
-            win.document.write('<div style="font-size: 10px; color: #666; margin-top: 2px;">Signature &amp; Clinic Stamp</div>');
-            win.document.write('</div>');
+            win.document.write('<div class="mc-footer-note">');
+            win.document.write('This is a computer-generated document. Valid without signature.  |  © Hope Dental Care');
             win.document.write('</div>');
             
-            win.document.write('<div class="mc-note">This is a computer-generated document. Valid without signature.  |  © Hope Dental Care</div>');
+            win.document.write('</div>');
             
             win.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 1500); };<\/script>');
             win.document.write('</body></html>');

@@ -200,61 +200,64 @@
             color: #1a2c3e;
         }
 
-        /* patient row: all in one line, compact */
+        /* patient row: all in one line, compact, with better font */
         .rx-patient-row {
             display: flex;
             align-items: baseline;
             flex-wrap: wrap;
             gap: 0 5px;
-            margin: 1px 0;
-            padding: 1px 0;
-            font-size: 10.5px;
+            margin: 2px 0 8px 0;  /* extra bottom margin for spacing */
+            padding: 2px 0;
+            font-size: 11px;
             font-family: 'Times New Roman', serif;
+            font-weight: 500;
+            color: #1a2c3e;
         }
         .rx-patient-row .rx-label {
             font-weight: 700;
             color: #0a2f44;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
-            font-size: 9.5px;
+            letter-spacing: 0.3px;
+            font-size: 10px;
         }
         .rx-patient-row .rx-value {
             color: #1a2c3e;
-            font-weight: 500;
+            font-weight: 600;
             padding: 0 2px;
-            font-size: 10.5px;
+            font-size: 11px;
         }
         .rx-patient-row .rx-value-sm {
             padding: 0 2px;
-            font-size: 10.5px;
+            font-size: 11px;
+            font-weight: 600;
         }
         .rx-patient-row .rx-label-sm {
             font-weight: 700;
             color: #0a2f44;
             margin-right: 1px;
             text-transform: uppercase;
-            font-size: 9.5px;
+            font-size: 10px;
         }
         .rx-patient-row .rx-spacer {
-            margin-right: 3px;
+            margin-right: 4px;
         }
 
         .rx-rx-symbol {
             font-size: 26px;
             font-weight: 700;
             color: #0a2f44;
-            padding: 1px 0 0px 0;
+            padding: 4px 0 2px 0;  /* extra top padding for spacing */
             font-family: 'Times New Roman', serif;
         }
 
         .rx-medication-area {
             min-height: 80px;
-            padding: 3px 0;
+            padding: 6px 0 3px 0;  /* extra top padding for spacing */
             margin: 0px 0;
             flex: 1 0 auto;
         }
         .rx-medication-area .med-item {
-            padding: 2px 0;
+            padding: 3px 0;
             font-size: 10.5px;
             font-family: 'Times New Roman', serif;
         }
@@ -672,7 +675,7 @@
             html += '<span class="rx-date">DATE: <span class="date-value">' + today + '</span></span>';
             html += '</div>';
             
-            // Patient row: all in one line
+            // Patient row: all in one line with better font and spacing
             html += '<div class="rx-patient-row">';
             html += '<span class="rx-label">PATIENT:</span>';
             html += '<span class="rx-value">' + escapeHtml(selectedPatient.name) + '</span>';
@@ -684,10 +687,10 @@
             html += '<span class="rx-value-sm">' + escapeHtml(displayId) + '</span>';
             html += '</div>';
             
-            // Rx symbol
+            // Rx symbol with extra spacing
             html += '<div class="rx-rx-symbol">℞</div>';
             
-            // Medication area (flexible)
+            // Medication area (with extra top spacing)
             html += '<div class="rx-medication-area">';
             html += '<div class="med-item">';
             html += '<div class="med-name">💊 ' + escapeHtml(presc.medication) + '</div>';

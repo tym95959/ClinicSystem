@@ -3,25 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Hope Dental | Reports Hub</title>
-    <!-- Font Awesome 6 -->
+    <title>Patient History - Hope Dental Care</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: #f0f4f8;
-            color: #1a2c3e;
-        }
-
-        /* Header */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #eef2f7; min-height: 100vh; }
+        
         .clinic-header {
             background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
             color: #004d4d;
@@ -33,306 +24,1076 @@
             gap: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .logo h2 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .back-btn { background: #1e4a6e; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; }
+        .back-btn:hover { background: #2a5f89; }
+        .logout-btn { background: #c63d2f; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; }
+        .logout-btn:hover { background: #a52a1f; }
+        
+        .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
+        
+        .search-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            padding: 20px;
+            margin-bottom: 20px;
         }
-        .logo h2 i {
-            font-size: 1.6rem;
-            color: #7ab7d4;
-        }
-        .header-actions {
+        
+        .search-wrapper {
             display: flex;
             gap: 12px;
-        }
-        .btn-outline {
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: white;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: 500;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 8px;
         }
-        .btn-outline:hover {
-            background: rgba(255,255,255,0.3);
+        
+        .search-wrapper .input-group {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
         }
-
-        /* Container */
-        .container {
-            max-width: 1000px;
-            margin: 60px auto;
-            padding: 0 24px;
+        
+        .search-wrapper .input-group input {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            border: 2px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 13px;
+            transition: all 0.3s ease;
         }
-
-        .back-btn {
-            background: #1e4a6e;
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 30px;
+        
+        .search-wrapper .input-group input:focus {
+            border-color: #0f5c7a;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a9aa8;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #0f5c7a;
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        
+        .search-results.active {
+            display: block;
+        }
+        
+        .search-result-item {
+            padding: 10px 14px;
             cursor: pointer;
-            font-weight: 500;
+            border-bottom: 1px solid #f0f4f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background: #e0f2fe;
+        }
+        
+        .search-result-item .name {
+            font-weight: 600;
+            color: #0a2f44;
+            font-size: 13px;
+        }
+        
+        .search-result-item .id {
             font-size: 11px;
+            color: #6c7a89;
         }
-
-        .back-btn:hover {
-            background: #c63d2f;
+        
+        .search-result-item .badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
         }
-
-        .page-title {
+        
+        .search-result-item .badge.citizen {
+            background: #146b3a;
+        }
+        
+        .search-empty {
+            padding: 20px;
             text-align: center;
-            margin-bottom: 48px;
+            color: #8a9aa8;
+            font-size: 13px;
         }
-        .page-title h2 {
-            font-size: 1.8rem;
+        
+        .patient-profile {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2eaf0;
+            padding: 24px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .patient-profile .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2eaf0;
+        }
+        
+        .patient-profile .name {
+            font-size: 24px;
             font-weight: 700;
             color: #0a2f44;
         }
-        .page-title p {
-            color: #6c8eae;
-            font-size: 14px;
-            margin-top: 6px;
-        }
-
-        /* Reports grid */
-        .reports-grid {
+        
+        .patient-profile .details {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 28px;
-            justify-content: center;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
         }
-
-        .report-card {
-            background: white;
-            border-radius: 32px;
-            text-align: center;
-            padding: 32px 20px 28px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            border: 1px solid #e9edf2;
-            text-decoration: none;
-            color: inherit;
+        
+        .patient-profile .detail-item {
+            font-size: 13px;
+            color: #5f7f9a;
+        }
+        
+        .patient-profile .detail-item strong {
+            color: #0a2f44;
+            display: inline-block;
+            min-width: 80px;
+        }
+        
+        .patient-profile .action-links {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .report-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 30px rgba(0,0,0,0.1);
-            border-color: #cbdde9;
-        }
-        .card-icon {
-            font-size: 3.2rem;
-        }
-        .card-icon.daily { color: #2c6e8f; }
-        .card-icon.monthly { color: #1e6f5c; }
-        .card-icon.insurance { color: #e67e22; }
-        .card-icon.doctor { color: #8e44ad; }
-        .report-card h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: -0.2px;
-            color: #1a2c3e;
-        }
-        .report-card .desc {
+        
+        .patient-profile .action-links a {
+            background: #f0f6fc;
+            color: #0a2f44;
+            padding: 6px 14px;
+            border-radius: 20px;
+            text-decoration: none;
             font-size: 12px;
-            color: #6c8eae;
-            line-height: 1.4;
-            padding: 0 6px;
-        }
-        .btn-hint {
-            font-size: 11px;
-            font-weight: 500;
-            background: #f0f4f9;
-            padding: 6px 16px;
-            border-radius: 30px;
-            color: #1f5e7e;
+            font-weight: 600;
+            transition: 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+        }
+        
+        .patient-profile .action-links a:hover {
+            background: #e0f2fe;
+            transform: translateY(-2px);
+        }
+        
+        .history-tabs {
+            display: flex;
+            gap: 5px;
+            background: #f4f9fe;
+            padding: 0 12px;
+            border-radius: 16px 16px 0 0;
+            overflow-x: auto;
+            border-bottom: 1px solid #e2eaf0;
+        }
+        
+        .history-tab {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5f7f9a;
+            transition: 0.2s;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .history-tab.active {
+            color: #0f5c7a;
+            border-bottom-color: #0f5c7a;
+            background: white;
+            margin-bottom: -1px;
+        }
+        
+        .history-tab:hover {
+            color: #0a2f44;
+        }
+        
+        .history-content {
+            background: white;
+            border-radius: 0 0 16px 16px;
+            border: 1px solid #e2eaf0;
+            border-top: none;
+            padding: 20px;
+            min-height: 300px;
+        }
+        
+        .history-panel {
+            display: none;
+        }
+        
+        .history-panel.active {
+            display: block;
+        }
+        
+        .history-item {
+            background: #f8fbfe;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border-left: 3px solid #0f5c7a;
             transition: 0.2s;
         }
-        .report-card:hover .btn-hint {
-            background: #1e6f5c;
-            color: white;
+        
+        .history-item:hover {
+            transform: translateX(3px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-
-        /* Restricted message */
-        .restricted-msg {
-            text-align: center;
-            padding: 20px;
-            background: #fff3cd;
-            border-radius: 16px;
-            border: 1px solid #ffc107;
-            color: #856404;
+        
+        .history-item .info {
+            flex: 1;
+        }
+        
+        .history-item .info .title {
+            font-weight: 600;
             font-size: 14px;
-            margin-bottom: 30px;
+            color: #0a2f44;
         }
-        .restricted-msg i {
-            margin-right: 10px;
+        
+        .history-item .info .sub {
+            font-size: 12px;
+            color: #5f7f9a;
+            margin-top: 4px;
         }
-
-        /* Footer */
-        .footer {
+        
+        .history-item .info .sub i {
+            margin-right: 4px;
+            width: 16px;
+        }
+        
+        .history-item .info .services-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            margin-top: 4px;
+        }
+        
+        .history-item .info .service-tag {
+            background: #e8f0fe;
+            color: #0a2f44;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        .history-item .info .service-tag.free {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .memo-badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .cert-badge {
+            background: #27ae60;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .rx-badge {
+            background: #8e44ad;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .empty-state {
             text-align: center;
-            margin-top: 70px;
-            padding: 20px;
-            font-size: 11px;
+            padding: 40px 20px;
             color: #8ba0b0;
-            border-top: 1px solid #e2e8f0;
         }
-
-        @media print {
-            .clinic-header, .btn-outline, .footer {
-                display: none;
-            }
+        
+        .empty-state i {
+            font-size: 48px;
+            opacity: 0.3;
+            margin-bottom: 15px;
+            display: block;
         }
-
-        @media (max-width: 640px) {
-            .container {
-                margin: 30px auto;
+        
+        .empty-state .sub-text {
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #f4f9fe;
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0a2f44;
+        }
+        
+        .stat-card .label {
+            font-size: 10px;
+            color: #5f7f9a;
+            margin-top: 2px;
+        }
+        
+        .stat-card .icon {
+            font-size: 20px;
+            color: #0f5c7a;
+            margin-bottom: 4px;
+        }
+        
+        .view-btn {
+            background: #0f5c7a;
+            color: white;
+            padding: 3px 12px;
+            border-radius: 20px;
+            border: none;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .view-btn:hover {
+            background: #1a6f8f;
+        }
+        
+        .history-item .actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .amount-text {
+            font-weight: 600;
+            color: #0a2f44;
+        }
+        
+        .amount-text.payable {
+            color: #0f5c7a;
+        }
+        
+        @media (max-width: 768px) {
+            .patient-profile .header {
+                flex-direction: column;
             }
-            .reports-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 16px;
+            .search-wrapper .input-group {
+                min-width: 100%;
             }
-            .report-card {
-                padding: 20px 12px 18px;
+            .history-tabs {
+                padding: 0 8px;
             }
-            .card-icon {
-                font-size: 2.4rem;
-            }
-            .report-card h3 {
-                font-size: 0.95rem;
-            }
-            .report-card .desc {
-                font-size: 10px;
+            .history-tab {
+                padding: 10px 14px;
+                font-size: 11px;
             }
         }
     </style>
 </head>
 <body>
 <div class="clinic-header">
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <img src="hope1.png" alt="Hope Dental Logo" style="height: 50px; vertical-align: middle;">
-        <h1 style="font-size: 1.3rem; font-weight: 600; margin: 0; background: linear-gradient(135deg, #006666, #20b2aa); -webkit-background-clip: text; background-clip: text; color: transparent;">Hope Dental Care / Reports</h1>
-    </div>
+    <div class="logo"><h2>📋 Patient History</h2></div>
     <div>
         <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
-        <button class="back-btn" onclick="logout()">🚪 Logout</button>
+        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
     </div>
 </div>
 
 <div class="container">
-    <div class="page-title">
-        <h2>📊 Reports Hub</h2>
-        <p>Select a report type to view detailed analytics and insights</p>
+    <!-- Search Card -->
+    <div class="search-card">
+        <div class="search-wrapper">
+            <div class="input-group">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Search patient by name, ID, or passport..." autocomplete="off">
+                <div id="searchResults" class="search-results">
+                    <div class="search-empty">Start typing to search patients...</div>
+                </div>
+            </div>
+            <button class="back-btn" onclick="clearSearch()" style="background: #6c757d; padding: 10px 20px; font-size: 13px;">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
     </div>
 
-    <!-- Restricted message (hidden by default) -->
-    <div id="restrictedMsg" class="restricted-msg" style="display: none;">
-        <i class="fas fa-lock"></i> You have limited access. Only the Daily Report is available.
+    <!-- Patient Profile -->
+    <div id="patientProfile" class="patient-profile">
+        <div class="header">
+            <div>
+                <div class="name" id="profileName">—</div>
+                <div class="details">
+                    <div class="detail-item"><strong>🪪 ID:</strong> <span id="profileId">—</span></div>
+                    <div class="detail-item"><strong>📞 Phone:</strong> <span id="profilePhone">—</span></div>
+                    <div class="detail-item"><strong>🎂 Age:</strong> <span id="profileAge">—</span></div>
+                    <div class="detail-item"><strong>🌍 Nationality:</strong> <span id="profileNationality">—</span></div>
+                    <div class="detail-item"><strong>📍 Address:</strong> <span id="profileAddress">—</span></div>
+                    <div class="detail-item"><strong>🏥 Insurance:</strong> <span id="profileInsurance">—</span></div>
+                </div>
+            </div>
+            <div class="action-links">
+                <a href="create-memo.html?patientId=" id="linkMemo"><i class="fas fa-file-medical"></i> New Memo</a>
+                <a href="prescriptions.html?patientId=" id="linkPrescription"><i class="fas fa-prescription"></i> Prescriptions</a>
+                <a href="medical-certificate.html?patientId=" id="linkCertificate"><i class="fas fa-file-medical-alt"></i> Certificate</a>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="summary-stats" id="summaryStats">
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-file-medical"></i></div>
+                <div class="number" id="statMemos">0</div>
+                <div class="label">Memos</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-prescription"></i></div>
+                <div class="number" id="statPrescriptions">0</div>
+                <div class="label">Prescriptions</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-file-medical-alt"></i></div>
+                <div class="number" id="statCertificates">0</div>
+                <div class="label">Certificates</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="number" id="statAppointments">0</div>
+                <div class="label">Appointments</div>
+            </div>
+        </div>
     </div>
 
-    <div class="reports-grid">
-        <!-- Daily Report – always visible -->
-        <a href="daily_report.html" class="report-card" id="dailyCard">
-            <i class="fas fa-calendar-day card-icon daily"></i>
-            <h3>Daily Report</h3>
-            <span class="desc">View daily financial summary and transactions</span>
-            <span class="btn-hint"><i class="fas fa-arrow-right"></i> Open</span>
-        </a>
-
-        <!-- Monthly Financial Report – supervisor only -->
-        <a href="monthly_report.html" class="report-card supervisor-only" id="monthlyCard">
-            <i class="fas fa-chart-line card-icon monthly"></i>
-            <h3>Monthly Report</h3>
-            <span class="desc">Comprehensive monthly financial overview</span>
-            <span class="btn-hint"><i class="fas fa-arrow-right"></i> Open</span>
-        </a>
-
-        <!-- Doctor Services Report – supervisor only -->
-        <a href="doctor_report.html" class="report-card supervisor-only" id="doctorCard">
-            <i class="fas fa-user-md card-icon doctor"></i>
-            <h3>Doctor Services Report</h3>
-            <span class="desc">Services breakdown by doctor with performance metrics</span>
-            <span class="btn-hint"><i class="fas fa-arrow-right"></i> Open</span>
-        </a>
-
-        <!-- Insurance Report – supervisor only -->
-        <a href="insurance_report.html" class="report-card supervisor-only" id="insuranceCard">
-            <i class="fas fa-file-invoice-dollar card-icon insurance"></i>
-            <h3>Insurance Report</h3>
-            <span class="desc">Insurance claims breakdown by company</span>
-            <span class="btn-hint"><i class="fas fa-arrow-right"></i> Open</span>
-        </a>
-    </div>
-
-    <div class="footer">
-        <i class="fas fa-print"></i> Print friendly &nbsp;|&nbsp;
-        <i class="fas fa-file-csv"></i> Export CSV &nbsp;|&nbsp;
-        Hope Dental Clinic
+    <!-- History Tabs -->
+    <div id="historySection" style="display: none;">
+        <div class="history-tabs">
+            <button class="history-tab active" data-tab="memos">📋 Memos</button>
+            <button class="history-tab" data-tab="prescriptions">💊 Prescriptions</button>
+            <button class="history-tab" data-tab="certificates">📄 Certificates</button>
+            <button class="history-tab" data-tab="appointments">📅 Appointments</button>
+        </div>
+        <div class="history-content">
+            <div id="panelMemos" class="history-panel active">
+                <div class="empty-state"><i class="fas fa-file-medical"></i><p>No memos found</p><div class="sub-text">Create a new memo from the patient profile</div></div>
+            </div>
+            <div id="panelPrescriptions" class="history-panel">
+                <div class="empty-state"><i class="fas fa-prescription"></i><p>No prescriptions found</p></div>
+            </div>
+            <div id="panelCertificates" class="history-panel">
+                <div class="empty-state"><i class="fas fa-file-medical-alt"></i><p>No medical certificates found</p></div>
+            </div>
+            <div id="panelAppointments" class="history-panel">
+                <div class="empty-state"><i class="fas fa-calendar-day"></i><p>No appointments found</p></div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // ========== AUTH & ROLE CHECK ==========
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) {
-        window.location.href = 'login.html';
-    }
+    (function() {
+        // ========== AUTH - SUPPORTS BOTH DOCTOR AND RECEPTION ==========
+        // Try doctor session first, then reception session, then fallback
+        var userData = null;
+        var loggedInUser = localStorage.getItem('loggedInUser');
+        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+        
+        if (doctorSession) {
+            try {
+                userData = JSON.parse(doctorSession);
+                userData.userType = 'doctor';
+            } catch(e) {}
+        }
+        
+        if (!userData && loggedInUser) {
+            try {
+                userData = JSON.parse(loggedInUser);
+                userData.userType = 'reception';
+            } catch(e) {}
+        }
+        
+        // Check if user is logged in
+        if (!userData || !userData.id) {
+            // If no user data, redirect to login
+            window.location.href = 'login.html';
+            return;
+        }
 
-    let user = null;
-    try {
-        user = JSON.parse(loggedInUser);
-    } catch(e) {
-        window.location.href = 'login.html';
-    }
+        var currentUser = {
+            id: userData.id || userData.username,
+            name: userData.name || userData.username || 'User',
+            role: userData.level || userData.role || 'Staff',
+            type: userData.userType || 'staff'
+        };
 
-    // Display user name in header
-    const header = document.querySelector('.clinic-header');
-    const userSpan = document.createElement('div');
-    userSpan.style.cssText = 'background: rgba(255,255,255,0.12); padding: 5px 14px; border-radius: 40px; font-size: 12px; font-weight: 500;';
-    userSpan.innerHTML = `<i class="fas fa-user-circle"></i> ${user.name || user.username} (${user.level})`;
-    header.insertBefore(userSpan, header.children[1]);
+        var firestoreDB = null;
+        var patientsList = [];
+        var selectedPatient = null;
+        var patientMemos = [];
+        var patientPrescriptions = [];
+        var patientCertificates = [];
+        var patientAppointments = [];
+        var searchTimeout = null;
 
-    // ========== ROLE-BASED VISIBILITY ==========
-    const level = (user.level || '').toLowerCase();
-    const isSupervisor = level === 'supervisor';
+        // ========== HELPER FUNCTIONS ==========
+        function escapeHtml(str) { 
+            if (!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m) { 
+                if (m === '&') return '&amp;'; 
+                if (m === '<') return '&lt;'; 
+                if (m === '>') return '&gt;'; 
+                return m; 
+            }); 
+        }
 
-    // Elements that are supervisor-only
-    const supervisorCards = document.querySelectorAll('.supervisor-only');
-    const restrictedMsg = document.getElementById('restrictedMsg');
+        function getDisplayId(patient) {
+            if (!patient) return 'N/A';
+            if (patient.idNumber && patient.idNumber.trim() !== '') return patient.idNumber;
+            if (patient.passportNumber && patient.passportNumber.trim() !== '') return patient.passportNumber;
+            if (patient.nationalId && patient.nationalId.trim() !== '') return patient.nationalId;
+            if (patient.id && patient.id.trim() !== '') return patient.id;
+            return 'N/A';
+        }
 
-    if (!isSupervisor) {
-        // Hide supervisor-only cards
-        supervisorCards.forEach(card => {
-            card.style.display = 'none';
+        function calculateAge(dob) { 
+            if (!dob) return 'N/A'; 
+            var birthDate = new Date(dob); 
+            if (isNaN(birthDate.getTime())) return 'Invalid'; 
+            var today = new Date(); 
+            var age = today.getFullYear() - birthDate.getFullYear(); 
+            var m = today.getMonth() - birthDate.getMonth(); 
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; 
+            return age; 
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                var d = new Date(timestamp);
+                return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch(e) {
+                return 'N/A';
+            }
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                var d = new Date(timestamp);
+                return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            } catch(e) {
+                return 'N/A';
+            }
+        }
+
+        // ========== LOAD PATIENTS ==========
+        async function loadPatients() {
+            if (!firestoreDB) return;
+            try {
+                var snapshot = await firestoreDB.collection("patients").get();
+                patientsList = [];
+                snapshot.forEach(function(doc) {
+                    patientsList.push({ id: doc.id, ...doc.data() });
+                });
+                console.log('Loaded ' + patientsList.length + ' patients');
+            } catch(e) {
+                console.error('Error loading patients:', e);
+            }
+        }
+
+        // ========== SEARCH PATIENTS ==========
+        function searchPatients(query) {
+            var resultsContainer = document.getElementById('searchResults');
+            if (!query || query.length < 1) {
+                resultsContainer.classList.remove('active');
+                return;
+            }
+
+            var lowerQuery = query.toLowerCase().trim();
+            var results = patientsList.filter(function(p) {
+                var name = (p.name || '').toLowerCase();
+                var id = (p.idNumber || p.passportNumber || p.nationalId || p.id || '').toLowerCase();
+                var phone = (p.phone || p.contactNo || '').toLowerCase();
+                return name.includes(lowerQuery) || id.includes(lowerQuery) || phone.includes(lowerQuery);
+            });
+
+            resultsContainer.innerHTML = '';
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<div class="search-empty">No patients found</div>';
+                resultsContainer.classList.add('active');
+                return;
+            }
+
+            var displayResults = results.slice(0, 15);
+            for (var i = 0; i < displayResults.length; i++) {
+                var p = displayResults[i];
+                var div = document.createElement('div');
+                div.className = 'search-result-item';
+                var displayId = getDisplayId(p);
+                var badgeClass = p.isCitizen ? 'citizen' : '';
+                var badgeText = p.isCitizen ? '🇲🇻 Citizen' : '🌍 Non-Citizen';
+
+                div.innerHTML = `
+                    <div>
+                        <div class="name">${escapeHtml(p.name)}</div>
+                        <div class="id">📋 ${escapeHtml(displayId)} ${p.phone ? '· 📞 ' + escapeHtml(p.phone) : ''}</div>
+                    </div>
+                    <div>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                `;
+
+                div.addEventListener('click', function() {
+                    var patientId = this.dataset.id;
+                    var patient = null;
+                    for (var j = 0; j < patientsList.length; j++) {
+                        if (patientsList[j].id === patientId) {
+                            patient = patientsList[j];
+                            break;
+                        }
+                    }
+                    if (patient) {
+                        selectPatient(patient);
+                        document.getElementById('searchResults').classList.remove('active');
+                        document.getElementById('searchInput').value = patient.name + ' (' + getDisplayId(patient) + ')';
+                    }
+                });
+                div.dataset.id = p.id;
+
+                div.addEventListener('mouseenter', function() {
+                    this.style.background = '#e0f2fe';
+                });
+                div.addEventListener('mouseleave', function() {
+                    this.style.background = 'transparent';
+                });
+
+                resultsContainer.appendChild(div);
+            }
+
+            if (results.length > 15) {
+                var moreDiv = document.createElement('div');
+                moreDiv.className = 'search-empty';
+                moreDiv.style.padding = '8px';
+                moreDiv.style.fontSize = '11px';
+                moreDiv.textContent = '+ ' + (results.length - 15) + ' more results...';
+                resultsContainer.appendChild(moreDiv);
+            }
+
+            resultsContainer.classList.add('active');
+        }
+
+        // ========== SELECT PATIENT ==========
+        async function selectPatient(patient) {
+            selectedPatient = patient;
+            
+            // Update profile
+            document.getElementById('patientProfile').style.display = 'block';
+            document.getElementById('historySection').style.display = 'block';
+            
+            var displayId = getDisplayId(patient);
+            var age = calculateAge(patient.dob);
+            var insurance = patient.insurance || {};
+            var primaryIns = insurance.primaryName || insurance.name || 'None';
+            
+            document.getElementById('profileName').textContent = patient.name || 'Unknown';
+            document.getElementById('profileId').textContent = displayId;
+            document.getElementById('profilePhone').textContent = patient.phone || patient.contactNo || 'N/A';
+            document.getElementById('profileAge').textContent = age + ' yrs';
+            document.getElementById('profileNationality').textContent = patient.nationality || 'N/A';
+            document.getElementById('profileAddress').textContent = patient.address || 'N/A';
+            document.getElementById('profileInsurance').textContent = primaryIns;
+            
+            // Update action links
+            var patientId = patient.id || '';
+            document.getElementById('linkMemo').href = 'create-memo.html?patientId=' + encodeURIComponent(patientId);
+            document.getElementById('linkPrescription').href = 'prescriptions.html?patientId=' + encodeURIComponent(patientId);
+            document.getElementById('linkCertificate').href = 'medical-certificate.html?patientId=' + encodeURIComponent(patientId);
+            
+            // Load patient data
+            await loadPatientData(patient.id);
+        }
+
+        // ========== LOAD PATIENT DATA ==========
+        async function loadPatientData(patientId) {
+            if (!firestoreDB || !patientId) return;
+            
+            try {
+                // Load Memos
+                var memoSnap = await firestoreDB.collection("memos")
+                    .where("patient.id", "==", patientId)
+                    .get();
+                patientMemos = [];
+                memoSnap.forEach(function(doc) {
+                    patientMemos.push({ id: doc.id, ...doc.data() });
+                });
+                patientMemos.sort(function(a, b) {
+                    return (b.timestamp || 0) - (a.timestamp || 0);
+                });
+                
+                // Load Prescriptions
+                var rxSnap = await firestoreDB.collection("prescriptions")
+                    .where("patientId", "==", patientId)
+                    .get();
+                patientPrescriptions = [];
+                rxSnap.forEach(function(doc) {
+                    patientPrescriptions.push({ id: doc.id, ...doc.data() });
+                });
+                patientPrescriptions.sort(function(a, b) {
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                });
+                
+                // Load Certificates
+                var certSnap = await firestoreDB.collection("medicalCertificates")
+                    .where("patientId", "==", patientId)
+                    .get();
+                patientCertificates = [];
+                certSnap.forEach(function(doc) {
+                    patientCertificates.push({ id: doc.id, ...doc.data() });
+                });
+                patientCertificates.sort(function(a, b) {
+                    return (b.issuedAt || 0) - (a.issuedAt || 0);
+                });
+                
+                // Load Appointments
+                var aptSnap = await firestoreDB.collection("appointments")
+                    .where("patientId", "==", patientId)
+                    .get();
+                patientAppointments = [];
+                aptSnap.forEach(function(doc) {
+                    patientAppointments.push({ id: doc.id, ...doc.data() });
+                });
+                patientAppointments.sort(function(a, b) {
+                    var dateA = a.date || '';
+                    var dateB = b.date || '';
+                    return dateB.localeCompare(dateA);
+                });
+                
+                // Update stats
+                document.getElementById('statMemos').textContent = patientMemos.length;
+                document.getElementById('statPrescriptions').textContent = patientPrescriptions.length;
+                document.getElementById('statCertificates').textContent = patientCertificates.length;
+                document.getElementById('statAppointments').textContent = patientAppointments.length;
+                
+                // Render panels
+                renderMemos();
+                renderPrescriptions();
+                renderCertificates();
+                renderAppointments();
+                
+            } catch(e) {
+                console.error('Error loading patient data:', e);
+            }
+        }
+
+        // ========== RENDER MEMOS (VIEW ONLY) ==========
+        function renderMemos() {
+            var container = document.getElementById('panelMemos');
+            if (!patientMemos.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-file-medical"></i><p>No memos found</p><div class="sub-text">Create a new memo from the patient profile</div></div>';
+                return;
+            }
+            
+            var html = '';
+            for (var i = 0; i < patientMemos.length; i++) {
+                var m = patientMemos[i];
+                var memoNumber = m.memoId || m.id || 'N/A';
+                var date = formatDate(m.timestamp);
+                var time = formatTime(m.timestamp);
+                var doctorName = m.doctor?.name || 'Unknown';
+                var servicesList = '';
+                if (m.services && m.services.length) {
+                    servicesList = m.services.map(function(s) {
+                        var freeTag = s.price === 0 ? ' <span class="service-tag free">FREE</span>' : '';
+                        return '<span class="service-tag">' + escapeHtml(s.name) + freeTag + '</span>';
+                    }).join('');
+                }
+                var totalAmount = m.billing?.subtotal || 0;
+                var patientPay = m.billing?.patientPayable || 0;
+                
+                html += '<div class="history-item">' +
+                    '<div class="info">' +
+                        '<div class="title">Memo #' + escapeHtml(memoNumber) + ' <span class="memo-badge">' + escapeHtml(date) + '</span></div>' +
+                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + ' · <i class="fas fa-clock"></i> ' + time + '</div>' +
+                        (servicesList ? '<div class="services-list">' + servicesList + '</div>' : '') +
+                        '<div class="sub"><i class="fas fa-money-bill"></i> Total: <span class="amount-text">MVR ' + totalAmount.toFixed(2) + '</span> · Patient Pay: <span class="amount-text payable">MVR ' + patientPay.toFixed(2) + '</span></div>' +
+                    '</div>' +
+                    '<div class="actions">' +
+                        '<a href="print-memo.html?memoId=' + encodeURIComponent(memoNumber) + '" class="view-btn" target="_blank"><i class="fas fa-print"></i> Print</a>' +
+                    '</div>' +
+                '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== RENDER PRESCRIPTIONS (VIEW ONLY) ==========
+        function renderPrescriptions() {
+            var container = document.getElementById('panelPrescriptions');
+            if (!patientPrescriptions.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-prescription"></i><p>No prescriptions found</p></div>';
+                return;
+            }
+            
+            var html = '';
+            for (var i = 0; i < patientPrescriptions.length; i++) {
+                var r = patientPrescriptions[i];
+                var date = formatDate(r.createdAt);
+                var doctorName = r.doctorName || 'Unknown';
+                var memoRef = r.memoId ? 'Memo #' + escapeHtml(r.memoId) : '';
+                
+                html += '<div class="history-item">' +
+                    '<div class="info">' +
+                        '<div class="title">💊 ' + escapeHtml(r.medication) + ' <span class="rx-badge">' + escapeHtml(date) + '</span></div>' +
+                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + '</div>' +
+                        (r.dosage ? '<div class="sub"><i class="fas fa-syringe"></i> Dosage: ' + escapeHtml(r.dosage) + '</div>' : '') +
+                        (r.duration ? '<div class="sub"><i class="fas fa-clock"></i> Duration: ' + escapeHtml(r.duration) + '</div>' : '') +
+                        (r.instructions ? '<div class="sub"><i class="fas fa-sticky-note"></i> ' + escapeHtml(r.instructions) + '</div>' : '') +
+                        (memoRef ? '<div class="sub"><i class="fas fa-file-medical"></i> ' + memoRef + '</div>' : '') +
+                    '</div>' +
+                    '<div class="actions">' +
+                        '<a href="prescriptions.html?patientId=' + encodeURIComponent(selectedPatient.id) + '" class="view-btn"><i class="fas fa-eye"></i> View All</a>' +
+                    '</div>' +
+                '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== RENDER CERTIFICATES (VIEW ONLY) ==========
+        function renderCertificates() {
+            var container = document.getElementById('panelCertificates');
+            if (!patientCertificates.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-file-medical-alt"></i><p>No medical certificates found</p></div>';
+                return;
+            }
+            
+            var html = '';
+            for (var i = 0; i < patientCertificates.length; i++) {
+                var c = patientCertificates[i];
+                var date = formatDate(c.issuedAt);
+                var doctorName = c.doctorName || 'Unknown';
+                var memoRef = c.memoId ? 'Memo #' + escapeHtml(c.memoId) : '';
+                
+                html += '<div class="history-item">' +
+                    '<div class="info">' +
+                        '<div class="title">📄 Medical Certificate <span class="cert-badge">' + escapeHtml(date) + '</span></div>' +
+                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + '</div>' +
+                        '<div class="sub"><i class="fas fa-stethoscope"></i> Diagnosis: ' + escapeHtml(c.diagnosisSummary || 'No diagnosis') + '</div>' +
+                        (c.recommendedRest ? '<div class="sub"><i class="fas fa-bed"></i> Rest: ' + escapeHtml(c.recommendedRest) + '</div>' : '') +
+                        (memoRef ? '<div class="sub"><i class="fas fa-file-medical"></i> ' + memoRef + '</div>' : '') +
+                        (c.remarks ? '<div class="sub"><i class="fas fa-sticky-note"></i> ' + escapeHtml(c.remarks) + '</div>' : '') +
+                    '</div>' +
+                    '<div class="actions">' +
+                        '<a href="medical-certificate.html?patientId=' + encodeURIComponent(selectedPatient.id) + '" class="view-btn"><i class="fas fa-eye"></i> View All</a>' +
+                    '</div>' +
+                '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== RENDER APPOINTMENTS (VIEW ONLY) ==========
+        function renderAppointments() {
+            var container = document.getElementById('panelAppointments');
+            if (!patientAppointments.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-day"></i><p>No appointments found</p></div>';
+                return;
+            }
+            
+            var html = '';
+            for (var i = 0; i < patientAppointments.length; i++) {
+                var a = patientAppointments[i];
+                var date = a.date || 'N/A';
+                var time = a.startTime || a.time || 'N/A';
+                var doctorName = a.doctorName || 'Unknown';
+                var status = a.status || 'Scheduled';
+                var statusColors = {
+                    'Scheduled': '#cce5ff',
+                    'Completed': '#d4edda',
+                    'Cancelled': '#f8d7da',
+                    'No Show': '#f8d7da'
+                };
+                var statusColor = statusColors[status] || '#e2eaf0';
+                
+                html += '<div class="history-item" style="border-left-color: ' + statusColor + ';">' +
+                    '<div class="info">' +
+                        '<div class="title">📅 ' + escapeHtml(date) + ' at ' + escapeHtml(time) + ' <span style="background:' + statusColor + '; padding:2px 10px; border-radius:12px; font-size:9px; font-weight:600;">' + escapeHtml(status) + '</span></div>' +
+                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + '</div>' +
+                        (a.serviceName ? '<div class="sub"><i class="fas fa-list"></i> Service: ' + escapeHtml(a.serviceName) + '</div>' : '') +
+                    '</div>' +
+                '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== CLEAR SEARCH ==========
+        window.clearSearch = function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').classList.remove('active');
+            document.getElementById('patientProfile').style.display = 'none';
+            document.getElementById('historySection').style.display = 'none';
+            selectedPatient = null;
+        };
+
+        // ========== TAB SWITCHING ==========
+        document.querySelectorAll('.history-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var allTabs = document.querySelectorAll('.history-tab');
+                allTabs.forEach(function(t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                
+                var panelId = 'panel' + this.dataset.tab.charAt(0).toUpperCase() + this.dataset.tab.slice(1);
+                var allPanels = document.querySelectorAll('.history-panel');
+                allPanels.forEach(function(p) { p.classList.remove('active'); });
+                document.getElementById(panelId).classList.add('active');
+            });
         });
-        // Show restricted message
-        restrictedMsg.style.display = 'block';
-        // Optionally, adjust grid to center the single daily card
-        const grid = document.querySelector('.reports-grid');
-        grid.style.gridTemplateColumns = 'minmax(260px, 320px)';
-        grid.style.justifyContent = 'center';
-    }
 
-    // ========== LOGOUT ==========
-    function logout() {
-        localStorage.removeItem('loggedInUser');
-        sessionStorage.clear();
-        window.location.href = 'login.html';
-    }
+        // ========== SEARCH INPUT EVENT ==========
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            var query = this.value;
+            if (query.length < 1) {
+                document.getElementById('searchResults').classList.remove('active');
+                return;
+            }
+            searchTimeout = setTimeout(function() {
+                searchPatients(query);
+            }, 300);
+        });
+
+        document.addEventListener('click', function(e) {
+            var wrapper = document.querySelector('.search-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('searchResults').classList.remove('active');
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('blur', function() {
+            setTimeout(function() {
+                document.getElementById('searchResults').classList.remove('active');
+            }, 200);
+        });
+
+        // ========== KEYBOARD SHORTCUTS ==========
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('searchResults').classList.remove('active');
+                document.getElementById('searchInput').blur();
+            }
+        });
+
+        // ========== LOGOUT ==========
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            // Clear both session and local storage
+            sessionStorage.removeItem('doctorSession');
+            localStorage.removeItem('currentDoctor');
+            localStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('selectedPatient');
+            sessionStorage.removeItem('selectedPatientId');
+            window.location.href = 'login.html';
+        });
+
+        // ========== INIT ==========
+        function init() {
+            if (window.db) {
+                firestoreDB = window.db;
+                loadPatients();
+                
+                // Check if patient ID passed in URL
+                var urlParams = new URLSearchParams(window.location.search);
+                var patientId = urlParams.get('patientId');
+                if (patientId) {
+                    // Try to find patient and select
+                    setTimeout(function() {
+                        var patient = null;
+                        for (var i = 0; i < patientsList.length; i++) {
+                            if (patientsList[i].id === patientId) {
+                                patient = patientsList[i];
+                                break;
+                            }
+                        }
+                        if (patient) {
+                            selectPatient(patient);
+                            document.getElementById('searchInput').value = patient.name + ' (' + getDisplayId(patient) + ')';
+                        } else {
+                            // Try to load from Firestore
+                            firestoreDB.collection("patients").doc(patientId).get().then(function(doc) {
+                                if (doc.exists) {
+                                    var p = { id: doc.id, ...doc.data() };
+                                    patientsList.push(p);
+                                    selectPatient(p);
+                                    document.getElementById('searchInput').value = p.name + ' (' + getDisplayId(p) + ')';
+                                }
+                            });
+                        }
+                    }, 500);
+                }
+            } else {
+                setTimeout(init, 500);
+            }
+        }
+        init();
+    })();
 </script>
 </body>
 </html>

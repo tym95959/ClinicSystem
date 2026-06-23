@@ -548,80 +548,74 @@
 </div>
 
 <script>
-    // ========== AUTH - SIMPLIFIED ==========
-    // Wait a moment for everything to load
-    setTimeout(function() {
-        // Check for loggedInUser (reception) or doctorSession (doctor)
-        var loggedInUser = localStorage.getItem('loggedInUser');
-        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-        
-        console.log('Checking authentication...');
-        console.log('loggedInUser exists:', !!loggedInUser);
-        console.log('doctorSession exists:', !!doctorSession);
-        
-        var userData = null;
-        var userType = 'reception';
-        
-        // Try loggedInUser first (reception)
-        if (loggedInUser) {
-            try {
-                userData = JSON.parse(loggedInUser);
-                console.log('User loaded from loggedInUser:', userData.name);
-                // Determine if this is a doctor
-                if (userData.level && userData.level.toLowerCase() === 'doctor') {
-                    userType = 'doctor';
-                }
-            } catch(e) {
-                console.warn('Error parsing loggedInUser:', e);
-            }
-        }
-        
-        // If no reception user, try doctor session
-        if (!userData && doctorSession) {
-            try {
-                userData = JSON.parse(doctorSession);
-                console.log('User loaded from doctorSession:', userData.name);
+    // ========== AUTH - IMMEDIATE CHECK (LIKE ADMIN PANEL) ==========
+    // Check for loggedInUser (reception) or doctorSession (doctor)
+    var loggedInUser = localStorage.getItem('loggedInUser');
+    var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+    
+    console.log('Checking authentication...');
+    console.log('loggedInUser exists:', !!loggedInUser);
+    console.log('doctorSession exists:', !!doctorSession);
+    
+    var userData = null;
+    var userType = 'reception';
+    
+    // Try loggedInUser first (reception) - THIS IS THE KEY FIX
+    if (loggedInUser) {
+        try {
+            userData = JSON.parse(loggedInUser);
+            console.log('User loaded from loggedInUser:', userData.name);
+            // Determine if this is a doctor
+            if (userData.level && userData.level.toLowerCase() === 'doctor') {
                 userType = 'doctor';
-            } catch(e) {
-                console.warn('Error parsing doctorSession:', e);
             }
+        } catch(e) {
+            console.warn('Error parsing loggedInUser:', e);
         }
-        
-        // If still no user, redirect to login
-        if (!userData || !userData.id) {
-            console.warn('No user found, redirecting to login');
-            window.location.href = 'login.html';
-            return;
+    }
+    
+    // If no reception user, try doctor session
+    if (!userData && doctorSession) {
+        try {
+            userData = JSON.parse(doctorSession);
+            console.log('User loaded from doctorSession:', userData.name);
+            userType = 'doctor';
+        } catch(e) {
+            console.warn('Error parsing doctorSession:', e);
         }
+    }
+    
+    // If still no user, redirect to login
+    if (!userData || !userData.id) {
+        console.warn('No user found, redirecting to login');
+        window.location.href = 'login.html';
+        // Stop execution
+        throw new Error('Redirecting to login');
+    }
 
-        var currentUser = {
-            id: userData.id || userData.username,
-            name: userData.name || userData.username || 'User',
-            role: userData.level || userData.role || 'Staff',
-            type: userType
-        };
-        
-        console.log('Current user:', currentUser.name, 'Type:', currentUser.type);
-        
-        // Store user for later use
-        window.currentUser = currentUser;
-        
-        // ========== GO BACK FUNCTION ==========
-        window.goBack = function() {
-            if (window.currentUser && window.currentUser.type === 'doctor') {
-                window.location.href = 'doctor-portal.html';
-            } else {
-                window.location.href = 'clinicdash.html';
-            }
-        };
-
-        // ========== NOW LOAD THE REST OF THE PAGE ==========
-        initializeApp();
-        
-    }, 200); // Small delay to ensure everything is loaded
+    var currentUser = {
+        id: userData.id || userData.username,
+        name: userData.name || userData.username || 'User',
+        role: userData.level || userData.role || 'Staff',
+        type: userType
+    };
+    
+    console.log('Current user:', currentUser.name, 'Type:', currentUser.type);
+    
+    // Store user for later use
+    window.currentUser = currentUser;
+    
+    // ========== GO BACK FUNCTION ==========
+    window.goBack = function() {
+        if (window.currentUser && window.currentUser.type === 'doctor') {
+            window.location.href = 'doctor-portal.html';
+        } else {
+            window.location.href = 'clinicdash.html';
+        }
+    };
 
     // ========== MAIN APPLICATION ==========
-    function initializeApp() {
+    (function() {
         var firestoreDB = null;
         var patientsList = [];
         var selectedPatient = null;
@@ -1133,7 +1127,7 @@
             }
         }
         init();
-    }
+    })();
 </script>
 </body>
 </html>

@@ -548,19 +548,29 @@
 </div>
 
 <script>
-    (function() {
-        // ========== AUTH - SAME AS CREATE MEMO PAGE ==========
+    // ========== AUTH - SIMPLIFIED ==========
+    // Wait a moment for everything to load
+    setTimeout(function() {
         // Check for loggedInUser (reception) or doctorSession (doctor)
         var loggedInUser = localStorage.getItem('loggedInUser');
         var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
         
+        console.log('Checking authentication...');
+        console.log('loggedInUser exists:', !!loggedInUser);
+        console.log('doctorSession exists:', !!doctorSession);
+        
         var userData = null;
+        var userType = 'reception';
         
         // Try loggedInUser first (reception)
         if (loggedInUser) {
             try {
                 userData = JSON.parse(loggedInUser);
-                console.log('User loaded from loggedInUser (reception):', userData.name);
+                console.log('User loaded from loggedInUser:', userData.name);
+                // Determine if this is a doctor
+                if (userData.level && userData.level.toLowerCase() === 'doctor') {
+                    userType = 'doctor';
+                }
             } catch(e) {
                 console.warn('Error parsing loggedInUser:', e);
             }
@@ -571,6 +581,7 @@
             try {
                 userData = JSON.parse(doctorSession);
                 console.log('User loaded from doctorSession:', userData.name);
+                userType = 'doctor';
             } catch(e) {
                 console.warn('Error parsing doctorSession:', e);
             }
@@ -583,16 +594,6 @@
             return;
         }
 
-        // Determine user type
-        var userType = 'reception';
-        if (userData.level && userData.level.toLowerCase() === 'doctor') {
-            userType = 'doctor';
-        } else if (userData.userType && userData.userType === 'doctor') {
-            userType = 'doctor';
-        } else if (doctorSession && userData.level && userData.level.toLowerCase() === 'doctor') {
-            userType = 'doctor';
-        }
-
         var currentUser = {
             id: userData.id || userData.username,
             name: userData.name || userData.username || 'User',
@@ -601,16 +602,26 @@
         };
         
         console.log('Current user:', currentUser.name, 'Type:', currentUser.type);
-
+        
+        // Store user for later use
+        window.currentUser = currentUser;
+        
         // ========== GO BACK FUNCTION ==========
         window.goBack = function() {
-            if (currentUser.type === 'doctor') {
+            if (window.currentUser && window.currentUser.type === 'doctor') {
                 window.location.href = 'doctor-portal.html';
             } else {
                 window.location.href = 'clinicdash.html';
             }
         };
 
+        // ========== NOW LOAD THE REST OF THE PAGE ==========
+        initializeApp();
+        
+    }, 200); // Small delay to ensure everything is loaded
+
+    // ========== MAIN APPLICATION ==========
+    function initializeApp() {
         var firestoreDB = null;
         var patientsList = [];
         var selectedPatient = null;
@@ -1122,7 +1133,7 @@
             }
         }
         init();
-    })();
+    }
 </script>
 </body>
 </html>

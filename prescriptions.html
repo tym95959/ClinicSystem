@@ -37,6 +37,22 @@
         .patient-badge .name { font-weight: 700; font-size: 16px; color: #0a2f44; }
         .patient-badge .id { font-size: 12px; color: #5f7f9a; }
         
+        .memo-status-banner {
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid;
+            margin-bottom: 16px;
+        }
+        .status-active { background: #d4edda; color: #155724; border-color: #28a745; }
+        .status-inactive { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+        .status-viewonly { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .memo-status-banner i { font-size: 18px; }
+        
         .prescription-item {
             background: #f8fbfe;
             border-radius: 12px;
@@ -72,6 +88,8 @@
         .btn-primary:hover { background: #1a6f8f; }
         .btn-success { background: #27ae60; color: white; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s; }
         .btn-success:hover { background: #219a52; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn-secondary:hover { background: #5a6268; }
         
         .empty-state { text-align: center; padding: 40px 20px; color: #8ba0b0; }
         .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
@@ -96,8 +114,6 @@
             size: A5 portrait;
             margin: 0.3cm 0.4cm;
         }
-
-        /* This is the key - the print container uses these styles */
         .rx-print-container {
             font-family: 'Times New Roman', Times, serif;
             padding: 0.1cm 0.2cm;
@@ -109,8 +125,6 @@
             flex-direction: column;
             min-height: 100vh;
         }
-
-        /* Header: LEFT (English) + RIGHT (Dhivehi) */
         .rx-header {
             display: flex;
             justify-content: space-between;
@@ -153,7 +167,6 @@
             font-weight: 700;
             text-align: right;
         }
-
         .rx-bismillah {
             text-align: center;
             font-family: 'Traditional Arabic', 'Amiri', 'Times New Roman', serif;
@@ -162,14 +175,11 @@
             margin-bottom: 2px;
             font-weight: 700;
         }
-
         .rx-divider {
             border: none;
             border-top: 0.8px solid #1a2c3e;
             margin: 2px 0 4px 0;
         }
-
-        /* Title row: PRESCRIPTION on LEFT, DATE on RIGHT */
         .rx-title-row {
             display: flex;
             justify-content: space-between;
@@ -195,8 +205,6 @@
             font-weight: 400;
             color: #1a2c3e;
         }
-
-        /* Patient row - all in one line */
         .rx-patient-row {
             display: flex;
             align-items: baseline;
@@ -237,7 +245,6 @@
         .rx-patient-row .rx-spacer {
             margin-right: 3px;
         }
-
         .rx-rx-symbol {
             font-size: 24px;
             font-weight: 700;
@@ -245,7 +252,6 @@
             padding: 4px 0 2px 0;
             font-family: 'Times New Roman', serif;
         }
-
         .rx-medication-area {
             min-height: 70px;
             padding: 6px 0 3px 0;
@@ -267,13 +273,10 @@
             font-size: 10px;
             padding: 1px 0;
         }
-
-        /* Bottom section */
         .rx-bottom {
             margin-top: auto;
             padding-top: 4px;
         }
-
         .rx-doctor-row {
             display: flex;
             justify-content: flex-end;
@@ -307,7 +310,6 @@
             margin-top: 1px;
             font-family: 'Times New Roman', serif;
         }
-
         .rx-footer {
             text-align: center;
             font-size: 8px;
@@ -352,6 +354,8 @@
             <div><span id="patientPhone"></span></div>
         </div>
         
+        <div id="memoStatusBanner" style="display: none;"></div>
+        
         <div id="noPatientWarning" class="no-patient-warning" style="display: none;">
             <i class="fas fa-user-circle"></i>
             <p><strong>No patient selected</strong></p>
@@ -364,27 +368,32 @@
         <div id="prescriptionsList"><div class="empty-state"><i class="fas fa-prescription"></i><p>No prescriptions found</p></div></div>
     </div>
     
-    <div class="card">
+    <div class="card" id="createPrescriptionCard">
         <div class="card-title">➕ Issue New Prescription</div>
-        <div class="form-group">
-            <label>Medication *</label>
-            <input type="text" id="prescMedName" placeholder="e.g., Amoxicillin 500mg">
+        <div id="createFormMessage" style="display: none; padding: 12px; background: #fff3cd; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #ffc107;">
+            <i class="fas fa-info-circle"></i> <span id="createFormMessageText"></span>
         </div>
-        <div class="form-group">
-            <label>Dosage & Frequency</label>
-            <input type="text" id="prescDosage" placeholder="e.g., 1 tablet twice daily after meals">
-        </div>
-        <div class="form-group">
-            <label>Duration</label>
-            <input type="text" id="prescDuration" placeholder="e.g., 7 days">
-        </div>
-        <div class="form-group">
-            <label>Instructions / Notes</label>
-            <textarea id="prescInstructions" rows="2" placeholder="Additional notes for patient"></textarea>
-        </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-primary" id="savePrescriptionBtn"><i class="fas fa-save"></i> Issue Prescription</button>
-            <button class="btn-success" id="printPrescriptionFormBtn"><i class="fas fa-print"></i> Print Prescription</button>
+        <div id="createFormFields">
+            <div class="form-group">
+                <label>Medication *</label>
+                <input type="text" id="prescMedName" placeholder="e.g., Amoxicillin 500mg">
+            </div>
+            <div class="form-group">
+                <label>Dosage & Frequency</label>
+                <input type="text" id="prescDosage" placeholder="e.g., 1 tablet twice daily after meals">
+            </div>
+            <div class="form-group">
+                <label>Duration</label>
+                <input type="text" id="prescDuration" placeholder="e.g., 7 days">
+            </div>
+            <div class="form-group">
+                <label>Instructions / Notes</label>
+                <textarea id="prescInstructions" rows="2" placeholder="Additional notes for patient"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-primary" id="savePrescriptionBtn"><i class="fas fa-save"></i> Issue Prescription</button>
+                <button class="btn-success" id="printPrescriptionFormBtn"><i class="fas fa-print"></i> Print Prescription</button>
+            </div>
         </div>
     </div>
 </div>
@@ -427,6 +436,7 @@
         var selectedPatient = null;
         var prescriptionsArray = [];
         var currentEditItem = null;
+        var memoStatus = 'inactive'; // default
 
         // ========== HELPER FUNCTIONS ==========
         function escapeHtml(str) { 
@@ -462,9 +472,7 @@
         // ========== GET PATIENT FROM URL OR SESSION ==========
         function getPatientFromUrl() {
             var urlParams = new URLSearchParams(window.location.search);
-            var patientId = urlParams.get('patientId');
-            if (patientId) return patientId;
-            return null;
+            return urlParams.get('patientId') || null;
         }
 
         async function loadPatientFromFirestore(patientId) {
@@ -516,10 +524,58 @@
             document.getElementById('patientPhone').textContent = '📞 ' + (patient.phone || patient.contactNo || 'N/A');
             document.getElementById('noPatientWarning').style.display = 'none';
             
+            // Get memoStatus from URL
+            var urlParams = new URLSearchParams(window.location.search);
+            memoStatus = urlParams.get('memoStatus') || 'inactive';
+            updateMemoStatusUI();
+            
             sessionStorage.setItem('selectedPatient', JSON.stringify(patient));
             sessionStorage.setItem('selectedPatientId', patient.id || '');
             
             await loadPrescriptions();
+        }
+
+        // ========== UPDATE MEMO STATUS UI ==========
+        function updateMemoStatusUI() {
+            var banner = document.getElementById('memoStatusBanner');
+            var formMessage = document.getElementById('createFormMessage');
+            var formMessageText = document.getElementById('createFormMessageText');
+            var createFormFields = document.getElementById('createFormFields');
+            var createCard = document.getElementById('createPrescriptionCard');
+            
+            banner.style.display = 'block';
+            var statusLabel = '', statusClass = '', icon = '', description = '';
+            
+            switch (memoStatus) {
+                case 'active':
+                    statusLabel = '🟢 Active Memo (Today)';
+                    statusClass = 'status-active';
+                    icon = '<i class="fas fa-check-circle"></i>';
+                    description = 'You can issue new prescriptions for this patient.';
+                    createFormFields.style.display = 'block';
+                    formMessage.style.display = 'none';
+                    break;
+                case 'viewonly':
+                    statusLabel = '📄 View Only (Past Memos)';
+                    statusClass = 'status-viewonly';
+                    icon = '<i class="fas fa-eye"></i>';
+                    description = 'No active memo today. You can only view and print existing prescriptions.';
+                    createFormFields.style.display = 'none';
+                    formMessage.style.display = 'block';
+                    formMessageText.textContent = '🔒 Prescription creation is disabled because no active memo exists for today. You can still view and print existing prescriptions.';
+                    break;
+                default: // inactive
+                    statusLabel = '🔴 No Memo on Record';
+                    statusClass = 'status-inactive';
+                    icon = '<i class="fas fa-exclamation-circle"></i>';
+                    description = 'No memo exists for this patient. You cannot create new prescriptions.';
+                    createFormFields.style.display = 'none';
+                    formMessage.style.display = 'block';
+                    formMessageText.textContent = '🚫 Prescription creation is disabled because no memo exists for this patient. You can still view and print existing prescriptions.';
+                    break;
+            }
+            
+            banner.innerHTML = '<div class="memo-status-banner ' + statusClass + '">' + icon + '<div><strong>' + statusLabel + '</strong><br><span style="font-weight:400;font-size:12px;">' + description + '</span></div></div>';
         }
 
         // ========== LOAD PRESCRIPTIONS ==========
@@ -641,10 +697,7 @@
             
             var html = '';
             
-            // Bismillah
             html += '<div class="rx-bismillah">بِسْمِ ٱللهِ ٱلرَّحْمَٰنِ ٱلرَّحِيْمِ</div>';
-            
-            // Header: LEFT (English) + RIGHT (Dhivehi)
             html += '<div class="rx-header">';
             html += '<div class="logo-left">';
             html += '<img src="hope1.png" alt="Hope Dental Care" class="logo-img" onerror="this.style.display=\'none\';">';
@@ -652,16 +705,11 @@
             html += '</div>';
             html += '<div class="logo-right">ހޯޕް ޑެންޓަލް ކެއާރ</div>';
             html += '</div>';
-            
             html += '<hr class="rx-divider">';
-            
-            // Title row: PRESCRIPTION on LEFT, DATE on RIGHT
             html += '<div class="rx-title-row">';
             html += '<span class="rx-title">PRESCRIPTION</span>';
             html += '<span class="rx-date">DATE: <span class="date-value">' + today + '</span></span>';
             html += '</div>';
-            
-            // Patient row
             html += '<div class="rx-patient-row">';
             html += '<span class="rx-label">PATIENT:</span>';
             html += '<span class="rx-value">' + escapeHtml(selectedPatient.name) + '</span>';
@@ -672,11 +720,7 @@
             html += '<span class="rx-label-sm">ID CARD NO:</span>';
             html += '<span class="rx-value-sm">' + escapeHtml(displayId) + '</span>';
             html += '</div>';
-            
-            // Rx symbol
             html += '<div class="rx-rx-symbol">℞</div>';
-            
-            // Medication area
             html += '<div class="rx-medication-area">';
             html += '<div class="med-item">';
             html += '<div class="med-name">💊 ' + escapeHtml(presc.medication) + '</div>';
@@ -685,11 +729,7 @@
             if (presc.instructions) html += '<div class="med-detail">📝 ' + escapeHtml(presc.instructions) + '</div>';
             html += '</div>';
             html += '</div>';
-            
-            // Bottom section
             html += '<div class="rx-bottom">';
-            
-            // Doctor
             html += '<div class="rx-doctor-row">';
             html += '<div class="rx-doctor">';
             html += '<div class="name">Dr. ' + escapeHtml(currentDoctor.name) + '</div>';
@@ -698,20 +738,14 @@
             html += '<div class="sign-label">DOCTOR</div>';
             html += '</div>';
             html += '</div>';
-            
-            // Footer
             html += '<div class="rx-footer">';
             html += '<div class="contact-info">TEL: +960 3001516, +960 7951515 | EMAIL: hopedentalcaremv@gmail.com</div>';
             html += '<div class="address">H. Fairy Palace, Abadhah Ufaa Hingun, Male\', Maldives</div>';
             html += '</div>';
-            
-            html += '</div>'; // end rx-bottom
+            html += '</div>';
             
             container.innerHTML = html;
-            
-            // Print
             window.print();
-            
             setTimeout(function() {
                 container.style.display = 'none';
             }, 500);
@@ -744,6 +778,10 @@
             if (!selectedPatient) { 
                 alert("No patient selected. Please select a patient first."); 
                 return; 
+            }
+            if (memoStatus !== 'active') {
+                alert("You cannot create a new prescription because the memo is not active for today.");
+                return;
             }
             if (!firestoreDB) { 
                 alert("Firebase not ready."); 

@@ -454,7 +454,7 @@
 <div class="clinic-header">
     <div class="logo"><h2>📋 Patient History</h2></div>
     <div>
-        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+        <button class="back-btn" onclick="goBack()">← Back</button>
         <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
     </div>
 </div>
@@ -550,28 +550,39 @@
 <script>
     (function() {
         // ========== AUTH - SUPPORTS BOTH DOCTOR AND RECEPTION ==========
-        // Try doctor session first, then reception session, then fallback
         var userData = null;
         var loggedInUser = localStorage.getItem('loggedInUser');
         var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+        var receptionSession = sessionStorage.getItem('receptionSession');
         
-        if (doctorSession) {
+        // Try to get user data from various sources
+        if (loggedInUser) {
             try {
-                userData = JSON.parse(doctorSession);
-                userData.userType = 'doctor';
+                userData = JSON.parse(loggedInUser);
+                userData.userType = userData.level || 'reception';
+                console.log('User loaded from loggedInUser:', userData.name);
             } catch(e) {}
         }
         
-        if (!userData && loggedInUser) {
+        if (!userData && doctorSession) {
             try {
-                userData = JSON.parse(loggedInUser);
+                userData = JSON.parse(doctorSession);
+                userData.userType = 'doctor';
+                console.log('User loaded from doctorSession:', userData.name);
+            } catch(e) {}
+        }
+        
+        if (!userData && receptionSession) {
+            try {
+                userData = JSON.parse(receptionSession);
                 userData.userType = 'reception';
+                console.log('User loaded from receptionSession:', userData.name);
             } catch(e) {}
         }
         
         // Check if user is logged in
         if (!userData || !userData.id) {
-            // If no user data, redirect to login
+            console.warn('No user data found, redirecting to login');
             window.location.href = 'login.html';
             return;
         }
@@ -582,6 +593,8 @@
             role: userData.level || userData.role || 'Staff',
             type: userData.userType || 'staff'
         };
+        
+        console.log('Current user:', currentUser.name, 'Type:', currentUser.type);
 
         var firestoreDB = null;
         var patientsList = [];
@@ -642,6 +655,16 @@
                 return 'N/A';
             }
         }
+
+        // ========== GO BACK FUNCTION ==========
+        window.goBack = function() {
+            var userType = currentUser.type || 'staff';
+            if (userType === 'doctor') {
+                window.location.href = 'doctor-portal.html';
+            } else {
+                window.location.href = 'clinicdash.html';
+            }
+        };
 
         // ========== LOAD PATIENTS ==========
         async function loadPatients() {
@@ -1044,8 +1067,9 @@
 
         // ========== LOGOUT ==========
         document.getElementById('logoutBtn').addEventListener('click', function() {
-            // Clear both session and local storage
+            // Clear all session data
             sessionStorage.removeItem('doctorSession');
+            sessionStorage.removeItem('receptionSession');
             localStorage.removeItem('currentDoctor');
             localStorage.removeItem('loggedInUser');
             sessionStorage.removeItem('selectedPatient');

@@ -114,18 +114,20 @@
             line-height: inherit;
         }
 
-        /* header: left (English) + right (Dhivehi) */
+        /* header: left (English) + right (Dhivehi) - FIXED alignment */
         .rx-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding-bottom: 2px;
             margin-bottom: 2px;
+            width: 100%;
         }
         .rx-header .logo-left {
             display: flex;
             align-items: center;
             gap: 4px;
+            flex-shrink: 0;
         }
         .rx-header .logo-left .logo-img {
             max-height: 30px;
@@ -158,6 +160,7 @@
             color: #2e7d32;
             font-weight: 700;
             text-align: right;
+            flex-shrink: 0;
         }
 
         .rx-bismillah {
@@ -176,13 +179,13 @@
             margin: 2px 0 5px 0;
         }
 
-        /* Title row: PRESCRIPTION on left, DATE on left as well */
+        /* Title row: PRESCRIPTION on left, DATE on right - small font, not bold */
         .rx-title-row {
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
             align-items: baseline;
-            gap: 20px;
             margin: 2px 0 4px 0;
+            width: 100%;
         }
         .rx-title-row .rx-title {
             font-size: 16px;
@@ -193,9 +196,10 @@
             font-family: 'Times New Roman', serif;
         }
         .rx-title-row .rx-date {
-            font-size: 10px;
-            font-weight: 600;
+            font-size: 9px;
+            font-weight: 400;
             color: #0a2f44;
+            font-family: 'Times New Roman', serif;
         }
         .rx-title-row .rx-date .date-value {
             font-weight: 400;
@@ -660,7 +664,7 @@
             // Bismillah (smaller)
             html += '<div class="rx-bismillah">بِسْمِ ٱللهِ ٱلرَّحْمَٰنِ ٱلرَّحِيْمِ</div>';
             
-            // Header: left (English) + right (Dhivehi)
+            // Header: left (English) + right (Dhivehi) - FIXED with flex justify-content: space-between
             html += '<div class="rx-header">';
             html += '<div class="logo-left">';
             html += '<img src="hope1.png" alt="Hope Dental Care" class="logo-img" onerror="this.style.display=\'none\';">';
@@ -671,7 +675,7 @@
             
             html += '<hr class="rx-divider">';
             
-            // Title + Date - both on LEFT side
+            // Title row: PRESCRIPTION on left, DATE on right (small font, not bold)
             html += '<div class="rx-title-row">';
             html += '<span class="rx-title">PRESCRIPTION</span>';
             html += '<span class="rx-date">DATE: <span class="date-value">' + today + '</span></span>';

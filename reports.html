@@ -167,6 +167,21 @@
             color: white;
         }
 
+        /* Restricted message */
+        .restricted-msg {
+            text-align: center;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 16px;
+            border: 1px solid #ffc107;
+            color: #856404;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .restricted-msg i {
+            margin-right: 10px;
+        }
+
         /* Footer */
         .footer {
             text-align: center;
@@ -224,33 +239,38 @@
         <p>Select a report type to view detailed analytics and insights</p>
     </div>
 
+    <!-- Restricted message (hidden by default) -->
+    <div id="restrictedMsg" class="restricted-msg" style="display: none;">
+        <i class="fas fa-lock"></i> You have limited access. Only the Daily Report is available.
+    </div>
+
     <div class="reports-grid">
-        <!-- Daily Report -->
-        <a href="daily_report.html" class="report-card">
+        <!-- Daily Report – always visible -->
+        <a href="daily_report.html" class="report-card" id="dailyCard">
             <i class="fas fa-calendar-day card-icon daily"></i>
             <h3>Daily Report</h3>
             <span class="desc">View daily financial summary and transactions</span>
             <span class="btn-hint"><i class="fas fa-arrow-right"></i> Open</span>
         </a>
 
-        <!-- Monthly Financial Report -->
-        <a href="monthly_report.html" class="report-card">
+        <!-- Monthly Financial Report – supervisor only -->
+        <a href="monthly_report.html" class="report-card supervisor-only" id="monthlyCard">
             <i class="fas fa-chart-line card-icon monthly"></i>
             <h3>Monthly Report</h3>
             <span class="desc">Comprehensive monthly financial overview</span>
             <span class="btn-hint"><i class="fas fa-arrow-right"></i> Open</span>
         </a>
 
-        <!-- Doctor Services Report -->
-        <a href="doctor_report.html" class="report-card">
+        <!-- Doctor Services Report – supervisor only -->
+        <a href="doctor_report.html" class="report-card supervisor-only" id="doctorCard">
             <i class="fas fa-user-md card-icon doctor"></i>
             <h3>Doctor Services Report</h3>
             <span class="desc">Services breakdown by doctor with performance metrics</span>
             <span class="btn-hint"><i class="fas fa-arrow-right"></i> Open</span>
         </a>
 
-        <!-- Insurance Report -->
-        <a href="insurance_report.html" class="report-card">
+        <!-- Insurance Report – supervisor only -->
+        <a href="insurance_report.html" class="report-card supervisor-only" id="insuranceCard">
             <i class="fas fa-file-invoice-dollar card-icon insurance"></i>
             <h3>Insurance Report</h3>
             <span class="desc">Insurance claims breakdown by company</span>
@@ -266,21 +286,48 @@
 </div>
 
 <script>
-    // Simple auth check – redirect to login if not logged in
+    // ========== AUTH & ROLE CHECK ==========
     const loggedInUser = localStorage.getItem('loggedInUser');
     if (!loggedInUser) {
         window.location.href = 'login.html';
     }
-    // Display user name in header (optional)
-    try {
-        const user = JSON.parse(loggedInUser);
-        const header = document.querySelector('.clinic-header');
-        const userSpan = document.createElement('div');
-        userSpan.style.cssText = 'background: rgba(255,255,255,0.12); padding: 5px 14px; border-radius: 40px; font-size: 12px; font-weight: 500;';
-        userSpan.innerHTML = `<i class="fas fa-user-circle"></i> ${user.name || user.username} (${user.level})`;
-        header.insertBefore(userSpan, header.children[1]);
-    } catch(e) {}
 
+    let user = null;
+    try {
+        user = JSON.parse(loggedInUser);
+    } catch(e) {
+        window.location.href = 'login.html';
+    }
+
+    // Display user name in header
+    const header = document.querySelector('.clinic-header');
+    const userSpan = document.createElement('div');
+    userSpan.style.cssText = 'background: rgba(255,255,255,0.12); padding: 5px 14px; border-radius: 40px; font-size: 12px; font-weight: 500;';
+    userSpan.innerHTML = `<i class="fas fa-user-circle"></i> ${user.name || user.username} (${user.level})`;
+    header.insertBefore(userSpan, header.children[1]);
+
+    // ========== ROLE-BASED VISIBILITY ==========
+    const level = (user.level || '').toLowerCase();
+    const isSupervisor = level === 'supervisor';
+
+    // Elements that are supervisor-only
+    const supervisorCards = document.querySelectorAll('.supervisor-only');
+    const restrictedMsg = document.getElementById('restrictedMsg');
+
+    if (!isSupervisor) {
+        // Hide supervisor-only cards
+        supervisorCards.forEach(card => {
+            card.style.display = 'none';
+        });
+        // Show restricted message
+        restrictedMsg.style.display = 'block';
+        // Optionally, adjust grid to center the single daily card
+        const grid = document.querySelector('.reports-grid');
+        grid.style.gridTemplateColumns = 'minmax(260px, 320px)';
+        grid.style.justifyContent = 'center';
+    }
+
+    // ========== LOGOUT ==========
     function logout() {
         localStorage.removeItem('loggedInUser');
         sessionStorage.clear();

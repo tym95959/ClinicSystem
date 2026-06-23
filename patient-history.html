@@ -264,14 +264,9 @@
         .history-item {
             background: #f8fbfe;
             border-radius: 12px;
-            padding: 14px;
+            padding: 14px 18px;
             margin-bottom: 12px;
             border-left: 3px solid #0f5c7a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
             transition: 0.2s;
         }
         
@@ -298,51 +293,29 @@
         
         .history-item .info .sub i {
             margin-right: 4px;
+            width: 16px;
         }
         
-        .history-item .actions {
+        .history-item .info .services-list {
             display: flex;
-            gap: 5px;
             flex-wrap: wrap;
+            gap: 4px 8px;
+            margin-top: 4px;
         }
         
-        .history-item .actions .btn-sm {
-            padding: 3px 12px;
-            border-radius: 20px;
-            border: none;
+        .history-item .info .service-tag {
+            background: #e8f0fe;
+            color: #0a2f44;
+            padding: 2px 8px;
+            border-radius: 12px;
             font-size: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+            font-weight: 500;
         }
         
-        .btn-view {
-            background: #0f5c7a;
-            color: white;
+        .history-item .info .service-tag.free {
+            background: #d4edda;
+            color: #155724;
         }
-        .btn-view:hover { background: #1a6f8f; }
-        
-        .btn-print {
-            background: #2c3e50;
-            color: white;
-        }
-        .btn-print:hover { background: #1a252f; }
-        
-        .btn-edit {
-            background: #f39c12;
-            color: white;
-        }
-        .btn-edit:hover { background: #d68910; }
-        
-        .btn-delete {
-            background: #e74c3c;
-            color: white;
-        }
-        .btn-delete:hover { background: #c0392b; }
         
         .memo-badge {
             background: #0f5c7a;
@@ -424,6 +397,42 @@
             margin-bottom: 4px;
         }
         
+        .view-btn {
+            background: #0f5c7a;
+            color: white;
+            padding: 3px 12px;
+            border-radius: 20px;
+            border: none;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .view-btn:hover {
+            background: #1a6f8f;
+        }
+        
+        .history-item .actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .amount-text {
+            font-weight: 600;
+            color: #0a2f44;
+        }
+        
+        .amount-text.payable {
+            color: #0f5c7a;
+        }
+        
         @media (max-width: 768px) {
             .patient-profile .header {
                 flex-direction: column;
@@ -437,10 +446,6 @@
             .history-tab {
                 padding: 10px 14px;
                 font-size: 11px;
-            }
-            .history-item {
-                flex-direction: column;
-                text-align: center;
             }
         }
     </style>
@@ -822,7 +827,7 @@
             }
         }
 
-        // ========== RENDER MEMOS ==========
+        // ========== RENDER MEMOS (VIEW ONLY) ==========
         function renderMemos() {
             var container = document.getElementById('panelMemos');
             if (!patientMemos.length) {
@@ -839,8 +844,10 @@
                 var doctorName = m.doctor?.name || 'Unknown';
                 var servicesList = '';
                 if (m.services && m.services.length) {
-                    var serviceNames = m.services.map(function(s) { return s.name; });
-                    servicesList = serviceNames.join(', ');
+                    servicesList = m.services.map(function(s) {
+                        var freeTag = s.price === 0 ? ' <span class="service-tag free">FREE</span>' : '';
+                        return '<span class="service-tag">' + escapeHtml(s.name) + freeTag + '</span>';
+                    }).join('');
                 }
                 var totalAmount = m.billing?.subtotal || 0;
                 var patientPay = m.billing?.patientPayable || 0;
@@ -849,19 +856,18 @@
                     '<div class="info">' +
                         '<div class="title">Memo #' + escapeHtml(memoNumber) + ' <span class="memo-badge">' + escapeHtml(date) + '</span></div>' +
                         '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + ' · <i class="fas fa-clock"></i> ' + time + '</div>' +
-                        '<div class="sub"><i class="fas fa-list"></i> ' + escapeHtml(servicesList) + '</div>' +
-                        '<div class="sub"><i class="fas fa-money-bill"></i> Total: MVR ' + totalAmount.toFixed(2) + ' · Patient Pay: MVR ' + patientPay.toFixed(2) + '</div>' +
+                        (servicesList ? '<div class="services-list">' + servicesList + '</div>' : '') +
+                        '<div class="sub"><i class="fas fa-money-bill"></i> Total: <span class="amount-text">MVR ' + totalAmount.toFixed(2) + '</span> · Patient Pay: <span class="amount-text payable">MVR ' + patientPay.toFixed(2) + '</span></div>' +
                     '</div>' +
                     '<div class="actions">' +
-                        '<a href="print-memo.html?memoId=' + encodeURIComponent(memoNumber) + '" class="btn-sm btn-print" target="_blank"><i class="fas fa-print"></i> Print</a>' +
-                        '<button class="btn-sm btn-delete" onclick="deleteMemo(\'' + m.id + '\')"><i class="fas fa-trash"></i> Delete</button>' +
+                        '<a href="print-memo.html?memoId=' + encodeURIComponent(memoNumber) + '" class="view-btn" target="_blank"><i class="fas fa-print"></i> Print</a>' +
                     '</div>' +
                 '</div>';
             }
             container.innerHTML = html;
         }
 
-        // ========== RENDER PRESCRIPTIONS ==========
+        // ========== RENDER PRESCRIPTIONS (VIEW ONLY) ==========
         function renderPrescriptions() {
             var container = document.getElementById('panelPrescriptions');
             if (!patientPrescriptions.length) {
@@ -879,20 +885,21 @@
                 html += '<div class="history-item">' +
                     '<div class="info">' +
                         '<div class="title">💊 ' + escapeHtml(r.medication) + ' <span class="rx-badge">' + escapeHtml(date) + '</span></div>' +
-                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + ' · ' + escapeHtml(r.dosage || '') + ' · ' + escapeHtml(r.duration || '') + '</div>' +
+                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + '</div>' +
+                        (r.dosage ? '<div class="sub"><i class="fas fa-syringe"></i> Dosage: ' + escapeHtml(r.dosage) + '</div>' : '') +
+                        (r.duration ? '<div class="sub"><i class="fas fa-clock"></i> Duration: ' + escapeHtml(r.duration) + '</div>' : '') +
                         (r.instructions ? '<div class="sub"><i class="fas fa-sticky-note"></i> ' + escapeHtml(r.instructions) + '</div>' : '') +
                         (memoRef ? '<div class="sub"><i class="fas fa-file-medical"></i> ' + memoRef + '</div>' : '') +
                     '</div>' +
                     '<div class="actions">' +
-                        '<button class="btn-sm btn-print" onclick="printPrescription(\'' + r.id + '\')"><i class="fas fa-print"></i> Print</button>' +
-                        '<button class="btn-sm btn-delete" onclick="deletePrescription(\'' + r.id + '\')"><i class="fas fa-trash"></i> Delete</button>' +
+                        '<a href="prescriptions.html?patientId=' + encodeURIComponent(selectedPatient.id) + '" class="view-btn"><i class="fas fa-eye"></i> View All</a>' +
                     '</div>' +
                 '</div>';
             }
             container.innerHTML = html;
         }
 
-        // ========== RENDER CERTIFICATES ==========
+        // ========== RENDER CERTIFICATES (VIEW ONLY) ==========
         function renderCertificates() {
             var container = document.getElementById('panelCertificates');
             if (!patientCertificates.length) {
@@ -910,21 +917,21 @@
                 html += '<div class="history-item">' +
                     '<div class="info">' +
                         '<div class="title">📄 Medical Certificate <span class="cert-badge">' + escapeHtml(date) + '</span></div>' +
-                        '<div class="sub"><i class="fas fa-stethoscope"></i> ' + escapeHtml(c.diagnosisSummary || 'No diagnosis') + '</div>' +
-                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + ' · Rest: ' + escapeHtml(c.recommendedRest || 'N/A') + '</div>' +
+                        '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + '</div>' +
+                        '<div class="sub"><i class="fas fa-stethoscope"></i> Diagnosis: ' + escapeHtml(c.diagnosisSummary || 'No diagnosis') + '</div>' +
+                        (c.recommendedRest ? '<div class="sub"><i class="fas fa-bed"></i> Rest: ' + escapeHtml(c.recommendedRest) + '</div>' : '') +
                         (memoRef ? '<div class="sub"><i class="fas fa-file-medical"></i> ' + memoRef + '</div>' : '') +
                         (c.remarks ? '<div class="sub"><i class="fas fa-sticky-note"></i> ' + escapeHtml(c.remarks) + '</div>' : '') +
                     '</div>' +
                     '<div class="actions">' +
-                        '<button class="btn-sm btn-print" onclick="printCertificate(\'' + c.id + '\')"><i class="fas fa-print"></i> Print</button>' +
-                        '<button class="btn-sm btn-delete" onclick="deleteCertificate(\'' + c.id + '\')"><i class="fas fa-trash"></i> Delete</button>' +
+                        '<a href="medical-certificate.html?patientId=' + encodeURIComponent(selectedPatient.id) + '" class="view-btn"><i class="fas fa-eye"></i> View All</a>' +
                     '</div>' +
                 '</div>';
             }
             container.innerHTML = html;
         }
 
-        // ========== RENDER APPOINTMENTS ==========
+        // ========== RENDER APPOINTMENTS (VIEW ONLY) ==========
         function renderAppointments() {
             var container = document.getElementById('panelAppointments');
             if (!patientAppointments.length) {
@@ -951,103 +958,12 @@
                     '<div class="info">' +
                         '<div class="title">📅 ' + escapeHtml(date) + ' at ' + escapeHtml(time) + ' <span style="background:' + statusColor + '; padding:2px 10px; border-radius:12px; font-size:9px; font-weight:600;">' + escapeHtml(status) + '</span></div>' +
                         '<div class="sub"><i class="fas fa-user-md"></i> Dr. ' + escapeHtml(doctorName) + '</div>' +
-                        (a.serviceName ? '<div class="sub"><i class="fas fa-list"></i> ' + escapeHtml(a.serviceName) + '</div>' : '') +
-                    '</div>' +
-                    '<div class="actions">' +
-                        '<button class="btn-sm btn-delete" onclick="deleteAppointment(\'' + a.id + '\')"><i class="fas fa-trash"></i> Delete</button>' +
+                        (a.serviceName ? '<div class="sub"><i class="fas fa-list"></i> Service: ' + escapeHtml(a.serviceName) + '</div>' : '') +
                     '</div>' +
                 '</div>';
             }
             container.innerHTML = html;
         }
-
-        // ========== DELETE FUNCTIONS ==========
-        window.deleteMemo = async function(id) {
-            if (!confirm('Delete this memo?')) return;
-            if (!firestoreDB) return;
-            try {
-                await firestoreDB.collection("memos").doc(id).delete();
-                if (selectedPatient) {
-                    await loadPatientData(selectedPatient.id);
-                }
-                alert('Memo deleted successfully.');
-            } catch(e) {
-                console.error(e);
-                alert('Error deleting memo: ' + e.message);
-            }
-        };
-
-        window.deletePrescription = async function(id) {
-            if (!confirm('Delete this prescription?')) return;
-            if (!firestoreDB) return;
-            try {
-                await firestoreDB.collection("prescriptions").doc(id).delete();
-                if (selectedPatient) {
-                    await loadPatientData(selectedPatient.id);
-                }
-                alert('Prescription deleted successfully.');
-            } catch(e) {
-                console.error(e);
-                alert('Error deleting prescription: ' + e.message);
-            }
-        };
-
-        window.deleteCertificate = async function(id) {
-            if (!confirm('Delete this medical certificate?')) return;
-            if (!firestoreDB) return;
-            try {
-                await firestoreDB.collection("medicalCertificates").doc(id).delete();
-                if (selectedPatient) {
-                    await loadPatientData(selectedPatient.id);
-                }
-                alert('Certificate deleted successfully.');
-            } catch(e) {
-                console.error(e);
-                alert('Error deleting certificate: ' + e.message);
-            }
-        };
-
-        window.deleteAppointment = async function(id) {
-            if (!confirm('Delete this appointment?')) return;
-            if (!firestoreDB) return;
-            try {
-                await firestoreDB.collection("appointments").doc(id).delete();
-                if (selectedPatient) {
-                    await loadPatientData(selectedPatient.id);
-                }
-                alert('Appointment deleted successfully.');
-            } catch(e) {
-                console.error(e);
-                alert('Error deleting appointment: ' + e.message);
-            }
-        };
-
-        // ========== PRINT FUNCTIONS ==========
-        window.printPrescription = function(id) {
-            var presc = null;
-            for (var i = 0; i < patientPrescriptions.length; i++) {
-                if (patientPrescriptions[i].id === id) {
-                    presc = patientPrescriptions[i];
-                    break;
-                }
-            }
-            if (!presc) return;
-            alert('Print functionality for prescription #' + presc.id + ' will be implemented.');
-            // Redirect to prescription print page
-            window.open('prescriptions.html?patientId=' + encodeURIComponent(selectedPatient.id) + '&print=' + id, '_blank');
-        };
-
-        window.printCertificate = function(id) {
-            var cert = null;
-            for (var i = 0; i < patientCertificates.length; i++) {
-                if (patientCertificates[i].id === id) {
-                    cert = patientCertificates[i];
-                    break;
-                }
-            }
-            if (!cert) return;
-            window.open('medical-certificate.html?patientId=' + encodeURIComponent(selectedPatient.id) + '&print=' + id, '_blank');
-        };
 
         // ========== CLEAR SEARCH ==========
         window.clearSearch = function() {

@@ -5,16 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Hope Dental | Doctor's Portal</title>
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js">
+    </script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="firebase-config.js"></script>
+    <script src="firebase-config.js">
+    </script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
-        body { background: #eef2f7; min-height: 100vh; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+        }
+
         .clinic-header {
             background: #0a2f44;
             color: white;
@@ -24,14 +36,48 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
-        .logo h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
-        .doctor-info { background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .online-status { display: flex; align-items: center; gap: 6px; font-size: 11px; background: #2ecc71; padding: 4px 10px; border-radius: 20px; color: white; }
-        .logout-btn { background: #c63d2f; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; transition: 0.2s; }
-        .logout-btn:hover { background: #a52a1f; transform: translateY(-1px); }
-        
+        .logo h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .doctor-info {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 20px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            background: #2ecc71;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: white;
+        }
+        .logout-btn {
+            background: #c63d2f;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        .logout-btn:hover {
+            background: #a52a1f;
+            transform: translateY(-1px);
+        }
+
         .dashboard-container {
             max-width: 1600px;
             margin: 20px auto;
@@ -40,7 +86,7 @@
             gap: 20px;
             flex-wrap: wrap;
         }
-        
+
         .appointments-panel {
             flex: 1.2;
             min-width: 350px;
@@ -52,25 +98,80 @@
             flex-direction: column;
             height: calc(100vh - 100px);
         }
-        
-        .panel-header { background: #f4f9fe; padding: 15px 20px; border-bottom: 1px solid #e2eaf0; }
-        .panel-header h3 { font-size: 16px; color: #0a2f44; display: flex; align-items: center; gap: 8px; }
-        .panel-header .next-patient-btn { background: #27ae60; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; }
-        .panel-header .next-patient-btn:hover { background: #219a52; }
-        
-        .list-tabs { display: flex; gap: 5px; background: #f4f9fe; padding: 0 12px; border-bottom: 1px solid #e2eaf0; overflow-x: auto; }
-        .list-tab { background: none; border: none; padding: 10px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: #5f7f9a; transition: 0.2s; white-space: nowrap; }
-        .list-tab.active-list { color: #0f5c7a; border-bottom: 2px solid #0f5c7a; background: white; margin-bottom: -1px; }
-        
-        .appointments-list, .memos-list, .patients-list {
+
+        .panel-header {
+            background: #f4f9fe;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2eaf0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .panel-header h3 {
+            font-size: 16px;
+            color: #0a2f44;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-header .next-patient-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .panel-header .next-patient-btn:hover {
+            background: #219a52;
+        }
+
+        .list-tabs {
+            display: flex;
+            gap: 5px;
+            background: #f4f9fe;
+            padding: 0 12px;
+            border-bottom: 1px solid #e2eaf0;
+            overflow-x: auto;
+        }
+        .list-tab {
+            background: none;
+            border: none;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5f7f9a;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .list-tab.active-list {
+            color: #0f5c7a;
+            border-bottom: 2px solid #0f5c7a;
+            background: white;
+            margin-bottom: -1px;
+        }
+
+        .appointments-list,
+        .memos-list,
+        .patients-list {
             flex: 1;
             overflow-y: auto;
             padding: 12px;
             display: none;
         }
-        .appointments-list.active-list, .memos-list.active-list, .patients-list.active-list { display: block; }
-        
-        .appointment-card, .memo-card {
+        .appointments-list.active-list,
+        .memos-list.active-list,
+        .patients-list.active-list {
+            display: block;
+        }
+
+        .appointment-card,
+        .memo-card {
             background: #f8fbfe;
             border-radius: 16px;
             padding: 14px;
@@ -80,13 +181,37 @@
             border-left: 3px solid #cbdde9;
             position: relative;
         }
-        .appointment-card:hover, .memo-card:hover { background: #e8f0fe; transform: translateX(3px); }
-        .appointment-card.selected, .memo-card.selected { background: #e0f2fe; border-left-color: #0f5c7a; }
-        
-        .appointment-time, .memo-date { font-size: 12px; font-weight: 700; color: #0f5c7a; margin-bottom: 6px; }
-        .appointment-patient, .memo-patient { font-size: 14px; font-weight: 600; color: #0a2f44; }
-        .appointment-details, .memo-details { font-size: 11px; color: #5f7f9a; margin-top: 5px; }
-        
+        .appointment-card:hover,
+        .memo-card:hover {
+            background: #e8f0fe;
+            transform: translateX(3px);
+        }
+        .appointment-card.selected,
+        .memo-card.selected {
+            background: #e0f2fe;
+            border-left-color: #0f5c7a;
+        }
+
+        .appointment-time,
+        .memo-date {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f5c7a;
+            margin-bottom: 6px;
+        }
+        .appointment-patient,
+        .memo-patient {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0a2f44;
+        }
+        .appointment-details,
+        .memo-details {
+            font-size: 11px;
+            color: #5f7f9a;
+            margin-top: 5px;
+        }
+
         .status-badge {
             font-size: 9px;
             padding: 2px 8px;
@@ -94,10 +219,19 @@
             font-weight: 600;
             margin-left: 8px;
         }
-        .status-done { background: #d4edda; color: #155724; }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-upcoming { background: #cce5ff; color: #004085; }
-        
+        .status-done {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-upcoming {
+            background: #cce5ff;
+            color: #004085;
+        }
+
         .next-badge {
             background: #28a745;
             color: white;
@@ -109,17 +243,47 @@
             animation: pulse 1.5s infinite;
         }
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
         }
-        
-        .patient-search-area { padding: 12px; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
-        .patient-search-input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2eaf0; border-radius: 30px; font-size: 13px; outline: none; }
-        .patient-search-input:focus { border-color: #0f5c7a; }
-        .patient-suggestions { max-height: 300px; overflow-y: auto; margin-top: 8px; }
-        .suggestion-item { padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: 0.1s; border-bottom: 1px solid #e2eaf0; }
-        .suggestion-item:hover { background: #e0f2fe; }
-        
+
+        .patient-search-area {
+            padding: 12px;
+            background: #f8fbfe;
+            border-bottom: 1px solid #e2eaf0;
+        }
+        .patient-search-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 30px;
+            font-size: 13px;
+            outline: none;
+        }
+        .patient-search-input:focus {
+            border-color: #0f5c7a;
+        }
+        .patient-suggestions {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 8px;
+        }
+        .suggestion-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.1s;
+            border-bottom: 1px solid #e2eaf0;
+        }
+        .suggestion-item:hover {
+            background: #e0f2fe;
+        }
+
         .detail-panel {
             flex: 2;
             min-width: 550px;
@@ -130,13 +294,13 @@
             flex-direction: column;
             height: calc(100vh - 100px);
         }
-        
+
         .patient-detail-area {
             flex: 1;
             display: flex;
             flex-direction: column;
         }
-        
+
         .patient-detail-area .empty-state {
             flex: 1;
             display: flex;
@@ -146,13 +310,12 @@
             padding: 40px;
             color: #8ba0b0;
         }
-        
         .patient-detail-area .empty-state i {
             font-size: 48px;
             opacity: 0.3;
             margin-bottom: 15px;
         }
-        
+
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -169,20 +332,71 @@
             transition: 0.2s;
             text-decoration: none;
             color: #0a2f44;
+            position: relative;
         }
         .quick-action-card:hover {
             background: #e0f2fe;
             transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
-        .quick-action-card i { font-size: 28px; color: #0f5c7a; margin-bottom: 10px; display: block; }
-        .quick-action-card h4 { font-size: 13px; margin-bottom: 5px; }
-        .quick-action-card p { font-size: 10px; color: #5f7f9a; }
-        
-        .patient-info-card { background: #f0f6fc; border-radius: 16px; padding: 16px; margin: 0 20px 20px 20px; }
-        .patient-name { font-size: 18px; font-weight: 700; color: #0a2f44; }
-        .patient-meta { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px; font-size: 12px; color: #5f7f9a; }
-        
+        .quick-action-card i {
+            font-size: 28px;
+            color: #0f5c7a;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .quick-action-card h4 {
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .quick-action-card p {
+            font-size: 10px;
+            color: #5f7f9a;
+        }
+        .quick-action-card .memo-status-tag {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 8px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .tag-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .tag-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .tag-viewonly {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .patient-info-card {
+            background: #f0f6fc;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 0 20px 20px 20px;
+        }
+        .patient-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0a2f44;
+        }
+        .patient-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #5f7f9a;
+        }
+
         .memo-number-badge {
             background: #0f5c7a;
             color: white;
@@ -192,7 +406,6 @@
             font-weight: 600;
             display: inline-block;
         }
-        
         .insurance-badge {
             background: #e0f2fe;
             color: #0f5c7a;
@@ -202,10 +415,20 @@
             font-weight: 600;
             display: inline-block;
         }
-        
-        .empty-list { text-align: center; color: #8ba0b0; padding: 40px; font-size: 12px; }
-        .empty-list i { font-size: 36px; opacity: 0.3; margin-bottom: 10px; display: block; }
-        
+
+        .empty-list {
+            text-align: center;
+            color: #8ba0b0;
+            padding: 40px;
+            font-size: 12px;
+        }
+        .empty-list i {
+            font-size: 36px;
+            opacity: 0.3;
+            margin-bottom: 10px;
+            display: block;
+        }
+
         .memo-service-item {
             background: #f8fbfe;
             padding: 6px 10px;
@@ -214,7 +437,38 @@
             font-size: 12px;
             border-left: 2px solid #0f5c7a;
         }
-        
+
+        /* ===== MEMO STATUS BANNER ===== */
+        .memo-status-banner {
+            margin: 0 20px 12px 20px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid;
+        }
+        .banner-active {
+            background: #d4edda;
+            color: #155724;
+            border-color: #28a745;
+        }
+        .banner-inactive {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545;
+        }
+        .banner-viewonly {
+            background: #fff3cd;
+            color: #856404;
+            border-color: #ffc107;
+        }
+        .memo-status-banner i {
+            font-size: 18px;
+        }
+
         /* ========== NOTIFICATION TOAST ========== */
         .notification-toast {
             position: fixed;
@@ -224,7 +478,7 @@
             color: white;
             padding: 14px 20px;
             border-radius: 14px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.35);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.35);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -235,12 +489,24 @@
             border-left: 4px solid #ffc107;
         }
         @keyframes slideInRight {
-            from { transform: translateX(120%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
         @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(120%); opacity: 0; }
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
         }
         .notification-toast .close-toast {
             margin-left: 10px;
@@ -248,7 +514,9 @@
             opacity: 0.7;
             font-size: 16px;
         }
-        .notification-toast .close-toast:hover { opacity: 1; }
+        .notification-toast .close-toast:hover {
+            opacity: 1;
+        }
         .notification-toast .msg-preview {
             font-size: 12px;
             opacity: 0.9;
@@ -265,7 +533,7 @@
         }
         .notification-toast .toast-icon {
             font-size: 24px;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.15);
             width: 44px;
             height: 44px;
             display: flex;
@@ -273,7 +541,7 @@
             justify-content: center;
             border-radius: 50%;
         }
-        
+
         .unread-badge {
             background: #ff4757;
             color: white;
@@ -284,11 +552,6 @@
             animation: pulse 1.5s infinite;
             font-weight: 700;
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
         .total-unread-badge {
             position: fixed;
             bottom: 90px;
@@ -306,7 +569,7 @@
             cursor: pointer;
             border: 2px solid white;
         }
-        
+
         /* ========== CHAT STYLES ========== */
         .chat-panel {
             position: fixed;
@@ -315,1383 +578,1662 @@
             width: 380px;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
             transition: all 0.3s;
             z-index: 1000;
-            border: 1px solid rgba(15,92,122,0.2);
+            border: 1px solid rgba(15, 92, 122, 0.2);
             overflow: hidden;
             max-height: 600px;
         }
-        .chat-panel.minimized { width: auto; cursor: pointer; max-height: 60px; }
-        .chat-panel.minimized .chat-header { border-radius: 20px; }
-        .chat-panel.minimized .staff-list, .chat-panel.minimized .chat-messages, 
-        .chat-panel.minimized .chat-input-area, .chat-panel.minimized .staff-list-title, 
-        .chat-panel.minimized .typing-indicator, .chat-panel.minimized .delete-all-btn { display: none; }
-        
-        .chat-header { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; padding: 14px 18px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
-        .chat-header i { font-size: 1.2rem; }
-        .chat-header h3 { font-size: 0.95rem; font-weight: 600; flex: 1; }
-        .chat-badge { background: #ff4757; color: white; border-radius: 40px; padding: 3px 10px; font-size: 10px; font-weight: bold; }
-        .minimize-icon { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
-        
-        .staff-list-title { font-size: 10px; color: #0f5c7a; padding: 10px 14px 4px; font-weight: 600; background: #f8fbfe; border-bottom: 1px solid #e2eaf0; }
-        .staff-list { background: #f8fbfe; padding: 8px 12px; max-height: 200px; overflow-y: auto; border-bottom: 1px solid #e2eaf0; }
-        .staff-tab { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 5px 0; border-radius: 14px; cursor: pointer; background: white; border: 1px solid #e2eaf0; transition: all 0.2s; }
-        .staff-tab.active-staff { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; }
-        .staff-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0f5c7a; font-weight: bold; font-size: 16px; }
-        .active-staff .staff-avatar { background: rgba(255,255,255,0.25); color: white; }
-        .staff-info { flex: 1; }
-        .staff-name { font-weight: 700; font-size: 13px; color: #0a2f44; }
-        .staff-role { font-size: 10px; color: #5f7f9a; margin-top: 2px; }
-        .online-indicator { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #4caf50; background: #e8f5e9; padding: 3px 8px; border-radius: 20px; }
-        
-        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #fefefe; display: flex; flex-direction: column; gap: 12px; max-height: 350px; min-height: 300px; }
-        .message { display: flex; flex-direction: column; max-width: 88%; animation: slideIn 0.2s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .message.doctor { align-self: flex-end; }
-        .message.reception { align-self: flex-start; }
-        .message-bubble { padding: 8px 14px; border-radius: 18px; font-size: 12px; line-height: 1.4; word-break: break-word; }
-        .message.doctor .message-bubble { background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%); color: white; border-bottom-right-radius: 4px; }
-        .message.reception .message-bubble { background: #eef2f7; color: #1a2c3e; border-bottom-left-radius: 4px; }
-        .message-meta { font-size: 9px; margin-top: 4px; padding: 0 6px; color: #8ba0b0; display: flex; justify-content: space-between; align-items: center; }
-        .delete-msg { font-size: 9px; color: #ff4757; cursor: pointer; margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
-        .message:hover .delete-msg { opacity: 1; }
-        
-        .typing-indicator { font-size: 10px; color: #0f5c7a; padding: 8px 16px; font-style: italic; background: #f8fbfe; border-top: 1px solid #e2eaf0; }
-        .chat-input-area { padding: 12px; background: white; border-top: 1px solid #e2eaf0; display: flex; gap: 10px; }
-        .chat-input-area input { flex: 1; border: 1.5px solid #e2eaf0; border-radius: 30px; padding: 10px 16px; font-size: 12px; outline: none; }
-        .chat-input-area input:focus { border-color: #0f5c7a; }
-        .chat-input-area button { background: #0f5c7a; border: none; color: white; padding: 0 20px; border-radius: 30px; font-weight: 600; cursor: pointer; font-size: 12px; }
-        .chat-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .delete-all-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin: 8px 12px; }
-        
-        .online-dot-chat { width: 6px; height: 6px; border-radius: 50%; background-color: #4caf50; display: inline-block; animation: pulseOnline 1.5s infinite; }
-        @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
-        
-        @media (max-width: 700px) { 
-            .chat-panel { width: 320px; right: 16px; bottom: 16px; } 
-            .tab-btn { padding: 8px 12px; font-size: 11px; }
-            .notification-toast { max-width: 300px; right: 10px; top: 10px; padding: 12px 16px; }
-            .total-unread-badge { right: 16px; bottom: 80px; }
+        .chat-panel.minimized {
+            width: auto;
+            cursor: pointer;
+            max-height: 60px;
+        }
+        .chat-panel.minimized .chat-header {
+            border-radius: 20px;
+        }
+        .chat-panel.minimized .staff-list,
+        .chat-panel.minimized .chat-messages,
+        .chat-panel.minimized .chat-input-area,
+        .chat-panel.minimized .staff-list-title,
+        .chat-panel.minimized .typing-indicator,
+        .chat-panel.minimized .delete-all-btn {
+            display: none;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .chat-header i {
+            font-size: 1.2rem;
+        }
+        .chat-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            flex: 1;
+        }
+        .chat-badge {
+            background: #ff4757;
+            color: white;
+            border-radius: 40px;
+            padding: 3px 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .minimize-icon {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .staff-list-title {
+            font-size: 10px;
+            color: #0f5c7a;
+            padding: 10px 14px 4px;
+            font-weight: 600;
+            background: #f8fbfe;
+            border-bottom: 1px solid #e2eaf0;
+        }
+        .staff-list {
+            background: #f8fbfe;
+            padding: 8px 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e2eaf0;
+        }
+        .staff-tab {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            margin: 5px 0;
+            border-radius: 14px;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #e2eaf0;
+            transition: all 0.2s;
+        }
+        .staff-tab.active-staff {
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+        }
+        .staff-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #b8dfef 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f5c7a;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .active-staff .staff-avatar {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+        .staff-info {
+            flex: 1;
+        }
+        .staff-name {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0a2f44;
+        }
+        .staff-role {
+            font-size: 10px;
+            color: #5f7f9a;
+            margin-top: 2px;
+        }
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            color: #4caf50;
+            background: #e8f5e9;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #fefefe;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 350px;
+            min-height: 300px;
+        }
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 88%;
+            animation: slideIn 0.2s ease;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .message.doctor {
+            align-self: flex-end;
+        }
+        .message.reception {
+            align-self: flex-start;
+        }
+        .message-bubble {
+            padding: 8px 14px;
+            border-radius: 18px;
+            font-size: 12px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .message.doctor .message-bubble {
+            background: linear-gradient(135deg, #0f5c7a 0%, #0a2f44 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .message.reception .message-bubble {
+            background: #eef2f7;
+            color: #1a2c3e;
+            border-bottom-left-radius: 4px;
+        }
+        .message-meta {
+            font-size: 9px;
+            margin-top: 4px;
+            padding: 0 6px;
+            color: #8ba0b0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-msg {
+            font-size: 9px;
+            color: #ff4757;
+            cursor: pointer;
+            margin-left: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .message:hover .delete-msg {
+            opacity: 1;
+        }
+
+        .typing-indicator {
+            font-size: 10px;
+            color: #0f5c7a;
+            padding: 8px 16px;
+            font-style: italic;
+            background: #f8fbfe;
+            border-top: 1px solid #e2eaf0;
+        }
+        .chat-input-area {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e2eaf0;
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input-area input {
+            flex: 1;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 30px;
+            padding: 10px 16px;
+            font-size: 12px;
+            outline: none;
+        }
+        .chat-input-area input:focus {
+            border-color: #0f5c7a;
+        }
+        .chat-input-area button {
+            background: #0f5c7a;
+            border: none;
+            color: white;
+            padding: 0 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .chat-input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .delete-all-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            margin: 8px 12px;
+        }
+        .online-dot-chat {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            display: inline-block;
+            animation: pulseOnline 1.5s infinite;
+        }
+        @keyframes pulseOnline {
+            0% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .chat-panel {
+                width: 320px;
+                right: 16px;
+                bottom: 16px;
+            }
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+            .notification-toast {
+                max-width: 300px;
+                right: 10px;
+                top: 10px;
+                padding: 12px 16px;
+            }
+            .total-unread-badge {
+                right: 16px;
+                bottom: 80px;
+            }
         }
         @media (max-width: 480px) {
-            .chat-panel { width: 280px; right: 10px; bottom: 10px; }
-            .notification-toast { max-width: 260px; right: 8px; top: 8px; padding: 10px 12px; }
-            .total-unread-badge { right: 10px; bottom: 70px; font-size: 10px; padding: 4px 10px; }
+            .chat-panel {
+                width: 280px;
+                right: 10px;
+                bottom: 10px;
+            }
+            .notification-toast {
+                max-width: 260px;
+                right: 8px;
+                top: 8px;
+                padding: 10px 12px;
+            }
+            .total-unread-badge {
+                right: 10px;
+                bottom: 70px;
+                font-size: 10px;
+                padding: 4px 10px;
+            }
         }
     </style>
 </head>
 <body>
-<div class="clinic-header">
-    <div class="logo"><h2>👨‍⚕️ Hope Dental · Doctor's Portal</h2></div>
-    <div class="doctor-info">
-        <span id="doctorName">Loading...</span>
-        <span id="doctorSpeciality"></span>
-        <span id="onlineStatusBadge" class="online-status">🟢 Online</span>
-        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
-    </div>
-</div>
-
-<!-- ========== TOTAL UNREAD BADGE ========== -->
-<div class="total-unread-badge" id="totalUnreadBadge" onclick="openChatAndShowUnread()">
-    <i class="fas fa-comment-dots"></i> <span id="totalUnreadCount">0</span> new
-</div>
-
-<div class="dashboard-container">
-    <div class="appointments-panel">
-        <div class="panel-header">
-            <h3>📋 My Patients</h3>
-            <button class="next-patient-btn" id="nextPatientBtn"><i class="fas fa-forward"></i> Next Patient</button>
-        </div>
-        <div class="list-tabs">
-            <button class="list-tab active-list" data-list="appointments">📅 Today's Appointments</button>
-            <button class="list-tab" data-list="memos">📜 Memo History</button>
-            <button class="list-tab" data-list="patients">🔍 Search</button>
-        </div>
-        <div class="appointments-list active-list" id="appointmentsList"><div class="empty-list"><i class="fas fa-calendar-day"></i>Loading today's appointments...</div></div>
-        <div class="memos-list" id="memosList"><div class="empty-list"><i class="fas fa-history"></i>Loading memos...</div></div>
-        <div class="patients-list" id="patientsList">
-            <div class="patient-search-area">
-                <input type="text" id="patientSearchInput" class="patient-search-input" placeholder="Search by name or ID...">
-                <div id="patientSuggestions" class="patient-suggestions"></div>
-            </div>
+    <div class="clinic-header">
+        <div class="logo"><h2>👨‍⚕️ Hope Dental · Doctor's Portal</h2></div>
+        <div class="doctor-info">
+            <span id="doctorName">Loading...</span>
+            <span id="doctorSpeciality"></span>
+            <span id="onlineStatusBadge" class="online-status">🟢 Online</span>
+            <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
         </div>
     </div>
 
-    <div class="detail-panel">
-        <div class="patient-detail-area">
-            <div style="padding: 20px 20px 0 20px;">
-                <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Details</h3>
+    <!-- ===== TOTAL UNREAD BADGE ===== -->
+    <div class="total-unread-badge" id="totalUnreadBadge" onclick="openChatAndShowUnread()">
+        <i class="fas fa-comment-dots"></i> <span id="totalUnreadCount">0</span> new
+    </div>
+
+    <div class="dashboard-container">
+        <div class="appointments-panel">
+            <div class="panel-header">
+                <h3>📋 My Patients</h3>
+                <button class="next-patient-btn" id="nextPatientBtn"><i class="fas fa-forward"></i> Next Patient</button>
             </div>
-            <div id="patientInfoContainer">
-                <!-- Empty state - no patient selected -->
-                <div class="empty-state" id="emptyPatientState">
-                    <i class="fas fa-user-circle"></i>
-                    <p>No patient selected</p>
-                    <p style="font-size: 12px; margin-top: 8px;">Click an appointment or search for a patient</p>
+            <div class="list-tabs">
+                <button class="list-tab active-list" data-list="appointments">📅 Today's Appointments</button>
+                <button class="list-tab" data-list="memos">📜 Memo History</button>
+                <button class="list-tab" data-list="patients">🔍 Search</button>
+            </div>
+            <div class="appointments-list active-list" id="appointmentsList"><div class="empty-list"><i class="fas fa-calendar-day"></i>Loading today's appointments...</div></div>
+            <div class="memos-list" id="memosList"><div class="empty-list"><i class="fas fa-history"></i>Loading memos...</div></div>
+            <div class="patients-list" id="patientsList">
+                <div class="patient-search-area">
+                    <input type="text" id="patientSearchInput" class="patient-search-input" placeholder="Search by name or ID...">
+                    <div id="patientSuggestions" class="patient-suggestions"></div>
                 </div>
             </div>
-            
-            <div class="quick-actions" id="quickActions" style="display: none;">
-                <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo">
-                    <i class="fas fa-user"></i>
-                    <h4>Patient Info</h4>
-                    <p>View patient details</p>
-                </a>
-                <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory">
-                    <i class="fas fa-notes-medical"></i>
-                    <h4>Medical History</h4>
-                    <p>View and add medical records</p>
-                </a>
-                <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis">
-                    <i class="fas fa-stethoscope"></i>
-                    <h4>Diagnosis & Treatment</h4>
-                    <p>Add diagnosis and treatment plans</p>
-                </a>
-                <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions">
-                    <i class="fas fa-prescription"></i>
-                    <h4>Prescriptions</h4>
-                    <p>Issue and manage prescriptions</p>
-                </a>
-                <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate">
-                    <i class="fas fa-file-medical-alt"></i>
-                    <h4>Medical Certificate</h4>
-                    <p>Issue medical certificates</p>
-                </a>
+        </div>
+
+        <div class="detail-panel">
+            <div class="patient-detail-area">
+                <div style="padding: 20px 20px 0 20px;">
+                    <h3 style="color: #0a2f44; font-size: 16px;">👤 Patient Details</h3>
+                </div>
+                <div id="patientInfoContainer">
+                    <div class="empty-state" id="emptyPatientState">
+                        <i class="fas fa-user-circle"></i>
+                        <p>No patient selected</p>
+                        <p style="font-size: 12px; margin-top: 8px;">Click an appointment or search for a patient</p>
+                    </div>
+                </div>
+
+                <!-- ===== MEMO STATUS BANNER (dynamic) ===== -->
+                <div id="memoStatusBannerContainer"></div>
+
+                <div class="quick-actions" id="quickActions" style="display: none;">
+                    <a href="patient-info.html" class="quick-action-card" id="btnPatientInfo">
+                        <i class="fas fa-user"></i>
+                        <h4>Patient Info</h4>
+                        <p>View patient details</p>
+                    </a>
+                    <a href="medical-history.html" class="quick-action-card" id="btnMedicalHistory">
+                        <i class="fas fa-notes-medical"></i>
+                        <h4>Medical History</h4>
+                        <p>View and add medical records</p>
+                    </a>
+                    <a href="diagnosis-treatment.html" class="quick-action-card" id="btnDiagnosis">
+                        <i class="fas fa-stethoscope"></i>
+                        <h4>Diagnosis & Treatment</h4>
+                        <p>Add diagnosis and treatment plans</p>
+                    </a>
+                    <!-- PRESCRIPTIONS -->
+                    <a href="prescriptions.html" class="quick-action-card" id="btnPrescriptions">
+                        <i class="fas fa-prescription"></i>
+                        <h4>Prescriptions</h4>
+                        <p id="prescriptionSubText">Issue prescriptions</p>
+                        <span class="memo-status-tag" id="prescriptionTag">—</span>
+                    </a>
+                    <!-- MEDICAL CERTIFICATE -->
+                    <a href="medical-certificate.html" class="quick-action-card" id="btnCertificate">
+                        <i class="fas fa-file-medical-alt"></i>
+                        <h4>Medical Certificate</h4>
+                        <p id="certificateSubText">Issue certificates</p>
+                        <span class="memo-status-tag" id="certificateTag">—</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- ========== CHAT PANEL ========== -->
-<div class="chat-panel minimized" id="chatPanel">
-    <div class="chat-header" id="chatHeader">
-        <i class="fas fa-comment-dots"></i>
-        <h3>Chat with Reception <span id="minimizedOnlineCount"></span></h3>
-        <div class="chat-badge" id="onlineCountBadge">0</div>
-        <div class="minimize-icon" id="minimizeBtn"><i class="fas fa-plus"></i></div>
+    <!-- ===== CHAT PANEL ===== -->
+    <div class="chat-panel minimized" id="chatPanel">
+        <div class="chat-header" id="chatHeader">
+            <i class="fas fa-comment-dots"></i>
+            <h3>Chat with Reception <span id="minimizedOnlineCount"></span></h3>
+            <div class="chat-badge" id="onlineCountBadge">0</div>
+            <div class="minimize-icon" id="minimizeBtn"><i class="fas fa-plus"></i></div>
+        </div>
+        <div class="staff-list-title"><i class="fas fa-users"></i> Reception Staff Online</div>
+        <div class="staff-list" id="staffList"><div class="empty-list">Loading...</div></div>
+        <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select reception to chat</div></div>
+        <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Reception is typing...</div>
+        <button class="delete-all-btn" id="deleteAllBtn" style="display:none;">🗑️ Delete All Messages</button>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Select reception..." disabled>
+            <button id="sendChatBtn" disabled><i class="fas fa-paper-plane"></i> Send</button>
+        </div>
     </div>
-    <div class="staff-list-title"><i class="fas fa-users"></i> Reception Staff Online</div>
-    <div class="staff-list" id="staffList"><div class="empty-list">Loading...</div></div>
-    <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select reception to chat</div></div>
-    <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Reception is typing...</div>
-    <button class="delete-all-btn" id="deleteAllBtn" style="display:none;">🗑️ Delete All Messages</button>
-    <div class="chat-input-area">
-        <input type="text" id="chatInput" placeholder="Select reception..." disabled>
-        <button id="sendChatBtn" disabled><i class="fas fa-paper-plane"></i> Send</button>
-    </div>
-</div>
 
-<script>
-    (function() {
-        // ========== DOCTOR SESSION & AUTH ==========
-        var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-        if (!doctorSession) { 
-            window.location.href = 'login.html'; 
-            return;
-        }
-        var currentDoctor = null;
-        try { 
-            currentDoctor = JSON.parse(doctorSession); 
-        } catch(e) { 
-            window.location.href = 'login.html'; 
-            return;
-        }
-        if (!currentDoctor || !currentDoctor.id) { 
-            window.location.href = 'login.html'; 
-            return;
-        }
+    <script>
+        (function() {
+            // ========== DOCTOR SESSION & AUTH ==========
+            var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
+            if (!doctorSession) { window.location.href = 'login.html'; return; }
+            var currentDoctor = null;
+            try { currentDoctor = JSON.parse(doctorSession); } catch (e) { window.location.href = 'login.html'; return; }
+            if (!currentDoctor || !currentDoctor.id) { window.location.href = 'login.html'; return; }
 
-        var doctorId = currentDoctor.id;
-        
-        var currentUser = {
-            id: doctorId,
-            name: currentDoctor.name,
-            role: "Doctor",
-            speciality: currentDoctor.speciality || "Dental Surgeon",
-            type: "doctor"
-        };
-        
-        document.getElementById('doctorName').textContent = currentUser.name;
-        document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
+            var doctorId = currentDoctor.id;
+            var currentUser = {
+                id: doctorId,
+                name: currentDoctor.name,
+                role: "Doctor",
+                speciality: currentDoctor.speciality || "Dental Surgeon",
+                type: "doctor"
+            };
+            document.getElementById('doctorName').textContent = currentUser.name;
+            document.getElementById('doctorSpeciality').textContent = currentUser.speciality;
 
-        var firestoreDB = null, realtimeDB = null;
-        var todayAppointments = [], allMemos = [], patientsList = [];
-        var selectedAppointment = null, selectedMemo = null, selectedPatient = null;
-        var patientMemos = []; // Memos for the selected patient (any doctor)
+            var firestoreDB = null,
+                realtimeDB = null;
+            var todayAppointments = [],
+                allMemos = [],
+                patientsList = [];
+            var selectedAppointment = null,
+                selectedMemo = null,
+                selectedPatient = null;
+            var patientMemos = [];
 
-        // ========== CHAT VARIABLES ==========
-        var selectedStaff = null;
-        var onlineListener = null;
-        var currentChatListener = null;
-        var onlineStaffData = [];
-        var heartbeatInterval = null;
-        var unreadCounts = {};
-        var shownNotifications = new Set();
-        var chatMessagesCache = {};
-        var totalUnread = 0;
-        var notificationSound = null;
-        var allMessageListeners = {};
+            // ===== MEMO STATUS CACHE =====
+            var memoStatusCache = {};
 
-        // ========== HELPER FUNCTIONS ==========
-        function escapeHtml(str) { 
-            if (!str) return ''; 
-            return String(str).replace(/[&<>]/g, function(m) { 
-                if (m === '&') return '&amp;'; 
-                if (m === '<') return '&lt;'; 
-                if (m === '>') return '&gt;'; 
-                return m; 
-            }); 
-        }
-        
-        function calculateAge(dob) { 
-            if (!dob) return 'N/A'; 
-            var birthDate = new Date(dob); 
-            if (isNaN(birthDate.getTime())) return 'Invalid'; 
-            var today = new Date(); 
-            var age = today.getFullYear() - birthDate.getFullYear(); 
-            var m = today.getMonth() - birthDate.getMonth(); 
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; 
-            return age; 
-        }
+            // ========== CHAT VARIABLES ==========
+            var selectedStaff = null;
+            var onlineListener = null;
+            var currentChatListener = null;
+            var onlineStaffData = [];
+            var heartbeatInterval = null;
+            var unreadCounts = {};
+            var shownNotifications = new Set();
+            var chatMessagesCache = {};
+            var totalUnread = 0;
+            var notificationSound = null;
+            var allMessageListeners = {};
 
-        // ========== GET ID/PASSPORT DISPLAY ==========
-        function getDisplayId(patient) {
-            if (!patient) return 'N/A';
-            if (patient.idNumber && patient.idNumber.trim() !== '') {
-                return patient.idNumber;
+            // ========== HELPER FUNCTIONS ==========
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str).replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
             }
-            if (patient.passportNumber && patient.passportNumber.trim() !== '') {
-                return patient.passportNumber;
-            }
-            if (patient.nationalId && patient.nationalId.trim() !== '') {
-                return patient.nationalId;
-            }
-            if (patient.id && patient.id.trim() !== '') {
-                return patient.id;
-            }
-            return 'N/A';
-        }
 
-        // ========== GET INSURANCE NAMES ==========
-        function getInsuranceNames(insurances) {
-            if (!insurances || !insurances.length) return 'None';
-            var names = [];
-            for (var i = 0; i < insurances.length; i++) {
-                if (insurances[i].name) {
-                    names.push(insurances[i].name);
+            function calculateAge(dob) {
+                if (!dob) return 'N/A';
+                var birthDate = new Date(dob);
+                if (isNaN(birthDate.getTime())) return 'Invalid';
+                var today = new Date();
+                var age = today.getFullYear() - birthDate.getFullYear();
+                var m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+                return age;
+            }
+
+            function getDisplayId(patient) {
+                if (!patient) return 'N/A';
+                if (patient.idNumber && patient.idNumber.trim() !== '') return patient.idNumber;
+                if (patient.passportNumber && patient.passportNumber.trim() !== '') return patient.passportNumber;
+                if (patient.nationalId && patient.nationalId.trim() !== '') return patient.nationalId;
+                if (patient.id && patient.id.trim() !== '') return patient.id;
+                return 'N/A';
+            }
+
+            function getInsuranceNames(insurances) {
+                if (!insurances || !insurances.length) return 'None';
+                var names = [];
+                for (var i = 0; i < insurances.length; i++) {
+                    if (insurances[i].name) names.push(insurances[i].name);
                 }
+                return names.length ? names.join(', ') : 'None';
             }
-            return names.length ? names.join(', ') : 'None';
-        }
 
-        // ========== GET TODAY'S DATE ==========
-        function getTodayDate() {
-            var today = new Date();
-            var dd = String(today.getDate()).padStart(2, '0');
-            var mm = String(today.getMonth() + 1).padStart(2, '0');
-            var yyyy = today.getFullYear();
-            return yyyy + '-' + mm + '-' + dd;
-        }
+            function getTodayDate() {
+                var today = new Date();
+                var dd = String(today.getDate()).padStart(2, '0');
+                var mm = String(today.getMonth() + 1).padStart(2, '0');
+                var yyyy = today.getFullYear();
+                return yyyy + '-' + mm + '-' + dd;
+            }
 
-        // ========== CHECK IF MEMO EXISTS ==========
-        function checkMemoExists(patientId, appointmentDate) {
-            if (!allMemos.length) return { exists: false, memoId: null };
-            for (var i = 0; i < allMemos.length; i++) {
-                var memo = allMemos[i];
-                if (memo.patient && memo.patient.id === patientId && memo.date === appointmentDate) {
-                    return { exists: true, memoId: memo.memoId || memo.id, memoNumber: memo.memoId || 'N/A' };
-                }
-            }
-            return { exists: false, memoId: null };
-        }
-
-        // ========== PLAY SOUND ==========
-        function playNotificationSound() {
-            try {
-                if (!notificationSound) {
-                    notificationSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-                    notificationSound.volume = 0.3;
-                }
-                notificationSound.currentTime = 0;
-                notificationSound.play().catch(function(e) {});
-            } catch(e) {}
-        }
-
-        // ========== UPDATE UNREAD BADGES ==========
-        function updateAllBadges() {
-            totalUnread = 0;
-            for (var key in unreadCounts) {
-                if (unreadCounts.hasOwnProperty(key)) {
-                    totalUnread += unreadCounts[key];
-                }
-            }
-            
-            var floatingBadge = document.getElementById('totalUnreadBadge');
-            var countSpan = document.getElementById('totalUnreadCount');
-            if (totalUnread > 0) {
-                floatingBadge.style.display = 'block';
-                if (countSpan) countSpan.textContent = totalUnread;
-                floatingBadge.style.animation = 'pulse 1.5s infinite';
-            } else {
-                floatingBadge.style.display = 'none';
-            }
-            
-            var chatBadge = document.getElementById('onlineCountBadge');
-            if (chatBadge) {
-                if (totalUnread > 0 && chatPanel.classList.contains('minimized')) {
-                    chatBadge.innerHTML = onlineStaffData.length + ' (' + totalUnread + ')';
-                } else {
-                    chatBadge.innerHTML = onlineStaffData.length + ' online';
-                }
-            }
-            
-            var staffTabs = document.querySelectorAll('.staff-tab');
-            for (var i = 0; i < staffTabs.length; i++) {
-                var tab = staffTabs[i];
-                var staffId = tab.dataset.id;
-                var unread = unreadCounts[staffId] || 0;
-                var nameDiv = tab.querySelector('.staff-name');
-                if (nameDiv) {
-                    var existingBadge = nameDiv.querySelector('.unread-badge');
-                    if (unread > 0) {
-                        if (!existingBadge) {
-                            var badge = document.createElement('span');
-                            badge.className = 'unread-badge';
-                            badge.textContent = unread;
-                            nameDiv.appendChild(badge);
-                        } else {
-                            existingBadge.textContent = unread;
-                        }
-                    } else {
-                        if (existingBadge) existingBadge.remove();
+            // ===== CHECK IF MEMO EXISTS FOR A PATIENT ON A GIVEN DATE =====
+            function checkMemoExists(patientId, appointmentDate) {
+                if (!allMemos.length) return { exists: false, memoId: null, memoNumber: null };
+                for (var i = 0; i < allMemos.length; i++) {
+                    var memo = allMemos[i];
+                    if (memo.patient && memo.patient.id === patientId && memo.date === appointmentDate) {
+                        return { exists: true, memoId: memo.memoId || memo.id, memoNumber: memo.memoId || 'N/A' };
                     }
                 }
+                return { exists: false, memoId: null, memoNumber: null };
             }
-        }
 
-        // ========== OPEN CHAT WITH UNREAD ==========
-        window.openChatAndShowUnread = function() {
-            if (chatPanel.classList.contains('minimized')) {
-                toggleChatPanel();
+            // ===== CHECK IF PATIENT HAS A MEMO FOR TODAY =====
+            function hasMemoForToday(patientId) {
+                var today = getTodayDate();
+                var result = checkMemoExists(patientId, today);
+                return result.exists;
             }
-            var unreadStaffIds = [];
-            for (var key in unreadCounts) {
-                if (unreadCounts.hasOwnProperty(key) && unreadCounts[key] > 0) {
-                    unreadStaffIds.push(key);
+
+            // ===== GET MEMO STATUS FOR A PATIENT =====
+            // Returns: 'active'  → no memo for today's appointment → can CREATE
+            //          'inactive' → memo exists for today → can only VIEW/PRINT
+            //          'viewonly' → no appointment today, but has past memos → can VIEW/PRINT
+            function getMemoStatus(patientId, appointmentDate) {
+                var cacheKey = patientId + '_' + (appointmentDate || '');
+                if (memoStatusCache[cacheKey]) return memoStatusCache[cacheKey];
+
+                // If we have an appointment date, check specifically for that date
+                if (appointmentDate) {
+                    var result = checkMemoExists(patientId, appointmentDate);
+                    var status = result.exists ? 'inactive' : 'active';
+                    memoStatusCache[cacheKey] = status;
+                    return status;
                 }
-            }
-            if (unreadStaffIds.length === 1) {
-                var staffId = unreadStaffIds[0];
-                var staff = null;
-                for (var i = 0; i < onlineStaffData.length; i++) {
-                    if (onlineStaffData[i].userId === staffId) {
-                        staff = onlineStaffData[i];
+
+                // No appointment date: check if there's a memo for today
+                var today = getTodayDate();
+                var hasTodayMemo = hasMemoForToday(patientId);
+                if (hasTodayMemo) {
+                    memoStatusCache[cacheKey] = 'inactive';
+                    return 'inactive';
+                }
+
+                // Check if patient has any past memos
+                var hasPastMemo = false;
+                for (var i = 0; i < allMemos.length; i++) {
+                    if (allMemos[i].patient && allMemos[i].patient.id === patientId) {
+                        hasPastMemo = true;
                         break;
                     }
                 }
-                if (staff) {
-                    selectStaffForChat(staff);
+                if (hasPastMemo) {
+                    memoStatusCache[cacheKey] = 'viewonly';
+                    return 'viewonly';
+                }
+
+                // No memos at all → active (can create)
+                memoStatusCache[cacheKey] = 'active';
+                return 'active';
+            }
+
+            // ========== PLAY SOUND ==========
+            function playNotificationSound() {
+                try {
+                    if (!notificationSound) {
+                        notificationSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                        notificationSound.volume = 0.3;
+                    }
+                    notificationSound.currentTime = 0;
+                    notificationSound.play().catch(function(e) {});
+                } catch (e) {}
+            }
+
+            // ========== UPDATE UNREAD BADGES ==========
+            function updateAllBadges() {
+                totalUnread = 0;
+                for (var key in unreadCounts) {
+                    if (unreadCounts.hasOwnProperty(key)) totalUnread += unreadCounts[key];
+                }
+                var floatingBadge = document.getElementById('totalUnreadBadge');
+                var countSpan = document.getElementById('totalUnreadCount');
+                if (totalUnread > 0) {
+                    floatingBadge.style.display = 'block';
+                    if (countSpan) countSpan.textContent = totalUnread;
+                    floatingBadge.style.animation = 'pulse 1.5s infinite';
+                } else {
+                    floatingBadge.style.display = 'none';
+                }
+                var chatBadge = document.getElementById('onlineCountBadge');
+                if (chatBadge) {
+                    if (totalUnread > 0 && chatPanel.classList.contains('minimized')) {
+                        chatBadge.innerHTML = onlineStaffData.length + ' (' + totalUnread + ')';
+                    } else {
+                        chatBadge.innerHTML = onlineStaffData.length + ' online';
+                    }
+                }
+                var staffTabs = document.querySelectorAll('.staff-tab');
+                for (var i = 0; i < staffTabs.length; i++) {
+                    var tab = staffTabs[i];
+                    var staffId = tab.dataset.id;
+                    var unread = unreadCounts[staffId] || 0;
+                    var nameDiv = tab.querySelector('.staff-name');
+                    if (nameDiv) {
+                        var existingBadge = nameDiv.querySelector('.unread-badge');
+                        if (unread > 0) {
+                            if (!existingBadge) {
+                                var badge = document.createElement('span');
+                                badge.className = 'unread-badge';
+                                badge.textContent = unread;
+                                nameDiv.appendChild(badge);
+                            } else {
+                                existingBadge.textContent = unread;
+                            }
+                        } else {
+                            if (existingBadge) existingBadge.remove();
+                        }
+                    }
                 }
             }
-        };
 
-        // ========== SHOW NOTIFICATION TOAST ==========
-        function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
-            // Update unread counts
-            unreadCounts[senderId] = (unreadCounts[senderId] || 0) + 1;
-            updateAllBadges();
-            
-            // Play sound for EVERY message
-            playNotificationSound();
-            
-            // Update page title for EVERY message
-            var originalTitle = document.title;
-            document.title = '📩 New message from ' + senderName;
-            setTimeout(function() { document.title = originalTitle; }, 5000);
-            
-            // Show toast notification for EVERY message
-            var toast = document.createElement('div');
-            toast.className = 'notification-toast';
-            var timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            
-            var messagePreview = message.substring(0, 80);
-            if (message.length > 80) messagePreview += '...';
-            
-            toast.innerHTML = 
-                '<div class="toast-icon"><i class="fas fa-comment-dots"></i></div>' +
-                '<div style="flex:1;">' +
+            window.openChatAndShowUnread = function() {
+                if (chatPanel.classList.contains('minimized')) toggleChatPanel();
+                var unreadStaffIds = [];
+                for (var key in unreadCounts) {
+                    if (unreadCounts.hasOwnProperty(key) && unreadCounts[key] > 0) unreadStaffIds.push(key);
+                }
+                if (unreadStaffIds.length === 1) {
+                    var staffId = unreadStaffIds[0];
+                    var staff = null;
+                    for (var i = 0; i < onlineStaffData.length; i++) {
+                        if (onlineStaffData[i].userId === staffId) { staff = onlineStaffData[i]; break; }
+                    }
+                    if (staff) selectStaffForChat(staff);
+                }
+            };
+
+            // ========== SHOW NOTIFICATION TOAST ==========
+            function showMessageNotification(senderName, message, senderId, timestamp, messageId) {
+                unreadCounts[senderId] = (unreadCounts[senderId] || 0) + 1;
+                updateAllBadges();
+                playNotificationSound();
+                var originalTitle = document.title;
+                document.title = '📩 New message from ' + senderName;
+                setTimeout(function() { document.title = originalTitle; }, 5000);
+                var toast = document.createElement('div');
+                toast.className = 'notification-toast';
+                var timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+                    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                var messagePreview = message.substring(0, 80);
+                if (message.length > 80) messagePreview += '...';
+                toast.innerHTML =
+                    '<div class="toast-icon"><i class="fas fa-comment-dots"></i></div>' +
+                    '<div style="flex:1;">' +
                     '<div class="sender-name">' + escapeHtml(senderName) + '</div>' +
                     '<div class="msg-preview">' + escapeHtml(messagePreview) + '</div>' +
                     '<div class="time-stamp">' + timeStr + '</div>' +
-                '</div>' +
-                '<span class="close-toast">×</span>';
-            
-            toast.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('close-toast')) {
-                    var staff = null;
-                    for (var i = 0; i < onlineStaffData.length; i++) {
-                        if (onlineStaffData[i].userId === senderId) {
-                            staff = onlineStaffData[i];
-                            break;
-                        }
-                    }
-                    if (staff) {
-                        selectStaffForChat(staff);
-                        if (chatPanel.classList.contains('minimized')) toggleChatPanel();
-                    }
-                    toast.remove();
-                }
-            });
-            toast.querySelector('.close-toast').addEventListener('click', function() { 
-                toast.remove(); 
-            });
-            document.body.appendChild(toast);
-            
-            // Auto-remove toast after 6 seconds
-            setTimeout(function() { 
-                if (toast.parentElement) {
-                    toast.style.animation = 'slideOutRight 0.4s ease';
-                    setTimeout(function() { if (toast.parentElement) toast.remove(); }, 400);
-                }
-            }, 6000);
-        }
-
-        // ========== CHAT FUNCTIONS ==========
-        function getChatId(u1, u2) {
-            var sorted = [u1, u2].sort();
-            return 'chat_' + sorted[0] + '_' + sorted[1];
-        }
-
-        function markMessageAsRead(chatId, messageId) {
-            if (!realtimeDB) return;
-            try {
-                realtimeDB.ref('chats/' + chatId + '/messages/' + messageId).update({
-                    read: true,
-                    readAt: firebase.database.ServerValue.TIMESTAMP
-                });
-            } catch(e) {}
-        }
-
-        async function setDoctorOnline() {
-            if(!realtimeDB) return;
-            try {
-                await realtimeDB.ref('online_users/' + currentUser.id).set({
-                    username: currentUser.id,
-                    name: currentUser.name,
-                    Level: "Doctor",
-                    status: "online",
-                    type: "doctor",
-                    loginTime: firebase.database.ServerValue.TIMESTAMP,
-                    lastSeen: firebase.database.ServerValue.TIMESTAMP
-                });
-                document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
-            } catch(e) { console.warn(e); }
-        }
-
-        function startHeartbeat() {
-            if(!realtimeDB) return;
-            heartbeatInterval = setInterval(function() {
-                if(realtimeDB && currentUser.id) {
-                    realtimeDB.ref('online_users/' + currentUser.id).update({
-                        lastSeen: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            }, 20000);
-        }
-
-        function stopHeartbeat() {
-            if(heartbeatInterval) clearInterval(heartbeatInterval);
-        }
-
-        // ========== LISTEN FOR ONLINE RECEPTION ==========
-        function listenOnlineReception() {
-            if(!realtimeDB) return;
-            if(onlineListener) {
-                onlineListener.off();
-                onlineListener = null;
-            }
-            onlineListener = realtimeDB.ref('online_users');
-            onlineListener.on('value', function(snapshot) {
-                onlineStaffData = [];
-                var users = snapshot.val();
-                if(users) {
-                    var keys = Object.keys(users);
-                    for(var i = 0; i < keys.length; i++) {
-                        var username = keys[i];
-                        var data = users[username];
-                        var isReception = data.Level && (data.Level.toLowerCase() === 'supervisor' || data.Level.toLowerCase() === 'receptionist');
-                        if(isReception && data.status === 'online' && username !== currentUser.id) {
-                            onlineStaffData.push({
-                                userId: username,
-                                name: data.name || username,
-                                role: data.Level,
-                                department: 'Reception Desk'
-                            });
-                        }
-                    }
-                }
-                document.getElementById('onlineCountBadge').textContent = onlineStaffData.length;
-                document.getElementById('minimizedOnlineCount').innerHTML = onlineStaffData.length > 0 ? '(' + onlineStaffData.length + ')' : '';
-                renderOnlineStaffList();
-                updateAllBadges();
-                // Setup message listeners for each staff
-                setupMessageListeners();
-            });
-        }
-
-        // ========== SETUP MESSAGE LISTENERS FOR ALL STAFF ==========
-        function setupMessageListeners() {
-            if (!realtimeDB) return;
-            
-            // Remove existing listeners
-            for (var key in allMessageListeners) {
-                if (allMessageListeners.hasOwnProperty(key) && allMessageListeners[key]) {
-                    try {
-                        allMessageListeners[key].off();
-                    } catch(e) {}
-                }
-            }
-            allMessageListeners = {};
-            
-            // Add listeners for each staff member
-            for (var i = 0; i < onlineStaffData.length; i++) {
-                var staff = onlineStaffData[i];
-                var chatId = getChatId(currentUser.id, staff.userId);
-                var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
-                
-                // Listen for new messages using child_added - fires for EVERY new message
-                allMessageListeners[staff.userId] = messagesRef;
-                allMessageListeners[staff.userId].on('child_added', function(snapshot) {
-                    var msg = snapshot.val();
-                    // Skip if no message or from current user
-                    if (!msg || msg.sender === currentUser.id) return;
-                    
-                    // Check if message is already read
-                    var isRead = msg.read === true;
-                    
-                    // Always show notification for unread messages
-                    if (!isRead) {
-                        var staffId = msg.sender;
+                    '</div>' +
+                    '<span class="close-toast">×</span>';
+                toast.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('close-toast')) {
                         var staff = null;
-                        for (var j = 0; j < onlineStaffData.length; j++) {
-                            if (onlineStaffData[j].userId === staffId) {
-                                staff = onlineStaffData[j];
-                                break;
-                            }
+                        for (var i = 0; i < onlineStaffData.length; i++) {
+                            if (onlineStaffData[i].userId === senderId) { staff = onlineStaffData[i]; break; }
                         }
                         if (staff) {
-                            showMessageNotification(staff.name, msg.text, staff.userId, msg.timestamp, snapshot.key);
+                            selectStaffForChat(staff);
+                            if (chatPanel.classList.contains('minimized')) toggleChatPanel();
                         }
+                        toast.remove();
                     }
                 });
+                toast.querySelector('.close-toast').addEventListener('click', function() { toast.remove(); });
+                document.body.appendChild(toast);
+                setTimeout(function() {
+                    if (toast.parentElement) {
+                        toast.style.animation = 'slideOutRight 0.4s ease';
+                        setTimeout(function() { if (toast.parentElement) toast.remove(); }, 400);
+                    }
+                }, 6000);
             }
-        }
 
-        function renderOnlineStaffList() {
-            var container = document.getElementById('staffList');
-            if(!onlineStaffData.length) {
-                container.innerHTML = '<div class="empty-list">No reception staff online</div>';
-                return;
+            // ========== CHAT FUNCTIONS ==========
+            function getChatId(u1, u2) {
+                var sorted = [u1, u2].sort();
+                return 'chat_' + sorted[0] + '_' + sorted[1];
             }
-            var html = '';
-            for(var i = 0; i < onlineStaffData.length; i++) {
-                var staff = onlineStaffData[i];
-                var unread = unreadCounts[staff.userId] || 0;
-                var unreadBadge = unread > 0 ? '<span class="unread-badge">' + unread + '</span>' : '';
-                html += '<div class="staff-tab" data-id="' + staff.userId + '" data-name="' + escapeHtml(staff.name) + '">' +
-                    '<div class="staff-avatar">' + staff.name.charAt(0).toUpperCase() + '</div>' +
-                    '<div class="staff-info">' +
+
+            function markMessageAsRead(chatId, messageId) {
+                if (!realtimeDB) return;
+                try {
+                    realtimeDB.ref('chats/' + chatId + '/messages/' + messageId).update({
+                        read: true,
+                        readAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                } catch (e) {}
+            }
+
+            async function setDoctorOnline() {
+                if (!realtimeDB) return;
+                try {
+                    await realtimeDB.ref('online_users/' + currentUser.id).set({
+                        username: currentUser.id,
+                        name: currentUser.name,
+                        Level: "Doctor",
+                        status: "online",
+                        type: "doctor",
+                        loginTime: firebase.database.ServerValue.TIMESTAMP,
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    document.getElementById('onlineStatusBadge').innerHTML = "🟢 Online";
+                } catch (e) { console.warn(e); }
+            }
+
+            function startHeartbeat() {
+                if (!realtimeDB) return;
+                heartbeatInterval = setInterval(function() {
+                    if (realtimeDB && currentUser.id) {
+                        realtimeDB.ref('online_users/' + currentUser.id).update({
+                            lastSeen: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                }, 20000);
+            }
+
+            function stopHeartbeat() {
+                if (heartbeatInterval) clearInterval(heartbeatInterval);
+            }
+
+            // ========== LISTEN FOR ONLINE RECEPTION ==========
+            function listenOnlineReception() {
+                if (!realtimeDB) return;
+                if (onlineListener) { onlineListener.off();
+                    onlineListener = null; }
+                onlineListener = realtimeDB.ref('online_users');
+                onlineListener.on('value', function(snapshot) {
+                    onlineStaffData = [];
+                    var users = snapshot.val();
+                    if (users) {
+                        var keys = Object.keys(users);
+                        for (var i = 0; i < keys.length; i++) {
+                            var username = keys[i];
+                            var data = users[username];
+                            var isReception = data.Level && (data.Level.toLowerCase() === 'supervisor' || data.Level
+                                .toLowerCase() === 'receptionist');
+                            if (isReception && data.status === 'online' && username !== currentUser.id) {
+                                onlineStaffData.push({
+                                    userId: username,
+                                    name: data.name || username,
+                                    role: data.Level,
+                                    department: 'Reception Desk'
+                                });
+                            }
+                        }
+                    }
+                    document.getElementById('onlineCountBadge').textContent = onlineStaffData.length;
+                    document.getElementById('minimizedOnlineCount').innerHTML = onlineStaffData.length > 0 ? '(' +
+                        onlineStaffData.length + ')' : '';
+                    renderOnlineStaffList();
+                    updateAllBadges();
+                    setupMessageListeners();
+                });
+            }
+
+            // ========== SETUP MESSAGE LISTENERS FOR ALL STAFF ==========
+            function setupMessageListeners() {
+                if (!realtimeDB) return;
+                for (var key in allMessageListeners) {
+                    if (allMessageListeners.hasOwnProperty(key) && allMessageListeners[key]) {
+                        try { allMessageListeners[key].off(); } catch (e) {}
+                    }
+                }
+                allMessageListeners = {};
+                for (var i = 0; i < onlineStaffData.length; i++) {
+                    var staff = onlineStaffData[i];
+                    var chatId = getChatId(currentUser.id, staff.userId);
+                    var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
+                    allMessageListeners[staff.userId] = messagesRef;
+                    allMessageListeners[staff.userId].on('child_added', function(snapshot) {
+                        var msg = snapshot.val();
+                        if (!msg || msg.sender === currentUser.id) return;
+                        var isRead = msg.read === true;
+                        if (!isRead) {
+                            var staffId = msg.sender;
+                            var staff = null;
+                            for (var j = 0; j < onlineStaffData.length; j++) {
+                                if (onlineStaffData[j].userId === staffId) { staff = onlineStaffData[j]; break; }
+                            }
+                            if (staff) {
+                                showMessageNotification(staff.name, msg.text, staff.userId, msg.timestamp, snapshot
+                                .key);
+                            }
+                        }
+                    });
+                }
+            }
+
+            function renderOnlineStaffList() {
+                var container = document.getElementById('staffList');
+                if (!onlineStaffData.length) {
+                    container.innerHTML = '<div class="empty-list">No reception staff online</div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < onlineStaffData.length; i++) {
+                    var staff = onlineStaffData[i];
+                    var unread = unreadCounts[staff.userId] || 0;
+                    var unreadBadge = unread > 0 ? '<span class="unread-badge">' + unread + '</span>' : '';
+                    html += '<div class="staff-tab" data-id="' + staff.userId + '" data-name="' + escapeHtml(staff.name) +
+                        '">' +
+                        '<div class="staff-avatar">' + staff.name.charAt(0).toUpperCase() + '</div>' +
+                        '<div class="staff-info">' +
                         '<div class="staff-name">' + escapeHtml(staff.name) + unreadBadge + '</div>' +
                         '<div class="staff-role">' + escapeHtml(staff.role) + '</div>' +
-                    '</div>' +
-                    '<div class="online-indicator"><span class="online-dot-chat"></span> Online</div>' +
-                '</div>';
-            }
-            container.innerHTML = html;
-            
-            var tabs = container.querySelectorAll('.staff-tab');
-            for(var j = 0; j < tabs.length; j++) {
-                tabs[j].addEventListener('click', function() {
-                    var allTabs = document.querySelectorAll('.staff-tab');
-                    for(var k = 0; k < allTabs.length; k++) {
-                        allTabs[k].classList.remove('active-staff');
-                    }
-                    this.classList.add('active-staff');
-                    var staffId = this.dataset.id;
-                    var staff = null;
-                    for(var l = 0; l < onlineStaffData.length; l++) {
-                        if(onlineStaffData[l].userId === staffId) {
-                            staff = onlineStaffData[l];
-                            break;
+                        '</div>' +
+                        '<div class="online-indicator"><span class="online-dot-chat"></span> Online</div>' +
+                        '</div>';
+                }
+                container.innerHTML = html;
+                var tabs = container.querySelectorAll('.staff-tab');
+                for (var j = 0; j < tabs.length; j++) {
+                    tabs[j].addEventListener('click', function() {
+                        var allTabs = document.querySelectorAll('.staff-tab');
+                        for (var k = 0; k < allTabs.length; k++) { allTabs[k].classList.remove('active-staff'); }
+                        this.classList.add('active-staff');
+                        var staffId = this.dataset.id;
+                        var staff = null;
+                        for (var l = 0; l < onlineStaffData.length; l++) {
+                            if (onlineStaffData[l].userId === staffId) { staff = onlineStaffData[l]; break; }
                         }
-                    }
-                    if(staff) selectStaffForChat(staff);
-                });
+                        if (staff) selectStaffForChat(staff);
+                    });
+                }
             }
-        }
 
-        // ========== SELECT STAFF FOR CHAT ==========
-        function selectStaffForChat(staff) {
-            selectedStaff = staff;
-            document.getElementById('chatInput').disabled = false;
-            document.getElementById('sendChatBtn').disabled = false;
-            document.getElementById('chatInput').placeholder = 'Message ' + staff.name + '...';
-            document.getElementById('deleteAllBtn').style.display = 'block';
-            
-            // Clear unread count for this staff
-            if (unreadCounts[staff.userId]) {
-                delete unreadCounts[staff.userId];
-                updateAllBadges();
-            }
-            
-            // Remove any existing listener
-            if (currentChatListener) {
-                try {
-                    if (typeof currentChatListener === 'function') {
-                        currentChatListener();
-                    } else if (currentChatListener.off) {
-                        currentChatListener.off();
-                    }
-                } catch(e) {
-                    console.warn('Error removing chat listener:', e);
-                }
-                currentChatListener = null;
-            }
-            
-            if (!realtimeDB || !staff) return;
-            
-            var chatId = getChatId(currentUser.id, staff.userId);
-            var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
-            
-            currentChatListener = messagesRef;
-            currentChatListener.on('value', function(snapshot) {
-                var messages = [];
-                snapshot.forEach(function(child) {
-                    messages.push({ id: child.key, ...child.val() });
-                });
-                messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
-                chatMessagesCache[staff.userId] = messages;
-                renderChatMessages(messages);
-                
-                // Mark unread messages as read
-                var unreadMessages = [];
-                for (var i = 0; i < messages.length; i++) {
-                    if (messages[i].sender === staff.userId && !messages[i].read) {
-                        unreadMessages.push(messages[i]);
-                    }
-                }
-                for (var j = 0; j < unreadMessages.length; j++) {
-                    markMessageAsRead(chatId, unreadMessages[j].id);
-                    if (unreadCounts[staff.userId]) {
-                        unreadCounts[staff.userId] = Math.max(0, unreadCounts[staff.userId] - 1);
-                    }
-                }
-                if (unreadMessages.length > 0) {
-                    if (unreadCounts[staff.userId]) delete unreadCounts[staff.userId];
+            // ========== SELECT STAFF FOR CHAT ==========
+            function selectStaffForChat(staff) {
+                selectedStaff = staff;
+                document.getElementById('chatInput').disabled = false;
+                document.getElementById('sendChatBtn').disabled = false;
+                document.getElementById('chatInput').placeholder = 'Message ' + staff.name + '...';
+                document.getElementById('deleteAllBtn').style.display = 'block';
+                if (unreadCounts[staff.userId]) {
+                    delete unreadCounts[staff.userId];
                     updateAllBadges();
                 }
-            });
-            
-            // Typing indicator
-            var typingRef = realtimeDB.ref('chats/' + chatId + '/typing');
-            typingRef.off();
-            typingRef.on('value', function(snap) {
-                var typing = snap.val();
-                var indicator = document.getElementById('typingIndicator');
-                if (typing === staff.userId) {
-                    indicator.style.display = 'block';
-                    indicator.innerHTML = '<i class="fas fa-ellipsis-h"></i> Reception is typing...';
-                } else {
-                    indicator.style.display = 'none';
+                if (currentChatListener) {
+                    try {
+                        if (typeof currentChatListener === 'function') { currentChatListener(); } else if (currentChatListener
+                            .off) { currentChatListener.off(); }
+                    } catch (e) { console.warn('Error removing chat listener:', e); }
+                    currentChatListener = null;
                 }
-            });
-        }
-
-        function renderChatMessages(messages) {
-            var container = document.getElementById('chatMessages');
-            if (!messages.length) {
-                container.innerHTML = '<div class="empty-chat">No messages yet</div>';
-                return;
+                if (!realtimeDB || !staff) return;
+                var chatId = getChatId(currentUser.id, staff.userId);
+                var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
+                currentChatListener = messagesRef;
+                currentChatListener.on('value', function(snapshot) {
+                    var messages = [];
+                    snapshot.forEach(function(child) {
+                        messages.push({ id: child.key, ...child.val() });
+                    });
+                    messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
+                    chatMessagesCache[staff.userId] = messages;
+                    renderChatMessages(messages);
+                    var unreadMessages = [];
+                    for (var i = 0; i < messages.length; i++) {
+                        if (messages[i].sender === staff.userId && !messages[i].read) {
+                            unreadMessages.push(messages[i]);
+                        }
+                    }
+                    for (var j = 0; j < unreadMessages.length; j++) {
+                        markMessageAsRead(chatId, unreadMessages[j].id);
+                        if (unreadCounts[staff.userId]) {
+                            unreadCounts[staff.userId] = Math.max(0, unreadCounts[staff.userId] - 1);
+                        }
+                    }
+                    if (unreadMessages.length > 0) {
+                        if (unreadCounts[staff.userId]) delete unreadCounts[staff.userId];
+                        updateAllBadges();
+                    }
+                });
+                var typingRef = realtimeDB.ref('chats/' + chatId + '/typing');
+                typingRef.off();
+                typingRef.on('value', function(snap) {
+                    var typing = snap.val();
+                    var indicator = document.getElementById('typingIndicator');
+                    if (typing === staff.userId) {
+                        indicator.style.display = 'block';
+                        indicator.innerHTML = '<i class="fas fa-ellipsis-h"></i> Reception is typing...';
+                    } else {
+                        indicator.style.display = 'none';
+                    }
+                });
             }
-            var html = '';
-            for(var i = 0; i < messages.length; i++) {
-                var msg = messages[i];
-                var isDoctor = (msg.sender === currentUser.id);
-                var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
-                html += '<div class="message ' + (isDoctor ? 'doctor' : 'reception') + '">' +
-                    '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
-                    '<div class="message-meta">' +
-                        '<span>' + (isDoctor ? 'You' : (selectedStaff ? selectedStaff.name : 'Reception')) + ' • ' + time + '</span>' +
+
+            function renderChatMessages(messages) {
+                var container = document.getElementById('chatMessages');
+                if (!messages.length) {
+                    container.innerHTML = '<div class="empty-chat">No messages yet</div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < messages.length; i++) {
+                    var msg = messages[i];
+                    var isDoctor = (msg.sender === currentUser.id);
+                    var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+                    html += '<div class="message ' + (isDoctor ? 'doctor' : 'reception') + '">' +
+                        '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
+                        '<div class="message-meta">' +
+                        '<span>' + (isDoctor ? 'You' : (selectedStaff ? selectedStaff.name : 'Reception')) + ' • ' +
+                        time + '</span>' +
                         '<span class="delete-msg" onclick="window.deleteChatMessage(\'' + msg.id + '\')">🗑️</span>' +
-                    '</div>' +
-                '</div>';
+                        '</div>' +
+                        '</div>';
+                }
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
             }
-            container.innerHTML = html;
-            container.scrollTop = container.scrollHeight;
-        }
 
-        window.deleteChatMessage = async function(msgId) {
-            if (!selectedStaff || !realtimeDB) return;
-            var chatId = getChatId(currentUser.id, selectedStaff.userId);
-            await realtimeDB.ref('chats/' + chatId + '/messages/' + msgId).remove();
-        };
-
-        async function sendMessage() {
-            var input = document.getElementById('chatInput');
-            var text = input.value.trim();
-            if (!text || !selectedStaff || !realtimeDB) return;
-            var chatId = getChatId(currentUser.id, selectedStaff.userId);
-            var newMsgRef = realtimeDB.ref('chats/' + chatId + '/messages').push();
-            await newMsgRef.set({
-                id: newMsgRef.key,
-                sender: currentUser.id,
-                senderName: 'Dr. ' + currentUser.name,
-                text: text,
-                timestamp: Date.now(),
-                delivered: true,
-                read: false
-            });
-            input.value = "";
-        }
-
-        // ========== CHAT UI CONTROLS ==========
-        var chatPanel = document.getElementById('chatPanel');
-        var minimizeBtn = document.getElementById('minimizeBtn');
-        
-        function toggleChatPanel() {
-            chatPanel.classList.toggle('minimized');
-            minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
-            if (!chatPanel.classList.contains('minimized')) {
-                updateAllBadges();
-                document.getElementById('totalUnreadBadge').style.display = 'none';
-            } else {
-                updateAllBadges();
-            }
-        }
-        
-        minimizeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleChatPanel();
-        });
-        
-        document.getElementById('chatHeader').addEventListener('click', function(e) {
-            if(e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains('minimized')) {
-                toggleChatPanel();
-            }
-        });
-
-        document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
-        document.getElementById('chatInput').addEventListener('keypress', function(e) {
-            if(e.key === 'Enter') sendMessage();
-        });
-
-        document.getElementById('deleteAllBtn').addEventListener('click', async function() {
-            if(selectedStaff && confirm('Delete all messages?')) {
+            window.deleteChatMessage = async function(msgId) {
+                if (!selectedStaff || !realtimeDB) return;
                 var chatId = getChatId(currentUser.id, selectedStaff.userId);
-                await realtimeDB.ref('chats/' + chatId + '/messages').remove();
-                document.getElementById('chatMessages').innerHTML = '<div class="empty-chat">No messages yet</div>';
-                alert('All messages deleted.');
-            }
-        });
+                await realtimeDB.ref('chats/' + chatId + '/messages/' + msgId).remove();
+            };
 
-        // ========== SAVE PATIENT SESSION ==========
-        function savePatientSession(patient) {
-            if (patient) {
-                sessionStorage.setItem('selectedPatient', JSON.stringify(patient));
-                sessionStorage.setItem('selectedPatientId', patient.id || '');
-                console.log('Patient saved to session:', patient.name, patient.id);
+            async function sendMessage() {
+                var input = document.getElementById('chatInput');
+                var text = input.value.trim();
+                if (!text || !selectedStaff || !realtimeDB) return;
+                var chatId = getChatId(currentUser.id, selectedStaff.userId);
+                var newMsgRef = realtimeDB.ref('chats/' + chatId + '/messages').push();
+                await newMsgRef.set({
+                    id: newMsgRef.key,
+                    sender: currentUser.id,
+                    senderName: 'Dr. ' + currentUser.name,
+                    text: text,
+                    timestamp: Date.now(),
+                    delivered: true,
+                    read: false
+                });
+                input.value = "";
             }
-        }
 
-        // ========== RESTORE PATIENT SESSION ==========
-        function restorePatientSession() {
-            var patientData = sessionStorage.getItem('selectedPatient');
-            if (patientData) {
-                try {
-                    var patient = JSON.parse(patientData);
-                    console.log('Patient restored from session:', patient.name, patient.id);
-                    return patient;
-                } catch(e) {
-                    console.warn('Error restoring patient session:', e);
+            // ========== CHAT UI CONTROLS ==========
+            var chatPanel = document.getElementById('chatPanel');
+            var minimizeBtn = document.getElementById('minimizeBtn');
+
+            function toggleChatPanel() {
+                chatPanel.classList.toggle('minimized');
+                minimizeBtn.innerHTML = chatPanel.classList.contains('minimized') ? '<i class="fas fa-plus"></i>' :
+                    '<i class="fas fa-minus"></i>';
+                if (!chatPanel.classList.contains('minimized')) {
+                    updateAllBadges();
+                    document.getElementById('totalUnreadBadge').style.display = 'none';
+                } else {
+                    updateAllBadges();
                 }
             }
-            return null;
-        }
+            minimizeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleChatPanel();
+            });
+            document.getElementById('chatHeader').addEventListener('click', function(e) {
+                if (e.target !== minimizeBtn && !minimizeBtn.contains(e.target) && chatPanel.classList.contains(
+                    'minimized')) {
+                    toggleChatPanel();
+                }
+            });
+            document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+            document.getElementById('deleteAllBtn').addEventListener('click', async function() {
+                if (selectedStaff && confirm('Delete all messages?')) {
+                    var chatId = getChatId(currentUser.id, selectedStaff.userId);
+                    await realtimeDB.ref('chats/' + chatId + '/messages').remove();
+                    document.getElementById('chatMessages').innerHTML = '<div class="empty-chat">No messages yet</div>';
+                    alert('All messages deleted.');
+                }
+            });
 
-        // ========== LOAD ALL MEMOS FOR A PATIENT (ANY DOCTOR) ==========
-        async function loadPatientMemos(patientId) {
-            if (!firestoreDB || !patientId) return;
-            try {
-                var snapshot = await firestoreDB.collection("memos")
-                    .where("patient.id", "==", patientId)
-                    .get();
-                
-                patientMemos = [];
-                snapshot.forEach(function(doc) {
-                    patientMemos.push({ id: doc.id, ...doc.data() });
-                });
-                patientMemos.sort(function(a, b) { 
-                    return (b.timestamp || 0) - (a.timestamp || 0); 
-                });
-                return patientMemos;
-            } catch(e) {
-                console.warn('Error loading patient memos:', e);
-                return [];
+            // ========== SAVE PATIENT SESSION ==========
+            function savePatientSession(patient) {
+                if (patient) {
+                    sessionStorage.setItem('selectedPatient', JSON.stringify(patient));
+                    sessionStorage.setItem('selectedPatientId', patient.id || '');
+                }
             }
-        }
 
-        // ========== SHOW/HIDE PATIENT DETAILS ==========
-        async function showPatientDetails(patient, appointment, memo) {
-            if (!patient) {
-                selectedPatient = null;
-                selectedAppointment = null;
-                selectedMemo = null;
-                patientMemos = [];
-                
-                var container = document.getElementById('patientInfoContainer');
+            function restorePatientSession() {
+                var patientData = sessionStorage.getItem('selectedPatient');
+                if (patientData) {
+                    try { return JSON.parse(patientData); } catch (e) { console.warn('Error restoring patient session:',
+                            e); }
+                }
+                return null;
+            }
+
+            // ========== LOAD ALL MEMOS FOR A PATIENT (ANY DOCTOR) ==========
+            async function loadPatientMemos(patientId) {
+                if (!firestoreDB || !patientId) return;
+                try {
+                    var snapshot = await firestoreDB.collection("memos")
+                        .where("patient.id", "==", patientId)
+                        .get();
+                    patientMemos = [];
+                    snapshot.forEach(function(doc) {
+                        patientMemos.push({ id: doc.id, ...doc.data() });
+                    });
+                    patientMemos.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+                    return patientMemos;
+                } catch (e) {
+                    console.warn('Error loading patient memos:', e);
+                    return [];
+                }
+            }
+
+            // ===== UPDATE MEMO STATUS BANNER & QUICK ACTION TAGS =====
+            function updateMemoStatusUI(patient, appointment) {
+                var bannerContainer = document.getElementById('memoStatusBannerContainer');
+                if (!patient) {
+                    bannerContainer.innerHTML = '';
+                    return;
+                }
+
+                var status = getMemoStatus(patient.id, appointment ? appointment.date : null);
+                var statusLabel = '',
+                    statusClass = '',
+                    icon = '',
+                    description = '';
+
+                switch (status) {
+                    case 'active':
+                        statusLabel = '🟢 Active Memo';
+                        statusClass = 'banner-active';
+                        icon = '<i class="fas fa-pen-fancy"></i>';
+                        description =
+                        'You can create new prescriptions and medical certificates for this patient.';
+                        break;
+                    case 'inactive':
+                        statusLabel = '🔒 Memo Completed';
+                        statusClass = 'banner-inactive';
+                        icon = '<i class="fas fa-check-circle"></i>';
+                        description =
+                        'A memo already exists for this appointment. You can only view and print existing prescriptions and certificates.';
+                        break;
+                    case 'viewonly':
+                        statusLabel = '📄 View Only';
+                        statusClass = 'banner-viewonly';
+                        icon = '<i class="fas fa-eye"></i>';
+                        description =
+                        'No active treatment session. You can view and print existing prescriptions and certificates.';
+                        break;
+                    default:
+                        statusLabel = '—';
+                        statusClass = 'banner-viewonly';
+                        icon = '<i class="fas fa-info-circle"></i>';
+                        description = '';
+                }
+
+                bannerContainer.innerHTML =
+                    '<div class="memo-status-banner ' + statusClass + '">' +
+                    icon +
+                    '<div><strong>' + statusLabel + '</strong><br><span style="font-weight:400;font-size:12px;">' +
+                    description + '</span></div>' +
+                    '</div>';
+
+                // Update quick action tags
+                var prescTag = document.getElementById('prescriptionTag');
+                var certTag = document.getElementById('certificateTag');
+                var prescSub = document.getElementById('prescriptionSubText');
+                var certSub = document.getElementById('certificateSubText');
+
+                if (status === 'active') {
+                    prescTag.textContent = '✏️ Create';
+                    prescTag.className = 'memo-status-tag tag-active';
+                    prescSub.textContent = 'Issue new prescription';
+                    certTag.textContent = '✏️ Create';
+                    certTag.className = 'memo-status-tag tag-active';
+                    certSub.textContent = 'Issue new certificate';
+                } else if (status === 'inactive') {
+                    prescTag.textContent = '🔒 View Only';
+                    prescTag.className = 'memo-status-tag tag-inactive';
+                    prescSub.textContent = 'View & print existing';
+                    certTag.textContent = '🔒 View Only';
+                    certTag.className = 'memo-status-tag tag-inactive';
+                    certSub.textContent = 'View & print existing';
+                } else {
+                    prescTag.textContent = '👁️ View Only';
+                    prescTag.className = 'memo-status-tag tag-viewonly';
+                    prescSub.textContent = 'View & print existing';
+                    certTag.textContent = '👁️ View Only';
+                    certTag.className = 'memo-status-tag tag-viewonly';
+                    certSub.textContent = 'View & print existing';
+                }
+
+                // Update links with memo status
+                var prescLink = document.getElementById('btnPrescriptions');
+                var certLink = document.getElementById('btnCertificate');
+                var patientId = patient.id || '';
+
+                // Prescriptions link
+                var prescHref = 'prescriptions.html?patientId=' + encodeURIComponent(patientId) + '&memoStatus=' + status;
+                if (appointment && appointment.date) {
+                    prescHref += '&appointmentDate=' + encodeURIComponent(appointment.date);
+                }
+                prescLink.setAttribute('href', prescHref);
+
+                // Certificate link
+                var certHref = 'medical-certificate.html?patientId=' + encodeURIComponent(patientId) + '&memoStatus=' +
+                    status;
+                if (appointment && appointment.date) {
+                    certHref += '&appointmentDate=' + encodeURIComponent(appointment.date);
+                }
+                certLink.setAttribute('href', certHref);
+            }
+
+            // ========== SHOW/HIDE PATIENT DETAILS ==========
+            async function showPatientDetails(patient, appointment, memo) {
+                if (!patient) {
+                    selectedPatient = null;
+                    selectedAppointment = null;
+                    selectedMemo = null;
+                    patientMemos = [];
+                    var container = document.getElementById('patientInfoContainer');
+                    var emptyState = document.getElementById('emptyPatientState');
+                    var quickActions = document.getElementById('quickActions');
+                    container.innerHTML = '';
+                    if (emptyState) emptyState.style.display = 'block';
+                    if (quickActions) quickActions.style.display = 'none';
+                    document.getElementById('memoStatusBannerContainer').innerHTML = '';
+                    sessionStorage.removeItem('selectedPatient');
+                    sessionStorage.removeItem('selectedPatientId');
+                    return;
+                }
+
+                selectedPatient = patient;
+                selectedAppointment = appointment || null;
+                selectedMemo = memo || null;
+
+                savePatientSession(patient);
+                await loadPatientMemos(patient.id);
+
                 var emptyState = document.getElementById('emptyPatientState');
                 var quickActions = document.getElementById('quickActions');
-                
-                container.innerHTML = '';
-                if (emptyState) emptyState.style.display = 'block';
-                if (quickActions) quickActions.style.display = 'none';
-                sessionStorage.removeItem('selectedPatient');
-                sessionStorage.removeItem('selectedPatientId');
-                return;
-            }
-            
-            selectedPatient = patient;
-            selectedAppointment = appointment || null;
-            selectedMemo = memo || null;
-            
-            // Save to session for other pages
-            savePatientSession(patient);
-            
-            // Load all memos for this patient (any doctor)
-            await loadPatientMemos(patient.id);
-            
-            var emptyState = document.getElementById('emptyPatientState');
-            var quickActions = document.getElementById('quickActions');
-            var container = document.getElementById('patientInfoContainer');
-            
-            if (emptyState) emptyState.style.display = 'none';
-            if (quickActions) quickActions.style.display = 'grid';
-            
-            displayPatientInfo();
-        }
+                var container = document.getElementById('patientInfoContainer');
+                if (emptyState) emptyState.style.display = 'none';
+                if (quickActions) quickActions.style.display = 'grid';
 
-        // ========== LOAD TODAY'S APPOINTMENTS ==========
-        async function loadTodayAppointments() { 
-            if (!firestoreDB) return; 
-            
-            var todayStr = getTodayDate();
-            
-            try {
-                var snapshot = await firestoreDB.collection("appointments")
-                    .where("doctorId", "==", currentUser.id)
-                    .where("date", "==", todayStr)
-                    .get(); 
-                
-                todayAppointments = []; 
-                snapshot.forEach(function(doc) { 
-                    todayAppointments.push({ id: doc.id, ...doc.data() }); 
-                });
-                todayAppointments.sort(function(a, b) { 
-                    var timeA = a.startTime || a.time || '00:00';
-                    var timeB = b.startTime || b.time || '00:00';
-                    return timeA.localeCompare(timeB);
-                });
-                renderTodayAppointments(); 
-            } catch(e) {
-                console.warn('Error loading appointments:', e);
-            }
-        }
-        
-        function renderTodayAppointments() { 
-            var container = document.getElementById('appointmentsList'); 
-            if (!todayAppointments.length) { 
-                container.innerHTML = '<div class="empty-list"><i class="fas fa-calendar-check"></i>No appointments for today.</div>'; 
-                return; 
-            } 
-            var html = ''; 
-            var nextPatientFound = false;
-            for (var i = 0; i < todayAppointments.length; i++) { 
-                var apt = todayAppointments[i]; 
-                var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt.passportNumber, nationalId: apt.nationalId });
-                var memoInfo = checkMemoExists(apt.patientId, apt.date);
-                var statusText = memoInfo.exists ? '📄 Memo #' + memoInfo.memoNumber : '⏳ No Memo';
-                var statusClass = memoInfo.exists ? 'status-done' : 'status-pending';
-                var isNext = false;
-                
-                if (i === 0 && !memoInfo.exists) {
-                    isNext = true;
-                    nextPatientFound = true;
-                }
-                var nextBadge = isNext ? '<span class="next-badge">▶ Next</span>' : '';
-                var timeDisplay = apt.startTime ? apt.startTime : (apt.time || 'N/A');
-                
-                html += '<div class="appointment-card" data-id="' + apt.id + '" data-patient-id="' + apt.patientId + '">' +
-                    '<div class="appointment-time">⏰ ' + escapeHtml(timeDisplay) + ' | 📅 ' + (apt.date || 'N/A') + 
-                    ' <span class="status-badge ' + statusClass + '">' + statusText + '</span>' + nextBadge +
-                    '</div>' +
-                    '<div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div>' +
-                    '<div class="appointment-details">🪪 ' + escapeHtml(displayId) + ' | 📞 ' + (apt.contact || 'N/A') + '</div>' +
-                '</div>'; 
-            } 
-            container.innerHTML = html; 
-            var cards = container.querySelectorAll('.appointment-card'); 
-            for (var j = 0; j < cards.length; j++) { 
-                cards[j].addEventListener('click', function() { 
-                    var allCards = container.querySelectorAll('.appointment-card'); 
-                    for (var k = 0; k < allCards.length; k++) { 
-                        allCards[k].classList.remove('selected'); 
-                    } 
-                    this.classList.add('selected'); 
-                    var aptId = this.dataset.id; 
-                    var apt = null; 
-                    for (var l = 0; l < todayAppointments.length; l++) { 
-                        if (todayAppointments[l].id === aptId) { 
-                            apt = todayAppointments[l]; 
-                            break; 
-                        } 
-                    } 
-                    if (apt) selectAppointment(apt); 
-                }); 
-            } 
-        }
+                // Update memo status UI
+                updateMemoStatusUI(patient, appointment);
 
-        // ========== LOAD ALL MEMOS (CURRENT DOCTOR'S) ==========
-        async function loadAllMemos() { 
-            if (!firestoreDB) return; 
-            try {
-                var snapshot = await firestoreDB.collection("memos")
-                    .where("doctor.id", "==", currentUser.id)
-                    .get(); 
-                allMemos = []; 
-                snapshot.forEach(function(doc) { 
-                    allMemos.push({ id: doc.id, ...doc.data() }); 
-                }); 
-                allMemos.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }); 
-                renderAllMemos(); 
-            } catch(e) {
-                console.warn('Error loading memos:', e);
+                displayPatientInfo();
             }
-        }
-        
-        function renderAllMemos() { 
-            var container = document.getElementById('memosList'); 
-            if (!allMemos.length) { 
-                container.innerHTML = '<div class="empty-list"><i class="fas fa-history"></i>No memos found.</div>'; 
-                return; 
-            } 
-            var html = ''; 
-            for (var i = 0; i < allMemos.length; i++) { 
-                var memo = allMemos[i]; 
-                var displayId = getDisplayId(memo.patient);
-                var memoNumber = memo.memoId || memo.id || 'N/A';
-                var insuranceNames = getInsuranceNames(memo.insurances);
-                
-                html += '<div class="memo-card" data-id="' + memo.id + '" data-patient-id="' + (memo.patient ? memo.patient.id : '') + '">' +
-                    '<div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) + ' | 📄 Memo #' + escapeHtml(memoNumber) + '</div>' +
-                    '<div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div>' +
-                    '<div class="memo-details">🪪 ' + escapeHtml(displayId) + ' | 🏥 ' + escapeHtml(insuranceNames) + '</div>' +
-                '</div>'; 
-            } 
-            container.innerHTML = html; 
-            var cards = container.querySelectorAll('.memo-card'); 
-            for (var j = 0; j < cards.length; j++) { 
-                cards[j].addEventListener('click', function() { 
-                    var allCards = container.querySelectorAll('.memo-card, .appointment-card'); 
-                    for (var k = 0; k < allCards.length; k++) { 
-                        allCards[k].classList.remove('selected'); 
-                    } 
-                    this.classList.add('selected'); 
-                    var memoId = this.dataset.id; 
-                    var memo = null; 
-                    for (var l = 0; l < allMemos.length; l++) { 
-                        if (allMemos[l].id === memoId) { 
-                            memo = allMemos[l]; 
-                            break; 
-                        } 
-                    } 
-                    if (memo) selectMemo(memo); 
-                }); 
-            } 
-        }
-        
-        async function selectMemo(memo) { 
-            selectedMemo = memo; 
-            selectedAppointment = null; 
-            var patient = null; 
-            if (memo.patient) {
-                // Try to find full patient in patientsList
-                for (var i = 0; i < patientsList.length; i++) { 
-                    if (patientsList[i].id === memo.patient.id) { 
-                        patient = patientsList[i]; 
-                        break; 
-                    } 
-                } 
-                if (!patient) patient = memo.patient; 
-            }
-            await showPatientDetails(patient, null, memo);
-        }
 
-        // ========== SELECT APPOINTMENT ==========
-        async function selectAppointment(apt) { 
-            selectedAppointment = apt; 
-            selectedMemo = null; 
-            
-            var patient = null; 
-            if (apt.patientId) {
-                // Try to find full patient in patientsList
-                for (var i = 0; i < patientsList.length; i++) { 
-                    if (patientsList[i].id === apt.patientId) { 
-                        patient = patientsList[i]; 
-                        break; 
-                    } 
-                } 
-                if (!patient) { 
-                    patient = { 
-                        id: apt.patientId, 
-                        name: apt.patientName, 
-                        phone: apt.contact,
-                        idNumber: apt.idNumber,
-                        passportNumber: apt.passportNumber,
-                        nationalId: apt.nationalId
-                    }; 
+            // ========== LOAD TODAY'S APPOINTMENTS ==========
+            async function loadTodayAppointments() {
+                if (!firestoreDB) return;
+                var todayStr = getTodayDate();
+                try {
+                    var snapshot = await firestoreDB.collection("appointments")
+                        .where("doctorId", "==", currentUser.id)
+                        .where("date", "==", todayStr)
+                        .get();
+                    todayAppointments = [];
+                    snapshot.forEach(function(doc) {
+                        todayAppointments.push({ id: doc.id, ...doc.data() });
+                    });
+                    todayAppointments.sort(function(a, b) {
+                        var timeA = a.startTime || a.time || '00:00';
+                        var timeB = b.startTime || b.time || '00:00';
+                        return timeA.localeCompare(timeB);
+                    });
+                    renderTodayAppointments();
+                } catch (e) {
+                    console.warn('Error loading appointments:', e);
                 }
             }
-            await showPatientDetails(patient, apt, null);
-        }
 
-        // ========== LOAD PATIENTS ==========
-        async function loadPatients() { 
-            if (!firestoreDB) return; 
-            try {
-                var snapshot = await firestoreDB.collection("patients").get(); 
-                patientsList = []; 
-                snapshot.forEach(function(doc) { 
-                    patientsList.push({ id: doc.id, ...doc.data() }); 
-                }); 
-            } catch(e) {
-                console.warn('Error loading patients:', e);
+            function renderTodayAppointments() {
+                var container = document.getElementById('appointmentsList');
+                if (!todayAppointments.length) {
+                    container.innerHTML =
+                        '<div class="empty-list"><i class="fas fa-calendar-check"></i>No appointments for today.</div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < todayAppointments.length; i++) {
+                    var apt = todayAppointments[i];
+                    var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt
+                            .passportNumber, nationalId: apt.nationalId });
+                    var memoInfo = checkMemoExists(apt.patientId, apt.date);
+                    var statusText = memoInfo.exists ? '📄 Memo #' + memoInfo.memoNumber : '⏳ No Memo';
+                    var statusClass = memoInfo.exists ? 'status-done' : 'status-pending';
+                    var isNext = false;
+                    if (i === 0 && !memoInfo.exists) { isNext = true; }
+                    var nextBadge = isNext ? '<span class="next-badge">▶ Next</span>' : '';
+                    var timeDisplay = apt.startTime ? apt.startTime : (apt.time || 'N/A');
+                    html += '<div class="appointment-card" data-id="' + apt.id + '" data-patient-id="' + apt.patientId +
+                        '">' +
+                        '<div class="appointment-time">⏰ ' + escapeHtml(timeDisplay) + ' | 📅 ' + (apt.date || 'N/A') +
+                        ' <span class="status-badge ' + statusClass + '">' + statusText + '</span>' + nextBadge +
+                        '</div>' +
+                        '<div class="appointment-patient">' + escapeHtml(apt.patientName || 'Unknown') + '</div>' +
+                        '<div class="appointment-details">🪪 ' + escapeHtml(displayId) + ' | 📞 ' + (apt.contact ||
+                            'N/A') + '</div>' +
+                        '</div>';
+                }
+                container.innerHTML = html;
+                var cards = container.querySelectorAll('.appointment-card');
+                for (var j = 0; j < cards.length; j++) {
+                    cards[j].addEventListener('click', function() {
+                        var allCards = container.querySelectorAll('.appointment-card');
+                        for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); }
+                        this.classList.add('selected');
+                        var aptId = this.dataset.id;
+                        var apt = null;
+                        for (var l = 0; l < todayAppointments.length; l++) {
+                            if (todayAppointments[l].id === aptId) { apt = todayAppointments[l]; break; }
+                        }
+                        if (apt) selectAppointment(apt);
+                    });
+                }
             }
-        }
-        
-        var searchInput = document.getElementById('patientSearchInput'), suggestionsDiv = document.getElementById('patientSuggestions');
-        
-        function renderPatientSuggestions(filterText) { 
-            if (!filterText.trim()) { 
-                suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>'; 
-                return; 
-            } 
-            var lowerFilter = filterText.toLowerCase(); 
-            var filtered = []; 
-            for (var i = 0; i < patientsList.length; i++) { 
-                var p = patientsList[i]; 
-                var displayId = getDisplayId(p);
-                if ((p.name && p.name.toLowerCase().includes(lowerFilter)) || 
-                    (displayId && displayId.toLowerCase().includes(lowerFilter))) { 
-                    filtered.push(p); 
-                } 
-            } 
-            filtered = filtered.slice(0, 15); 
-            if (!filtered.length) { 
-                suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>'; 
-                return; 
-            } 
-            var html = ''; 
-            for (var j = 0; j < filtered.length; j++) { 
-                var p = filtered[j]; 
-                var displayId = getDisplayId(p);
-                html += '<div class="suggestion-item" data-id="' + p.id + '" data-name="' + escapeHtml(p.name) + '" data-phone="' + (p.phone || '') + '">' +
-                    '<strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">🪪 ' + escapeHtml(displayId) + '</span><br>' +
-                    '<small>📞 ' + (p.phone || 'N/A') + '</small>' +
-                '</div>'; 
-            } 
-            suggestionsDiv.innerHTML = html; 
-            var items = suggestionsDiv.querySelectorAll('.suggestion-item'); 
-            for (var k = 0; k < items.length; k++) { 
-                items[k].addEventListener('click', function() { 
-                    var patientId = this.dataset.id; 
-                    var patient = null; 
-                    for (var l = 0; l < patientsList.length; l++) { 
-                        if (patientsList[l].id === patientId) { 
-                            patient = patientsList[l]; 
-                            break; 
-                        } 
-                    } 
-                    if (patient) { 
-                        var displayId = getDisplayId(patient);
-                        searchInput.value = patient.name + ' (🪪 ' + displayId + ')'; 
-                        suggestionsDiv.innerHTML = ''; 
-                        showPatientDetails(patient, null, null);
-                    } 
-                }); 
-            } 
-        }
-        
-        searchInput.addEventListener('input', function(e) { renderPatientSuggestions(e.target.value); });
 
-        // ========== DISPLAY PATIENT INFO ==========
-        function displayPatientInfo() {
-            var container = document.getElementById('patientInfoContainer');
-            if (!selectedPatient) {
-                container.innerHTML = '';
-                return;
+            // ========== LOAD ALL MEMOS (CURRENT DOCTOR'S) ==========
+            async function loadAllMemos() {
+                if (!firestoreDB) return;
+                try {
+                    var snapshot = await firestoreDB.collection("memos")
+                        .where("doctor.id", "==", currentUser.id)
+                        .get();
+                    allMemos = [];
+                    snapshot.forEach(function(doc) {
+                        allMemos.push({ id: doc.id, ...doc.data() });
+                    });
+                    allMemos.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+                    renderAllMemos();
+                } catch (e) {
+                    console.warn('Error loading memos:', e);
+                }
             }
-            
-            var dob = selectedPatient.dob || 'N/A';
-            var age = calculateAge(dob);
-            var insurance = selectedPatient.insurance || {};
-            var primaryIns = insurance.primaryName || 'None';
-            var displayId = getDisplayId(selectedPatient);
-            
-            var extraHtml = '';
-            
-            // If there's a selected appointment
-            if (selectedAppointment) {
-                var memoInfo = checkMemoExists(selectedPatient.id, selectedAppointment.date);
-                var memoStatus = memoInfo.exists ? '✅ Memo Completed (# ' + memoInfo.memoNumber + ')' : '⏳ No Memo Yet';
-                var memoColor = memoInfo.exists ? '#27ae60' : '#ffc107';
-                
-                extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">' +
-                    '<p><strong>📋 Appointment:</strong> ' + (selectedAppointment.date || 'N/A') + ' at ' + (selectedAppointment.startTime || selectedAppointment.time || 'N/A') + '</p>' +
-                    '<p><strong>Memo Status:</strong> <span style="color:' + memoColor + '; font-weight:600;">' + memoStatus + '</span></p>' +
-                '</div>';
+
+            function renderAllMemos() {
+                var container = document.getElementById('memosList');
+                if (!allMemos.length) {
+                    container.innerHTML = '<div class="empty-list"><i class="fas fa-history"></i>No memos found.</div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < allMemos.length; i++) {
+                    var memo = allMemos[i];
+                    var displayId = getDisplayId(memo.patient);
+                    var memoNumber = memo.memoId || memo.id || 'N/A';
+                    var insuranceNames = getInsuranceNames(memo.insurances);
+                    html += '<div class="memo-card" data-id="' + memo.id + '" data-patient-id="' + (memo.patient ? memo
+                        .patient.id : '') + '">' +
+                        '<div class="memo-date">📅 ' + (memo.date || new Date(memo.timestamp).toLocaleDateString()) +
+                        ' | 📄 Memo #' + escapeHtml(memoNumber) + '</div>' +
+                        '<div class="memo-patient">' + escapeHtml(memo.patient?.name || 'Unknown') + '</div>' +
+                        '<div class="memo-details">🪪 ' + escapeHtml(displayId) + ' | 🏥 ' + escapeHtml(
+                        insuranceNames) + '</div>' +
+                        '</div>';
+                }
+                container.innerHTML = html;
+                var cards = container.querySelectorAll('.memo-card');
+                for (var j = 0; j < cards.length; j++) {
+                    cards[j].addEventListener('click', function() {
+                        var allCards = container.querySelectorAll('.memo-card, .appointment-card');
+                        for (var k = 0; k < allCards.length; k++) { allCards[k].classList.remove('selected'); }
+                        this.classList.add('selected');
+                        var memoId = this.dataset.id;
+                        var memo = null;
+                        for (var l = 0; l < allMemos.length; l++) {
+                            if (allMemos[l].id === memoId) { memo = allMemos[l]; break; }
+                        }
+                        if (memo) selectMemo(memo);
+                    });
+                }
             }
-            
-            // Display all memos for this patient (any doctor)
-            if (patientMemos && patientMemos.length > 0) {
-                var memosHtml = '<div style="margin-top: 12px; padding: 12px; background: #e8f0fe; border-radius: 12px;">' +
-                    '<p><strong>📄 Memo History (' + patientMemos.length + ')</strong></p>';
-                for (var i = 0; i < Math.min(patientMemos.length, 5); i++) {
-                    var m = patientMemos[i];
-                    var memoNumber = m.memoId || m.id || 'N/A';
-                    var memoDate = m.date || (m.timestamp ? new Date(m.timestamp).toLocaleDateString() : 'N/A');
-                    var doctorName = m.doctor?.name || 'Unknown';
+
+            async function selectMemo(memo) {
+                selectedMemo = memo;
+                selectedAppointment = null;
+                var patient = null;
+                if (memo.patient) {
+                    for (var i = 0; i < patientsList.length; i++) {
+                        if (patientsList[i].id === memo.patient.id) { patient = patientsList[i]; break; }
+                    }
+                    if (!patient) patient = memo.patient;
+                }
+                await showPatientDetails(patient, null, memo);
+            }
+
+            // ========== SELECT APPOINTMENT ==========
+            async function selectAppointment(apt) {
+                selectedAppointment = apt;
+                selectedMemo = null;
+                var patient = null;
+                if (apt.patientId) {
+                    for (var i = 0; i < patientsList.length; i++) {
+                        if (patientsList[i].id === apt.patientId) { patient = patientsList[i]; break; }
+                    }
+                    if (!patient) {
+                        patient = {
+                            id: apt.patientId,
+                            name: apt.patientName,
+                            phone: apt.contact,
+                            idNumber: apt.idNumber,
+                            passportNumber: apt.passportNumber,
+                            nationalId: apt.nationalId
+                        };
+                    }
+                }
+                // Clear cache for this patient to force fresh status check
+                var cacheKey = patient.id + '_' + (apt.date || '');
+                delete memoStatusCache[cacheKey];
+                await showPatientDetails(patient, apt, null);
+            }
+
+            // ========== LOAD PATIENTS ==========
+            async function loadPatients() {
+                if (!firestoreDB) return;
+                try {
+                    var snapshot = await firestoreDB.collection("patients").get();
+                    patientsList = [];
+                    snapshot.forEach(function(doc) {
+                        patientsList.push({ id: doc.id, ...doc.data() });
+                    });
+                } catch (e) {
+                    console.warn('Error loading patients:', e);
+                }
+            }
+
+            var searchInput = document.getElementById('patientSearchInput'),
+                suggestionsDiv = document.getElementById('patientSuggestions');
+
+            function renderPatientSuggestions(filterText) {
+                if (!filterText.trim()) {
+                    suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>';
+                    return;
+                }
+                var lowerFilter = filterText.toLowerCase();
+                var filtered = [];
+                for (var i = 0; i < patientsList.length; i++) {
+                    var p = patientsList[i];
+                    var displayId = getDisplayId(p);
+                    if ((p.name && p.name.toLowerCase().includes(lowerFilter)) ||
+                        (displayId && displayId.toLowerCase().includes(lowerFilter))) {
+                        filtered.push(p);
+                    }
+                }
+                filtered = filtered.slice(0, 15);
+                if (!filtered.length) {
+                    suggestionsDiv.innerHTML = '<div class="empty-list">No matching patients</div>';
+                    return;
+                }
+                var html = '';
+                for (var j = 0; j < filtered.length; j++) {
+                    var p = filtered[j];
+                    var displayId = getDisplayId(p);
+                    html += '<div class="suggestion-item" data-id="' + p.id + '" data-name="' + escapeHtml(p.name) +
+                        '" data-phone="' + (p.phone || '') + '">' +
+                        '<strong>' + escapeHtml(p.name) + '</strong> <span style="color:#5f7f9a;">🪪 ' + escapeHtml(
+                            displayId) + '</span><br>' +
+                        '<small>📞 ' + (p.phone || 'N/A') + '</small>' +
+                        '</div>';
+                }
+                suggestionsDiv.innerHTML = html;
+                var items = suggestionsDiv.querySelectorAll('.suggestion-item');
+                for (var k = 0; k < items.length; k++) {
+                    items[k].addEventListener('click', function() {
+                        var patientId = this.dataset.id;
+                        var patient = null;
+                        for (var l = 0; l < patientsList.length; l++) {
+                            if (patientsList[l].id === patientId) { patient = patientsList[l]; break; }
+                        }
+                        if (patient) {
+                            var displayId = getDisplayId(patient);
+                            searchInput.value = patient.name + ' (🪪 ' + displayId + ')';
+                            suggestionsDiv.innerHTML = '';
+                            // Clear cache for this patient
+                            var cacheKey = patient.id + '_';
+                            for (var key in memoStatusCache) {
+                                if (key.startsWith(patient.id + '_')) delete memoStatusCache[key];
+                            }
+                            showPatientDetails(patient, null, null);
+                        }
+                    });
+                }
+            }
+            searchInput.addEventListener('input', function(e) { renderPatientSuggestions(e.target.value); });
+
+            // ========== DISPLAY PATIENT INFO ==========
+            function displayPatientInfo() {
+                var container = document.getElementById('patientInfoContainer');
+                if (!selectedPatient) {
+                    container.innerHTML = '';
+                    return;
+                }
+                var dob = selectedPatient.dob || 'N/A';
+                var age = calculateAge(dob);
+                var insurance = selectedPatient.insurance || {};
+                var primaryIns = insurance.primaryName || 'None';
+                var displayId = getDisplayId(selectedPatient);
+                var extraHtml = '';
+
+                if (selectedAppointment) {
+                    var memoInfo = checkMemoExists(selectedPatient.id, selectedAppointment.date);
+                    var memoStatus = memoInfo.exists ? '✅ Memo Completed (# ' + memoInfo.memoNumber + ')' :
+                        '⏳ No Memo Yet';
+                    var memoColor = memoInfo.exists ? '#27ae60' : '#ffc107';
+                    extraHtml = '<div style="margin-top:12px;padding:12px;background:#e8f0fe;border-radius:12px;">' +
+                        '<p><strong>📋 Appointment:</strong> ' + (selectedAppointment.date || 'N/A') + ' at ' + (
+                            selectedAppointment.startTime || selectedAppointment.time || 'N/A') + '</p>' +
+                        '<p><strong>Memo Status:</strong> <span style="color:' + memoColor + ';font-weight:600;">' +
+                        memoStatus + '</span></p>' +
+                        '</div>';
+                }
+
+                if (patientMemos && patientMemos.length > 0) {
+                    var memosHtml = '<div style="margin-top:12px;padding:12px;background:#e8f0fe;border-radius:12px;">' +
+                        '<p><strong>📄 Memo History (' + patientMemos.length + ')</strong></p>';
+                    for (var i = 0; i < Math.min(patientMemos.length, 5); i++) {
+                        var m = patientMemos[i];
+                        var memoNumber = m.memoId || m.id || 'N/A';
+                        var memoDate = m.date || (m.timestamp ? new Date(m.timestamp).toLocaleDateString() : 'N/A');
+                        var doctorName = m.doctor?.name || 'Unknown';
+                        var servicesList = '';
+                        if (m.services && m.services.length) {
+                            servicesList = m.services.map(function(s) { return escapeHtml(s.name); }).join(', ');
+                        }
+                        memosHtml += '<div style="padding:6px 0;border-bottom:1px dotted #e2eaf0;font-size:12px;">' +
+                            '<span class="memo-number-badge">#' + escapeHtml(memoNumber) + '</span> ' +
+                            '<span style="color:#0a2f44;">' + escapeHtml(memoDate) + '</span> ' +
+                            '<span style="color:#5f7f9a;">👨‍⚕️ ' + escapeHtml(doctorName) + '</span>' +
+                            (servicesList ? '<br><span style="color:#5f7f9a;font-size:11px;">💊 ' + servicesList +
+                                '</span>' : '') +
+                            '</div>';
+                    }
+                    if (patientMemos.length > 5) {
+                        memosHtml += '<div style="font-size:11px;color:#8ba0b0;margin-top:4px;">+' + (patientMemos
+                            .length - 5) + ' more memos...</div>';
+                    }
+                    memosHtml += '</div>';
+                    extraHtml += memosHtml;
+                }
+
+                if (selectedMemo) {
+                    var insuranceNames = getInsuranceNames(selectedMemo.insurances);
+                    var memoNumber = selectedMemo.memoId || selectedMemo.id || 'N/A';
                     var servicesList = '';
-                    if (m.services && m.services.length) {
-                        servicesList = m.services.map(function(s) { 
-                            return escapeHtml(s.name); 
-                        }).join(', ');
+                    if (selectedMemo.services && selectedMemo.services.length) {
+                        servicesList = '<div style="margin-top:8px;"><strong>Services:</strong><ul style="margin:4px 0 0 20px;">';
+                        for (var i = 0; i < selectedMemo.services.length; i++) {
+                            var svc = selectedMemo.services[i];
+                            servicesList += '<li>' + escapeHtml(svc.name) + '</li>';
+                        }
+                        servicesList += '</ul></div>';
                     }
-                    memosHtml += '<div style="padding: 6px 0; border-bottom: 1px dotted #e2eaf0; font-size: 12px;">' +
-                        '<span class="memo-number-badge">#' + escapeHtml(memoNumber) + '</span> ' +
-                        '<span style="color:#0a2f44;">' + escapeHtml(memoDate) + '</span> ' +
-                        '<span style="color:#5f7f9a;">👨‍⚕️ ' + escapeHtml(doctorName) + '</span>' +
-                        (servicesList ? '<br><span style="color:#5f7f9a; font-size:11px;">💊 ' + servicesList + '</span>' : '') +
-                    '</div>';
+                    extraHtml = '<div style="margin-top:12px;padding:12px;background:#e0f2fe;border-radius:12px;border-left:3px solid #0f5c7a;">' +
+                        '<p><strong>📄 Selected Memo #' + escapeHtml(memoNumber) + '</strong></p>' +
+                        '<p><strong>🏥 Insurances:</strong> ' + escapeHtml(insuranceNames) + '</p>' +
+                        servicesList +
+                        '</div>' + extraHtml;
                 }
-                if (patientMemos.length > 5) {
-                    memosHtml += '<div style="font-size: 11px; color: #8ba0b0; margin-top: 4px;">+' + (patientMemos.length - 5) + ' more memos...</div>';
-                }
-                memosHtml += '</div>';
-                extraHtml += memosHtml;
-            }
-            
-            // If there's a selected memo (highlight it)
-            if (selectedMemo) {
-                var insuranceNames = getInsuranceNames(selectedMemo.insurances);
-                var memoNumber = selectedMemo.memoId || selectedMemo.id || 'N/A';
-                var servicesList = '';
-                if (selectedMemo.services && selectedMemo.services.length) {
-                    servicesList = '<div style="margin-top: 8px;"><strong>Services:</strong><ul style="margin: 4px 0 0 20px;">';
-                    for (var i = 0; i < selectedMemo.services.length; i++) {
-                        var svc = selectedMemo.services[i];
-                        servicesList += '<li>' + escapeHtml(svc.name) + '</li>';
-                    }
-                    servicesList += '</ul></div>';
-                }
-                
-                extraHtml = '<div style="margin-top: 12px; padding: 12px; background: #e0f2fe; border-radius: 12px; border-left: 3px solid #0f5c7a;">' +
-                    '<p><strong>📄 Selected Memo #' + escapeHtml(memoNumber) + '</strong></p>' +
-                    '<p><strong>🏥 Insurances:</strong> ' + escapeHtml(insuranceNames) + '</p>' +
-                    servicesList +
-                '</div>' + extraHtml;
-            }
-            
-            container.innerHTML = '<div class="patient-info-card" style="margin: 12px 20px;">' +
-                '<div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div>' +
-                '<div class="patient-meta">' +
+
+                container.innerHTML = '<div class="patient-info-card" style="margin:12px 20px;">' +
+                    '<div class="patient-name">' + escapeHtml(selectedPatient.name) + '</div>' +
+                    '<div class="patient-meta">' +
                     '<span>🪪 ' + escapeHtml(displayId) + '</span>' +
                     '<span>📞 ' + (selectedPatient.phone || selectedPatient.contactNo || 'N/A') + '</span>' +
                     '<span>🎂 ' + dob + ' (' + age + ' yrs)</span>' +
                     '<span>🏥 ' + escapeHtml(primaryIns) + '</span>' +
-                '</div>' +
-                extraHtml +
-            '</div>';
-        }
+                    '</div>' +
+                    extraHtml +
+                    '</div>';
+            }
 
-        // ========== UPDATE QUICK ACTION LINKS WITH PATIENT ID ==========
-        function updateQuickActionLinks() {
-            if (!selectedPatient) return;
-            
-            var patientId = selectedPatient.id || '';
-            var links = document.querySelectorAll('.quick-action-card');
-            
-            for (var i = 0; i < links.length; i++) {
-                var link = links[i];
-                var href = link.getAttribute('href');
-                if (href && !href.includes('?')) {
-                    link.setAttribute('href', href + '?patientId=' + encodeURIComponent(patientId));
-                } else if (href && href.includes('?')) {
-                    var baseUrl = href.split('?')[0];
-                    var existingParams = href.split('?')[1] || '';
-                    var params = {};
-                    if (existingParams) {
-                        var pairs = existingParams.split('&');
-                        for (var j = 0; j < pairs.length; j++) {
-                            var pair = pairs[j].split('=');
-                            if (pair.length === 2) {
-                                params[pair[0]] = pair[1];
+            // ========== UPDATE QUICK ACTION LINKS ==========
+            function updateQuickActionLinks() {
+                if (!selectedPatient) return;
+                var patientId = selectedPatient.id || '';
+                var links = document.querySelectorAll('.quick-action-card');
+                for (var i = 0; i < links.length; i++) {
+                    var link = links[i];
+                    var href = link.getAttribute('href');
+                    if (href && !href.includes('?')) {
+                        link.setAttribute('href', href + '?patientId=' + encodeURIComponent(patientId));
+                    } else if (href && href.includes('?')) {
+                        var baseUrl = href.split('?')[0];
+                        var existingParams = href.split('?')[1] || '';
+                        var params = {};
+                        if (existingParams) {
+                            var pairs = existingParams.split('&');
+                            for (var j = 0; j < pairs.length; j++) {
+                                var pair = pairs[j].split('=');
+                                if (pair.length === 2) { params[pair[0]] = pair[1]; }
                             }
                         }
-                    }
-                    params.patientId = encodeURIComponent(patientId);
-                    var newParams = [];
-                    for (var key in params) {
-                        if (params.hasOwnProperty(key)) {
-                            newParams.push(key + '=' + params[key]);
+                        params.patientId = encodeURIComponent(patientId);
+                        var newParams = [];
+                        for (var key in params) {
+                            if (params.hasOwnProperty(key)) { newParams.push(key + '=' + params[key]); }
                         }
+                        link.setAttribute('href', baseUrl + '?' + newParams.join('&'));
                     }
-                    link.setAttribute('href', baseUrl + '?' + newParams.join('&'));
+                }
+                // Also update prescription and certificate links with memo status
+                var status = getMemoStatus(selectedPatient.id, selectedAppointment ? selectedAppointment.date : null);
+                var prescLink = document.getElementById('btnPrescriptions');
+                var certLink = document.getElementById('btnCertificate');
+                if (prescLink) {
+                    var prescHref = 'prescriptions.html?patientId=' + encodeURIComponent(patientId) + '&memoStatus=' +
+                        status;
+                    if (selectedAppointment && selectedAppointment.date) {
+                        prescHref += '&appointmentDate=' + encodeURIComponent(selectedAppointment.date);
+                    }
+                    prescLink.setAttribute('href', prescHref);
+                }
+                if (certLink) {
+                    var certHref = 'medical-certificate.html?patientId=' + encodeURIComponent(patientId) +
+                        '&memoStatus=' + status;
+                    if (selectedAppointment && selectedAppointment.date) {
+                        certHref += '&appointmentDate=' + encodeURIComponent(selectedAppointment.date);
+                    }
+                    certLink.setAttribute('href', certHref);
                 }
             }
-        }
 
-        // ========== NEXT PATIENT ==========
-        function selectNextPatient() {
-            if (!todayAppointments.length) {
-                alert('No appointments for today.');
-                return;
-            }
-            
-            var nextAppointment = null;
-            for (var i = 0; i < todayAppointments.length; i++) {
-                var apt = todayAppointments[i];
-                var memoInfo = checkMemoExists(apt.patientId, apt.date);
-                if (!memoInfo.exists) {
-                    nextAppointment = apt;
-                    break;
+            // ========== NEXT PATIENT ==========
+            function selectNextPatient() {
+                if (!todayAppointments.length) {
+                    alert('No appointments for today.');
+                    return;
+                }
+                var nextAppointment = null;
+                for (var i = 0; i < todayAppointments.length; i++) {
+                    var apt = todayAppointments[i];
+                    var memoInfo = checkMemoExists(apt.patientId, apt.date);
+                    if (!memoInfo.exists) {
+                        nextAppointment = apt;
+                        break;
+                    }
+                }
+                if (!nextAppointment) {
+                    alert('All patients have memos completed.');
+                    return;
+                }
+                selectAppointment(nextAppointment);
+                var cards = document.querySelectorAll('.appointment-card');
+                for (var j = 0; j < cards.length; j++) {
+                    cards[j].classList.remove('selected');
+                    if (cards[j].dataset.id === nextAppointment.id) {
+                        cards[j].classList.add('selected');
+                        cards[j].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                 }
             }
-            
-            if (!nextAppointment) {
-                alert('All patients have memos completed.');
-                return;
-            }
-            
-            selectAppointment(nextAppointment);
-            var cards = document.querySelectorAll('.appointment-card');
-            for (var j = 0; j < cards.length; j++) {
-                cards[j].classList.remove('selected');
-                if (cards[j].dataset.id === nextAppointment.id) {
-                    cards[j].classList.add('selected');
-                    cards[j].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-        }
 
-        // ========== LOGOUT ==========
-        document.getElementById('logoutBtn').addEventListener('click', async function() {
-            try { 
-                stopHeartbeat(); 
-                if (onlineListener) {
-                    onlineListener.off();
-                    onlineListener = null;
-                }
-                if (currentChatListener) {
-                    try {
-                        if (typeof currentChatListener === 'function') {
-                            currentChatListener();
-                        } else if (currentChatListener.off) {
-                            currentChatListener.off();
-                        }
-                    } catch(e) {}
-                    currentChatListener = null;
-                }
-                // Clean up message listeners
-                for (var key in allMessageListeners) {
-                    if (allMessageListeners.hasOwnProperty(key) && allMessageListeners[key]) {
+            // ========== LOGOUT ==========
+            document.getElementById('logoutBtn').addEventListener('click', async function() {
+                try {
+                    stopHeartbeat();
+                    if (onlineListener) { onlineListener.off();
+                        onlineListener = null; }
+                    if (currentChatListener) {
                         try {
-                            allMessageListeners[key].off();
-                        } catch(e) {}
+                            if (typeof currentChatListener === 'function') { currentChatListener(); } else if (
+                                currentChatListener.off) { currentChatListener.off(); }
+                        } catch (e) {}
+                        currentChatListener = null;
                     }
-                }
-                allMessageListeners = {};
-                if (realtimeDB) await realtimeDB.ref('online_users/' + currentUser.id).remove(); 
-            } catch(e) { console.warn(e); }
-            sessionStorage.removeItem('doctorSession');
-            localStorage.removeItem('currentDoctor');
-            sessionStorage.removeItem('selectedPatient');
-            sessionStorage.removeItem('selectedPatientId');
-            window.location.href = 'login.html';
-        });
-
-        // ========== EVENT LISTENERS ==========
-        var tabs = document.querySelectorAll('.list-tab');
-        for (var i = 0; i < tabs.length; i++) {
-            tabs[i].addEventListener('click', function() {
-                var allTabs = document.querySelectorAll('.list-tab');
-                for (var j = 0; j < allTabs.length; j++) {
-                    allTabs[j].classList.remove('active-list');
-                }
-                var allLists = document.querySelectorAll('.appointments-list, .memos-list, .patients-list');
-                for (var k = 0; k < allLists.length; k++) {
-                    allLists[k].classList.remove('active-list');
-                }
-                this.classList.add('active-list');
-                var listId = this.dataset.list + 'List';
-                document.getElementById(listId).classList.add('active-list');
-                if (this.dataset.list === 'patients') {
-                    suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>';
-                    searchInput.value = '';
-                }
+                    for (var key in allMessageListeners) {
+                        if (allMessageListeners.hasOwnProperty(key) && allMessageListeners[key]) {
+                            try { allMessageListeners[key].off(); } catch (e) {}
+                        }
+                    }
+                    allMessageListeners = {};
+                    if (realtimeDB) await realtimeDB.ref('online_users/' + currentUser.id).remove();
+                } catch (e) { console.warn(e); }
+                sessionStorage.removeItem('doctorSession');
+                localStorage.removeItem('currentDoctor');
+                sessionStorage.removeItem('selectedPatient');
+                sessionStorage.removeItem('selectedPatientId');
+                window.location.href = 'login.html';
             });
-        }
-        
-        document.getElementById('nextPatientBtn').addEventListener('click', selectNextPatient);
 
-        // ========== INIT ==========
-        async function init() {
-            if (window.db) firestoreDB = window.db;
-            if (window.rtdb) realtimeDB = window.rtdb;
-            if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
-            
-            await setDoctorOnline();
-            startHeartbeat();
-            await loadPatients();
-            await loadTodayAppointments();
-            await loadAllMemos();
-            listenOnlineReception();
-            
-            // Check if there's a patient session from another page
-            var restoredPatient = restorePatientSession();
-            if (restoredPatient) {
-                selectedPatient = restoredPatient;
-                await loadPatientMemos(selectedPatient.id);
-                showPatientDetails(selectedPatient, null, null);
-                updateQuickActionLinks();
+            // ========== EVENT LISTENERS ==========
+            var tabs = document.querySelectorAll('.list-tab');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].addEventListener('click', function() {
+                    var allTabs = document.querySelectorAll('.list-tab');
+                    for (var j = 0; j < allTabs.length; j++) { allTabs[j].classList.remove('active-list'); }
+                    var allLists = document.querySelectorAll('.appointments-list, .memos-list, .patients-list');
+                    for (var k = 0; k < allLists.length; k++) { allLists[k].classList.remove('active-list'); }
+                    this.classList.add('active-list');
+                    var listId = this.dataset.list + 'List';
+                    document.getElementById(listId).classList.add('active-list');
+                    if (this.dataset.list === 'patients') {
+                        suggestionsDiv.innerHTML = '<div class="empty-list">Start typing name or ID...</div>';
+                        searchInput.value = '';
+                    }
+                });
             }
-            
-            if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
-        }
-        
-        // Override showPatientDetails to also update quick action links
-        var originalShowPatientDetails = showPatientDetails;
-        showPatientDetails = function(patient, appointment, memo) {
-            originalShowPatientDetails(patient, appointment, memo);
-            if (patient) {
-                updateQuickActionLinks();
+            document.getElementById('nextPatientBtn').addEventListener('click', selectNextPatient);
+
+            // ========== INIT ==========
+            async function init() {
+                if (window.db) firestoreDB = window.db;
+                if (window.rtdb) realtimeDB = window.rtdb;
+                if (!firestoreDB || !realtimeDB) { setTimeout(init, 500); return; }
+
+                await setDoctorOnline();
+                startHeartbeat();
+                await loadPatients();
+                await loadTodayAppointments();
+                await loadAllMemos();
+                listenOnlineReception();
+
+                var restoredPatient = restorePatientSession();
+                if (restoredPatient) {
+                    selectedPatient = restoredPatient;
+                    await loadPatientMemos(selectedPatient.id);
+                    showPatientDetails(selectedPatient, null, null);
+                    updateQuickActionLinks();
+                }
+
+                if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
             }
-        };
-        
-        init();
-    })();
-</script>
+
+            // Override showPatientDetails to also update quick action links
+            var originalShowPatientDetails = showPatientDetails;
+            showPatientDetails = function(patient, appointment, memo) {
+                originalShowPatientDetails(patient, appointment, memo);
+                if (patient) {
+                    updateQuickActionLinks();
+                }
+            };
+
+            init();
+        })();
+    </script>
 </body>
 </html>

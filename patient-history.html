@@ -549,63 +549,67 @@
 
 <script>
     (function() {
-        // ========== AUTH - CHECK IMMEDIATELY ==========
-        var userData = null;
+        // ========== AUTH - SAME AS CREATE MEMO PAGE ==========
+        // Check for loggedInUser (reception) or doctorSession (doctor)
         var loggedInUser = localStorage.getItem('loggedInUser');
         var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-        var receptionSession = sessionStorage.getItem('receptionSession');
         
-        console.log('Checking authentication...');
-        console.log('loggedInUser:', loggedInUser);
-        console.log('doctorSession:', doctorSession);
-        console.log('receptionSession:', receptionSession);
+        var userData = null;
         
-        // Try to get user data from various sources
+        // Try loggedInUser first (reception)
         if (loggedInUser) {
             try {
                 userData = JSON.parse(loggedInUser);
-                userData.userType = userData.level || 'reception';
-                console.log('User loaded from loggedInUser:', userData.name);
+                console.log('User loaded from loggedInUser (reception):', userData.name);
             } catch(e) {
                 console.warn('Error parsing loggedInUser:', e);
             }
         }
         
+        // If no reception user, try doctor session
         if (!userData && doctorSession) {
             try {
                 userData = JSON.parse(doctorSession);
-                userData.userType = 'doctor';
                 console.log('User loaded from doctorSession:', userData.name);
             } catch(e) {
                 console.warn('Error parsing doctorSession:', e);
             }
         }
         
-        if (!userData && receptionSession) {
-            try {
-                userData = JSON.parse(receptionSession);
-                userData.userType = 'reception';
-                console.log('User loaded from receptionSession:', userData.name);
-            } catch(e) {
-                console.warn('Error parsing receptionSession:', e);
-            }
-        }
-        
-        // Check if user is logged in - if not, redirect to login
+        // If still no user, redirect to login
         if (!userData || !userData.id) {
-            console.warn('No user data found, redirecting to login');
+            console.warn('No user found, redirecting to login');
             window.location.href = 'login.html';
             return;
+        }
+
+        // Determine user type
+        var userType = 'reception';
+        if (userData.level && userData.level.toLowerCase() === 'doctor') {
+            userType = 'doctor';
+        } else if (userData.userType && userData.userType === 'doctor') {
+            userType = 'doctor';
+        } else if (doctorSession && userData.level && userData.level.toLowerCase() === 'doctor') {
+            userType = 'doctor';
         }
 
         var currentUser = {
             id: userData.id || userData.username,
             name: userData.name || userData.username || 'User',
             role: userData.level || userData.role || 'Staff',
-            type: userData.userType || 'staff'
+            type: userType
         };
         
         console.log('Current user:', currentUser.name, 'Type:', currentUser.type);
+
+        // ========== GO BACK FUNCTION ==========
+        window.goBack = function() {
+            if (currentUser.type === 'doctor') {
+                window.location.href = 'doctor-portal.html';
+            } else {
+                window.location.href = 'clinicdash.html';
+            }
+        };
 
         var firestoreDB = null;
         var patientsList = [];
@@ -666,16 +670,6 @@
                 return 'N/A';
             }
         }
-
-        // ========== GO BACK FUNCTION ==========
-        window.goBack = function() {
-            var userType = currentUser.type || 'staff';
-            if (userType === 'doctor') {
-                window.location.href = 'doctor-portal.html';
-            } else {
-                window.location.href = 'clinicdash.html';
-            }
-        };
 
         // ========== LOAD PATIENTS ==========
         async function loadPatients() {

@@ -16,7 +16,7 @@
     <script src="firebase-config.js">
     </script>
     <style>
-        /* ===== ALL STYLES (unchanged) ===== */
+        /* ===== STYLES (unchanged) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
         body { background: #eef2f7; min-height: 100vh; }
         .clinic-header { background: #0a2f44; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -283,7 +283,7 @@
             var patientMemos = [];
             var memoStatusCache = {};
 
-            // ========== CHAT VARIABLES ==========
+            // ========== CHAT VARIABLES (unchanged) ==========
             var selectedStaff = null;
             var onlineListener = null;
             var currentChatListener = null;
@@ -343,26 +343,43 @@
                 return yyyy + '-' + mm + '-' + dd;
             }
 
-            // ===== CHECK IF MEMO EXISTS (UPDATED: checks both allMemos and patientMemos) =====
+            // ===== FIXED: CONVERT ANY DATE TO STRING =====
+            function toDateString(dateValue) {
+                if (!dateValue) return null;
+                if (typeof dateValue === 'string') return dateValue;
+                if (dateValue.toDate) { // Firestore Timestamp
+                    var d = dateValue.toDate();
+                    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                }
+                if (typeof dateValue === 'object' && dateValue.seconds) { // another timestamp format
+                    var d = new Date(dateValue.seconds * 1000);
+                    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                }
+                return null;
+            }
+
+            // ===== CHECK IF MEMO EXISTS FOR PATIENT & DATE (UPDATED) =====
             function memoExistsForPatientAndDate(patientId, dateStr) {
                 // Check allMemos (current doctor)
                 for (var i = 0; i < allMemos.length; i++) {
                     var memo = allMemos[i];
-                    if (memo.patient && memo.patient.id === patientId && memo.date === dateStr) {
-                        return true;
+                    if (memo.patient && memo.patient.id === patientId) {
+                        var memoDateStr = toDateString(memo.date);
+                        if (memoDateStr === dateStr) return true;
                     }
                 }
                 // Check patientMemos (all doctors)
                 for (var j = 0; j < patientMemos.length; j++) {
                     var memo = patientMemos[j];
-                    if (memo.patient && memo.patient.id === patientId && memo.date === dateStr) {
-                        return true;
+                    if (memo.patient && memo.patient.id === patientId) {
+                        var memoDateStr = toDateString(memo.date);
+                        if (memoDateStr === dateStr) return true;
                     }
                 }
                 return false;
             }
 
-            // ===== GET MEMO STATUS (UPDATED) =====
+            // ===== GET MEMO STATUS =====
             function getMemoStatus(patientId, appointmentDate) {
                 var cacheKey = patientId + '_' + (appointmentDate || '');
                 if (memoStatusCache[cacheKey]) return memoStatusCache[cacheKey];
@@ -1094,12 +1111,11 @@
                     var apt = todayAppointments[i];
                     var displayId = getDisplayId({ id: apt.patientId, idNumber: apt.idNumber, passportNumber: apt
                             .passportNumber, nationalId: apt.nationalId });
-                    var memoInfo = memoExistsForPatientAndDate(apt.patientId, apt.date) ? { exists: true, memoNumber: 'found' } :
-                        { exists: false };
-                    var statusText = memoInfo.exists ? '📄 Memo' : '⏳ No Memo';
-                    var statusClass = memoInfo.exists ? 'status-done' : 'status-pending';
+                    var hasMemo = memoExistsForPatientAndDate(apt.patientId, apt.date);
+                    var statusText = hasMemo ? '📄 Memo' : '⏳ No Memo';
+                    var statusClass = hasMemo ? 'status-done' : 'status-pending';
                     var isNext = false;
-                    if (i === 0 && !apt.consulted && !memoInfo.exists) { isNext = true; }
+                    if (i === 0 && !apt.consulted && !hasMemo) { isNext = true; }
                     var nextBadge = isNext ? '<span class="next-badge">▶ Next</span>' : '';
                     var timeDisplay = apt.startTime ? apt.startTime : (apt.time || 'N/A');
                     var consultedBadge = apt.consulted ? ' <span style="background:#d4edda;color:#155724;font-size:9px;padding:2px 8px;border-radius:20px;font-weight:600;">✅ Consulted</span>' :

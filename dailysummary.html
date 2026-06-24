@@ -824,6 +824,7 @@
             // ——— aggregates ———
             let totalRevenue = 0,
                 totalPatientPayable = 0,
+                totalCash = 0,
                 totalDiscount = 0;
             const insTotals = {}; // company -> { amount, count }
             const payTotals = {}; // method -> { amount, count }
@@ -857,6 +858,10 @@
                     if (!payTotals[pt]) payTotals[pt] = { amount: 0, count: 0 };
                     payTotals[pt].amount += paid;
                     payTotals[pt].count++;
+                    // accumulate cash separately
+                    if (pt.toLowerCase() === 'cash') {
+                        totalCash += paid;
+                    }
                 }
 
                 // insurances
@@ -950,8 +955,8 @@
                                     <div class="value">MVR ${totalRevenue.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
-                                    <div class="label">💵 Patient Payable <span class="hint">total paid by patients</span></div>
-                                    <div class="value">MVR ${totalPatientPayable.toFixed(2)}</div>
+                                    <div class="label">💵 Cash Collected <span class="hint">cash only</span></div>
+                                    <div class="value">MVR ${totalCash.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
                                     <div class="label">📋 Visits</div>
@@ -999,6 +1004,7 @@
         function renderDetail(memos, startDate, endDate) {
             let totalRevenue = 0,
                 totalPatientPayable = 0,
+                totalCash = 0,
                 totalDiscount = 0;
             const insTotals = {};
             const payTotals = {};
@@ -1022,6 +1028,9 @@
                     if (!payTotals[pt]) payTotals[pt] = { amount: 0, count: 0 };
                     payTotals[pt].amount += paid;
                     payTotals[pt].count++;
+                    if (pt.toLowerCase() === 'cash') {
+                        totalCash += paid;
+                    }
                 }
 
                 const insArr = m.insurances || [];
@@ -1146,7 +1155,7 @@
                             <div class="stats-footer-title">📊 Financial Summary (${startDate} – ${endDate})</div>
                             <div class="stats-grid-small">
                                 <div class="stat-card-small"><h4>💰 Revenue</h4><div class="stat-value-small">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-label-small">Patient + Insurance</div></div>
-                                <div class="stat-card-small"><h4>💵 Patient Payable</h4><div class="stat-value-small">MVR ${totalPatientPayable.toFixed(2)}</div><div class="stat-label-small">Total paid by patients</div></div>
+                                <div class="stat-card-small"><h4>💵 Cash Collected</h4><div class="stat-value-small">MVR ${totalCash.toFixed(2)}</div><div class="stat-label-small">Cash only</div></div>
                                 <div class="stat-card-small"><h4>🎟️ Discounts</h4><div class="stat-value-small">MVR ${totalDiscount.toFixed(2)}</div></div>
                                 <div class="stat-card-small"><h4>📋 Visits</h4><div class="stat-value-small">${memos.length}</div></div>
                             </div>

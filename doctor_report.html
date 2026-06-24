@@ -440,7 +440,6 @@
     document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
     let currentReportData = [];
-    let doctorsList = [];
     let reportLoaded = false;
     let doctorsCommissionMap = {};
 
@@ -458,6 +457,7 @@
                 const data = doc.data();
                 const name = data.name || '';
                 select.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+                // Store commission rates
                 doctorsCommissionMap[name] = {
                     consultation: data.consultationCommission !== undefined ? data.consultationCommission : (data.baseCommission || 0),
                     service: data.serviceCommission !== undefined ? data.serviceCommission : (data.baseCommission || 0)
@@ -550,13 +550,12 @@
             const memoId = memo.memoId || memo.id || 'N/A';
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
 
-            // Compute total gross from all services (sum of service totals)
+            // Compute total gross from all services
             let totalGrossServices = 0;
             services.forEach(s => {
                 totalGrossServices += (s.total || s.qty * s.price || 0);
             });
 
-            // Total discount from billing
             const totalDiscountAmount = billing.discount?.amount || 0;
 
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
@@ -574,17 +573,14 @@
                     visits: 0,
                     services: {},
                     insuranceTotal: 0,
-                    patientPayableTotal: 0,
                     discounts: 0,
-                    commission: 0,
-                    serviceDetails: []
+                    commission: 0
                 };
             }
             doctorTotals[doctorName].revenue += totalBill;
             doctorTotals[doctorName].patientPayable += patientPayable;
             doctorTotals[doctorName].visits++;
             doctorTotals[doctorName].insuranceTotal += (billing.totalInsurancePayment || 0);
-            doctorTotals[doctorName].patientPayableTotal += patientPayable;
             doctorTotals[doctorName].discounts += discount;
 
             // Process each service to compute commission on net amount

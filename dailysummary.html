@@ -620,7 +620,7 @@
             }
 
             .summary-metric .label .hint {
-                display: none; /* hide hints on print to save space */
+                display: none;
             }
 
             .summary-breakdown {
@@ -824,7 +824,7 @@
             // ——— aggregates ———
             let totalRevenue = 0,
                 totalPatientPayable = 0,
-                totalCash = 0,
+                totalInsurance = 0,
                 totalDiscount = 0;
             const insTotals = {}; // company -> { amount, count }
             const payTotals = {}; // method -> { amount, count }
@@ -834,11 +834,18 @@
             memos.forEach(m => {
                 const billing = m.billing || {};
                 const after = billing.afterDiscount || 0;
+                const patientPayable = billing.patientPayable || 0;
                 const paid = billing.paid || 0;
+                const change = billing.change || 0;
                 const disc = billing.discount?.amount || 0;
                 totalRevenue += after;
-                totalPatientPayable += paid;
+                totalPatientPayable += patientPayable;
                 totalDiscount += disc;
+
+                // insurance total (primary + aasandha)
+                const primaryIns = billing.primaryInsurancePayment || 0;
+                const aasandha = billing.aasandhaPayment || 0;
+                totalInsurance += primaryIns + aasandha;
 
                 // unique patients
                 const patient = m.patient || {};
@@ -848,23 +855,16 @@
                 // transactions: memos with any payment
                 if (paid > 0) transactionCount++;
 
-                // pay type
-                let pt = 'Unknown';
-                if (billing.paymentMethod) pt = billing.paymentMethod;
-                else if (m.paymentType) pt = m.paymentType;
-                else if (paid > 0 && (billing.cashAmount || billing.cardAmount)) pt = 'Mixed';
-                else if (paid > 0) pt = 'Cash';
-                if (paid > 0 && pt !== 'Unknown') {
-                    if (!payTotals[pt]) payTotals[pt] = { amount: 0, count: 0 };
-                    payTotals[pt].amount += paid;
-                    payTotals[pt].count++;
-                    // accumulate cash separately
-                    if (pt.toLowerCase() === 'cash') {
-                        totalCash += paid;
-                    }
+                // payment method and net collected for breakdown
+                const paymentMethod = m.payment?.method || billing.paymentMethod || 'Unknown';
+                const netCollected = paid - change; // amount actually kept
+                if (netCollected > 0) {
+                    if (!payTotals[paymentMethod]) payTotals[paymentMethod] = { amount: 0, count: 0 };
+                    payTotals[paymentMethod].amount += netCollected;
+                    payTotals[paymentMethod].count++;
                 }
 
-                // insurances
+                // insurances for breakdown
                 const insArr = m.insurances || [];
                 if (insArr.length) {
                     insArr.forEach(ins => {
@@ -955,8 +955,12 @@
                                     <div class="value">MVR ${totalRevenue.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
-                                    <div class="label">💵 Cash Collected <span class="hint">cash only</span></div>
-                                    <div class="value">MVR ${totalCash.toFixed(2)}</div>
+                                    <div class="label">🏥 Insurance Payments</div>
+                                    <div class="value">MVR ${totalInsurance.toFixed(2)}</div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="label">💵 Patient Payable <span class="hint">amount owed by patients</span></div>
+                                    <div class="value">MVR ${totalPatientPayable.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
                                     <div class="label">📋 Visits</div>
@@ -970,10 +974,6 @@
                                     <div class="label">🧑‍⚕️ Patients <span class="hint">unique by ID/Passport</span></div>
                                     <div class="value">${uniquePatients}</div>
                                 </div>
-                                <div class="summary-metric">
-                                    <div class="label">💳 Transactions <span class="hint">memos with payment</span></div>
-                                    <div class="value">${transactionCount}</div>
-                                </div>
                             </div>
 
                             <!-- BREAKDOWNS: 2 columns -->
@@ -983,7 +983,7 @@
                                     ${insHtml || '<div style="font-size:10px;color:#8ba0b0;">No claims</div>'}
                                 </div>
                                 <div class="summary-breakdown">
-                                    <h4><i class="fas fa-credit-card"></i> Payment Methods – Patient Payable</h4>
+                                    <h4><i class="fas fa-credit-card"></i> Payment Methods – Net Collected</h4>
                                     ${payHtml}
                                 </div>
                             </div>
@@ -998,13 +998,13 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        //  ─── DETAILED VIEW (original) ───
+        //  ─── DETAILED VIEW ───
         // ═══════════════════════════════════════════════════════
 
         function renderDetail(memos, startDate, endDate) {
             let totalRevenue = 0,
                 totalPatientPayable = 0,
-                totalCash = 0,
+                totalInsurance = 0,
                 totalDiscount = 0;
             const insTotals = {};
             const payTotals = {};
@@ -1013,24 +1013,21 @@
             memos.forEach(m => {
                 const billing = m.billing || {};
                 const after = billing.afterDiscount || 0;
+                const patientPayable = billing.patientPayable || 0;
                 const paid = billing.paid || 0;
+                const change = billing.change || 0;
                 const disc = billing.discount?.amount || 0;
                 totalRevenue += after;
-                totalPatientPayable += paid;
+                totalPatientPayable += patientPayable;
                 totalDiscount += disc;
+                totalInsurance += (billing.primaryInsurancePayment || 0) + (billing.aasandhaPayment || 0);
 
-                let pt = 'Unknown';
-                if (billing.paymentMethod) pt = billing.paymentMethod;
-                else if (m.paymentType) pt = m.paymentType;
-                else if (paid > 0 && (billing.cashAmount || billing.cardAmount)) pt = 'Mixed';
-                else if (paid > 0) pt = 'Cash';
-                if (paid > 0 && pt !== 'Unknown') {
-                    if (!payTotals[pt]) payTotals[pt] = { amount: 0, count: 0 };
-                    payTotals[pt].amount += paid;
-                    payTotals[pt].count++;
-                    if (pt.toLowerCase() === 'cash') {
-                        totalCash += paid;
-                    }
+                const paymentMethod = m.payment?.method || billing.paymentMethod || 'Unknown';
+                const netCollected = paid - change;
+                if (netCollected > 0) {
+                    if (!payTotals[paymentMethod]) payTotals[paymentMethod] = { amount: 0, count: 0 };
+                    payTotals[paymentMethod].amount += netCollected;
+                    payTotals[paymentMethod].count++;
                 }
 
                 const insArr = m.insurances || [];
@@ -1095,9 +1092,12 @@
                     secondaryIns: secondaryList.join(', ') || 'None',
                     insuranceEach: allInsList.join(' | ') || 'None',
                     paid: paid,
-                    payType: pt,
+                    change: change,
+                    netCollected: netCollected,
+                    payType: paymentMethod,
                     discount: disc,
-                    after: after
+                    after: after,
+                    patientPayable: patientPayable
                 });
             });
 
@@ -1128,7 +1128,7 @@
                                 <thead><tr>
                                     <th>Memo No</th><th>Date</th><th>Doctor</th><th>User</th><th>Patient</th>
                                     <th>Services</th><th>Primary Ins</th><th>Secondary Ins</th>
-                                    <th>Ins Breakdown</th><th>Paid (MVR)</th><th>Pay Type</th><th>Discount</th>
+                                    <th>Ins Breakdown</th><th>Patient Payable</th><th>Net Collected</th><th>Pay Type</th><th>Discount</th>
                                 </tr></thead>
                                 <tbody>
                                     ${tableRows.map(r => `
@@ -1142,12 +1142,13 @@
                                             <td><small>${escHtml(r.primaryIns)}</small></td>
                                             <td><small>${escHtml(r.secondaryIns)}</small></td>
                                             <td><small>${escHtml(r.insuranceEach)}</small></td>
-                                            <td>MVR ${r.paid.toFixed(2)}</td>
+                                            <td>MVR ${r.patientPayable.toFixed(2)}</td>
+                                            <td>MVR ${r.netCollected.toFixed(2)}</td>
                                             <td>${escHtml(r.payType)}</td>
                                             <td>MVR ${r.discount.toFixed(2)}</td>
                                         </tr>
                                     `).join('')}
-                                    ${tableRows.length === 0 ? `<tr><td colspan="12" class="empty-state">No records</td></tr>` : ''}
+                                    ${tableRows.length === 0 ? `<tr><td colspan="13" class="empty-state">No records</td></tr>` : ''}
                                 </tbody>
                             </table>
                         </div>
@@ -1155,7 +1156,8 @@
                             <div class="stats-footer-title">📊 Financial Summary (${startDate} – ${endDate})</div>
                             <div class="stats-grid-small">
                                 <div class="stat-card-small"><h4>💰 Revenue</h4><div class="stat-value-small">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-label-small">Patient + Insurance</div></div>
-                                <div class="stat-card-small"><h4>💵 Cash Collected</h4><div class="stat-value-small">MVR ${totalCash.toFixed(2)}</div><div class="stat-label-small">Cash only</div></div>
+                                <div class="stat-card-small"><h4>🏥 Insurance Payments</h4><div class="stat-value-small">MVR ${totalInsurance.toFixed(2)}</div></div>
+                                <div class="stat-card-small"><h4>💵 Patient Payable</h4><div class="stat-value-small">MVR ${totalPatientPayable.toFixed(2)}</div><div class="stat-label-small">Amount owed by patients</div></div>
                                 <div class="stat-card-small"><h4>🎟️ Discounts</h4><div class="stat-value-small">MVR ${totalDiscount.toFixed(2)}</div></div>
                                 <div class="stat-card-small"><h4>📋 Visits</h4><div class="stat-value-small">${memos.length}</div></div>
                             </div>
@@ -1165,7 +1167,7 @@
                             <div class="insurance-breakdown-grid">${insBreakHtml || '<div class="empty-state">No claims</div>'}</div>
                         </div>
                         <div class="stats-footer">
-                            <div class="stats-footer-title">💳 Payment Methods – Patient Payable</div>
+                            <div class="stats-footer-title">💳 Payment Methods – Net Collected</div>
                             <div class="paytype-breakdown-grid">${payBreakHtml || '<div class="empty-state">No payments</div>'}</div>
                         </div>
                     `;

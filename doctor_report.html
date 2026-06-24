@@ -442,7 +442,6 @@
     let currentReportData = [];
     let doctorsList = [];
     let reportLoaded = false;
-    // Store commission data by doctor name
     let doctorsCommissionMap = {};
 
     // Load doctors and commission data
@@ -459,7 +458,6 @@
                 const data = doc.data();
                 const name = data.name || '';
                 select.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
-                // Store commission data
                 doctorsCommissionMap[name] = {
                     consultation: data.consultationCommission !== undefined ? data.consultationCommission : (data.baseCommission || 0),
                     service: data.serviceCommission !== undefined ? data.serviceCommission : (data.baseCommission || 0)
@@ -473,17 +471,12 @@
     function isConsultation(serviceName) {
         if (!serviceName) return false;
         const lower = serviceName.toLowerCase();
-        // Check if service name contains "consult" or code starts with "CONS"
         return lower.includes('consult') || lower.includes('cons');
     }
 
     function getDoctorCommission(doctorName, serviceName) {
         const comm = doctorsCommissionMap[doctorName] || { consultation: 0, service: 0 };
-        if (isConsultation(serviceName)) {
-            return comm.consultation;
-        } else {
-            return comm.service;
-        }
+        return isConsultation(serviceName) ? comm.consultation : comm.service;
     }
 
     async function loadDoctorReport() {
@@ -500,7 +493,6 @@
             return;
         }
 
-        // Show loading state
         document.getElementById('reportContainer').innerHTML = `
             <div class="empty-message">
                 <i class="fas fa-spinner fa-spin" style="color: #1e6f5c;"></i>
@@ -536,7 +528,6 @@
     }
 
     function renderDoctorReport(memos, startDate, endDate, doctorFilter) {
-        // Filter by doctor if specified
         if (doctorFilter) {
             memos = memos.filter(m => (m.doctor?.name || '') === doctorFilter);
         }
@@ -558,23 +549,15 @@
             const patientName = memo.patient?.name || 'N/A';
             const memoId = memo.memoId || memo.id || 'N/A';
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
-            
-            // Get total discount and gross bill for proportional distribution
-            const totalDiscountAmount = billing.discount?.amount || 0;
-            const totalGrossBill = billing.subtotal || 0;
 
-            // Get services for this memo
-            const serviceList = services.map(s => ({
-                name: s.name || 'Service',
-                qty: s.qty || 1,
-                price: s.price || 0,
-                total: (s.total || s.qty * s.price || 0),
-                primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
-                aasandhaAmount: s.aasandhaAmount || 0,
-                discountPercent: s.discountPercent || 0,
-                discountAmount: s.discountAmount || 0,
-                code: s.code || ''
-            }));
+            // Compute total gross from all services (sum of service totals)
+            let totalGrossServices = 0;
+            services.forEach(s => {
+                totalGrossServices += (s.total || s.qty * s.price || 0);
+            });
+
+            // Total discount from billing
+            const totalDiscountAmount = billing.discount?.amount || 0;
 
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
             const patientPayable = billing.patientPayable || 0;
@@ -584,7 +567,6 @@
             totalPatientPayable += patientPayable;
             totalDiscount += discount;
 
-            // Doctor totals
             if (!doctorTotals[doctorName]) {
                 doctorTotals[doctorName] = { 
                     revenue: 0, 
@@ -605,48 +587,44 @@
             doctorTotals[doctorName].patientPayableTotal += patientPayable;
             doctorTotals[doctorName].discounts += discount;
 
-            // Service totals per doctor and compute commission
-            serviceList.forEach(s => {
-                const svcName = s.name;
+            // Process each service to compute commission on net amount
+            let memoCommission = 0;
+            services.forEach(s => {
+                const svcName = s.name || 'Service';
                 const svcGrossTotal = s.total || s.qty * s.price || 0;
                 
-                // Calculate service-level discount (per-service discount + proportional global discount)
-                let svcDiscount = s.discountAmount || 0;
-                if (totalGrossBill > 0 && totalDiscountAmount > 0) {
-                    const ratio = svcGrossTotal / totalGrossBill;
-                    svcDiscount += totalDiscountAmount * ratio;
+                // Per-service discount (if any)
+                const perServiceDiscount = s.discountAmount || 0;
+                
+                // Allocate global discount proportionally
+                let globalDiscountShare = 0;
+                if (totalGrossServices > 0 && totalDiscountAmount > 0) {
+                    globalDiscountShare = (svcGrossTotal / totalGrossServices) * totalDiscountAmount;
                 }
                 
-                // Net amount after discount = service price - discount
-                const discountedTotal = Math.max(0, svcGrossTotal - svcDiscount);
+                // Total discount for this service = per-service + global share
+                const totalSvcDiscount = perServiceDiscount + globalDiscountShare;
+                // Net amount after discount
+                const netAmount = Math.max(0, svcGrossTotal - totalSvcDiscount);
                 
-                // Compute commission on the net amount
-                const commissionPercent = getDoctorCommission(doctorName, svcName);
-                const commissionAmount = (discountedTotal * commissionPercent) / 100;
+                // Commission rate
+                const commPercent = getDoctorCommission(doctorName, svcName);
+                const commAmount = (netAmount * commPercent) / 100;
                 
-                totalCommission += commissionAmount;
-                doctorTotals[doctorName].commission += commissionAmount;
-                doctorTotals[doctorName].serviceDetails.push({
-                    service: svcName,
-                    grossTotal: svcGrossTotal,
-                    discount: svcDiscount,
-                    netTotal: discountedTotal,
-                    commission: commissionAmount,
-                    rate: commissionPercent
-                });
-
-                // Service totals per doctor for breakdown (using gross total for count)
+                memoCommission += commAmount;
+                doctorTotals[doctorName].commission += commAmount;
+                
+                // Store service details for breakdown
                 if (!doctorTotals[doctorName].services[svcName]) {
                     doctorTotals[doctorName].services[svcName] = { count: 0, total: 0 };
                 }
-                doctorTotals[doctorName].services[svcName].count += s.qty;
+                doctorTotals[doctorName].services[svcName].count += s.qty || 1;
                 doctorTotals[doctorName].services[svcName].total += svcGrossTotal;
 
-                // Global service totals
                 if (!serviceTotals[svcName]) {
                     serviceTotals[svcName] = { count: 0, total: 0 };
                 }
-                serviceTotals[svcName].count += s.qty;
+                serviceTotals[svcName].count += s.qty || 1;
                 serviceTotals[svcName].total += svcGrossTotal;
             });
 
@@ -684,30 +662,9 @@
             let payType = memo.payment?.method || billing.paymentMethod || '—';
             if (payType === '—' && patientPayable > 0) payType = 'Cash';
 
-            // Build service descriptions with commission per service
-            let serviceDesc = '';
-            let commissionDetails = [];
-            if (services.length) {
-                serviceDesc = services.map((s, idx) => {
-                    const svcGrossTotal = s.total || s.qty * s.price || 0;
-                    let svcDiscount = s.discountAmount || 0;
-                    if (totalGrossBill > 0 && totalDiscountAmount > 0) {
-                        const ratio = svcGrossTotal / totalGrossBill;
-                        svcDiscount += totalDiscountAmount * ratio;
-                    }
-                    const discountedTotal = Math.max(0, svcGrossTotal - svcDiscount);
-                    const commPercent = getDoctorCommission(doctorName, s.name);
-                    const commAmt = (discountedTotal * commPercent) / 100;
-                    commissionDetails.push({ name: s.name, comm: commAmt, rate: commPercent });
-                    return `${s.name || 'Service'} (${s.qty || 1})`;
-                }).join('; ');
-            } else {
-                serviceDesc = '—';
-                commissionDetails = [];
-            }
-
-            // Summarize commission for the row (total of all services in memo)
-            const totalCommissionForMemo = commissionDetails.reduce((sum, c) => sum + c.comm, 0);
+            // Build service description
+            let serviceDesc = services.map(s => `${s.name || 'Service'} (${s.qty || 1})`).join('; ');
+            if (!serviceDesc) serviceDesc = '—';
 
             rows.push({
                 date: visitDate,
@@ -723,20 +680,17 @@
                 patientPayable: patientPayable,
                 payType: payType,
                 discount: discount,
-                commission: totalCommissionForMemo
+                commission: memoCommission
             });
         });
 
         const totalOutstanding = totalRevenue - totalPatientPayable;
         const collectionRate = totalRevenue > 0 ? ((totalPatientPayable / totalRevenue) * 100).toFixed(1) : 0;
 
-        // Build doctor summary cards including commission
         const sortedDoctors = Object.keys(doctorTotals).sort();
         const doctorCardsHtml = sortedDoctors.map(doc => {
             const data = doctorTotals[doc];
             const docCollectionRate = data.revenue > 0 ? ((data.patientPayable / data.revenue) * 100).toFixed(1) : 0;
-            
-            // Build service breakdown for this doctor
             const serviceItems = Object.keys(data.services).sort().map(svc => `
                 <div class="service-item">
                     <span class="svc-name">${escapeHtml(svc)}</span>
@@ -776,7 +730,6 @@
             `;
         }).join('');
 
-        // Build service summary (top services)
         const sortedServices = Object.keys(serviceTotals).sort((a, b) => serviceTotals[b].total - serviceTotals[a].total);
         const topServices = sortedServices.slice(0, 10).map(s => `
             <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px; border-bottom:1px dotted #f0f4f9;">
@@ -823,7 +776,6 @@
             </div>
 
             <div class="summary-cards-section">
-                <!-- Doctor Summary Cards -->
                 <div style="background: white; border-radius: 24px; padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7;">
                     <div class="section-title" style="font-size:13px; font-weight:700; color:#1f5e7e; margin-bottom:16px; display:flex; align-items:center; gap:8px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
                         <i class="fas fa-user-md"></i> Doctor Performance Summary
@@ -831,7 +783,6 @@
                     <div class="doctor-summary-grid">${doctorCardsHtml}</div>
                 </div>
 
-                <!-- Global Stats -->
                 <div class="stats-row">
                     <div class="stat-card"><h4><i class="fas fa-chart-line"></i> Total Revenue</h4><div class="stat-value">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-sub">${memos.length} visits</div></div>
                     <div class="stat-card"><h4><i class="fas fa-hand-holding-usd"></i> Patient Payable</h4><div class="stat-value">MVR ${totalPatientPayable.toFixed(2)}</div><div class="stat-sub">Amount to cashier</div></div>
@@ -841,7 +792,6 @@
                     <div class="stat-card"><h4><i class="fas fa-coins"></i> Total Doctor Commission</h4><div class="stat-value">MVR ${totalCommission.toFixed(2)}</div><div class="stat-sub">Combined all doctors</div></div>
                 </div>
 
-                <!-- Top Services -->
                 <div style="background: white; border-radius: 24px; padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7;">
                     <div class="section-title" style="font-size:13px; font-weight:700; color:#1f5e7e; margin-bottom:16px; display:flex; align-items:center; gap:8px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
                         <i class="fas fa-stethoscope"></i> Top Services Performed
@@ -898,21 +848,25 @@
                 if (legPri) { primaryName = 'Primary Insurance'; primaryAmt = legPri; }
                 if (legSec) { secondaryName = 'Aasandha'; secondaryAmt = legSec; }
             }
-            // Calculate total commission for this memo
-            let memoCommission = 0;
-            const totalDiscountAmount = billing.discount?.amount || 0;
-            const totalGrossBill = billing.subtotal || 0;
+
+            // Calculate commission for this memo
+            let totalGrossServices = 0;
             services.forEach(s => {
-                const svcGrossTotal = s.total || s.qty * s.price || 0;
-                let svcDiscount = s.discountAmount || 0;
-                if (totalGrossBill > 0 && totalDiscountAmount > 0) {
-                    const ratio = svcGrossTotal / totalGrossBill;
-                    svcDiscount += totalDiscountAmount * ratio;
-                }
-                const discountedTotal = Math.max(0, svcGrossTotal - svcDiscount);
-                const commPercent = getDoctorCommission(doctor, s.name);
-                memoCommission += (discountedTotal * commPercent) / 100;
+                totalGrossServices += (s.total || s.qty * s.price || 0);
             });
+            const totalDiscountAmount = billing.discount?.amount || 0;
+            let memoCommission = 0;
+            services.forEach(s => {
+                const svcGross = s.total || s.qty * s.price || 0;
+                let svcDiscount = s.discountAmount || 0;
+                if (totalGrossServices > 0 && totalDiscountAmount > 0) {
+                    svcDiscount += (svcGross / totalGrossServices) * totalDiscountAmount;
+                }
+                const net = Math.max(0, svcGross - svcDiscount);
+                const rate = getDoctorCommission(doctor, s.name);
+                memoCommission += (net * rate) / 100;
+            });
+
             csvRows.push([
                 visitDate, memoId, patientName, doctor, serviceDesc.replace(/,/g, ';'), 
                 totalBill, discount, primaryName, primaryAmt, secondaryName, secondaryAmt, patientPayable, payType, memoCommission.toFixed(2)
@@ -944,7 +898,6 @@
     function init() {
         if (window.db) {
             loadDoctorsList();
-            // Don't auto-load report - user must click "View Report"
         } else {
             setTimeout(init, 400);
         }

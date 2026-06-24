@@ -15,18 +15,8 @@
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: #f4f7fc;
-            color: #1a2c3e;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fc; color: #1a2c3e; }
         .clinic-header {
             background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
             color: #004d4d;
@@ -38,346 +28,95 @@
             gap: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-
-        .logo h2 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo h2 i {
-            font-size: 1.5rem;
-            color: #7ab7d4;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-        }
-
+        .logo h2 { font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .logo h2 i { font-size: 1.5rem; color: #7ab7d4; }
+        .header-actions { display: flex; gap: 12px; }
         .btn-outline {
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: white;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: 500;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            background: rgba(255,255,255,0.15); border: none; color: white;
+            padding: 8px 18px; border-radius: 40px; font-weight: 500; font-size: 12px;
+            cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px;
         }
-
-        .btn-outline:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .btn-primary {
-            background: #1e6f5c;
-            border: none;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-weight: 500;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .btn-secondary {
-            background: #e67e22;
-            border: none;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 28px auto;
-            padding: 0 24px;
-        }
-
+        .btn-outline:hover { background: rgba(255,255,255,0.3); }
+        .btn-primary { background: #1e6f5c; border: none; color: white; padding: 8px 20px; border-radius: 40px; font-weight: 500; font-size: 12px; cursor: pointer; }
+        .btn-secondary { background: #e67e22; border: none; color: white; padding: 8px 20px; border-radius: 40px; font-weight: 500; cursor: pointer; }
+        .container { max-width: 1400px; margin: 28px auto; padding: 0 24px; }
         .filter-card {
-            background: white;
-            border-radius: 24px;
-            padding: 20px 24px;
-            margin-bottom: 28px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            align-items: flex-end;
+            background: white; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px;
+            display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end;
             box-shadow: 0 2px 10px rgba(0,0,0,0.03), 0 0 0 1px #e9edf2;
         }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .filter-group label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #2c6e8f;
-        }
-
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #2c6e8f; }
         .filter-group input, .filter-group select {
-            padding: 10px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 16px;
-            font-size: 13px;
-            font-weight: 500;
-            min-width: 170px;
-            background: white;
+            padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 16px;
+            font-size: 13px; font-weight: 500; min-width: 170px; background: white;
         }
-
         .filter-group input:focus, .filter-group select:focus {
-            outline: none;
-            border-color: #1e6f5c;
-            box-shadow: 0 0 0 3px rgba(30,111,92,0.1);
+            outline: none; border-color: #1e6f5c; box-shadow: 0 0 0 3px rgba(30,111,92,0.1);
         }
-
         .btn-generate {
-            background: #1e6f5c;
-            border: none;
-            padding: 10px 28px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 13px;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: #1e6f5c; border: none; padding: 10px 28px; border-radius: 40px;
+            font-weight: 600; font-size: 13px; color: white; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
         }
-
-        .btn-generate:hover {
-            background: #155a4a;
-        }
-
+        .btn-generate:hover { background: #155a4a; }
         .table-wrapper {
-            background: white;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
-            border: 1px solid #edf2f7;
-            overflow-x: auto;
-            margin-bottom: 28px;
+            background: white; border-radius: 24px; overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04); border: 1px solid #edf2f7;
+            overflow-x: auto; margin-bottom: 28px;
         }
-
         .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            min-width: 1300px;
+            width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1400px;
         }
-
         .data-table th {
-            background: #f8fafc;
-            padding: 14px 12px;
-            text-align: left;
-            font-weight: 700;
-            color: #1f5e7e;
-            font-size: 11px;
-            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc; padding: 14px 12px; text-align: left;
+            font-weight: 700; color: #1f5e7e; font-size: 11px; border-bottom: 1px solid #e2e8f0;
         }
-
-        .data-table td {
-            padding: 12px 12px;
-            border-bottom: 1px solid #f0f4f9;
-            vertical-align: top;
-        }
-
-        .data-table tr:hover td {
-            background: #fafcff;
-        }
-
-        .badge-pri {
-            background: #e1f0fa;
-            color: #0f5c7a;
-            padding: 3px 8px;
-            border-radius: 30px;
-            font-size: 10px;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .badge-sec {
-            background: #e6f4ea;
-            color: #1e6f5c;
-            padding: 3px 8px;
-            border-radius: 30px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .badge-commission {
-            background: #f0ad4e;
-            color: #fff;
-            padding: 2px 8px;
-            border-radius: 30px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .empty-message {
-            text-align: center;
-            padding: 60px 20px;
-            color: #8ba0b0;
-            background: white;
-            border-radius: 24px;
-        }
-
-        .empty-message i {
-            font-size: 42px;
-            color: #cbd5e1;
-            margin-bottom: 12px;
-            display: block;
-        }
-
-        .summary-cards-section {
-            display: flex;
-            flex-direction: column;
-            gap: 28px;
-            margin-top: 8px;
-        }
-
-        .stats-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
+        .data-table td { padding: 12px 12px; border-bottom: 1px solid #f0f4f9; vertical-align: top; }
+        .data-table tr:hover td { background: #fafcff; }
+        .badge-pri { background: #e1f0fa; color: #0f5c7a; padding: 3px 8px; border-radius: 30px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-sec { background: #e6f4ea; color: #1e6f5c; padding: 3px 8px; border-radius: 30px; font-size: 10px; font-weight: 600; }
+        .badge-commission { background: #f0ad4e; color: #fff; padding: 2px 8px; border-radius: 30px; font-size: 10px; font-weight: 600; }
+        .badge-rate { background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 30px; font-size: 9px; font-weight: 600; }
+        .empty-message { text-align: center; padding: 60px 20px; color: #8ba0b0; background: white; border-radius: 24px; }
+        .empty-message i { font-size: 42px; color: #cbd5e1; margin-bottom: 12px; display: block; }
+        .summary-cards-section { display: flex; flex-direction: column; gap: 28px; margin-top: 8px; }
+        .stats-row { display: flex; flex-wrap: wrap; gap: 20px; }
         .stat-card {
-            background: white;
-            border-radius: 24px;
-            padding: 16px 20px;
-            flex: 1;
-            min-width: 160px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            background: white; border-radius: 24px; padding: 16px 20px;
+            flex: 1; min-width: 160px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             border-left: 5px solid #1e6f5c;
         }
-
-        .stat-card h4 {
-            font-size: 12px;
-            font-weight: 600;
-            color: #5d7182;
-            margin-bottom: 6px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 800;
-            color: #1a2c3e;
-        }
-
-        .stat-sub {
-            font-size: 10px;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-
-        .doctor-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
+        .stat-card h4 { font-size: 12px; font-weight: 600; color: #5d7182; margin-bottom: 6px; }
+        .stat-value { font-size: 24px; font-weight: 800; color: #1a2c3e; }
+        .stat-sub { font-size: 10px; color: #7f8c8d; margin-top: 5px; }
+        .doctor-summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
         .doctor-card {
-            background: white;
-            border-radius: 20px;
-            padding: 16px 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            border: 1px solid #edf2f7;
+            background: white; border-radius: 20px; padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7;
             border-left: 5px solid #2c6e8f;
         }
-
-        .doctor-card h4 {
-            font-size: 14px;
-            font-weight: 700;
-            color: #1f5e7e;
-            margin-bottom: 10px;
-        }
-
-        .doctor-card .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-size: 12px;
-            border-bottom: 1px dotted #f0f4f9;
-        }
-
-        .doctor-card .row:last-child {
-            border-bottom: none;
-        }
-
-        .doctor-card .label {
-            color: #5d7182;
-        }
-
-        .doctor-card .value {
-            font-weight: 600;
-            color: #1a2c3e;
-        }
-
-        .service-breakdown {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .service-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            padding: 2px 0;
-        }
-
-        .service-item .svc-name {
-            color: #5d7182;
-        }
-
-        .service-item .svc-count {
-            color: #1a2c3e;
-            font-weight: 600;
-        }
-
+        .doctor-card h4 { font-size: 14px; font-weight: 700; color: #1f5e7e; margin-bottom: 10px; }
+        .doctor-card .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px dotted #f0f4f9; }
+        .doctor-card .row:last-child { border-bottom: none; }
+        .doctor-card .label { color: #5d7182; }
+        .doctor-card .value { font-weight: 600; color: #1a2c3e; }
+        .service-breakdown { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+        .service-item { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
+        .service-item .svc-name { color: #5d7182; }
+        .service-item .svc-count { color: #1a2c3e; font-weight: 600; }
         @media print {
-            .clinic-header, .filter-card, .btn-outline, .btn-primary, .btn-secondary, .btn-generate {
-                display: none !important;
-            }
-            .table-wrapper, .stat-card, .doctor-card {
-                border: 1px solid #ccc !important;
-                box-shadow: none;
-            }
-            .data-table th, .data-table td {
-                border: 1px solid #aaa !important;
-            }
-            body {
-                background: white;
-                margin: 0;
-                padding: 0;
-            }
-            .container {
-                margin: 0;
-                padding: 0;
-            }
+            .clinic-header, .filter-card, .btn-outline, .btn-primary, .btn-secondary, .btn-generate { display: none !important; }
+            .table-wrapper, .stat-card, .doctor-card { border: 1px solid #ccc !important; box-shadow: none; }
+            .data-table th, .data-table td { border: 1px solid #aaa !important; }
+            body { background: white; margin: 0; padding: 0; }
+            .container { margin: 0; padding: 0; }
         }
     </style>
 </head>
 <body>
 <div class="clinic-header">
-    <div class="logo">
-        <h2><i class="fas fa-user-md"></i> Hope Dental Care · Doctor Services Report</h2>
-    </div>
+    <div class="logo"><h2><i class="fas fa-user-md"></i> Hope Dental Care · Doctor Services Report</h2></div>
     <div class="header-actions">
         <button class="btn-outline" onclick="window.location.href='clinicdash.html'"><i class="fas fa-arrow-left"></i> Dashboard</button>
         <button class="btn-primary" onclick="window.location.href='monthly-report.html'"><i class="fas fa-chart-line"></i> Financial Report</button>
@@ -386,29 +125,12 @@
 
 <div class="container">
     <div class="filter-card">
-        <div class="filter-group">
-            <label><i class="far fa-calendar-alt"></i> FROM DATE</label>
-            <input type="date" id="startDate">
-        </div>
-        <div class="filter-group">
-            <label><i class="far fa-calendar-alt"></i> TO DATE</label>
-            <input type="date" id="endDate">
-        </div>
-        <div class="filter-group">
-            <label><i class="fas fa-user-md"></i> DOCTOR</label>
-            <select id="doctorFilter">
-                <option value="">All Doctors</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <button class="btn-generate" onclick="loadDoctorReport()"><i class="fas fa-eye"></i> View Report</button>
-        </div>
-        <div class="filter-group">
-            <button class="btn-primary" onclick="printReport()" id="printBtn" disabled><i class="fas fa-print"></i> Print</button>
-        </div>
-        <div class="filter-group">
-            <button class="btn-secondary" onclick="exportToCSV()" id="exportBtn" disabled><i class="fas fa-file-csv"></i> Export CSV</button>
-        </div>
+        <div class="filter-group"><label><i class="far fa-calendar-alt"></i> FROM DATE</label><input type="date" id="startDate"></div>
+        <div class="filter-group"><label><i class="far fa-calendar-alt"></i> TO DATE</label><input type="date" id="endDate"></div>
+        <div class="filter-group"><label><i class="fas fa-user-md"></i> DOCTOR</label><select id="doctorFilter"><option value="">All Doctors</option></select></div>
+        <div class="filter-group"><button class="btn-generate" onclick="loadDoctorReport()"><i class="fas fa-eye"></i> View Report</button></div>
+        <div class="filter-group"><button class="btn-primary" onclick="printReport()" id="printBtn" disabled><i class="fas fa-print"></i> Print</button></div>
+        <div class="filter-group"><button class="btn-secondary" onclick="exportToCSV()" id="exportBtn" disabled><i class="fas fa-file-csv"></i> Export CSV</button></div>
     </div>
 
     <div id="reportContainer">
@@ -445,10 +167,7 @@
 
     // Load doctors and commission data
     async function loadDoctorsList() {
-        if (!window.db) {
-            setTimeout(loadDoctorsList, 500);
-            return;
-        }
+        if (!window.db) { setTimeout(loadDoctorsList, 500); return; }
         try {
             const snapshot = await window.db.collection("doctors").get();
             const select = document.getElementById('doctorFilter');
@@ -457,15 +176,12 @@
                 const data = doc.data();
                 const name = data.name || '';
                 select.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
-                // Store commission rates
                 doctorsCommissionMap[name] = {
                     consultation: data.consultationCommission !== undefined ? data.consultationCommission : (data.baseCommission || 0),
                     service: data.serviceCommission !== undefined ? data.serviceCommission : (data.baseCommission || 0)
                 };
             });
-        } catch (error) {
-            console.error("Error loading doctors:", error);
-        }
+        } catch (error) { console.error("Error loading doctors:", error); }
     }
 
     function isConsultation(serviceName) {
@@ -483,15 +199,8 @@
         const startRaw = document.getElementById('startDate').value;
         const endRaw = document.getElementById('endDate').value;
         const doctorFilter = document.getElementById('doctorFilter').value;
-        
-        if (!startRaw || !endRaw) {
-            alert('Please select start and end dates');
-            return;
-        }
-        if (!window.db) {
-            setTimeout(() => loadDoctorReport(), 400);
-            return;
-        }
+        if (!startRaw || !endRaw) { alert('Please select start and end dates'); return; }
+        if (!window.db) { setTimeout(() => loadDoctorReport(), 400); return; }
 
         document.getElementById('reportContainer').innerHTML = `
             <div class="empty-message">
@@ -502,24 +211,18 @@
         `;
 
         try {
-            const startDateObj = new Date(startRaw);
-            startDateObj.setHours(0,0,0,0);
-            const endDateObj = new Date(endRaw);
-            endDateObj.setHours(23,59,59,999);
-
+            const startDateObj = new Date(startRaw); startDateObj.setHours(0,0,0,0);
+            const endDateObj = new Date(endRaw); endDateObj.setHours(23,59,59,999);
             let query = window.db.collection("memos")
                 .where("createdAt", ">=", startDateObj.toISOString())
                 .where("createdAt", "<=", endDateObj.toISOString());
-
             const snapshot = await query.get();
             const memos = [];
             snapshot.forEach(doc => memos.push({ id: doc.id, ...doc.data() }));
             currentReportData = memos;
             reportLoaded = true;
-            
             document.getElementById('printBtn').disabled = false;
             document.getElementById('exportBtn').disabled = false;
-            
             renderDoctorReport(memos, startRaw, endRaw, doctorFilter);
         } catch (err) {
             console.error(err);
@@ -531,7 +234,6 @@
         if (doctorFilter) {
             memos = memos.filter(m => (m.doctor?.name || '') === doctorFilter);
         }
-
         if (!memos.length) {
             document.getElementById('reportContainer').innerHTML = `<div class="empty-message">📭 No records found for the selected period.</div>`;
             return;
@@ -550,31 +252,22 @@
             const memoId = memo.memoId || memo.id || 'N/A';
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
 
-            // Compute total gross from all services
+            // Calculate total gross from all services
             let totalGrossServices = 0;
-            services.forEach(s => {
-                totalGrossServices += (s.total || s.qty * s.price || 0);
-            });
-
+            services.forEach(s => { totalGrossServices += (s.total || s.qty * s.price || 0); });
             const totalDiscountAmount = billing.discount?.amount || 0;
 
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
             const patientPayable = billing.patientPayable || 0;
             const discount = billing.discount?.amount || 0;
-            
             totalRevenue += totalBill;
             totalPatientPayable += patientPayable;
             totalDiscount += discount;
 
             if (!doctorTotals[doctorName]) {
                 doctorTotals[doctorName] = { 
-                    revenue: 0, 
-                    patientPayable: 0, 
-                    visits: 0,
-                    services: {},
-                    insuranceTotal: 0,
-                    discounts: 0,
-                    commission: 0
+                    revenue: 0, patientPayable: 0, visits: 0, services: {},
+                    insuranceTotal: 0, discounts: 0, commission: 0, netAmounts: []
                 };
             }
             doctorTotals[doctorName].revenue += totalBill;
@@ -583,34 +276,41 @@
             doctorTotals[doctorName].insuranceTotal += (billing.totalInsurancePayment || 0);
             doctorTotals[doctorName].discounts += discount;
 
-            // Process each service to compute commission on net amount
+            // ----- COMMISSION CALCULATION: Price - Discount = Net Amount -----
             let memoCommission = 0;
+            let netAmounts = [];
+
             services.forEach(s => {
                 const svcName = s.name || 'Service';
                 const svcGrossTotal = s.total || s.qty * s.price || 0;
                 
-                // Per-service discount (if any)
+                // 1. Per-service discount
                 const perServiceDiscount = s.discountAmount || 0;
                 
-                // Allocate global discount proportionally
+                // 2. Proportional share of global memo discount
                 let globalDiscountShare = 0;
                 if (totalGrossServices > 0 && totalDiscountAmount > 0) {
                     globalDiscountShare = (svcGrossTotal / totalGrossServices) * totalDiscountAmount;
                 }
                 
-                // Total discount for this service = per-service + global share
+                // 3. Total discount applied to this service
                 const totalSvcDiscount = perServiceDiscount + globalDiscountShare;
-                // Net amount after discount
+                
+                // 4. NET AMOUNT = Price - Discount
                 const netAmount = Math.max(0, svcGrossTotal - totalSvcDiscount);
                 
-                // Commission rate
+                // 5. Commission % for this service type (consultation or service)
                 const commPercent = getDoctorCommission(doctorName, svcName);
+                
+                // 6. DOCTOR COMMISSION = Net Amount × Commission %
                 const commAmount = (netAmount * commPercent) / 100;
                 
                 memoCommission += commAmount;
                 doctorTotals[doctorName].commission += commAmount;
                 
-                // Store service details for breakdown
+                // Store for breakdown display
+                netAmounts.push({ name: svcName, net: netAmount, rate: commPercent, comm: commAmount });
+
                 if (!doctorTotals[doctorName].services[svcName]) {
                     doctorTotals[doctorName].services[svcName] = { count: 0, total: 0 };
                 }
@@ -625,64 +325,50 @@
             });
 
             // Build insurance display
-            let primaryName = '—', primaryAmount = 0;
-            let secondaryName = '—', secondaryAmount = 0;
+            let primaryName = '—', primaryAmount = 0, secondaryName = '—', secondaryAmount = 0;
             const insurances = memo.insurances || [];
-            
             insurances.forEach(ins => {
                 const insName = ins.name || 'Unknown';
                 const insAmount = ins.amount || 0;
                 if (insName.toLowerCase() === 'aasandha') {
-                    secondaryName = insName;
-                    secondaryAmount = insAmount;
+                    secondaryName = insName; secondaryAmount = insAmount;
                 } else {
                     if (primaryName === '—') primaryName = insName;
                     else primaryName += ', ' + insName;
                     primaryAmount += insAmount;
                 }
             });
-            
             if (insurances.length === 0) {
                 const legPrimary = billing.primaryInsurancePayment || billing.insurancePayment || 0;
                 const legAasandha = billing.aasandhaPayment || 0;
-                if (legPrimary > 0) {
-                    primaryName = 'Primary Insurance';
-                    primaryAmount = legPrimary;
-                }
-                if (legAasandha > 0) {
-                    secondaryName = 'Aasandha';
-                    secondaryAmount = legAasandha;
-                }
+                if (legPrimary > 0) { primaryName = 'Primary Insurance'; primaryAmount = legPrimary; }
+                if (legAasandha > 0) { secondaryName = 'Aasandha'; secondaryAmount = legAasandha; }
             }
 
             let payType = memo.payment?.method || billing.paymentMethod || '—';
             if (payType === '—' && patientPayable > 0) payType = 'Cash';
 
-            // Build service description
             let serviceDesc = services.map(s => `${s.name || 'Service'} (${s.qty || 1})`).join('; ');
             if (!serviceDesc) serviceDesc = '—';
 
+            // Build net amount description for the row
+            let netDesc = netAmounts.map(n => `${n.name}: MVR ${n.net.toFixed(2)} @ ${n.rate}%`).join('; ');
+
             rows.push({
-                date: visitDate,
-                memoId: memoId,
-                patient: patientName,
-                doctor: doctorName,
+                date: visitDate, memoId, patient: patientName, doctor: doctorName,
                 service: serviceDesc,
                 price: totalBill,
-                primaryName: primaryName,
-                primaryAmt: primaryAmount,
-                secondaryName: secondaryName,
-                secondaryAmt: secondaryAmount,
-                patientPayable: patientPayable,
-                payType: payType,
+                primaryName, primaryAmt: primaryAmount,
+                secondaryName, secondaryAmt: secondaryAmount,
+                patientPayable, payType,
                 discount: discount,
+                netAmounts: netAmounts,
+                netDesc: netDesc,
                 commission: memoCommission
             });
         });
 
-        const totalOutstanding = totalRevenue - totalPatientPayable;
-        const collectionRate = totalRevenue > 0 ? ((totalPatientPayable / totalRevenue) * 100).toFixed(1) : 0;
-
+        // --- Build Doctor Summary Cards ---
         const sortedDoctors = Object.keys(doctorTotals).sort();
         const doctorCardsHtml = sortedDoctors.map(doc => {
             const data = doctorTotals[doc];
@@ -697,35 +383,22 @@
             return `
                 <div class="doctor-card">
                     <h4><i class="fas fa-user-md"></i> Dr. ${escapeHtml(doc)}</h4>
-                    <div class="row">
-                        <span class="label">Total Revenue</span>
-                        <span class="value">MVR ${data.revenue.toFixed(2)}</span>
-                    </div>
-                    <div class="row">
-                        <span class="label">Patient Payable</span>
-                        <span class="value">MVR ${data.patientPayable.toFixed(2)} (${docCollectionRate}%)</span>
-                    </div>
-                    <div class="row">
-                        <span class="label">Insurance Paid</span>
-                        <span class="value">MVR ${data.insuranceTotal.toFixed(2)}</span>
-                    </div>
-                    <div class="row">
-                        <span class="label">Discounts Given</span>
-                        <span class="value">MVR ${data.discounts.toFixed(2)}</span>
-                    </div>
-                    <div class="row">
-                        <span class="label">Doctor Commission</span>
-                        <span class="value">MVR ${data.commission.toFixed(2)}</span>
-                    </div>
-                    <div class="row">
-                        <span class="label">Total Visits</span>
-                        <span class="value">${data.visits}</span>
-                    </div>
+                    <div class="row"><span class="label">Total Revenue</span><span class="value">MVR ${data.revenue.toFixed(2)}</span></div>
+                    <div class="row"><span class="label">Patient Payable</span><span class="value">MVR ${data.patientPayable.toFixed(2)} (${docCollectionRate}%)</span></div>
+                    <div class="row"><span class="label">Insurance Paid</span><span class="value">MVR ${data.insuranceTotal.toFixed(2)}</span></div>
+                    <div class="row"><span class="label">Discounts Given</span><span class="value">MVR ${data.discounts.toFixed(2)}</span></div>
+                    <div class="row"><span class="label"><strong>💰 Doctor Commission</strong></span><span class="value" style="color:#0f5c7a; font-size:16px;">MVR ${data.commission.toFixed(2)}</span></div>
+                    <div class="row"><span class="label">Total Visits</span><span class="value">${data.visits}</span></div>
                     ${data.visits > 0 ? `<div class="service-breakdown">${serviceItems}</div>` : ''}
                 </div>
             `;
         }).join('');
 
+        // --- Global Stats ---
+        const totalOutstanding = totalRevenue - totalPatientPayable;
+        const collectionRate = totalRevenue > 0 ? ((totalPatientPayable / totalRevenue) * 100).toFixed(1) : 0;
+
+        // --- Top Services ---
         const sortedServices = Object.keys(serviceTotals).sort((a, b) => serviceTotals[b].total - serviceTotals[a].total);
         const topServices = sortedServices.slice(0, 10).map(s => `
             <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px; border-bottom:1px dotted #f0f4f9;">
@@ -734,6 +407,7 @@
             </div>
         `).join('');
 
+        // --- Build HTML ---
         const html = `
             <div class="table-wrapper">
                 <table class="data-table">
@@ -741,10 +415,11 @@
                         <tr>
                             <th>Date</th><th>Memo No</th><th>Patient</th><th>Doctor</th><th>Service(s)</th>
                             <th>Price (MVR)</th><th>Discount</th>
-                            <th>Primary Insurance</th><th>Pri. Amount</th>
-                            <th>Secondary Insurance</th><th>Sec. Amount</th>
-                            <th>Patient Payable (MVR)</th>
-                            <th>Pay Type</th>
+                            <th>Primary Ins.</th><th>Pri. Amt</th>
+                            <th>Secondary Ins.</th><th>Sec. Amt</th>
+                            <th>Patient Payable</th><th>Pay Type</th>
+                            <th>Net Amount (Price-Discount)</th>
+                            <th>Commission %</th>
                             <th>Doctor Commission</th>
                         </tr>
                     </thead>
@@ -755,7 +430,7 @@
                                 <td><strong>${escapeHtml(r.memoId)}</strong></td>
                                 <td><strong>${escapeHtml(r.patient)}</strong></td>
                                 <td><strong>${escapeHtml(r.doctor)}</strong></td>
-                                <td style="max-width:200px; white-space:normal;">${escapeHtml(r.service.substring(0, 100))}${r.service.length > 100 ? '…' : ''}</td>
+                                <td style="max-width:180px; white-space:normal;">${escapeHtml(r.service.substring(0, 80))}${r.service.length > 80 ? '…' : ''}</td>
                                 <td><strong>MVR ${r.price.toFixed(2)}</strong></td>
                                 <td>MVR ${r.discount.toFixed(2)}</td>
                                 <td><span class="badge-pri">${escapeHtml(r.primaryName)}</span></td>
@@ -764,6 +439,8 @@
                                 <td>MVR ${r.secondaryAmt.toFixed(2)}</td>
                                 <td><strong>MVR ${r.patientPayable.toFixed(2)}</strong></td>
                                 <td>${escapeHtml(r.payType)}</td>
+                                <td style="font-size:10px;">${r.netAmounts.map(n => `${escapeHtml(n.name)}: MVR ${n.net.toFixed(2)}`).join('; ')}</td>
+                                <td>${r.netAmounts.map(n => `<span class="badge-rate">${escapeHtml(n.name)} ${n.rate}%</span>`).join(' ')}</td>
                                 <td><span class="badge-commission">MVR ${r.commission.toFixed(2)}</span></td>
                             </tr>
                         `).join('')}
@@ -772,6 +449,7 @@
             </div>
 
             <div class="summary-cards-section">
+                <!-- Doctor Summary -->
                 <div style="background: white; border-radius: 24px; padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7;">
                     <div class="section-title" style="font-size:13px; font-weight:700; color:#1f5e7e; margin-bottom:16px; display:flex; align-items:center; gap:8px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
                         <i class="fas fa-user-md"></i> Doctor Performance Summary
@@ -779,15 +457,17 @@
                     <div class="doctor-summary-grid">${doctorCardsHtml}</div>
                 </div>
 
+                <!-- Global Stats -->
                 <div class="stats-row">
                     <div class="stat-card"><h4><i class="fas fa-chart-line"></i> Total Revenue</h4><div class="stat-value">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-sub">${memos.length} visits</div></div>
                     <div class="stat-card"><h4><i class="fas fa-hand-holding-usd"></i> Patient Payable</h4><div class="stat-value">MVR ${totalPatientPayable.toFixed(2)}</div><div class="stat-sub">Amount to cashier</div></div>
                     <div class="stat-card"><h4><i class="fas fa-tags"></i> Discounts Given</h4><div class="stat-value">MVR ${totalDiscount.toFixed(2)}</div><div class="stat-sub">Total discount</div></div>
-                    <div class="stat-card"><h4><i class="fas fa-chart-pie"></i> Outstanding Balance</h4><div class="stat-value">MVR ${totalOutstanding.toFixed(2)}</div><div class="stat-sub">To be collected</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-chart-pie"></i> Outstanding</h4><div class="stat-value">MVR ${totalOutstanding.toFixed(2)}</div><div class="stat-sub">To be collected</div></div>
                     <div class="stat-card"><h4><i class="fas fa-percent"></i> Collection Efficiency</h4><div class="stat-value">${collectionRate}%</div><div class="stat-sub">Payable / Revenue</div></div>
-                    <div class="stat-card"><h4><i class="fas fa-coins"></i> Total Doctor Commission</h4><div class="stat-value">MVR ${totalCommission.toFixed(2)}</div><div class="stat-sub">Combined all doctors</div></div>
+                    <div class="stat-card" style="border-left-color: #f0ad4e;"><h4><i class="fas fa-coins"></i> Total Doctor Commission</h4><div class="stat-value" style="color:#f0ad4e;">MVR ${totalCommission.toFixed(2)}</div><div class="stat-sub">Combined all doctors</div></div>
                 </div>
 
+                <!-- Top Services -->
                 <div style="background: white; border-radius: 24px; padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7;">
                     <div class="section-title" style="font-size:13px; font-weight:700; color:#1f5e7e; margin-bottom:16px; display:flex; align-items:center; gap:8px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
                         <i class="fas fa-stethoscope"></i> Top Services Performed
@@ -801,6 +481,7 @@
         document.getElementById('reportContainer').innerHTML = html;
     }
 
+    // ========== CSV EXPORT ==========
     function exportToCSV() {
         if (!reportLoaded || !currentReportData.length) {
             alert('No data to export. Please generate report first.');
@@ -808,7 +489,7 @@
         }
         const startRaw = document.getElementById('startDate').value;
         const endRaw = document.getElementById('endDate').value;
-        const csvRows = [["Date", "Memo No", "Patient", "Doctor", "Services", "Total Bill (MVR)", "Discount", "Primary Insurance", "Primary Amount", "Secondary Insurance", "Secondary Amount", "Patient Payable (MVR)", "Pay Type", "Doctor Commission"]];
+        const csvRows = [["Date","Memo No","Patient","Doctor","Services","Price (MVR)","Discount","Primary Ins.","Pri. Amt","Secondary Ins.","Sec. Amt","Patient Payable","Pay Type","Net Amount (Price-Discount)","Commission %","Doctor Commission"]];
         
         currentReportData.forEach(memo => {
             const billing = memo.billing || {};
@@ -826,12 +507,11 @@
             let payType = memo.payment?.method || billing.paymentMethod || '—';
             if (payType === '—' && patientPayable > 0) payType = 'Cash';
             
-            let primaryName = '—', primaryAmt = 0, secondaryName = '—', secondaryAmt = 0;
+            let primaryName='—', primaryAmt=0, secondaryName='—', secondaryAmt=0;
             const insurances = memo.insurances || [];
             insurances.forEach(ins => {
                 if (ins.name?.toLowerCase() === 'aasandha') {
-                    secondaryName = ins.name;
-                    secondaryAmt = ins.amount || 0;
+                    secondaryName = ins.name; secondaryAmt = ins.amount || 0;
                 } else {
                     if (primaryName === '—') primaryName = ins.name;
                     else primaryName += ', ' + ins.name;
@@ -845,27 +525,41 @@
                 if (legSec) { secondaryName = 'Aasandha'; secondaryAmt = legSec; }
             }
 
-            // Calculate commission for this memo
-            let totalGrossServices = 0;
+            // Calculate net amount and commission
+            let totalGross = 0;
+            services.forEach(s => { totalGross += (s.total || s.qty * s.price || 0); });
+            const totalDisc = billing.discount?.amount || 0;
+            let netParts = [];
+            let commParts = [];
             services.forEach(s => {
-                totalGrossServices += (s.total || s.qty * s.price || 0);
-            });
-            const totalDiscountAmount = billing.discount?.amount || 0;
-            let memoCommission = 0;
-            services.forEach(s => {
-                const svcGross = s.total || s.qty * s.price || 0;
-                let svcDiscount = s.discountAmount || 0;
-                if (totalGrossServices > 0 && totalDiscountAmount > 0) {
-                    svcDiscount += (svcGross / totalGrossServices) * totalDiscountAmount;
-                }
-                const net = Math.max(0, svcGross - svcDiscount);
+                const gross = s.total || s.qty * s.price || 0;
+                const svcDisc = s.discountAmount || 0;
+                let share = 0;
+                if (totalGross > 0 && totalDisc > 0) share = (gross / totalGross) * totalDisc;
+                const net = Math.max(0, gross - svcDisc - share);
                 const rate = getDoctorCommission(doctor, s.name);
-                memoCommission += (net * rate) / 100;
+                netParts.push(`${s.name}: ${net.toFixed(2)}`);
+                commParts.push(`${s.name} ${rate}%`);
+            });
+            const netStr = netParts.join('; ');
+            const commStr = commParts.join(' ');
+
+            // Calculate total memo commission
+            let memoComm = 0;
+            services.forEach(s => {
+                const gross = s.total || s.qty * s.price || 0;
+                const svcDisc = s.discountAmount || 0;
+                let share = 0;
+                if (totalGross > 0 && totalDisc > 0) share = (gross / totalGross) * totalDisc;
+                const net = Math.max(0, gross - svcDisc - share);
+                const rate = getDoctorCommission(doctor, s.name);
+                memoComm += (net * rate) / 100;
             });
 
             csvRows.push([
-                visitDate, memoId, patientName, doctor, serviceDesc.replace(/,/g, ';'), 
-                totalBill, discount, primaryName, primaryAmt, secondaryName, secondaryAmt, patientPayable, payType, memoCommission.toFixed(2)
+                visitDate, memoId, patientName, doctor, serviceDesc.replace(/,/g, ';'),
+                totalBill, discount, primaryName, primaryAmt, secondaryName, secondaryAmt,
+                patientPayable, payType, netStr, commStr, memoComm.toFixed(2)
             ]);
         });
         
@@ -879,24 +573,15 @@
     }
 
     function printReport() {
-        if (!reportLoaded) {
-            alert('Please generate a report first before printing.');
-            return;
-        }
+        if (!reportLoaded) { alert('Please generate a report first before printing.'); return; }
         window.print();
     }
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-    }
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
 
     function init() {
-        if (window.db) {
-            loadDoctorsList();
-        } else {
-            setTimeout(init, 400);
-        }
+        if (window.db) { loadDoctorsList(); } 
+        else { setTimeout(init, 400); }
     }
     init();
 </script>

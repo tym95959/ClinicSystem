@@ -548,66 +548,33 @@
 </div>
 
 <script>
-    // ========== AUTH - IMMEDIATE CHECK (LIKE ADMIN PANEL) ==========
-    // Check for loggedInUser (reception) or doctorSession (doctor)
-    var loggedInUser = localStorage.getItem('loggedInUser');
-    var doctorSession = sessionStorage.getItem('doctorSession') || localStorage.getItem('currentDoctor');
-    
-    console.log('Checking authentication...');
-    console.log('loggedInUser exists:', !!loggedInUser);
-    console.log('doctorSession exists:', !!doctorSession);
-    
-    var userData = null;
-    var userType = 'reception';
-    
-    // Try loggedInUser first (reception) - THIS IS THE KEY FIX
-    if (loggedInUser) {
-        try {
-            userData = JSON.parse(loggedInUser);
-            console.log('User loaded from loggedInUser:', userData.name);
-            // Determine if this is a doctor
-            if (userData.level && userData.level.toLowerCase() === 'doctor') {
-                userType = 'doctor';
-            }
-        } catch(e) {
-            console.warn('Error parsing loggedInUser:', e);
-        }
-    }
-    
-    // If no reception user, try doctor session
-    if (!userData && doctorSession) {
-        try {
-            userData = JSON.parse(doctorSession);
-            console.log('User loaded from doctorSession:', userData.name);
-            userType = 'doctor';
-        } catch(e) {
-            console.warn('Error parsing doctorSession:', e);
-        }
-    }
-    
-    // If still no user, redirect to login
-    if (!userData || !userData.id) {
-        console.warn('No user found, redirecting to login');
+    // ========== AUTH - SAME AS CREATE MEMO PAGE ==========
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) {
         window.location.href = 'login.html';
-        // Stop execution
-        throw new Error('Redirecting to login');
     }
-
-    var currentUser = {
-        id: userData.id || userData.username,
-        name: userData.name || userData.username || 'User',
-        role: userData.level || userData.role || 'Staff',
-        type: userType
-    };
     
-    console.log('Current user:', currentUser.name, 'Type:', currentUser.type);
+    let currentUser = null;
+    try {
+        currentUser = JSON.parse(loggedInUser);
+        console.log('User loaded:', currentUser.name);
+    } catch(e) {
+        console.warn('Error parsing user:', e);
+        window.location.href = 'login.html';
+    }
     
-    // Store user for later use
+    // Determine user type
+    var userType = 'reception';
+    if (currentUser.level && currentUser.level.toLowerCase() === 'doctor') {
+        userType = 'doctor';
+    }
+    
     window.currentUser = currentUser;
+    window.userType = userType;
     
     // ========== GO BACK FUNCTION ==========
     window.goBack = function() {
-        if (window.currentUser && window.currentUser.type === 'doctor') {
+        if (userType === 'doctor') {
             window.location.href = 'doctor-portal.html';
         } else {
             window.location.href = 'clinicdash.html';
@@ -1077,13 +1044,8 @@
 
         // ========== LOGOUT ==========
         document.getElementById('logoutBtn').addEventListener('click', function() {
-            // Clear all session data
-            sessionStorage.removeItem('doctorSession');
-            sessionStorage.removeItem('receptionSession');
-            localStorage.removeItem('currentDoctor');
             localStorage.removeItem('loggedInUser');
-            sessionStorage.removeItem('selectedPatient');
-            sessionStorage.removeItem('selectedPatientId');
+            sessionStorage.removeItem('clinic_user_session');
             window.location.href = 'login.html';
         });
 

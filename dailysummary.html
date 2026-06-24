@@ -823,7 +823,7 @@
         function renderSummary(memos, startDate, endDate) {
             // ——— aggregates ———
             let totalRevenue = 0,
-                totalCollected = 0,
+                totalPatientPayments = 0,
                 totalDiscount = 0;
             const insTotals = {}; // company -> { amount, count }
             const payTotals = {}; // method -> { amount, count }
@@ -836,7 +836,7 @@
                 const paid = billing.paid || 0;
                 const disc = billing.discount?.amount || 0;
                 totalRevenue += after;
-                totalCollected += paid;
+                totalPatientPayments += paid;
                 totalDiscount += disc;
 
                 // unique patients
@@ -943,15 +943,15 @@
                                 <div class="period">📅 ${startDate} – ${endDate}</div>
                             </div>
 
-                            <!-- 3×2 METRICS GRID with hints -->
+                            <!-- 3×2 METRICS GRID with clear labels -->
                             <div class="summary-metrics">
                                 <div class="summary-metric">
-                                    <div class="label">💰 Revenue <span class="hint">total after discounts</span></div>
+                                    <div class="label">💰 Revenue <span class="hint">patient + insurance payments</span></div>
                                     <div class="value">MVR ${totalRevenue.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
-                                    <div class="label">💵 Collected <span class="hint">amount paid by patients</span></div>
-                                    <div class="value">MVR ${totalCollected.toFixed(2)}</div>
+                                    <div class="label">💵 Patient Payments <span class="hint">cash/credit collected</span></div>
+                                    <div class="value">MVR ${totalPatientPayments.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
                                     <div class="label">📋 Visits</div>
@@ -998,7 +998,7 @@
 
         function renderDetail(memos, startDate, endDate) {
             let totalRevenue = 0,
-                totalCollected = 0,
+                totalPatientPayments = 0,
                 totalDiscount = 0;
             const insTotals = {};
             const payTotals = {};
@@ -1010,7 +1010,7 @@
                 const paid = billing.paid || 0;
                 const disc = billing.discount?.amount || 0;
                 totalRevenue += after;
-                totalCollected += paid;
+                totalPatientPayments += paid;
                 totalDiscount += disc;
 
                 let pt = 'Unknown';
@@ -1145,8 +1145,8 @@
                         <div class="stats-footer">
                             <div class="stats-footer-title">📊 Financial Summary (${startDate} – ${endDate})</div>
                             <div class="stats-grid-small">
-                                <div class="stat-card-small"><h4>💰 Revenue</h4><div class="stat-value-small">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-label-small">After discounts</div></div>
-                                <div class="stat-card-small"><h4>💵 Collected</h4><div class="stat-value-small">MVR ${totalCollected.toFixed(2)}</div><div class="stat-label-small">Amount paid</div></div>
+                                <div class="stat-card-small"><h4>💰 Revenue</h4><div class="stat-value-small">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-label-small">Patient + Insurance</div></div>
+                                <div class="stat-card-small"><h4>💵 Patient Payments</h4><div class="stat-value-small">MVR ${totalPatientPayments.toFixed(2)}</div><div class="stat-label-small">Cash/credit collected</div></div>
                                 <div class="stat-card-small"><h4>🎟️ Discounts</h4><div class="stat-value-small">MVR ${totalDiscount.toFixed(2)}</div></div>
                                 <div class="stat-card-small"><h4>📋 Visits</h4><div class="stat-value-small">${memos.length}</div></div>
                             </div>

@@ -401,10 +401,10 @@
             margin-top: 6px;
         }
 
-        /* summary metrics grid — 2×2 */
+        /* summary metrics — 3 columns, 2 rows */
         .summary-metrics {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-bottom: 18px;
         }
@@ -412,7 +412,7 @@
         .summary-metric {
             background: #f8fbfe;
             border-radius: 12px;
-            padding: 10px 8px;
+            padding: 10px 6px;
             text-align: center;
             border-left: 3px solid #20b2aa;
         }
@@ -498,68 +498,6 @@
             color: #8ba0b0;
             font-weight: 400;
             margin-left: 6px;
-        }
-
-        /* summary memo list — compact */
-        .summary-memo-list {
-            margin-top: 12px;
-            border-top: 1px solid #eef3fa;
-            padding-top: 12px;
-        }
-
-        .summary-memo-list h4 {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            color: #1f5e7e;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .summary-memo-list h4 i {
-            color: #20b2aa;
-        }
-
-        .summary-memo-item {
-            display: grid;
-            grid-template-columns: 70px 1fr 70px 60px;
-            gap: 6px;
-            padding: 4px 0;
-            font-size: 9.5px;
-            border-bottom: 1px solid #f5f8fc;
-            color: #1e2f3e;
-        }
-
-        .summary-memo-item .memo-no {
-            font-weight: 600;
-            color: #0f5c7a;
-        }
-        .summary-memo-item .memo-patient {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .summary-memo-item .memo-amount {
-            text-align: right;
-            font-weight: 600;
-        }
-        .summary-memo-item .memo-paytype {
-            text-align: center;
-            font-size: 8.5px;
-            background: #eef3fa;
-            border-radius: 20px;
-            padding: 0 6px;
-            display: inline-block;
-            color: #1f5e7e;
-        }
-
-        .summary-memo-more {
-            text-align: center;
-            font-size: 9px;
-            color: #8ba0b0;
-            padding: 6px 0 2px;
         }
 
         .summary-footer {
@@ -683,12 +621,6 @@
                 border-bottom: 1px dashed #ddd !important;
             }
 
-            .summary-memo-item {
-                border-bottom: 1px solid #eee !important;
-                font-size: 8pt !important;
-                grid-template-columns: 60px 1fr 60px 50px !important;
-            }
-
             .summary-header {
                 border-bottom: 2px solid #aaa !important;
             }
@@ -700,10 +632,6 @@
             .summary-footer {
                 border-top: 1px solid #ccc !important;
             }
-
-            .summary-memo-list {
-                border-top: 1px solid #ccc !important;
-            }
         }
 
         /* ─── RESPONSIVE ─── */
@@ -713,10 +641,6 @@
             }
             .summary-metrics {
                 grid-template-columns: 1fr 1fr;
-            }
-            .summary-memo-item {
-                grid-template-columns: 55px 1fr 55px 50px;
-                font-size: 8.5px;
             }
             .clinic-header .logo-area h1 {
                 font-size: 0.95rem;
@@ -890,8 +814,8 @@
                 totalDiscount = 0;
             const insTotals = {}; // company -> { amount, count }
             const payTotals = {}; // method -> { amount, count }
-
-            const memoRows = [];
+            const patientSet = new Set(); // unique patient IDs
+            let transactionCount = 0; // memos with paid > 0
 
             memos.forEach(m => {
                 const billing = m.billing || {};
@@ -901,6 +825,14 @@
                 totalRevenue += after;
                 totalCollected += paid;
                 totalDiscount += disc;
+
+                // unique patients
+                const patient = m.patient || {};
+                const patientId = patient.id || patient.passport || patient.name;
+                if (patientId) patientSet.add(String(patientId));
+
+                // transactions: memos with any payment
+                if (paid > 0) transactionCount++;
 
                 // pay type
                 let pt = 'Unknown';
@@ -941,21 +873,7 @@
                         insTotals[n].count++;
                     }
                 }
-
-                // memo row for list
-                const memoNo = m.memoId || m.id.slice(-6).toUpperCase();
-                const patient = m.patient?.name || 'N/A';
-                memoRows.push({
-                    no: memoNo,
-                    patient: patient,
-                    amount: paid,
-                    payType: pt,
-                    date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'N/A'
-                });
             });
-
-            // sort memo rows by date desc
-            memoRows.sort((a, b) => (a.date < b.date ? 1 : -1));
 
             // ——— build HTML ———
             const sortedIns = Object.keys(insTotals).sort();
@@ -1000,20 +918,8 @@
                         </div>`;
             }).join('') || '<div style="font-size:10px;color:#8ba0b0;padding:6px 0;">No payment data</div>';
 
-            // memo list (max 12 items, else "…")
-            const showMemos = memoRows.slice(0, 12);
-            const memoHtml = showMemos.map(r =>
-                `<div class="summary-memo-item">
-                            <span class="memo-no">#${escHtml(r.no)}</span>
-                            <span class="memo-patient">${escHtml(r.patient)}</span>
-                            <span class="memo-amount">MVR ${r.amount.toFixed(2)}</span>
-                            <span class="memo-paytype">${escHtml(r.payType)}</span>
-                        </div>`
-            ).join('');
-
-            const moreText = memoRows.length > 12 ?
-                `<div class="summary-memo-more">+ ${memoRows.length - 12} more memos not shown</div>` :
-                '';
+            const uniquePatients = patientSet.size;
+            const totalVisits = memos.length;
 
             const html = `
                         <div class="summary-view">
@@ -1024,10 +930,10 @@
                                 <div class="period">📅 ${startDate} – ${endDate}</div>
                             </div>
 
-                            <!-- 2×2 METRICS -->
+                            <!-- 3×2 METRICS GRID -->
                             <div class="summary-metrics">
                                 <div class="summary-metric">
-                                    <div class="label">💰 Total Revenue</div>
+                                    <div class="label">💰 Revenue</div>
                                     <div class="value">MVR ${totalRevenue.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
@@ -1035,12 +941,20 @@
                                     <div class="value">MVR ${totalCollected.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
+                                    <div class="label">📋 Visits</div>
+                                    <div class="value">${totalVisits}</div>
+                                </div>
+                                <div class="summary-metric">
                                     <div class="label">🎟️ Discounts</div>
                                     <div class="value">MVR ${totalDiscount.toFixed(2)}</div>
                                 </div>
                                 <div class="summary-metric">
-                                    <div class="label">📋 Visits</div>
-                                    <div class="value">${memos.length}</div>
+                                    <div class="label">🧑‍⚕️ Patients</div>
+                                    <div class="value">${uniquePatients}</div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="label">💳 Transactions</div>
+                                    <div class="value">${transactionCount}</div>
                                 </div>
                             </div>
 
@@ -1054,13 +968,6 @@
                                     <h4><i class="fas fa-credit-card"></i> Payment Methods</h4>
                                     ${payHtml}
                                 </div>
-                            </div>
-
-                            <!-- MEMO LIST (compact) -->
-                            <div class="summary-memo-list">
-                                <h4><i class="fas fa-list-ul"></i> Recent Memos (${memos.length} total)</h4>
-                                ${memoHtml || '<div style="font-size:10px;color:#8ba0b0;padding:6px 0;">No memos</div>'}
-                                ${moreText}
                             </div>
 
                             <div class="summary-footer">
@@ -1263,7 +1170,6 @@
                                 .summary-view{max-width:100%!important;padding:0!important;border:none!important;box-shadow:none!important;}
                                 .summary-metric{border:1px solid #ccc!important;background:none!important;border-left:3px solid #20b2aa!important;}
                                 .summary-breakdown{border:1px solid #ccc!important;background:none!important;}
-                                .summary-memo-item{font-size:7.5pt!important;}
                             ` : `
                                 table{width:100%;border-collapse:collapse;font-size:7.5pt;}
                                 th,td{border:1px solid #aaa;padding:4px 5px;}

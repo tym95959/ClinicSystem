@@ -487,67 +487,133 @@
             const billing = memo.billing || {};
             const insurances = memo.insurances || [];
             const patient = memo.patient || {};
+            const doctorName = memo.doctor?.name || 'N/A';
             const services = memo.services || [];
-            let serviceDesc = services.map(s => `${s.name || 'Service'} (${s.qty || 1})`).join('; ');
-            if (!serviceDesc && memo.treatment) serviceDesc = memo.treatment;
-            if (!serviceDesc) serviceDesc = '—';
-            
-            const totalBill = billing.afterDiscount || billing.subtotal || 0;
             const memoNo = memo.memoId || memo.id.slice(-6).toUpperCase();
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
             const patientName = patient.name || 'N/A';
             const patientIdCard = patient.id || patient.nic || patient.passport || 'N/A';
-            
-            let primary = null, secondary = null;
-            // process insurances array
-            insurances.forEach(ins => {
-                const insName = ins.name || 'Unknown';
-                const amount = ins.amount || 0;
-                const coverage = ins.coverage || (ins.value + (ins.type === 'percent' ? '%' : ' MVR'));
-                if (insName.toLowerCase() === 'aasandha') {
-                    if (!secondary || ins.priority === 'secondary') secondary = { name: insName, amount, coverage };
-                } else {
-                    if (!primary || ins.priority === 'primary') primary = { name: insName, amount, coverage };
-                }
-                if (!companyTotals[insName]) companyTotals[insName] = { amount: 0, count: 0 };
-                companyTotals[insName].amount += amount;
-                companyTotals[insName].count++;
-            });
-            // legacy fallback
-            if (!primary && !secondary) {
-                const legPrimary = billing.primaryInsurancePayment || billing.insurancePayment || 0;
-                const legAasandha = billing.aasandhaPayment || 0;
-                if (legPrimary > 0) {
-                    primary = { name: 'Primary Insurance', amount: legPrimary, coverage: 'Full/Partial' };
-                    if (!companyTotals['Primary Insurance']) companyTotals['Primary Insurance'] = { amount: 0, count: 0 };
-                    companyTotals['Primary Insurance'].amount += legPrimary;
-                    companyTotals['Primary Insurance'].count++;
-                }
-                if (legAasandha > 0) {
-                    secondary = { name: 'Aasandha', amount: legAasandha, coverage: 'Government Scheme' };
-                    if (!companyTotals['Aasandha']) companyTotals['Aasandha'] = { amount: 0, count: 0 };
-                    companyTotals['Aasandha'].amount += legAasandha;
-                    companyTotals['Aasandha'].count++;
-                }
+
+            // If no services, treat as a single service line with no details
+            if (!services.length) {
+                // Still create a row with empty service details
+                const primary = getPrimaryInsurance(insurances, billing);
+                const secondary = getSecondaryInsurance(insurances, billing);
+                const primaryAmt = primary ? primary.amount : 0;
+                const secondaryAmt = secondary ? secondary.amount : 0;
+                if (primaryAmt > 0) { totalPrimary += primaryAmt; primaryCount++; }
+                if (secondaryAmt > 0) { totalSecondary += secondaryAmt; secondaryCount++; }
+                if (primary) updateCompanyTotals(companyTotals, primary.name, primaryAmt);
+                if (secondary) updateCompanyTotals(companyTotals, secondary.name, secondaryAmt);
+                rows.push({
+                    date: visitDate,
+                    memoNo,
+                    patientName,
+                    patientIdCard,
+                    doctor: doctorName,
+                    serviceName: '—',
+                    qty: 1,
+                    serviceTotal: billing.afterDiscount || billing.subtotal || 0,
+                    primaryName: primary ? primary.name : '—',
+                    primaryAmount: primaryAmt,
+                    secondaryName: secondary ? secondary.name : '—',
+                    secondaryAmount: secondaryAmt
+                });
+                return;
             }
-            if (!primary && !secondary) return;
-            
-            if (primary && primary.amount > 0) { totalPrimary += primary.amount; primaryCount++; }
-            if (secondary && secondary.amount > 0) { totalSecondary += secondary.amount; secondaryCount++; }
-            
-            rows.push({
-                date: visitDate,
-                memoNo,
-                patientName,
-                patientIdCard,
-                serviceDesc: serviceDesc.substring(0, 140),
-                totalBill,
-                primaryName: primary ? primary.name : '—',
-                primaryAmount: primary ? primary.amount : 0,
-                secondaryName: secondary ? secondary.name : '—',
-                secondaryAmount: secondary ? secondary.amount : 0
+
+            // Iterate over services
+            services.forEach(s => {
+                const serviceName = s.name || 'Service';
+                const qty = s.qty || 1;
+                const price = s.price || 0;
+                const serviceTotal = s.total || (qty * price);
+                // Get per-service insurance amounts if available
+                let primaryAmt = s.primaryInsuranceAmount || 0;
+                let aasandhaAmt = s.aasandhaAmount || 0;
+                // Fallback: if service has no insurance amounts but memo has total insurance, we can allocate proportionally
+                // For simplicity, we'll use the memo-level primary and secondary if service amounts are zero and there is only one service
+                if (primaryAmt === 0 && aasandhaAmt === 0) {
+                    // Try to get from memo-level insurance array
+                    const primary = getPrimaryInsurance(insurances, billing);
+                    const secondary = getSecondaryInsurance(insurances, billing);
+                    // If only one service, assign all insurance to it
+                    if (services.length === 1) {
+                        primaryAmt = primary ? primary.amount : 0;
+                        aasandhaAmt = secondary ? secondary.amount : 0;
+                    } else {
+                        // Proportional allocation based on serviceTotal / totalBill
+                        const totalBill = billing.afterDiscount || billing.subtotal || 0;
+                        if (totalBill > 0) {
+                            const ratio = serviceTotal / totalBill;
+                            const primaryTotal = primary ? primary.amount : 0;
+                            const secondaryTotal = secondary ? secondary.amount : 0;
+                            primaryAmt = primaryTotal * ratio;
+                            aasandhaAmt = secondaryTotal * ratio;
+                        }
+                    }
+                }
+                // Now get names for insurance
+                const primary = getPrimaryInsurance(insurances, billing);
+                const secondary = getSecondaryInsurance(insurances, billing);
+                const primaryName = primary ? primary.name : '—';
+                const secondaryName = secondary ? secondary.name : '—';
+                if (primaryAmt > 0) { totalPrimary += primaryAmt; primaryCount++; }
+                if (aasandhaAmt > 0) { totalSecondary += aasandhaAmt; secondaryCount++; }
+                if (primary) updateCompanyTotals(companyTotals, primary.name, primaryAmt);
+                if (secondary) updateCompanyTotals(companyTotals, secondary.name, aasandhaAmt);
+
+                rows.push({
+                    date: visitDate,
+                    memoNo,
+                    patientName,
+                    patientIdCard,
+                    doctor: doctorName,
+                    serviceName: serviceName,
+                    qty: qty,
+                    serviceTotal: serviceTotal,
+                    primaryName: primaryName,
+                    primaryAmount: primaryAmt,
+                    secondaryName: secondaryName,
+                    secondaryAmount: aasandhaAmt
+                });
             });
         });
+
+        // Helper to get primary insurance (first non-Aasandha)
+        function getPrimaryInsurance(insurances, billing) {
+            let primary = null;
+            insurances.forEach(ins => {
+                if (ins.name && ins.name.toLowerCase() !== 'aasandha') {
+                    if (!primary || ins.priority === 'primary') primary = ins;
+                }
+            });
+            if (!primary) {
+                const legPrimary = billing.primaryInsurancePayment || billing.insurancePayment || 0;
+                if (legPrimary > 0) primary = { name: 'Primary Insurance', amount: legPrimary };
+            }
+            return primary;
+        }
+
+        function getSecondaryInsurance(insurances, billing) {
+            let secondary = null;
+            insurances.forEach(ins => {
+                if (ins.name && ins.name.toLowerCase() === 'aasandha') {
+                    secondary = ins;
+                }
+            });
+            if (!secondary) {
+                const legAas = billing.aasandhaPayment || 0;
+                if (legAas > 0) secondary = { name: 'Aasandha', amount: legAas };
+            }
+            return secondary;
+        }
+
+        function updateCompanyTotals(totals, name, amount) {
+            if (!totals[name]) totals[name] = { amount: 0, count: 0 };
+            totals[name].amount += amount;
+            totals[name].count++;
+        }
 
         // Build company breakdown grid
         const companyHtml = Object.entries(companyTotals)
@@ -563,11 +629,16 @@
         const filterBadge = selectedCompany !== 'all' ? `<span style="margin-left: 8px; background:#eef2ff; padding:2px 10px; border-radius:20px; font-size:11px;">Filter: ${escapeHtml(selectedCompany)}</span>` : '';
         
         const html = `
-           
+            <div class="stats-row">
+                <div class="stat-card"><h4>💰 Total Primary Insurance</h4><div class="stat-value">MVR ${totalPrimary.toFixed(2)}</div><div class="stat-sub">${primaryCount} claim(s)</div></div>
+                <div class="stat-card"><h4>🟢 Total Secondary Insurance</h4><div class="stat-value">MVR ${totalSecondary.toFixed(2)}</div><div class="stat-sub">${secondaryCount} claim(s)</div></div>
+                <div class="stat-card"><h4>📋 Total Service Lines</h4><div class="stat-value">${rows.length}</div><div class="stat-sub">with insurance details</div></div>
+            </div>
+
             <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
-                        <tr><th>Date</th><th>Memo No</th><th>Patient Name</th><th>ID Card No</th><th>Service(s)</th><th>Total Bill (MVR)</th><th>Primary Insurance</th><th>Primary Amount</th><th>Secondary Insurance</th><th>Secondary Amount</th></tr>
+                        <tr><th>Date</th><th>Memo No</th><th>Patient Name</th><th>ID/Passport</th><th>Doctor</th><th>Service</th><th>Qty</th><th>Service Total</th><th>Primary Insurance</th><th>Primary Amount</th><th>Secondary Insurance</th><th>Secondary Amount</th></tr>
                     </thead>
                     <tbody>
                         ${rows.map(r => `
@@ -576,15 +647,17 @@
                                 <td><strong>${escapeHtml(r.memoNo)}</strong></td>
                                 <td>${escapeHtml(r.patientName)}</td>
                                 <td>${escapeHtml(r.patientIdCard)}</td>
-                                <td style="max-width:220px; white-space:normal;">${escapeHtml(r.serviceDesc)}</td>
-                                <td>MVR ${r.totalBill.toFixed(2)}</td>
+                                <td><strong>${escapeHtml(r.doctor)}</strong></td>
+                                <td>${escapeHtml(r.serviceName)}</td>
+                                <td>${r.qty}</td>
+                                <td>MVR ${r.serviceTotal.toFixed(2)}</td>
                                 <td><span class="badge-primary">${escapeHtml(r.primaryName)}</span></td>
                                 <td>MVR ${r.primaryAmount.toFixed(2)}</td>
                                 <td><span class="badge-secondary">${escapeHtml(r.secondaryName)}</span></td>
                                 <td>MVR ${r.secondaryAmount.toFixed(2)}</td>
                             </tr>
                         `).join('')}
-                        ${rows.length === 0 ? '<tr><td colspan="10" class="empty-message">No matching insurance claims</td></tr>' : ''}
+                        ${rows.length === 0 ? '<tr><td colspan="12" class="empty-message">No matching insurance claims</td></tr>' : ''}
                     </tbody>
                 </table>
             </div>
@@ -596,7 +669,7 @@
         document.getElementById('dynamicReport').innerHTML = html;
     }
 
-    // CSV Export
+    // CSV Export – now expanded per service
     function exportToCSV() {
         if (!currentMemos.length) { alert('No data to export. Generate report first.'); return; }
         const selected = document.getElementById('insuranceFilterSelect').value;
@@ -612,34 +685,49 @@
                 return found;
             });
         }
-        const csvRows = [["Date","Memo No","Patient Name","ID Card No","Service","Total Bill (MVR)","Primary Insurance","Primary Claim (MVR)","Secondary Insurance","Secondary Claim (MVR)"]];
+        const csvRows = [["Date","Memo No","Patient Name","ID/Passport","Doctor","Service","Qty","Service Total (MVR)","Primary Insurance","Primary Amount","Secondary Insurance","Secondary Amount"]];
         filtered.forEach(memo => {
             const billing = memo.billing || {};
             const insurances = memo.insurances || [];
             const patient = memo.patient || {};
+            const doctorName = memo.doctor?.name || 'N/A';
             const services = memo.services || [];
-            let serviceDesc = services.map(s => `${s.name || 'Service'} (${s.qty || 1})`).join('; ');
-            if (!serviceDesc && memo.treatment) serviceDesc = memo.treatment;
-            if (!serviceDesc) serviceDesc = '—';
-            const totalBill = billing.afterDiscount || billing.subtotal || 0;
             const memoNo = memo.memoId || memo.id.slice(-6).toUpperCase();
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
             const patientName = patient.name || 'N/A';
             const patientIdCard = patient.id || patient.nic || patient.passport || 'N/A';
-            let primaryName='', primaryAmt=0, secondaryName='', secondaryAmt=0;
-            insurances.forEach(ins => {
-                if (ins.name?.toLowerCase() === 'aasandha') { secondaryName = ins.name; secondaryAmt = ins.amount || 0; }
-                else { primaryName = ins.name; primaryAmt = ins.amount || 0; }
+            if (!services.length) {
+                // Single row with empty service
+                const primary = getPrimaryInsurance(insurances, billing);
+                const secondary = getSecondaryInsurance(insurances, billing);
+                csvRows.push([visitDate, memoNo, patientName, patientIdCard, doctorName, '—', 1, billing.afterDiscount || billing.subtotal || 0, primary ? primary.name : '—', primary ? primary.amount : 0, secondary ? secondary.name : '—', secondary ? secondary.amount : 0]);
+                return;
+            }
+            services.forEach(s => {
+                const serviceName = s.name || 'Service';
+                const qty = s.qty || 1;
+                const serviceTotal = s.total || (qty * s.price || 0);
+                let primaryAmt = s.primaryInsuranceAmount || 0;
+                let aasandhaAmt = s.aasandhaAmount || 0;
+                if (primaryAmt === 0 && aasandhaAmt === 0 && services.length === 1) {
+                    const primary = getPrimaryInsurance(insurances, billing);
+                    const secondary = getSecondaryInsurance(insurances, billing);
+                    primaryAmt = primary ? primary.amount : 0;
+                    aasandhaAmt = secondary ? secondary.amount : 0;
+                } else if (primaryAmt === 0 && aasandhaAmt === 0 && services.length > 1) {
+                    const totalBill = billing.afterDiscount || billing.subtotal || 0;
+                    if (totalBill > 0) {
+                        const ratio = serviceTotal / totalBill;
+                        const primary = getPrimaryInsurance(insurances, billing);
+                        const secondary = getSecondaryInsurance(insurances, billing);
+                        primaryAmt = (primary ? primary.amount : 0) * ratio;
+                        aasandhaAmt = (secondary ? secondary.amount : 0) * ratio;
+                    }
+                }
+                const primary = getPrimaryInsurance(insurances, billing);
+                const secondary = getSecondaryInsurance(insurances, billing);
+                csvRows.push([visitDate, memoNo, patientName, patientIdCard, doctorName, serviceName, qty, serviceTotal, primary ? primary.name : '—', primaryAmt, secondary ? secondary.name : '—', aasandhaAmt]);
             });
-            if (!primaryName && !secondaryName) {
-                const legPri = billing.primaryInsurancePayment || billing.insurancePayment || 0;
-                const legSec = billing.aasandhaPayment || 0;
-                if(legPri) { primaryName = 'Primary Insurance'; primaryAmt = legPri; }
-                if(legSec) { secondaryName = 'Aasandha'; secondaryAmt = legSec; }
-            }
-            if (primaryName || secondaryName) {
-                csvRows.push([visitDate, memoNo, patientName, patientIdCard, serviceDesc.replace(/,/g,';'), totalBill, primaryName, primaryAmt, secondaryName, secondaryAmt]);
-            }
         });
         const csvContent = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
         const blob = new Blob([csvContent], {type: 'text/csv'});

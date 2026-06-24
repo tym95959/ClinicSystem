@@ -559,6 +559,10 @@
             const memoId = memo.memoId || memo.id || 'N/A';
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
             
+            // Get total discount and gross bill for proportional distribution
+            const totalDiscountAmount = billing.discount?.amount || 0;
+            const totalGrossBill = billing.subtotal || 0;
+
             // Get services for this memo
             const serviceList = services.map(s => ({
                 name: s.name || 'Service',
@@ -604,32 +608,46 @@
             // Service totals per doctor and compute commission
             serviceList.forEach(s => {
                 const svcName = s.name;
-                const svcTotal = s.total;
-                // Compute commission for this service
+                const svcGrossTotal = s.total || s.qty * s.price || 0;
+                
+                // Calculate service-level discount (per-service discount + proportional global discount)
+                let svcDiscount = s.discountAmount || 0;
+                if (totalGrossBill > 0 && totalDiscountAmount > 0) {
+                    const ratio = svcGrossTotal / totalGrossBill;
+                    svcDiscount += totalDiscountAmount * ratio;
+                }
+                
+                // Net amount after discount = service price - discount
+                const discountedTotal = Math.max(0, svcGrossTotal - svcDiscount);
+                
+                // Compute commission on the net amount
                 const commissionPercent = getDoctorCommission(doctorName, svcName);
-                const commissionAmount = (svcTotal * commissionPercent) / 100;
+                const commissionAmount = (discountedTotal * commissionPercent) / 100;
+                
                 totalCommission += commissionAmount;
                 doctorTotals[doctorName].commission += commissionAmount;
                 doctorTotals[doctorName].serviceDetails.push({
                     service: svcName,
-                    total: svcTotal,
+                    grossTotal: svcGrossTotal,
+                    discount: svcDiscount,
+                    netTotal: discountedTotal,
                     commission: commissionAmount,
                     rate: commissionPercent
                 });
 
-                // Service totals per doctor for breakdown
+                // Service totals per doctor for breakdown (using gross total for count)
                 if (!doctorTotals[doctorName].services[svcName]) {
                     doctorTotals[doctorName].services[svcName] = { count: 0, total: 0 };
                 }
                 doctorTotals[doctorName].services[svcName].count += s.qty;
-                doctorTotals[doctorName].services[svcName].total += svcTotal;
+                doctorTotals[doctorName].services[svcName].total += svcGrossTotal;
 
                 // Global service totals
                 if (!serviceTotals[svcName]) {
                     serviceTotals[svcName] = { count: 0, total: 0 };
                 }
                 serviceTotals[svcName].count += s.qty;
-                serviceTotals[svcName].total += svcTotal;
+                serviceTotals[svcName].total += svcGrossTotal;
             });
 
             // Build insurance display
@@ -671,9 +689,15 @@
             let commissionDetails = [];
             if (services.length) {
                 serviceDesc = services.map((s, idx) => {
-                    const svcTotal = (s.total || s.qty * s.price || 0);
+                    const svcGrossTotal = s.total || s.qty * s.price || 0;
+                    let svcDiscount = s.discountAmount || 0;
+                    if (totalGrossBill > 0 && totalDiscountAmount > 0) {
+                        const ratio = svcGrossTotal / totalGrossBill;
+                        svcDiscount += totalDiscountAmount * ratio;
+                    }
+                    const discountedTotal = Math.max(0, svcGrossTotal - svcDiscount);
                     const commPercent = getDoctorCommission(doctorName, s.name);
-                    const commAmt = (svcTotal * commPercent) / 100;
+                    const commAmt = (discountedTotal * commPercent) / 100;
                     commissionDetails.push({ name: s.name, comm: commAmt, rate: commPercent });
                     return `${s.name || 'Service'} (${s.qty || 1})`;
                 }).join('; ');
@@ -876,10 +900,18 @@
             }
             // Calculate total commission for this memo
             let memoCommission = 0;
+            const totalDiscountAmount = billing.discount?.amount || 0;
+            const totalGrossBill = billing.subtotal || 0;
             services.forEach(s => {
-                const svcTotal = (s.total || s.qty * s.price || 0);
+                const svcGrossTotal = s.total || s.qty * s.price || 0;
+                let svcDiscount = s.discountAmount || 0;
+                if (totalGrossBill > 0 && totalDiscountAmount > 0) {
+                    const ratio = svcGrossTotal / totalGrossBill;
+                    svcDiscount += totalDiscountAmount * ratio;
+                }
+                const discountedTotal = Math.max(0, svcGrossTotal - svcDiscount);
                 const commPercent = getDoctorCommission(doctor, s.name);
-                memoCommission += (svcTotal * commPercent) / 100;
+                memoCommission += (discountedTotal * commPercent) / 100;
             });
             csvRows.push([
                 visitDate, memoId, patientName, doctor, serviceDesc.replace(/,/g, ';'), 

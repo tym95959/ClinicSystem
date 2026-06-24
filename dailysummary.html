@@ -518,7 +518,7 @@
             margin-top: 14px;
         }
 
-        /* ─── PRINT: A5 ─── */
+        /* ─── PRINT ─── */
         @media print {
             @page {
                 size: A5 portrait;
@@ -531,6 +531,7 @@
                 padding: 0;
             }
 
+            /* Keep everything visible - no hiding */
             .clinic-header,
             .date-filter,
             .btn,
@@ -538,104 +539,106 @@
             .back-btn,
             .print-btn,
             .filter-btn {
-                display: none !important;
+                display: flex !important;
             }
 
             .container {
-                padding: 0 !important;
-                margin: 0 !important;
+                padding: 0 20px !important;
+                margin: 20px auto !important;
                 max-width: 100% !important;
             }
 
             #dailyReportContent .empty-state {
-                box-shadow: none !important;
-                border: 1px solid #ddd !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+                border: none !important;
             }
 
-            /* detailed view print */
             .table-container {
-                box-shadow: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                overflow-x: visible !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+                border: none !important;
+                border-radius: 16px !important;
+                overflow: hidden !important;
             }
 
             table {
-                font-size: 7.5pt !important;
-                min-width: auto !important;
+                font-size: 11px !important;
+                min-width: 1200px !important;
                 width: 100% !important;
             }
 
             th,
             td {
-                border: 1px solid #aaa !important;
-                padding: 4px 5px !important;
+                border: none !important;
+                border-bottom: 1px solid #eef3fa !important;
+                padding: 8px 8px !important;
             }
 
             th {
-                background: #e0e7ef !important;
+                background: #f4f9fe !important;
+                border-bottom: 2px solid #e2eaf0 !important;
             }
 
             .stats-footer {
-                box-shadow: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                background: none !important;
-                padding: 10px !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+                border: none !important;
+                border-radius: 16px !important;
+                background: #fff !important;
+                padding: 16px 20px !important;
             }
 
             .stats-grid-small,
             .insurance-breakdown-grid,
             .paytype-breakdown-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-                gap: 6px;
+                display: grid !important;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+                gap: 12px !important;
             }
 
             .stat-card-small,
             .insurance-company-card,
             .paytype-card {
-                background: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                border-left: none !important;
-                padding: 5px !important;
+                background: #f8fbfe !important;
+                border: none !important;
+                border-radius: 12px !important;
+                border-left: 3px solid #0f5c7a !important;
+                padding: 10px 12px !important;
             }
 
             /* ── summary view print ── */
             .summary-view {
-                box-shadow: none !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
                 border: none !important;
-                border-radius: 0 !important;
-                padding: 0 !important;
-                max-width: 100% !important;
+                border-radius: 16px !important;
+                padding: 20px 22px !important;
+                max-width: 780px !important;
+                margin: 0 auto !important;
             }
 
             .summary-metric {
-                background: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
+                background: #f8fbfe !important;
+                border: none !important;
+                border-radius: 12px !important;
                 border-left: 3px solid #20b2aa !important;
-                padding: 6px !important;
+                padding: 10px 6px !important;
             }
 
             .summary-metric .label .hint {
-                display: none;
+                display: block !important;
             }
 
             .summary-breakdown {
-                background: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                padding: 8px !important;
+                background: #fafcfe !important;
+                border: 1px solid #eef3fa !important;
+                border-radius: 12px !important;
+                padding: 12px 14px !important;
             }
 
             .summary-breakdown-item {
-                border-bottom: 1px dashed #ddd !important;
+                border-bottom: 1px dashed #f0f4f8 !important;
             }
 
             .summary-header {
-                border-bottom: 2px solid #aaa !important;
+                border-bottom: 2px solid #e2eaf0 !important;
             }
 
             .summary-header .period {
@@ -643,7 +646,29 @@
             }
 
             .summary-footer {
-                border-top: 1px solid #ccc !important;
+                border-top: 1px solid #eef3fa !important;
+            }
+
+            /* Hide interactive elements in print */
+            .btn:not(.btn-print) {
+                display: none !important;
+            }
+
+            .btn-print {
+                display: inline-flex !important;
+                background: #146b3a !important;
+                color: #fff !important;
+            }
+
+            .view-toggle .btn {
+                background: #eef2f7 !important;
+                color: #6c7a8a !important;
+            }
+
+            .view-toggle .btn.active {
+                background: #fff !important;
+                color: #0f5c7a !important;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
             }
         }
 
@@ -1185,38 +1210,459 @@
             const to = document.getElementById('dailyEndDate').value;
             const viewLabel = currentView === 'summary' ? 'Summary' : 'Detailed';
 
+            // Get the current state of the page including header, date filter, etc.
+            const headerHTML = document.querySelector('.clinic-header').outerHTML;
+            const dateFilterHTML = document.querySelector('.date-filter').outerHTML;
+            const viewToggleHTML = document.querySelector('.view-toggle').outerHTML;
+
             const win = window.open('', '_blank');
             win.document.write(`
                         <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hope Dental - ${viewLabel} Report</title>
                         <style>
-                            body{font-family:Inter,Arial;margin:0;padding:0.7cm;font-size:9pt;background:#fff;}
-                            ${currentView === 'summary' ? `
-                                .summary-view{max-width:100%!important;padding:0!important;border:none!important;box-shadow:none!important;}
-                                .summary-metric{border:1px solid #ccc!important;background:none!important;border-left:3px solid #20b2aa!important;}
-                                .summary-breakdown{border:1px solid #ccc!important;background:none!important;}
-                            ` : `
-                                table{width:100%;border-collapse:collapse;font-size:7.5pt;}
-                                th,td{border:1px solid #aaa;padding:4px 5px;}
-                                th{background:#e0e7ef;}
-                                .stats-footer{border:1px solid #ccc!important;background:none!important;box-shadow:none!important;padding:8px!important;}
-                                .stat-card-small,.insurance-company-card,.paytype-card{background:none!important;border:1px solid #ccc!important;border-left:none!important;padding:4px!important;}
-                                .insurance-breakdown-grid,.paytype-breakdown-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
-                            `}
-                            .no-print{display:none!important;}
-                            .report-print-header{text-align:center;margin-bottom:12px;border-bottom:2px solid #aaa;padding-bottom:10px;}
-                            .report-print-header h2{font-size:16px;color:#004d4d;margin:0;}
-                            .report-print-header .sub{font-size:10px;color:#6c7a8a;}
-                            .report-print-header .period{font-size:11px;font-weight:600;color:#0f5c7a;background:#f0f7fb;display:inline-block;padding:1px 16px;border-radius:30px;margin-top:4px;}
-                            .footer-print{text-align:center;font-size:7.5pt;color:#8ba0b0;border-top:1px solid #ccc;padding-top:8px;margin-top:12px;}
+                            /* Copy all styles from main page */
+                            * {
+                                margin: 0;
+                                padding: 0;
+                                box-sizing: border-box;
+                                font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+                            }
+                            body {
+                                background: #eef2f7;
+                                min-height: 100vh;
+                                padding: 0;
+                            }
+                            .clinic-header {
+                                background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
+                                color: #004d4d;
+                                padding: 10px 20px;
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                flex-wrap: wrap;
+                                gap: 10px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                            }
+                            .clinic-header .logo-area {
+                                display: flex;
+                                align-items: center;
+                                gap: 12px;
+                            }
+                            .clinic-header .logo-area img {
+                                height: 44px;
+                            }
+                            .clinic-header .logo-area h1 {
+                                font-size: 1.2rem;
+                                font-weight: 600;
+                                margin: 0;
+                                background: linear-gradient(135deg, #006666, #20b2aa);
+                                -webkit-background-clip: text;
+                                background-clip: text;
+                                color: transparent;
+                            }
+                            .header-actions {
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                flex-wrap: wrap;
+                            }
+                            .header-actions .user-badge {
+                                background: rgba(255,255,255,0.2);
+                                padding: 4px 14px;
+                                border-radius: 30px;
+                                font-size: 11px;
+                                color: #004d4d;
+                                font-weight: 500;
+                            }
+                            .btn {
+                                border: none;
+                                padding: 6px 18px;
+                                border-radius: 30px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 11px;
+                                transition: 0.2s;
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 6px;
+                            }
+                            .btn-back {
+                                background: #1e4a6e;
+                                color: #fff;
+                            }
+                            .btn-print {
+                                background: #146b3a;
+                                color: #fff;
+                            }
+                            .date-filter {
+                                background: #fff;
+                                padding: 18px 20px;
+                                border-radius: 16px;
+                                margin-bottom: 20px;
+                                display: flex;
+                                gap: 15px;
+                                flex-wrap: wrap;
+                                align-items: flex-end;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                            }
+                            .filter-group {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 4px;
+                            }
+                            .filter-group label {
+                                font-size: 11px;
+                                font-weight: 600;
+                                color: #1f5e7e;
+                            }
+                            .filter-group input {
+                                padding: 7px 12px;
+                                border: 1.5px solid #e2eaf0;
+                                border-radius: 12px;
+                                font-size: 12px;
+                                background: #fafcfe;
+                            }
+                            .filter-btn {
+                                background: #0f5c7a;
+                                color: #fff;
+                                border: none;
+                                padding: 7px 22px;
+                                border-radius: 12px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 12px;
+                            }
+                            .view-toggle {
+                                display: flex;
+                                gap: 6px;
+                                background: #eef2f7;
+                                padding: 4px;
+                                border-radius: 30px;
+                            }
+                            .view-toggle .btn {
+                                border-radius: 30px;
+                                padding: 5px 16px;
+                                font-size: 10px;
+                            }
+                            .view-toggle .btn.active {
+                                background: #fff;
+                                color: #0f5c7a;
+                                box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+                            }
+                            .view-toggle .btn:not(.active) {
+                                background: transparent;
+                                color: #6c7a8a;
+                            }
+                            .container {
+                                max-width: 1600px;
+                                margin: 20px auto;
+                                padding: 0 20px;
+                            }
+                            #dailyReportContent .empty-state {
+                                text-align: center;
+                                padding: 50px 20px;
+                                color: #8ba0b0;
+                                background: #fff;
+                                border-radius: 16px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                            }
+                            .summary-view {
+                                background: #fff;
+                                border-radius: 16px;
+                                padding: 20px 22px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                                max-width: 780px;
+                                margin: 0 auto;
+                            }
+                            .summary-header {
+                                text-align: center;
+                                padding-bottom: 14px;
+                                border-bottom: 2px solid #e2eaf0;
+                                margin-bottom: 16px;
+                            }
+                            .summary-header h2 {
+                                font-size: 18px;
+                                color: #004d4d;
+                                letter-spacing: -0.3px;
+                            }
+                            .summary-header h2 i {
+                                color: #20b2aa;
+                                margin-right: 6px;
+                            }
+                            .summary-header .sub {
+                                font-size: 11px;
+                                color: #6c7a8a;
+                                margin-top: 4px;
+                            }
+                            .summary-header .period {
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: #0f5c7a;
+                                background: #f0f7fb;
+                                display: inline-block;
+                                padding: 2px 18px;
+                                border-radius: 30px;
+                                margin-top: 6px;
+                            }
+                            .summary-metrics {
+                                display: grid;
+                                grid-template-columns: repeat(3, 1fr);
+                                gap: 10px;
+                                margin-bottom: 18px;
+                            }
+                            .summary-metric {
+                                background: #f8fbfe;
+                                border-radius: 12px;
+                                padding: 10px 6px;
+                                text-align: center;
+                                border-left: 3px solid #20b2aa;
+                            }
+                            .summary-metric .label {
+                                font-size: 9px;
+                                text-transform: uppercase;
+                                letter-spacing: 0.4px;
+                                color: #6c7a8a;
+                                font-weight: 600;
+                            }
+                            .summary-metric .label .hint {
+                                font-weight: 400;
+                                text-transform: none;
+                                font-size: 8px;
+                                color: #8ba0b0;
+                                display: block;
+                                margin-top: 1px;
+                            }
+                            .summary-metric .value {
+                                font-size: 18px;
+                                font-weight: 700;
+                                color: #0a2f44;
+                                margin-top: 2px;
+                            }
+                            .summary-breakdowns {
+                                display: grid;
+                                grid-template-columns: 1fr 1fr;
+                                gap: 16px;
+                                margin-bottom: 14px;
+                            }
+                            .summary-breakdown {
+                                background: #fafcfe;
+                                border-radius: 12px;
+                                padding: 12px 14px;
+                                border: 1px solid #eef3fa;
+                            }
+                            .summary-breakdown h4 {
+                                font-size: 10px;
+                                text-transform: uppercase;
+                                letter-spacing: 0.3px;
+                                color: #1f5e7e;
+                                margin-bottom: 8px;
+                                border-bottom: 1px solid #eef3fa;
+                                padding-bottom: 6px;
+                                display: flex;
+                                align-items: center;
+                                gap: 6px;
+                            }
+                            .summary-breakdown h4 i {
+                                color: #20b2aa;
+                                width: 16px;
+                            }
+                            .summary-breakdown-item {
+                                display: flex;
+                                justify-content: space-between;
+                                padding: 3px 0;
+                                font-size: 10.5px;
+                                border-bottom: 1px dashed #f0f4f8;
+                            }
+                            .summary-breakdown-item:last-child {
+                                border-bottom: none;
+                            }
+                            .summary-breakdown-item .name {
+                                color: #1e2f3e;
+                                font-weight: 500;
+                            }
+                            .summary-breakdown-item .amt {
+                                font-weight: 600;
+                                color: #0a2f44;
+                            }
+                            .summary-breakdown-item .count {
+                                font-size: 8.5px;
+                                color: #8ba0b0;
+                                font-weight: 400;
+                                margin-left: 6px;
+                            }
+                            .summary-footer {
+                                text-align: center;
+                                font-size: 8.5px;
+                                color: #8ba0b0;
+                                border-top: 1px solid #eef3fa;
+                                padding-top: 12px;
+                                margin-top: 14px;
+                            }
+                            .table-container {
+                                background: #fff;
+                                border-radius: 16px;
+                                overflow: hidden;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                                margin-bottom: 20px;
+                                overflow-x: auto;
+                            }
+                            table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                min-width: 1200px;
+                                font-size: 11px;
+                            }
+                            th {
+                                background: #f4f9fe;
+                                padding: 10px 8px;
+                                text-align: left;
+                                font-weight: 700;
+                                color: #1f5e7e;
+                                border-bottom: 2px solid #e2eaf0;
+                                font-size: 10px;
+                            }
+                            td {
+                                padding: 8px 8px;
+                                border-bottom: 1px solid #eef3fa;
+                                color: #1e2f3e;
+                                vertical-align: top;
+                            }
+                            .stats-footer {
+                                background: #fff;
+                                border-radius: 16px;
+                                padding: 16px 20px;
+                                margin-top: 20px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                            }
+                            .stats-footer-title {
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: #0a2f44;
+                                margin-bottom: 12px;
+                                padding-bottom: 8px;
+                                border-bottom: 1px solid #e2eaf0;
+                            }
+                            .stats-grid-small {
+                                display: grid;
+                                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                                gap: 12px;
+                            }
+                            .stat-card-small {
+                                background: #f8fbfe;
+                                padding: 10px 12px;
+                                border-radius: 12px;
+                                text-align: center;
+                                border-left: 3px solid #0f5c7a;
+                            }
+                            .stat-card-small h4 {
+                                font-size: 10px;
+                                color: #6c757d;
+                                margin-bottom: 4px;
+                                font-weight: 500;
+                            }
+                            .stat-value-small {
+                                font-size: 16px;
+                                font-weight: 700;
+                                color: #0a2f44;
+                            }
+                            .stat-label-small {
+                                font-size: 9px;
+                                color: #8ba0b0;
+                                margin-top: 2px;
+                            }
+                            .insurance-breakdown-grid, .paytype-breakdown-grid {
+                                display: grid;
+                                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                                gap: 12px;
+                                margin-top: 12px;
+                            }
+                            .insurance-company-card, .paytype-card {
+                                background: #f8fbfe;
+                                border-radius: 12px;
+                                padding: 10px 12px;
+                                border-left: 3px solid #0f5c7a;
+                                text-align: center;
+                            }
+                            .insurance-company-name, .paytype-name {
+                                font-weight: 700;
+                                font-size: 12px;
+                                color: #1f5e7e;
+                                margin-bottom: 4px;
+                            }
+                            .insurance-company-total, .paytype-total {
+                                font-size: 14px;
+                                font-weight: 700;
+                                color: #0a2f44;
+                            }
+                            .insurance-company-count, .paytype-count {
+                                font-size: 9px;
+                                color: #6c757d;
+                                margin-top: 2px;
+                            }
+
+                            @media print {
+                                @page {
+                                    size: A5 portrait;
+                                    margin: 0.8cm 0.7cm;
+                                }
+                                body {
+                                    background: #fff;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                                /* Keep everything visible in print */
+                                .clinic-header, .date-filter, .btn, .view-toggle, .back-btn, .print-btn, .filter-btn {
+                                    display: flex !important;
+                                }
+                                .btn:not(.btn-print) {
+                                    display: none !important;
+                                }
+                                .btn-print {
+                                    display: inline-flex !important;
+                                }
+                                .container {
+                                    padding: 0 20px !important;
+                                    margin: 20px auto !important;
+                                    max-width: 100% !important;
+                                }
+                                .summary-view {
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+                                    border: none !important;
+                                    border-radius: 16px !important;
+                                    padding: 20px 22px !important;
+                                }
+                                .summary-metric {
+                                    background: #f8fbfe !important;
+                                    border: none !important;
+                                    border-left: 3px solid #20b2aa !important;
+                                }
+                                .summary-metric .label .hint {
+                                    display: block !important;
+                                }
+                                .summary-breakdown {
+                                    background: #fafcfe !important;
+                                    border: 1px solid #eef3fa !important;
+                                }
+                                .table-container {
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+                                    border: none !important;
+                                }
+                                .stats-footer {
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+                                    border: none !important;
+                                }
+                                .stat-card-small, .insurance-company-card, .paytype-card {
+                                    background: #f8fbfe !important;
+                                    border: none !important;
+                                    border-left: 3px solid #0f5c7a !important;
+                                }
+                            }
                         </style>
                         </head><body>
-                        <div class="report-print-header">
-                            <h2>🏥 Hope Dental Clinic</h2>
-                            <div class="sub">${viewLabel} Report</div>
-                            <div class="period">📅 ${from} – ${to}</div>
+                        ${headerHTML}
+                        <div class="container">
+                            ${dateFilterHTML}
+                            ${content}
                         </div>
-                        ${content}
-                        <div class="footer-print">Generated ${new Date().toLocaleString()} · Hope Dental Clinic</div>
                         <\/body><\/html>
                     `);
             win.document.close();

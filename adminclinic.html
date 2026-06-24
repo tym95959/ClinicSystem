@@ -111,6 +111,8 @@
         .consultation-icon { color: #0f5c7a; }
         .service-icon { color: #146b3a; }
         .commission-column { min-width: 100px; }
+        .hidden-commission { display: none !important; }
+        .hidden-col { display: none; }
     </style>
 </head>
 <body>
@@ -147,13 +149,19 @@
     <div id="doctorsTab" class="card" style="display:none;">
         <div class="card-title">👨‍⚕️ Doctors Management <button class="btn-primary" id="addDoctorBtn" style="padding:6px 18px;">+ Add Doctor</button></div>
         
-        <!-- Restricted note -->
-        <div class="restricted-note">
+        <!-- Restricted note - only show for Supervisor/Manager -->
+        <div class="restricted-note" id="restrictedNote">
             <i class="fas fa-lock" style="color:#d9534f;"></i>
             <strong>Restricted:</strong> Commission allocation is only available to <strong>Supervisor</strong> and <strong>Manager</strong> level staff.
         </div>
         
-        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Doctor Name</th><th>Speciality</th><th>Consultation Comm.</th><th>Service Comm.</th><th>Actions</th></tr></thead><tbody id="doctorsList"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr id="doctorTableHead">
+            <th>Doctor Name</th>
+            <th>Speciality</th>
+            <th class="commission-col">Consultation Comm.</th>
+            <th class="commission-col">Service Comm.</th>
+            <th>Actions</th>
+        </tr></thead><tbody id="doctorsList"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div>
         <div id="doctorsMessage" class="message" style="display:none;"></div>
     </div>
 
@@ -235,7 +243,7 @@
     <div class="input-group"><label>Doctor Name *</label><input type="text" id="doctorName" placeholder="Dr. Abdulla Irufan"></div>
     <div class="input-group"><label>Speciality *</label><input type="text" id="doctorSpeciality" placeholder="Cardiology"></div>
     
-    <div class="commission-group">
+    <div class="commission-group" id="commissionGroup">
         <div class="input-group">
             <label><i class="fas fa-stethoscope consultation-icon"></i> Consultation Commission <span class="badge-restricted">Restricted</span></label>
             <div class="commission-input-wrapper">
@@ -253,7 +261,7 @@
             <div class="field-hint">Percentage of <strong>other services</strong> fee that goes to the doctor.</div>
         </div>
     </div>
-    <div class="commission-range" style="font-size:10px; color:#6c757d; margin-top:-4px; margin-bottom:8px; padding:6px 12px; background:#f8fafc; border-radius:12px;">
+    <div class="commission-range" id="commissionRange" style="font-size:10px; color:#6c757d; margin-top:-4px; margin-bottom:8px; padding:6px 12px; background:#f8fafc; border-radius:12px;">
         <i class="fas fa-info-circle"></i> Range: 0% – 100% each (only Supervisor/Manager can set these)
     </div>
     
@@ -280,8 +288,13 @@
         const loggedInUser = localStorage.getItem('loggedInUser');
         if (!loggedInUser) { window.location.href = 'login.html'; return; }
         let currentUser = null;
+        let isAuthorizedForCommission = false;
         try {
             currentUser = JSON.parse(loggedInUser);
+            // Check if user is Supervisor or Manager
+            const level = currentUser.level || '';
+            isAuthorizedForCommission = (level === 'Supervisor' || level === 'Manager');
+            
             if (currentUser.level !== 'Supervisor') {
                 alert('Access Denied. Only Supervisors can access Admin Panel.');
                 window.location.href = 'clinicdash.html';
@@ -289,6 +302,28 @@
             }
             document.getElementById('adminUser').textContent = `${currentUser.name || currentUser.username} (${currentUser.level})`;
         } catch(e) { window.location.href = 'login.html'; return; }
+
+        // Hide commission elements if user is not authorized
+        function applyCommissionVisibility() {
+            const commissionCols = document.querySelectorAll('.commission-col');
+            const commissionGroup = document.getElementById('commissionGroup');
+            const commissionRange = document.getElementById('commissionRange');
+            const restrictedNote = document.getElementById('restrictedNote');
+            
+            if (!isAuthorizedForCommission) {
+                // Hide commission columns in table
+                commissionCols.forEach(col => col.classList.add('hidden-col'));
+                // Hide commission group in modal
+                if (commissionGroup) commissionGroup.style.display = 'none';
+                if (commissionRange) commissionRange.style.display = 'none';
+                if (restrictedNote) restrictedNote.style.display = 'none';
+            } else {
+                commissionCols.forEach(col => col.classList.remove('hidden-col'));
+                if (commissionGroup) commissionGroup.style.display = 'grid';
+                if (commissionRange) commissionRange.style.display = 'block';
+                if (restrictedNote) restrictedNote.style.display = 'flex';
+            }
+        }
 
         // ----- Data stores -----
         let services = [], doctors = [], insuranceList = [], discountsList = [];
@@ -398,6 +433,7 @@
                 discountsList = discountsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderAll();
                 await loadExistingDoctors();
+                applyCommissionVisibility();
             } catch (error) { console.error(error); document.getElementById('firebaseStatus').innerHTML = 'Error'; }
         }
         
@@ -434,7 +470,11 @@
         function renderDoctors() {
             const tbody = document.getElementById('doctorsList');
             if (!tbody) return;
-            if (doctors.length === 0) { tbody.innerHTML = '<tr><td colspan="5">No doctors</td></tr>'; return; }
+            if (doctors.length === 0) { 
+                const colSpan = isAuthorizedForCommission ? 5 : 3;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}">No doctors</td></tr>`; 
+                return; 
+            }
             tbody.innerHTML = doctors.map(d => {
                 const consultComm = d.consultationCommission !== undefined ? d.consultationCommission : (d.baseCommission || 0);
                 const serviceComm = d.serviceCommission !== undefined ? d.serviceCommission : (d.baseCommission || 0);
@@ -444,11 +484,15 @@
                 else if (consultComm <= 5) consultBadge += ' low';
                 if (serviceComm >= 20) serviceBadge += ' high';
                 else if (serviceComm <= 5) serviceBadge += ' low';
+                
+                const commissionCols = isAuthorizedForCommission ? 
+                    `<td><span class="${consultBadge}">${consultComm}%</span></td>
+                     <td><span class="${serviceBadge}">${serviceComm}%</span></td>` : '';
+                
                 return `<tr>
                     <td><strong>${escapeHtml(d.name)}</strong></td>
                     <td>${escapeHtml(d.speciality)}</td>
-                    <td><span class="${consultBadge}">${consultComm}%</span></td>
-                    <td><span class="${serviceBadge}">${serviceComm}%</span></td>
+                    ${commissionCols}
                     <td><button class="btn-sm" onclick="window.editDoctor('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDoctor('${d.id}')">🗑️ Delete</button></td>
                 </tr>`;
             }).join('');
@@ -501,8 +545,10 @@
                 document.getElementById('doctorModalTitle').innerText = 'Edit Doctor'; 
                 document.getElementById('doctorName').value = d.name; 
                 document.getElementById('doctorSpeciality').value = d.speciality; 
-                document.getElementById('doctorConsultationCommission').value = d.consultationCommission !== undefined ? d.consultationCommission : (d.baseCommission || 0);
-                document.getElementById('doctorServiceCommission').value = d.serviceCommission !== undefined ? d.serviceCommission : (d.baseCommission || 0);
+                if (isAuthorizedForCommission) {
+                    document.getElementById('doctorConsultationCommission').value = d.consultationCommission !== undefined ? d.consultationCommission : (d.baseCommission || 0);
+                    document.getElementById('doctorServiceCommission').value = d.serviceCommission !== undefined ? d.serviceCommission : (d.baseCommission || 0);
+                }
                 document.getElementById('doctorModal').style.display = 'flex'; 
             } 
         };
@@ -597,36 +643,50 @@
         async function saveDoctor() {
             const name = document.getElementById('doctorName').value.trim();
             const speciality = document.getElementById('doctorSpeciality').value.trim();
-            const consultationCommission = parseFloat(document.getElementById('doctorConsultationCommission').value) || 0;
-            const serviceCommission = parseFloat(document.getElementById('doctorServiceCommission').value) || 0;
             
-            // Validate commission ranges
-            if (consultationCommission < 0 || consultationCommission > 100) {
-                showMessage('doctorsMessage', 'Consultation commission must be between 0 and 100', 'error');
-                return;
-            }
-            if (serviceCommission < 0 || serviceCommission > 100) {
-                showMessage('doctorsMessage', 'Service commission must be between 0 and 100', 'error');
-                return;
+            let consultationCommission = 0;
+            let serviceCommission = 0;
+            
+            if (isAuthorizedForCommission) {
+                consultationCommission = parseFloat(document.getElementById('doctorConsultationCommission').value) || 0;
+                serviceCommission = parseFloat(document.getElementById('doctorServiceCommission').value) || 0;
+                
+                if (consultationCommission < 0 || consultationCommission > 100) {
+                    showMessage('doctorsMessage', 'Consultation commission must be between 0 and 100', 'error');
+                    return;
+                }
+                if (serviceCommission < 0 || serviceCommission > 100) {
+                    showMessage('doctorsMessage', 'Service commission must be between 0 and 100', 'error');
+                    return;
+                }
             }
             
             if (!name || !speciality) { showMessage('doctorsMessage', 'Doctor name and speciality required', 'error'); return; }
             
             if (currentEditId) {
                 const idx = doctors.findIndex(d => d.id === currentEditId);
-                if (idx !== -1) doctors[idx] = { ...doctors[idx], name, speciality, consultationCommission, serviceCommission };
-                await window.db.collection("doctors").doc(currentEditId).set(doctors[idx]);
+                if (idx !== -1) {
+                    const updateData = { ...doctors[idx], name, speciality };
+                    if (isAuthorizedForCommission) {
+                        updateData.consultationCommission = consultationCommission;
+                        updateData.serviceCommission = serviceCommission;
+                    }
+                    doctors[idx] = updateData;
+                    await window.db.collection("doctors").doc(currentEditId).set(doctors[idx]);
+                }
             } else {
                 const newId = `D${Date.now()}`;
                 const newDoctor = { 
                     id: newId, 
                     name, 
                     speciality, 
-                    consultationCommission, 
-                    serviceCommission,
                     status: 'active', 
                     createdAt: new Date().toISOString() 
                 };
+                if (isAuthorizedForCommission) {
+                    newDoctor.consultationCommission = consultationCommission;
+                    newDoctor.serviceCommission = serviceCommission;
+                }
                 doctors.push(newDoctor);
                 await window.db.collection("doctors").doc(newId).set(newDoctor);
             }
@@ -686,6 +746,7 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
             if (tabName === 'users') loadUsersFromFirebase();
+            if (tabName === 'doctors') applyCommissionVisibility();
         }
 
         // ========== USER MANAGEMENT ==========
@@ -789,11 +850,15 @@
                             id: username,
                             name: fullName,
                             speciality: speciality,
-                            consultationCommission: 0,
-                            serviceCommission: 0,
                             status: 'active',
                             createdAt: new Date().toISOString()
                         });
+                        if (isAuthorizedForCommission) {
+                            await doctorRef.update({
+                                consultationCommission: 0,
+                                serviceCommission: 0
+                            });
+                        }
                     } else {
                         await doctorRef.update({ name: fullName, speciality: speciality });
                     }
@@ -917,8 +982,10 @@
             document.getElementById('doctorModalTitle').innerText = 'Add Doctor'; 
             document.getElementById('doctorName').value = ''; 
             document.getElementById('doctorSpeciality').value = ''; 
-            document.getElementById('doctorConsultationCommission').value = ''; 
-            document.getElementById('doctorServiceCommission').value = ''; 
+            if (isAuthorizedForCommission) {
+                document.getElementById('doctorConsultationCommission').value = ''; 
+                document.getElementById('doctorServiceCommission').value = ''; 
+            }
             document.getElementById('doctorModal').style.display = 'flex'; 
         };
         
@@ -966,6 +1033,7 @@
         document.getElementById('regPassword').addEventListener('input', (e) => updateStrength(e.target.value));
         
         toggleSpecialityField();
+        applyCommissionVisibility();
         
         function waitForFirebase() { 
             if (window.db) { 

@@ -492,7 +492,7 @@
             const memoNo = memo.memoId || memo.id.slice(-6).toUpperCase();
             const visitDate = memo.createdAt ? new Date(memo.createdAt).toLocaleDateString() : 'N/A';
             const patientName = patient.name || 'N/A';
-            const patientIdCard =  patient.nic || patient.passport || 'N/A';
+            const patientIdCard =  patient.idNumber || patient.passport || 'N/A';
 
             // If no services, treat as a single service line with no details
             if (!services.length) {

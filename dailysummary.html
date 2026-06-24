@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>Hope Dental | Daily Report Summary</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- Firebase Config -->
+    <script src="firebase-config.js">
+    </script>
+    <style>
+        /* ─── BASE ─── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #eef2f7;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        /* ─── HEADER ─── */
+        .clinic-header {
+            background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
+            color: #004d4d;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .clinic-header .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .clinic-header .logo-area img {
+            height: 44px;
+        }
+
+        .clinic-header .logo-area h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0;
+            background: linear-gradient(135deg, #006666, #20b2aa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header-actions .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 11px;
+            color: #004d4d;
+            font-weight: 500;
+        }
+
+        .btn {
+            border: none;
+            padding: 6px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 11px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-back {
+            background: #1e4a6e;
+            color: #fff;
+        }
+        .btn-back:hover {
+            background: #143a55;
+        }
+
+        .btn-print {
+            background: #146b3a;
+            color: #fff;
+        }
+        .btn-print:hover {
+            background: #0e522b;
+        }
+
+        .btn-summary {
+            background: #b8860b;
+            color: #fff;
+        }
+        .btn-summary:hover {
+            background: #9a7209;
+        }
+        .btn-summary.active {
+            background: #0f5c7a;
+        }
+
+        .btn-detail {
+            background: #0f5c7a;
+            color: #fff;
+        }
+        .btn-detail:hover {
+            background: #0a455d;
+        }
+        .btn-detail.active {
+            background: #b8860b;
+        }
+
+        /* ─── CONTAINER ─── */
+        .container {
+            max-width: 1600px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* ─── DATE FILTER ─── */
+        .date-filter {
+            background: #fff;
+            padding: 18px 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1f5e7e;
+        }
+
+        .filter-group input {
+            padding: 7px 12px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 12px;
+            font-size: 12px;
+            background: #fafcfe;
+        }
+
+        .filter-group input:focus {
+            border-color: #20b2aa;
+            outline: none;
+        }
+
+        .filter-btn {
+            background: #0f5c7a;
+            color: #fff;
+            border: none;
+            padding: 7px 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .filter-btn:hover {
+            background: #0a455d;
+        }
+
+        /* ─── VIEW TOGGLE ─── */
+        .view-toggle {
+            display: flex;
+            gap: 6px;
+            background: #eef2f7;
+            padding: 4px;
+            border-radius: 30px;
+        }
+
+        .view-toggle .btn {
+            border-radius: 30px;
+            padding: 5px 16px;
+            font-size: 10px;
+        }
+
+        .view-toggle .btn.active {
+            background: #fff;
+            color: #0f5c7a;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .view-toggle .btn:not(.active) {
+            background: transparent;
+            color: #6c7a8a;
+        }
+
+        /* ─── REPORT CONTENT ─── */
+        #dailyReportContent .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #8ba0b0;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ─── DETAILED VIEW TABLES ─── */
+        .table-container {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+            font-size: 11px;
+        }
+
+        th {
+            background: #f4f9fe;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 700;
+            color: #1f5e7e;
+            border-bottom: 2px solid #e2eaf0;
+            font-size: 10px;
+        }
+
+        td {
+            padding: 8px 8px;
+            border-bottom: 1px solid #eef3fa;
+            color: #1e2f3e;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: #f8fbfe;
+        }
+
+        /* ─── STATS CARDS ─── */
+        .stats-footer {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-footer-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0a2f44;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2eaf0;
+        }
+
+        .stats-grid-small {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card-small {
+            background: #f8fbfe;
+            padding: 10px 12px;
+            border-radius: 12px;
+            text-align: center;
+            border-left: 3px solid #0f5c7a;
+        }
+
+        .stat-card-small h4 {
+            font-size: 10px;
+            color: #6c757d;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .stat-value-small {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a2f44;
+        }
+
+        .stat-label-small {
+            font-size: 9px;
+            color: #8ba0b0;
+            margin-top: 2px;
+        }
+
+        .insurance-breakdown-grid,
+        .paytype-breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .insurance-company-card,
+        .paytype-card {
+            background: #f8fbfe;
+            border-radius: 12px;
+            padding: 10px 12px;
+            border-left: 3px solid #0f5c7a;
+            text-align: center;
+        }
+
+        .insurance-company-name,
+        .paytype-name {
+            font-weight: 700;
+            font-size: 12px;
+            color: #1f5e7e;
+            margin-bottom: 4px;
+        }
+
+        .insurance-company-total,
+        .paytype-total {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0a2f44;
+        }
+
+        .insurance-company-count,
+        .paytype-count {
+            font-size: 9px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        /* ═══════════════════════════════════════════ */
+        /* ─── SUMMARY VIEW (A5‑OPTIMISED) ─── */
+        /* ═══════════════════════════════════════════ */
+        .summary-view {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 22px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            max-width: 780px;
+            margin: 0 auto;
+        }
+
+        .summary-header {
+            text-align: center;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #e2eaf0;
+            margin-bottom: 16px;
+        }
+
+        .summary-header h2 {
+            font-size: 18px;
+            color: #004d4d;
+            letter-spacing: -0.3px;
+        }
+
+        .summary-header h2 i {
+            color: #20b2aa;
+            margin-right: 6px;
+        }
+
+        .summary-header .sub {
+            font-size: 11px;
+            color: #6c7a8a;
+            margin-top: 4px;
+        }
+
+        .summary-header .period {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0f5c7a;
+            background: #f0f7fb;
+            display: inline-block;
+            padding: 2px 18px;
+            border-radius: 30px;
+            margin-top: 6px;
+        }
+
+        /* summary metrics grid — 2×2 */
+        .summary-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .summary-metric {
+            background: #f8fbfe;
+            border-radius: 12px;
+            padding: 10px 8px;
+            text-align: center;
+            border-left: 3px solid #20b2aa;
+        }
+
+        .summary-metric .label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #6c7a8a;
+            font-weight: 600;
+        }
+
+        .summary-metric .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0a2f44;
+            margin-top: 2px;
+        }
+
+        .summary-metric .value small {
+            font-size: 11px;
+            font-weight: 400;
+            color: #6c7a8a;
+        }
+
+        /* summary breakdowns — two columns */
+        .summary-breakdowns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .summary-breakdown {
+            background: #fafcfe;
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid #eef3fa;
+        }
+
+        .summary-breakdown h4 {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #1f5e7e;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #eef3fa;
+            padding-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .summary-breakdown h4 i {
+            color: #20b2aa;
+            width: 16px;
+        }
+
+        .summary-breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 10.5px;
+            border-bottom: 1px dashed #f0f4f8;
+        }
+
+        .summary-breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-breakdown-item .name {
+            color: #1e2f3e;
+            font-weight: 500;
+        }
+
+        .summary-breakdown-item .amt {
+            font-weight: 600;
+            color: #0a2f44;
+        }
+
+        .summary-breakdown-item .count {
+            font-size: 8.5px;
+            color: #8ba0b0;
+            font-weight: 400;
+            margin-left: 6px;
+        }
+
+        /* summary memo list — compact */
+        .summary-memo-list {
+            margin-top: 12px;
+            border-top: 1px solid #eef3fa;
+            padding-top: 12px;
+        }
+
+        .summary-memo-list h4 {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #1f5e7e;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .summary-memo-list h4 i {
+            color: #20b2aa;
+        }
+
+        .summary-memo-item {
+            display: grid;
+            grid-template-columns: 70px 1fr 70px 60px;
+            gap: 6px;
+            padding: 4px 0;
+            font-size: 9.5px;
+            border-bottom: 1px solid #f5f8fc;
+            color: #1e2f3e;
+        }
+
+        .summary-memo-item .memo-no {
+            font-weight: 600;
+            color: #0f5c7a;
+        }
+        .summary-memo-item .memo-patient {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .summary-memo-item .memo-amount {
+            text-align: right;
+            font-weight: 600;
+        }
+        .summary-memo-item .memo-paytype {
+            text-align: center;
+            font-size: 8.5px;
+            background: #eef3fa;
+            border-radius: 20px;
+            padding: 0 6px;
+            display: inline-block;
+            color: #1f5e7e;
+        }
+
+        .summary-memo-more {
+            text-align: center;
+            font-size: 9px;
+            color: #8ba0b0;
+            padding: 6px 0 2px;
+        }
+
+        .summary-footer {
+            text-align: center;
+            font-size: 8.5px;
+            color: #8ba0b0;
+            border-top: 1px solid #eef3fa;
+            padding-top: 12px;
+            margin-top: 14px;
+        }
+
+        /* ─── PRINT: A5 ─── */
+        @media print {
+            @page {
+                size: A5 portrait;
+                margin: 0.8cm 0.7cm;
+            }
+
+            body {
+                background: #fff;
+                margin: 0;
+                padding: 0;
+            }
+
+            .clinic-header,
+            .date-filter,
+            .btn,
+            .view-toggle,
+            .back-btn,
+            .print-btn,
+            .filter-btn {
+                display: none !important;
+            }
+
+            .container {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+
+            #dailyReportContent .empty-state {
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+            }
+
+            /* detailed view print */
+            .table-container {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                overflow-x: visible !important;
+            }
+
+            table {
+                font-size: 7.5pt !important;
+                min-width: auto !important;
+                width: 100% !important;
+            }
+
+            th,
+            td {
+                border: 1px solid #aaa !important;
+                padding: 4px 5px !important;
+            }
+
+            th {
+                background: #e0e7ef !important;
+            }
+
+            .stats-footer {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                background: none !important;
+                padding: 10px !important;
+            }
+
+            .stats-grid-small,
+            .insurance-breakdown-grid,
+            .paytype-breakdown-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 6px;
+            }
+
+            .stat-card-small,
+            .insurance-company-card,
+            .paytype-card {
+                background: none !important;
+                border: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                border-left: none !important;
+                padding: 5px !important;
+            }
+
+            /* ── summary view print ── */
+            .summary-view {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .summary-metric {
+                background: none !important;
+                border: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                border-left: 3px solid #20b2aa !important;
+                padding: 6px !important;
+            }
+
+            .summary-breakdown {
+                background: none !important;
+                border: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                padding: 8px !important;
+            }
+
+            .summary-breakdown-item {
+                border-bottom: 1px dashed #ddd !important;
+            }
+
+            .summary-memo-item {
+                border-bottom: 1px solid #eee !important;
+                font-size: 8pt !important;
+                grid-template-columns: 60px 1fr 60px 50px !important;
+            }
+
+            .summary-header {
+                border-bottom: 2px solid #aaa !important;
+            }
+
+            .summary-header .period {
+                background: #f0f7fb !important;
+            }
+
+            .summary-footer {
+                border-top: 1px solid #ccc !important;
+            }
+
+            .summary-memo-list {
+                border-top: 1px solid #ccc !important;
+            }
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 600px) {
+            .summary-breakdowns {
+                grid-template-columns: 1fr;
+            }
+            .summary-metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+            .summary-memo-item {
+                grid-template-columns: 55px 1fr 55px 50px;
+                font-size: 8.5px;
+            }
+            .clinic-header .logo-area h1 {
+                font-size: 0.95rem;
+            }
+            .date-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .date-filter .filter-group {
+                width: 100%;
+            }
+            .date-filter .filter-group input {
+                width: 100%;
+            }
+            .header-actions .user-badge {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══ HEADER ═══ -->
+    <div class="clinic-header">
+        <div class="logo-area">
+            <img src="hope1.png" alt="Hope Dental Logo" />
+            <h1>Hope Dental Clinic</h1>
+        </div>
+        <div class="header-actions">
+            <span class="user-badge" id="userBadge">👤 Staff</span>
+            <button class="btn btn-back" onclick="window.location.href='reports.html'">← Reports</button>
+        </div>
+    </div>
+
+    <!-- ═══ MAIN ═══ -->
+    <div class="container">
+
+        <!-- DATE FILTER -->
+        <div class="date-filter">
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" id="dailyStartDate" />
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" id="dailyEndDate" />
+            </div>
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="filter-btn" onclick="loadDailyReport()">📊 Generate</button>
+            </div>
+            <div class="filter-group" style="flex:1; min-width:140px;">
+                <label>&nbsp;</label>
+                <div class="view-toggle" id="viewToggle">
+                    <button class="btn active" data-view="summary" onclick="setView('summary')">
+                        <i class="fas fa-file-alt"></i> Summary
+                    </button>
+                    <button class="btn" data-view="detail" onclick="setView('detail')">
+                        <i class="fas fa-table"></i> Detail
+                    </button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-print" onclick="printReport()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+
+        <!-- REPORT OUTPUT -->
+        <div id="dailyReportContent">
+            <div class="empty-state">Select a date range and click Generate Report</div>
+        </div>
+
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════
+        //  AUTH & DEFAULTS
+        // ═══════════════════════════════════════════════════════
+
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (!loggedInUser) window.location.href = 'login.html';
+        try {
+            const user = JSON.parse(loggedInUser);
+            document.getElementById('userBadge').textContent = `👤 ${user.name || user.username} (${user.level})`;
+        } catch (_) {}
+
+        // default dates: last 30 days
+        const d = new Date();
+        const endDef = d.toISOString().split('T')[0];
+        const startDef = new Date(d.setDate(d.getDate() - 30)).toISOString().split('T')[0];
+        document.getElementById('dailyStartDate').value = startDef;
+        document.getElementById('dailyEndDate').value = endDef;
+
+        let currentView = 'summary';
+        let currentMemos = [];
+        let currentStart = '';
+        let currentEnd = '';
+
+        // ═══════════════════════════════════════════════════════
+        //  VIEW TOGGLE
+        // ═══════════════════════════════════════════════════════
+
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('#viewToggle .btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.view === view);
+            });
+            if (currentMemos.length) {
+                renderView(currentMemos, currentStart, currentEnd);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  LOAD DATA
+        // ═══════════════════════════════════════════════════════
+
+        async function loadDailyReport() {
+            const s = document.getElementById('dailyStartDate').value;
+            const e = document.getElementById('dailyEndDate').value;
+            if (!s || !e) { alert('Please select both dates'); return; }
+            if (!window.db) { setTimeout(() => loadDailyReport(), 400); return; }
+
+            try {
+                const start = new Date(s);
+                start.setHours(0, 0, 0, 0);
+                const end = new Date(e);
+                end.setHours(23, 59, 59, 999);
+
+                const snap = await window.db.collection('memos')
+                    .where('createdAt', '>=', start.toISOString())
+                    .where('createdAt', '<=', end.toISOString())
+                    .get();
+
+                const memos = [];
+                snap.forEach(doc => memos.push({ id: doc.id, ...doc.data() }));
+
+                currentMemos = memos;
+                currentStart = s;
+                currentEnd = e;
+                renderView(memos, s, e);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('dailyReportContent').innerHTML =
+                    `<div class="empty-state">Error: ${err.message}</div>`;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  RENDER: dispatches to summary or detail
+        // ═══════════════════════════════════════════════════════
+
+        function renderView(memos, startDate, endDate) {
+            if (currentView === 'summary') {
+                renderSummary(memos, startDate, endDate);
+            } else {
+                renderDetail(memos, startDate, endDate);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  ─── SUMMARY VIEW (A5‑FRIENDLY) ───
+        // ═══════════════════════════════════════════════════════
+
+        function renderSummary(memos, startDate, endDate) {
+            // ——— aggregates ———
+            let totalRevenue = 0,
+                totalCollected = 0,
+                totalDiscount = 0;
+            const insTotals = {}; // company -> { amount, count }
+            const payTotals = {}; // method -> { amount, count }
+
+            const memoRows = [];
+
+            memos.forEach(m => {
+                const billing = m.billing || {};
+                const after = billing.afterDiscount || 0;
+                const paid = billing.paid || 0;
+                const disc = billing.discount?.amount || 0;
+                totalRevenue += after;
+                totalCollected += paid;
+                totalDiscount += disc;
+
+                // pay type
+                let pt = 'Unknown';
+                if (billing.paymentMethod) pt = billing.paymentMethod;
+                else if (m.paymentType) pt = m.paymentType;
+                else if (paid > 0 && (billing.cashAmount || billing.cardAmount)) pt = 'Mixed';
+                else if (paid > 0) pt = 'Cash';
+                if (paid > 0 && pt !== 'Unknown') {
+                    if (!payTotals[pt]) payTotals[pt] = { amount: 0, count: 0 };
+                    payTotals[pt].amount += paid;
+                    payTotals[pt].count++;
+                }
+
+                // insurances
+                const insArr = m.insurances || [];
+                if (insArr.length) {
+                    insArr.forEach(ins => {
+                        const name = ins.name || 'Unknown';
+                        const amt = ins.amount || 0;
+                        if (!insTotals[name]) insTotals[name] = { amount: 0, count: 0 };
+                        insTotals[name].amount += amt;
+                        insTotals[name].count++;
+                    });
+                } else {
+                    // legacy fallback
+                    const legPrim = billing.primaryInsurancePayment || billing.insurancePayment || 0;
+                    const legAas = billing.aasandhaPayment || 0;
+                    if (legPrim > 0) {
+                        const n = 'Primary Insurance';
+                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
+                        insTotals[n].amount += legPrim;
+                        insTotals[n].count++;
+                    }
+                    if (legAas > 0) {
+                        const n = 'Aasandha';
+                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
+                        insTotals[n].amount += legAas;
+                        insTotals[n].count++;
+                    }
+                }
+
+                // memo row for list
+                const memoNo = m.memoId || m.id.slice(-6).toUpperCase();
+                const patient = m.patient?.name || 'N/A';
+                memoRows.push({
+                    no: memoNo,
+                    patient: patient,
+                    amount: paid,
+                    payType: pt,
+                    date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'N/A'
+                });
+            });
+
+            // sort memo rows by date desc
+            memoRows.sort((a, b) => (a.date < b.date ? 1 : -1));
+
+            // ——— build HTML ———
+            const sortedIns = Object.keys(insTotals).sort();
+            const sortedPay = Object.keys(payTotals).sort();
+
+            // show top 5 insurances by amount, rest as "Other"
+            let insDisplay = sortedIns;
+            if (insDisplay.length > 6) {
+                const top = insDisplay.slice(0, 5);
+                const rest = insDisplay.slice(5);
+                let restAmt = 0,
+                    restCnt = 0;
+                rest.forEach(k => { restAmt += insTotals[k].amount;
+                    restCnt += insTotals[k].count; });
+                insDisplay = top;
+                if (restAmt > 0) {
+                    insDisplay.push('__OTHER__');
+                    insTotals['__OTHER__'] = { amount: restAmt, count: restCnt };
+                }
+            }
+
+            const insHtml = insDisplay.map(key => {
+                if (key === '__OTHER__') {
+                    const d = insTotals[key];
+                    return `<div class="summary-breakdown-item">
+                                <span class="name">Other insurances</span>
+                                <span class="amt">MVR ${d.amount.toFixed(2)} <span class="count">(${d.count})</span></span>
+                            </div>`;
+                }
+                const d = insTotals[key];
+                return `<div class="summary-breakdown-item">
+                            <span class="name">${escHtml(key)}</span>
+                            <span class="amt">MVR ${d.amount.toFixed(2)} <span class="count">(${d.count})</span></span>
+                        </div>`;
+            }).join('');
+
+            const payHtml = sortedPay.map(key => {
+                const d = payTotals[key];
+                return `<div class="summary-breakdown-item">
+                            <span class="name">${escHtml(key)}</span>
+                            <span class="amt">MVR ${d.amount.toFixed(2)} <span class="count">(${d.count})</span></span>
+                        </div>`;
+            }).join('') || '<div style="font-size:10px;color:#8ba0b0;padding:6px 0;">No payment data</div>';
+
+            // memo list (max 12 items, else "…")
+            const showMemos = memoRows.slice(0, 12);
+            const memoHtml = showMemos.map(r =>
+                `<div class="summary-memo-item">
+                            <span class="memo-no">#${escHtml(r.no)}</span>
+                            <span class="memo-patient">${escHtml(r.patient)}</span>
+                            <span class="memo-amount">MVR ${r.amount.toFixed(2)}</span>
+                            <span class="memo-paytype">${escHtml(r.payType)}</span>
+                        </div>`
+            ).join('');
+
+            const moreText = memoRows.length > 12 ?
+                `<div class="summary-memo-more">+ ${memoRows.length - 12} more memos not shown</div>` :
+                '';
+
+            const html = `
+                        <div class="summary-view">
+                            <!-- HEADER -->
+                            <div class="summary-header">
+                                <h2><i class="fas fa-tooth"></i> Hope Dental Clinic</h2>
+                                <div class="sub">Daily Report Summary</div>
+                                <div class="period">📅 ${startDate} – ${endDate}</div>
+                            </div>
+
+                            <!-- 2×2 METRICS -->
+                            <div class="summary-metrics">
+                                <div class="summary-metric">
+                                    <div class="label">💰 Total Revenue</div>
+                                    <div class="value">MVR ${totalRevenue.toFixed(2)}</div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="label">💵 Collected</div>
+                                    <div class="value">MVR ${totalCollected.toFixed(2)}</div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="label">🎟️ Discounts</div>
+                                    <div class="value">MVR ${totalDiscount.toFixed(2)}</div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="label">📋 Visits</div>
+                                    <div class="value">${memos.length}</div>
+                                </div>
+                            </div>
+
+                            <!-- BREAKDOWNS: 2 columns -->
+                            <div class="summary-breakdowns">
+                                <div class="summary-breakdown">
+                                    <h4><i class="fas fa-building"></i> Insurance by Company</h4>
+                                    ${insHtml || '<div style="font-size:10px;color:#8ba0b0;">No claims</div>'}
+                                </div>
+                                <div class="summary-breakdown">
+                                    <h4><i class="fas fa-credit-card"></i> Payment Methods</h4>
+                                    ${payHtml}
+                                </div>
+                            </div>
+
+                            <!-- MEMO LIST (compact) -->
+                            <div class="summary-memo-list">
+                                <h4><i class="fas fa-list-ul"></i> Recent Memos (${memos.length} total)</h4>
+                                ${memoHtml || '<div style="font-size:10px;color:#8ba0b0;padding:6px 0;">No memos</div>'}
+                                ${moreText}
+                            </div>
+
+                            <div class="summary-footer">
+                                Generated ${new Date().toLocaleString()} &nbsp;·&nbsp; Hope Dental Clinic
+                            </div>
+                        </div>
+                    `;
+
+            document.getElementById('dailyReportContent').innerHTML = html;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  ─── DETAILED VIEW (original) ───
+        // ═══════════════════════════════════════════════════════
+
+        function renderDetail(memos, startDate, endDate) {
+            let totalRevenue = 0,
+                totalCollected = 0,
+                totalDiscount = 0;
+            const insTotals = {};
+            const payTotals = {};
+            const tableRows = [];
+
+            memos.forEach(m => {
+                const billing = m.billing || {};
+                const after = billing.afterDiscount || 0;
+                const paid = billing.paid || 0;
+                const disc = billing.discount?.amount || 0;
+                totalRevenue += after;
+                totalCollected += paid;
+                totalDiscount += disc;
+
+                let pt = 'Unknown';
+                if (billing.paymentMethod) pt = billing.paymentMethod;
+                else if (m.paymentType) pt = m.paymentType;
+                else if (paid > 0 && (billing.cashAmount || billing.cardAmount)) pt = 'Mixed';
+                else if (paid > 0) pt = 'Cash';
+                if (paid > 0 && pt !== 'Unknown') {
+                    if (!payTotals[pt]) payTotals[pt] = { amount: 0, count: 0 };
+                    payTotals[pt].amount += paid;
+                    payTotals[pt].count++;
+                }
+
+                const insArr = m.insurances || [];
+                let primaryList = [],
+                    secondaryList = [],
+                    allInsList = [];
+                insArr.forEach(ins => {
+                    const name = ins.name || 'Unknown';
+                    const amt = ins.amount || 0;
+                    allInsList.push(`${name}: MVR ${amt.toFixed(2)}`);
+                    if (!insTotals[name]) insTotals[name] = { amount: 0, count: 0 };
+                    insTotals[name].amount += amt;
+                    insTotals[name].count++;
+                    if (name.toLowerCase() === 'aasandha') {
+                        secondaryList.push(`${name} MVR ${amt.toFixed(2)}`);
+                    } else {
+                        primaryList.push(`${name} MVR ${amt.toFixed(2)}`);
+                    }
+                });
+                if (insArr.length === 0) {
+                    const lp = billing.primaryInsurancePayment || billing.insurancePayment || 0;
+                    const la = billing.aasandhaPayment || 0;
+                    if (lp > 0) {
+                        const n = 'Primary Insurance';
+                        primaryList.push(`${n}: MVR ${lp.toFixed(2)}`);
+                        allInsList.push(`${n}: MVR ${lp.toFixed(2)}`);
+                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
+                        insTotals[n].amount += lp;
+                        insTotals[n].count++;
+                    }
+                    if (la > 0) {
+                        const n = 'Aasandha';
+                        secondaryList.push(`${n}: MVR ${la.toFixed(2)}`);
+                        allInsList.push(`${n}: MVR ${la.toFixed(2)}`);
+                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
+                        insTotals[n].amount += la;
+                        insTotals[n].count++;
+                    }
+                }
+
+                const svc = (m.services || []).map(s => `${s.name || 'Service'} (${s.qty||1}) x ${s.price||0}`).join('; ') ||
+                    m.treatment || '—';
+
+                const memoNo = m.memoId || m.id.slice(-6).toUpperCase();
+                const visitDate = m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'N/A';
+                const doctor = m.doctor?.name || 'N/A';
+                let user = 'Staff';
+                if (m.createdBy?.name) user = m.createdBy.name;
+                else if (m.user?.name) user = m.user.name;
+                else if (m.staffName) user = m.staffName;
+                else if (m.createdBy) user = m.createdBy;
+                const patient = m.patient?.name || 'N/A';
+
+                tableRows.push({
+                    no: memoNo,
+                    date: visitDate,
+                    doctor,
+                    user,
+                    patient,
+                    services: svc,
+                    primaryIns: primaryList.join(', ') || 'None',
+                    secondaryIns: secondaryList.join(', ') || 'None',
+                    insuranceEach: allInsList.join(' | ') || 'None',
+                    paid: paid,
+                    payType: pt,
+                    discount: disc,
+                    after: after
+                });
+            });
+
+            // insurance breakdown
+            const sortedIns = Object.keys(insTotals).sort();
+            const insBreakHtml = sortedIns.map(k => {
+                const d = insTotals[k];
+                return `<div class="insurance-company-card">
+                            <div class="insurance-company-name">${escHtml(k)}</div>
+                            <div class="insurance-company-total">MVR ${d.amount.toFixed(2)}</div>
+                            <div class="insurance-company-count">${d.count} claim(s)</div>
+                        </div>`;
+            }).join('');
+
+            const sortedPay = Object.keys(payTotals).sort();
+            const payBreakHtml = sortedPay.map(k => {
+                const d = payTotals[k];
+                return `<div class="paytype-card">
+                            <div class="paytype-name">${escHtml(k)}</div>
+                            <div class="paytype-total">MVR ${d.amount.toFixed(2)}</div>
+                            <div class="paytype-count">${d.count} transaction(s)</div>
+                        </div>`;
+            }).join('');
+
+            const tableHtml = `
+                        <div class="table-container">
+                            <table>
+                                <thead><tr>
+                                    <th>Memo No</th><th>Date</th><th>Doctor</th><th>User</th><th>Patient</th>
+                                    <th>Services</th><th>Primary Ins</th><th>Secondary Ins</th>
+                                    <th>Ins Breakdown</th><th>Paid (MVR)</th><th>Pay Type</th><th>Discount</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${tableRows.map(r => `
+                                        <tr>
+                                            <td><strong>${escHtml(r.no)}</strong></td>
+                                            <td>${r.date}</td>
+                                            <td>${escHtml(r.doctor)}</td>
+                                            <td>${escHtml(r.user)}</td>
+                                            <td>${escHtml(r.patient)}</td>
+                                            <td style="max-width:200px;white-space:normal;">${escHtml(r.services.substring(0,100))}${r.services.length>100?'…':''}</td>
+                                            <td><small>${escHtml(r.primaryIns)}</small></td>
+                                            <td><small>${escHtml(r.secondaryIns)}</small></td>
+                                            <td><small>${escHtml(r.insuranceEach)}</small></td>
+                                            <td>MVR ${r.paid.toFixed(2)}</td>
+                                            <td>${escHtml(r.payType)}</td>
+                                            <td>MVR ${r.discount.toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                    ${tableRows.length === 0 ? `<tr><td colspan="12" class="empty-state">No records</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="stats-footer">
+                            <div class="stats-footer-title">📊 Financial Summary (${startDate} – ${endDate})</div>
+                            <div class="stats-grid-small">
+                                <div class="stat-card-small"><h4>💰 Revenue</h4><div class="stat-value-small">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-label-small">After discount</div></div>
+                                <div class="stat-card-small"><h4>💵 Collected</h4><div class="stat-value-small">MVR ${totalCollected.toFixed(2)}</div></div>
+                                <div class="stat-card-small"><h4>🎟️ Discounts</h4><div class="stat-value-small">MVR ${totalDiscount.toFixed(2)}</div></div>
+                                <div class="stat-card-small"><h4>📋 Visits</h4><div class="stat-value-small">${memos.length}</div></div>
+                            </div>
+                        </div>
+                        <div class="stats-footer">
+                            <div class="stats-footer-title">🏥 Insurance by Company</div>
+                            <div class="insurance-breakdown-grid">${insBreakHtml || '<div class="empty-state">No claims</div>'}</div>
+                        </div>
+                        <div class="stats-footer">
+                            <div class="stats-footer-title">💳 Payment Methods</div>
+                            <div class="paytype-breakdown-grid">${payBreakHtml || '<div class="empty-state">No payments</div>'}</div>
+                        </div>
+                    `;
+
+            document.getElementById('dailyReportContent').innerHTML = tableHtml;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  PRINT
+        // ═══════════════════════════════════════════════════════
+
+        function printReport() {
+            const content = document.getElementById('dailyReportContent').innerHTML;
+            const from = document.getElementById('dailyStartDate').value;
+            const to = document.getElementById('dailyEndDate').value;
+            const viewLabel = currentView === 'summary' ? 'Summary' : 'Detailed';
+
+            const win = window.open('', '_blank');
+            win.document.write(`
+                        <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hope Dental - ${viewLabel} Report</title>
+                        <style>
+                            body{font-family:Inter,Arial;margin:0;padding:0.7cm;font-size:9pt;background:#fff;}
+                            ${currentView === 'summary' ? `
+                                .summary-view{max-width:100%!important;padding:0!important;border:none!important;box-shadow:none!important;}
+                                .summary-metric{border:1px solid #ccc!important;background:none!important;border-left:3px solid #20b2aa!important;}
+                                .summary-breakdown{border:1px solid #ccc!important;background:none!important;}
+                                .summary-memo-item{font-size:7.5pt!important;}
+                            ` : `
+                                table{width:100%;border-collapse:collapse;font-size:7.5pt;}
+                                th,td{border:1px solid #aaa;padding:4px 5px;}
+                                th{background:#e0e7ef;}
+                                .stats-footer{border:1px solid #ccc!important;background:none!important;box-shadow:none!important;padding:8px!important;}
+                                .stat-card-small,.insurance-company-card,.paytype-card{background:none!important;border:1px solid #ccc!important;border-left:none!important;padding:4px!important;}
+                                .insurance-breakdown-grid,.paytype-breakdown-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+                            `}
+                            .no-print{display:none!important;}
+                            .report-print-header{text-align:center;margin-bottom:12px;border-bottom:2px solid #aaa;padding-bottom:10px;}
+                            .report-print-header h2{font-size:16px;color:#004d4d;margin:0;}
+                            .report-print-header .sub{font-size:10px;color:#6c7a8a;}
+                            .report-print-header .period{font-size:11px;font-weight:600;color:#0f5c7a;background:#f0f7fb;display:inline-block;padding:1px 16px;border-radius:30px;margin-top:4px;}
+                            .footer-print{text-align:center;font-size:7.5pt;color:#8ba0b0;border-top:1px solid #ccc;padding-top:8px;margin-top:12px;}
+                        </style>
+                        </head><body>
+                        <div class="report-print-header">
+                            <h2>🏥 Hope Dental Clinic</h2>
+                            <div class="sub">${viewLabel} Report</div>
+                            <div class="period">📅 ${from} – ${to}</div>
+                        </div>
+                        ${content}
+                        <div class="footer-print">Generated ${new Date().toLocaleString()} · Hope Dental Clinic</div>
+                        <\/body><\/html>
+                    `);
+            win.document.close();
+            win.print();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  HELPERS
+        // ═══════════════════════════════════════════════════════
+
+        function escHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } [m] || m));
+        }
+
+        function waitForFirebase() {
+            if (window.db) {
+                loadDailyReport();
+            } else {
+                setTimeout(waitForFirebase, 500);
+            }
+        }
+        waitForFirebase();
+
+        // auto-run on date change (optional)
+        document.getElementById('dailyStartDate').addEventListener('change', loadDailyReport);
+        document.getElementById('dailyEndDate').addEventListener('change', loadDailyReport);
+    </script>
+
+</body>
+</html>

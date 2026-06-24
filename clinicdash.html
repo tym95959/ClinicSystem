@@ -486,19 +486,18 @@
             align-items: center;
         }
 
-        /* Delete button hidden for non-supervisors */
         .delete-msg {
             display: none;
-        }
-
-        .is-supervisor .delete-msg {
-            display: inline-block;
             font-size: 8px;
             color: #ff6b6b;
             cursor: pointer;
             margin-left: 6px;
             opacity: 0;
             transition: opacity 0.2s;
+        }
+
+        .is-supervisor .delete-msg {
+            display: inline-block;
         }
 
         .is-supervisor .message:hover .delete-msg {
@@ -1246,15 +1245,16 @@
                 var allMessages = [...messages];
                 // Add Firestore messages if they exist
                 loadChatHistoryFromFirestore(staff.userId).then(function(firestoreMsgs) {
+                    var combined = [];
                     if (firestoreMsgs && firestoreMsgs.length > 0) {
-                        var combined = [...firestoreMsgs, ...messages];
-                        combined.sort(function(a, b) {
-                            return (a.timestamp || 0) - (b.timestamp || 0);
-                        });
-                        renderChatMessages(combined);
+                        combined = [...firestoreMsgs, ...messages];
                     } else {
-                        renderChatMessages(messages);
+                        combined = messages;
                     }
+                    combined.sort(function(a, b) {
+                        return (a.timestamp || 0) - (b.timestamp || 0);
+                    });
+                    renderChatMessages(combined);
                 });
                 
                 var unreadMessages = [];
@@ -1288,9 +1288,17 @@
             });
         }
         
+        // ========== RENDER CHAT MESSAGES - FIXED ==========
         function renderChatMessages(messages) {
             var container = document.getElementById('chatMessages');
-            if (!messages || messages.length === 0) {
+            if (!container) return;
+            
+            // Ensure messages is an array
+            if (!messages || typeof messages !== 'object' || !Array.isArray(messages)) {
+                messages = [];
+            }
+            
+            if (messages.length === 0) {
                 container.innerHTML = '<div class="empty-chat">No messages yet</div>';
                 return;
             }
@@ -1298,8 +1306,11 @@
             var html = '';
             var currentDate = '';
             
+            // Use a for loop instead of forEach to avoid issues
             for (var i = 0; i < messages.length; i++) {
                 var msg = messages[i];
+                if (!msg) continue;
+                
                 var isCurrentUser = (msg.sender === currentUser.id);
                 var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
                 var isRead = msg.read === true;
@@ -1325,7 +1336,7 @@
                 }
                 
                 html += '<div class="message ' + (isCurrentUser ? 'reception' : 'staff') + '" data-msg-id="' + msg.id + '">' +
-                    '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
+                    '<div class="message-bubble">' + escapeHtml(msg.text || '') + '</div>' +
                     '<div class="message-meta"><span>' + (isCurrentUser ? 'You (Reception)' : 'Dr. ' + (selectedStaff ? selectedStaff.name : '')) + ' • ' + time + ' ' + statusIcon + '</span>' +
                     deleteBtn +
                     '</div>' +
@@ -1347,7 +1358,13 @@
                 var staffId = selectedStaff.userId;
                 var messages = await loadChatHistoryFromFirestore(staffId);
                 var currentMessages = chatMessagesCache[staffId] || [];
-                var combined = [...messages, ...currentMessages];
+                var combined = [];
+                if (messages && messages.length > 0) {
+                    combined = [...messages];
+                }
+                if (currentMessages && currentMessages.length > 0) {
+                    combined = [...combined, ...currentMessages];
+                }
                 combined.sort(function(a, b) {
                     return (a.timestamp || 0) - (b.timestamp || 0);
                 });
@@ -1399,7 +1416,10 @@
         // ========== LOGOUT ==========
         async function logout() {
             stopHeartbeat();
-            if (onlineListenerRef) { onlineListenerRef.off(); onlineListenerRef = null; }
+            if (onlineListenerRef) { 
+                try { onlineListenerRef.off(); } catch(e) {}
+                onlineListenerRef = null; 
+            }
             if (chatListener) {
                 if (typeof chatListener === 'function') chatListener();
                 else if (chatListener.off) chatListener.off();

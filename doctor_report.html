@@ -177,7 +177,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
-            min-width: 1200px;
+            min-width: 1300px;
         }
 
         .data-table th {
@@ -214,6 +214,15 @@
             background: #e6f4ea;
             color: #1e6f5c;
             padding: 3px 8px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge-commission {
+            background: #f0ad4e;
+            color: #fff;
+            padding: 2px 8px;
             border-radius: 30px;
             font-size: 10px;
             font-weight: 600;
@@ -433,8 +442,10 @@
     let currentReportData = [];
     let doctorsList = [];
     let reportLoaded = false;
+    // Store commission data by doctor name
+    let doctorsCommissionMap = {};
 
-    // Load doctors for filter dropdown
+    // Load doctors and commission data
     async function loadDoctorsList() {
         if (!window.db) {
             setTimeout(loadDoctorsList, 500);
@@ -446,10 +457,32 @@
             select.innerHTML = '<option value="">All Doctors</option>';
             snapshot.forEach(doc => {
                 const data = doc.data();
-                select.innerHTML += `<option value="${escapeHtml(data.name)}">${escapeHtml(data.name)}</option>`;
+                const name = data.name || '';
+                select.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+                // Store commission data
+                doctorsCommissionMap[name] = {
+                    consultation: data.consultationCommission !== undefined ? data.consultationCommission : (data.baseCommission || 0),
+                    service: data.serviceCommission !== undefined ? data.serviceCommission : (data.baseCommission || 0)
+                };
             });
         } catch (error) {
             console.error("Error loading doctors:", error);
+        }
+    }
+
+    function isConsultation(serviceName) {
+        if (!serviceName) return false;
+        const lower = serviceName.toLowerCase();
+        // Check if service name contains "consult" or code starts with "CONS"
+        return lower.includes('consult') || lower.includes('cons');
+    }
+
+    function getDoctorCommission(doctorName, serviceName) {
+        const comm = doctorsCommissionMap[doctorName] || { consultation: 0, service: 0 };
+        if (isConsultation(serviceName)) {
+            return comm.consultation;
+        } else {
+            return comm.service;
         }
     }
 
@@ -492,7 +525,6 @@
             currentReportData = memos;
             reportLoaded = true;
             
-            // Enable print and export buttons
             document.getElementById('printBtn').disabled = false;
             document.getElementById('exportBtn').disabled = false;
             
@@ -514,7 +546,7 @@
             return;
         }
 
-        let totalRevenue = 0, totalPatientPayable = 0, totalDiscount = 0;
+        let totalRevenue = 0, totalPatientPayable = 0, totalDiscount = 0, totalCommission = 0;
         const doctorTotals = {};
         const serviceTotals = {};
         const rows = [];
@@ -541,7 +573,6 @@
             }));
 
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
-            // PATIENT PAYABLE - the amount that goes to the cashier
             const patientPayable = billing.patientPayable || 0;
             const discount = billing.discount?.amount || 0;
             
@@ -558,7 +589,9 @@
                     services: {},
                     insuranceTotal: 0,
                     patientPayableTotal: 0,
-                    discounts: 0
+                    discounts: 0,
+                    commission: 0,
+                    serviceDetails: []
                 };
             }
             doctorTotals[doctorName].revenue += totalBill;
@@ -568,21 +601,35 @@
             doctorTotals[doctorName].patientPayableTotal += patientPayable;
             doctorTotals[doctorName].discounts += discount;
 
-            // Service totals per doctor
+            // Service totals per doctor and compute commission
             serviceList.forEach(s => {
-                const key = `${doctorName}|${s.name}`;
-                if (!doctorTotals[doctorName].services[s.name]) {
-                    doctorTotals[doctorName].services[s.name] = { count: 0, total: 0 };
+                const svcName = s.name;
+                const svcTotal = s.total;
+                // Compute commission for this service
+                const commissionPercent = getDoctorCommission(doctorName, svcName);
+                const commissionAmount = (svcTotal * commissionPercent) / 100;
+                totalCommission += commissionAmount;
+                doctorTotals[doctorName].commission += commissionAmount;
+                doctorTotals[doctorName].serviceDetails.push({
+                    service: svcName,
+                    total: svcTotal,
+                    commission: commissionAmount,
+                    rate: commissionPercent
+                });
+
+                // Service totals per doctor for breakdown
+                if (!doctorTotals[doctorName].services[svcName]) {
+                    doctorTotals[doctorName].services[svcName] = { count: 0, total: 0 };
                 }
-                doctorTotals[doctorName].services[s.name].count += s.qty;
-                doctorTotals[doctorName].services[s.name].total += s.total;
+                doctorTotals[doctorName].services[svcName].count += s.qty;
+                doctorTotals[doctorName].services[svcName].total += svcTotal;
 
                 // Global service totals
-                if (!serviceTotals[s.name]) {
-                    serviceTotals[s.name] = { count: 0, total: 0 };
+                if (!serviceTotals[svcName]) {
+                    serviceTotals[svcName] = { count: 0, total: 0 };
                 }
-                serviceTotals[s.name].count += s.qty;
-                serviceTotals[s.name].total += s.total;
+                serviceTotals[svcName].count += s.qty;
+                serviceTotals[svcName].total += svcTotal;
             });
 
             // Build insurance display
@@ -616,17 +663,27 @@
                 }
             }
 
-            // Get payment method
             let payType = memo.payment?.method || billing.paymentMethod || '—';
             if (payType === '—' && patientPayable > 0) payType = 'Cash';
 
-            // Service description
+            // Build service descriptions with commission per service
             let serviceDesc = '';
+            let commissionDetails = [];
             if (services.length) {
-                serviceDesc = services.map(s => `${s.name || 'Service'} (${s.qty || 1})`).join('; ');
+                serviceDesc = services.map((s, idx) => {
+                    const svcTotal = (s.total || s.qty * s.price || 0);
+                    const commPercent = getDoctorCommission(doctorName, s.name);
+                    const commAmt = (svcTotal * commPercent) / 100;
+                    commissionDetails.push({ name: s.name, comm: commAmt, rate: commPercent });
+                    return `${s.name || 'Service'} (${s.qty || 1})`;
+                }).join('; ');
             } else {
                 serviceDesc = '—';
+                commissionDetails = [];
             }
+
+            // Summarize commission for the row (total of all services in memo)
+            const totalCommissionForMemo = commissionDetails.reduce((sum, c) => sum + c.comm, 0);
 
             rows.push({
                 date: visitDate,
@@ -641,14 +698,15 @@
                 secondaryAmt: secondaryAmount,
                 patientPayable: patientPayable,
                 payType: payType,
-                discount: discount
+                discount: discount,
+                commission: totalCommissionForMemo
             });
         });
 
         const totalOutstanding = totalRevenue - totalPatientPayable;
         const collectionRate = totalRevenue > 0 ? ((totalPatientPayable / totalRevenue) * 100).toFixed(1) : 0;
 
-        // Build doctor summary cards
+        // Build doctor summary cards including commission
         const sortedDoctors = Object.keys(doctorTotals).sort();
         const doctorCardsHtml = sortedDoctors.map(doc => {
             const data = doctorTotals[doc];
@@ -682,6 +740,10 @@
                         <span class="value">MVR ${data.discounts.toFixed(2)}</span>
                     </div>
                     <div class="row">
+                        <span class="label">Doctor Commission</span>
+                        <span class="value">MVR ${data.commission.toFixed(2)}</span>
+                    </div>
+                    <div class="row">
                         <span class="label">Total Visits</span>
                         <span class="value">${data.visits}</span>
                     </div>
@@ -704,19 +766,13 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Memo No</th>
-                            <th>Patient</th>
-                            <th>Doctor</th>
-                            <th>Service(s)</th>
-                            <th>Price (MVR)</th>
-                            <th>Discount</th>
-                            <th>Primary Insurance</th>
-                            <th>Pri. Amount</th>
-                            <th>Secondary Insurance</th>
-                            <th>Sec. Amount</th>
+                            <th>Date</th><th>Memo No</th><th>Patient</th><th>Doctor</th><th>Service(s)</th>
+                            <th>Price (MVR)</th><th>Discount</th>
+                            <th>Primary Insurance</th><th>Pri. Amount</th>
+                            <th>Secondary Insurance</th><th>Sec. Amount</th>
                             <th>Patient Payable (MVR)</th>
                             <th>Pay Type</th>
+                            <th>Doctor Commission</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -735,6 +791,7 @@
                                 <td>MVR ${r.secondaryAmt.toFixed(2)}</td>
                                 <td><strong>MVR ${r.patientPayable.toFixed(2)}</strong></td>
                                 <td>${escapeHtml(r.payType)}</td>
+                                <td><span class="badge-commission">MVR ${r.commission.toFixed(2)}</span></td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -757,6 +814,7 @@
                     <div class="stat-card"><h4><i class="fas fa-tags"></i> Discounts Given</h4><div class="stat-value">MVR ${totalDiscount.toFixed(2)}</div><div class="stat-sub">Total discount</div></div>
                     <div class="stat-card"><h4><i class="fas fa-chart-pie"></i> Outstanding Balance</h4><div class="stat-value">MVR ${totalOutstanding.toFixed(2)}</div><div class="stat-sub">To be collected</div></div>
                     <div class="stat-card"><h4><i class="fas fa-percent"></i> Collection Efficiency</h4><div class="stat-value">${collectionRate}%</div><div class="stat-sub">Payable / Revenue</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-coins"></i> Total Doctor Commission</h4><div class="stat-value">MVR ${totalCommission.toFixed(2)}</div><div class="stat-sub">Combined all doctors</div></div>
                 </div>
 
                 <!-- Top Services -->
@@ -780,7 +838,7 @@
         }
         const startRaw = document.getElementById('startDate').value;
         const endRaw = document.getElementById('endDate').value;
-        const csvRows = [["Date", "Memo No", "Patient", "Doctor", "Services", "Total Bill (MVR)", "Discount", "Primary Insurance", "Primary Amount", "Secondary Insurance", "Secondary Amount", "Patient Payable (MVR)", "Pay Type"]];
+        const csvRows = [["Date", "Memo No", "Patient", "Doctor", "Services", "Total Bill (MVR)", "Discount", "Primary Insurance", "Primary Amount", "Secondary Insurance", "Secondary Amount", "Patient Payable (MVR)", "Pay Type", "Doctor Commission"]];
         
         currentReportData.forEach(memo => {
             const billing = memo.billing || {};
@@ -816,9 +874,16 @@
                 if (legPri) { primaryName = 'Primary Insurance'; primaryAmt = legPri; }
                 if (legSec) { secondaryName = 'Aasandha'; secondaryAmt = legSec; }
             }
+            // Calculate total commission for this memo
+            let memoCommission = 0;
+            services.forEach(s => {
+                const svcTotal = (s.total || s.qty * s.price || 0);
+                const commPercent = getDoctorCommission(doctor, s.name);
+                memoCommission += (svcTotal * commPercent) / 100;
+            });
             csvRows.push([
                 visitDate, memoId, patientName, doctor, serviceDesc.replace(/,/g, ';'), 
-                totalBill, discount, primaryName, primaryAmt, secondaryName, secondaryAmt, patientPayable, payType
+                totalBill, discount, primaryName, primaryAmt, secondaryName, secondaryAmt, patientPayable, payType, memoCommission.toFixed(2)
             ]);
         });
         

@@ -303,8 +303,7 @@
         .chat-panel.minimized .chat-messages,
         .chat-panel.minimized .chat-input-area,
         .chat-panel.minimized .staff-list-title,
-        .chat-panel.minimized .typing-indicator,
-        .chat-panel.minimized .delete-all-btn {
+        .chat-panel.minimized .typing-indicator {
             display: none;
         }
 
@@ -487,7 +486,13 @@
             align-items: center;
         }
 
+        /* Delete button hidden for non-supervisors */
         .delete-msg {
+            display: none;
+        }
+
+        .is-supervisor .delete-msg {
+            display: inline-block;
             font-size: 8px;
             color: #ff6b6b;
             cursor: pointer;
@@ -496,7 +501,7 @@
             transition: opacity 0.2s;
         }
 
-        .message:hover .delete-msg {
+        .is-supervisor .message:hover .delete-msg {
             opacity: 1;
         }
 
@@ -541,17 +546,6 @@
             font-size: 11px;
         }
 
-        .delete-all-btn {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 16px;
-            font-size: 9px;
-            cursor: pointer;
-            margin: 6px 10px;
-        }
-
         .empty-chat {
             text-align: center;
             color: #8ba0b0;
@@ -564,6 +558,16 @@
             padding: 20px;
             color: #8ba0b0;
             font-size: 11px;
+        }
+
+        .date-divider {
+            text-align: center;
+            font-size: 10px;
+            color: #8ba0b0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eef3fa;
+            margin-bottom: 8px;
+            font-weight: 600;
         }
 
         @media (max-width: 700px) {
@@ -656,7 +660,6 @@
                     <div class="quick-icon">👨‍⚕️</div>
                     <div class="quick-label">Doctor Duty</div>
                 </div>
-                <!-- NEW: History Button -->
                 <div class="quick-card" onclick="window.location.href='patient-history.html'">
                     <div class="quick-icon">📋</div>
                     <div class="quick-label">History</div>
@@ -689,7 +692,6 @@
     <div class="staff-list" id="staffList"><div class="empty-online">Loading...</div></div>
     <div class="chat-messages" id="chatMessages"><div class="empty-chat">Select a doctor to chat</div></div>
     <div class="typing-indicator" id="typingIndicator" style="display:none;"><i class="fas fa-ellipsis-h"></i> Doctor is typing...</div>
-    <button class="delete-all-btn" id="deleteAllBtn" style="display:none;">🗑️ Delete All Messages</button>
     <div class="chat-input-area">
         <input type="text" id="chatInput" placeholder="Select a doctor..." disabled>
         <button id="sendChatBtn" disabled><i class="fas fa-paper-plane"></i> Send</button>
@@ -706,12 +708,20 @@
         }
         var user = JSON.parse(loggedInUser);
         
+        var isSupervisor = (user.level === 'Supervisor');
+        
         var currentUser = {
             id: user.username,
             name: user.name,
             role: user.level || "Receptionist",
-            type: "reception"
+            type: "reception",
+            isSupervisor: isSupervisor
         };
+
+        // Add supervisor class to body for CSS
+        if (isSupervisor) {
+            document.body.classList.add('is-supervisor');
+        }
 
         document.getElementById('userName').textContent = currentUser.name;
         document.getElementById('userRole').textContent = currentUser.role + " | Reception";
@@ -732,6 +742,7 @@
         var heartbeatInterval = null;
         var allChatListeners = {};
         var shownNotifications = new Set();
+        var todayDate = new Date().toISOString().split('T')[0];
 
         // ========== HELPER FUNCTIONS ==========
         function escapeHtml(str) {
@@ -742,6 +753,75 @@
                 if (m === '>') return '&gt;';
                 return m;
             });
+        }
+
+        function getTodayDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function getChatId(u1, u2) {
+            var sorted = [u1, u2].sort();
+            return 'chat_' + sorted[0] + '_' + sorted[1];
+        }
+
+        // ========== SAVE MESSAGE TO FIRESTORE ==========
+        async function saveMessageToFirestore(chatId, messageData) {
+            if (!firestoreDB) return;
+            try {
+                var today = getTodayDate();
+                var docRef = firestoreDB.collection('chatHistory').doc(today).collection('messages').doc();
+                await docRef.set({
+                    id: docRef.id,
+                    chatId: chatId,
+                    sender: messageData.sender,
+                    senderName: messageData.senderName,
+                    text: messageData.text,
+                    timestamp: messageData.timestamp,
+                    date: today,
+                    read: messageData.read || false
+                });
+            } catch(e) {
+                console.warn('Error saving to Firestore:', e);
+            }
+        }
+
+        // ========== DELETE MESSAGE FROM FIRESTORE ==========
+        async function deleteMessageFromFirestore(messageId) {
+            if (!firestoreDB) return;
+            if (!currentUser.isSupervisor) {
+                alert('Only supervisors can delete messages.');
+                return;
+            }
+            try {
+                var today = getTodayDate();
+                await firestoreDB.collection('chatHistory').doc(today).collection('messages').doc(messageId).delete();
+            } catch(e) {
+                console.warn('Error deleting from Firestore:', e);
+            }
+        }
+
+        // ========== LOAD TODAY'S CHAT HISTORY FROM FIRESTORE ==========
+        async function loadChatHistoryFromFirestore(staffId) {
+            if (!firestoreDB) return;
+            try {
+                var today = getTodayDate();
+                var chatId = getChatId(currentUser.id, staffId);
+                var snapshot = await firestoreDB.collection('chatHistory')
+                    .doc(today)
+                    .collection('messages')
+                    .where('chatId', '==', chatId)
+                    .orderBy('timestamp', 'asc')
+                    .get();
+                
+                var messages = [];
+                snapshot.forEach(function(doc) {
+                    messages.push({ id: doc.id, ...doc.data(), fromFirestore: true });
+                });
+                return messages;
+            } catch(e) {
+                console.warn('Error loading chat history from Firestore:', e);
+                return [];
+            }
         }
 
         // ========== HEARTBEAT ==========
@@ -1122,7 +1202,6 @@
             document.getElementById('chatInput').disabled = false;
             document.getElementById('sendChatBtn').disabled = false;
             document.getElementById('chatInput').placeholder = 'Message Dr. ' + staff.name + '...';
-            document.getElementById('deleteAllBtn').style.display = 'block';
             
             if (unreadCounts[staff.userId]) {
                 delete unreadCounts[staff.userId];
@@ -1142,6 +1221,19 @@
             var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
             var messagesRef = realtimeDB.ref('chats/' + chatId + '/messages');
             
+            // Load today's chat history from Firestore first
+            loadChatHistoryFromFirestore(staff.userId).then(function(firestoreMessages) {
+                if (firestoreMessages && firestoreMessages.length > 0) {
+                    // Merge Firestore messages with Realtime DB messages
+                    var currentMessages = chatMessagesCache[staff.userId] || [];
+                    var allMessages = [...firestoreMessages, ...currentMessages];
+                    allMessages.sort(function(a, b) {
+                        return (a.timestamp || 0) - (b.timestamp || 0);
+                    });
+                    renderChatMessages(allMessages);
+                }
+            });
+            
             chatListener = messagesRef.on('value', function(snapshot) {
                 var messages = [];
                 snapshot.forEach(function(child) {
@@ -1149,7 +1241,22 @@
                 });
                 messages.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
                 chatMessagesCache[staff.userId] = messages;
-                renderChatMessages(messages);
+                
+                // Combine with Firestore messages
+                var allMessages = [...messages];
+                // Add Firestore messages if they exist
+                loadChatHistoryFromFirestore(staff.userId).then(function(firestoreMsgs) {
+                    if (firestoreMsgs && firestoreMsgs.length > 0) {
+                        var combined = [...firestoreMsgs, ...messages];
+                        combined.sort(function(a, b) {
+                            return (a.timestamp || 0) - (b.timestamp || 0);
+                        });
+                        renderChatMessages(combined);
+                    } else {
+                        renderChatMessages(messages);
+                    }
+                });
+                
                 var unreadMessages = [];
                 for (var i = 0; i < messages.length; i++) {
                     if (messages[i].sender === staff.userId && !messages[i].read) {
@@ -1183,51 +1290,81 @@
         
         function renderChatMessages(messages) {
             var container = document.getElementById('chatMessages');
-            if (!messages.length) {
+            if (!messages || messages.length === 0) {
                 container.innerHTML = '<div class="empty-chat">No messages yet</div>';
                 return;
             }
+            
             var html = '';
+            var currentDate = '';
+            
             for (var i = 0; i < messages.length; i++) {
                 var msg = messages[i];
                 var isCurrentUser = (msg.sender === currentUser.id);
                 var time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
                 var isRead = msg.read === true;
                 var statusIcon = isCurrentUser ? (msg.delivered ? (msg.read ? '✓✓' : '✓') : '○') : '';
-                var readClass = !isCurrentUser && isRead ? 'read' : '';
-                html += '<div class="message ' + (isCurrentUser ? 'reception' : 'staff') + ' ' + readClass + '" data-msg-id="' + msg.id + '">' +
+                var msgDate = msg.timestamp ? new Date(msg.timestamp).toISOString().split('T')[0] : '';
+                
+                // Show date divider if date changes
+                if (msgDate && msgDate !== currentDate) {
+                    currentDate = msgDate;
+                    var displayDate = new Date(msg.timestamp).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    });
+                    html += '<div class="date-divider">' + displayDate + '</div>';
+                }
+                
+                // Check if this message is from Firestore (has fromFirestore flag)
+                var isFromFirestore = msg.fromFirestore === true;
+                var deleteBtn = '';
+                if (isFromFirestore && currentUser.isSupervisor) {
+                    deleteBtn = '<span class="delete-msg" onclick="deleteChatMessage(\'' + msg.id + '\')">🗑️</span>';
+                }
+                
+                html += '<div class="message ' + (isCurrentUser ? 'reception' : 'staff') + '" data-msg-id="' + msg.id + '">' +
                     '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
                     '<div class="message-meta"><span>' + (isCurrentUser ? 'You (Reception)' : 'Dr. ' + (selectedStaff ? selectedStaff.name : '')) + ' • ' + time + ' ' + statusIcon + '</span>' +
-                    '<span class="delete-msg" onclick="deleteMessage(\'' + msg.id + '\')">🗑️</span></div>' +
+                    deleteBtn +
+                    '</div>' +
                 '</div>';
             }
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
         }
         
-        window.deleteMessage = async function(msgId) {
-            if (!selectedStaff || !realtimeDB) return;
-            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
-            await realtimeDB.ref('chats/' + chatId + '/messages/' + msgId).remove();
+        window.deleteChatMessage = async function(messageId) {
+            if (!currentUser.isSupervisor) {
+                alert('Only supervisors can delete messages.');
+                return;
+            }
+            if (!confirm('Delete this message? This action cannot be undone.')) return;
+            await deleteMessageFromFirestore(messageId);
+            // Refresh messages
+            if (selectedStaff) {
+                var staffId = selectedStaff.userId;
+                var messages = await loadChatHistoryFromFirestore(staffId);
+                var currentMessages = chatMessagesCache[staffId] || [];
+                var combined = [...messages, ...currentMessages];
+                combined.sort(function(a, b) {
+                    return (a.timestamp || 0) - (b.timestamp || 0);
+                });
+                renderChatMessages(combined);
+            }
         };
-        
-        async function deleteAllMessages() {
-            if (!selectedStaff || !confirm('Delete all messages with this doctor?')) return;
-            var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-            var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
-            await realtimeDB.ref('chats/' + chatId + '/messages').remove();
-            renderChatMessages([]);
-        }
         
         async function sendMessage() {
             var input = document.getElementById('chatInput');
             var text = input.value.trim();
             if (!text || !selectedStaff || !realtimeDB) return;
+            
             var chatUsers = [currentUser.id, selectedStaff.userId].sort();
             var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+            
             var newMsgRef = realtimeDB.ref('chats/' + chatId + '/messages').push();
-            await newMsgRef.set({
+            var messageData = {
                 id: newMsgRef.key,
                 sender: currentUser.id,
                 senderName: currentUser.name + ' (Reception)',
@@ -1235,7 +1372,14 @@
                 timestamp: Date.now(),
                 delivered: true,
                 read: false
-            });
+            };
+            
+            // Save to Realtime DB
+            await newMsgRef.set(messageData);
+            
+            // Save to Firestore for permanent storage
+            await saveMessageToFirestore(chatId, messageData);
+            
             input.value = "";
             await realtimeDB.ref('chats/' + chatId + '/typing').remove();
         }
@@ -1276,7 +1420,6 @@
         
         document.getElementById('logoutBtn').addEventListener('click', logout);
         document.getElementById('sendChatBtn').addEventListener('click', sendMessage);
-        document.getElementById('deleteAllBtn').addEventListener('click', deleteAllMessages);
         document.getElementById('chatInput').addEventListener('keypress', function(e) {
             if(e.key === 'Enter') sendMessage();
         });

@@ -1,23 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    <title>Hope Dental | Daily Report Summary</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hope Dental | Create Clinical Memo</title>
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js">
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Firebase Config -->
-    <script src="firebase-config.js">
-    </script>
+    <script src="firebase-config.js"></script>
     <style>
-        /* ─── BASE ─── */
+        /* ====== ALL EXISTING STYLES REMAIN ====== */
         * {
             margin: 0;
             padding: 0;
@@ -28,10 +24,8 @@
         body {
             background: #eef2f7;
             min-height: 100vh;
-            padding: 0;
         }
 
-        /* ─── HEADER ─── */
         .clinic-header {
             background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
             color: #004d4d;
@@ -41,1210 +35,2789 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        .clinic-header .logo-area {
+        .logo h2 {
+            font-size: 1.1rem;
             display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .clinic-header .logo-area img {
-            height: 44px;
-        }
-
-        .clinic-header .logo-area h1 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin: 0;
-            background: linear-gradient(135deg, #006666, #20b2aa);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .header-actions .user-badge {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 14px;
-            border-radius: 30px;
-            font-size: 11px;
-            color: #004d4d;
-            font-weight: 500;
-        }
-
-        .btn {
-            border: none;
-            padding: 6px 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 11px;
-            transition: 0.2s;
-            display: inline-flex;
             align-items: center;
             gap: 6px;
         }
 
-        .btn-back {
+        .back-btn {
             background: #1e4a6e;
-            color: #fff;
-        }
-        .btn-back:hover {
-            background: #143a55;
-        }
-
-        .btn-print {
-            background: #146b3a;
-            color: #fff;
-        }
-        .btn-print:hover {
-            background: #0e522b;
-        }
-
-        .btn-summary {
-            background: #b8860b;
-            color: #fff;
-        }
-        .btn-summary:hover {
-            background: #9a7209;
-        }
-        .btn-summary.active {
-            background: #0f5c7a;
-        }
-
-        .btn-detail {
-            background: #0f5c7a;
-            color: #fff;
-        }
-        .btn-detail:hover {
-            background: #0a455d;
-        }
-        .btn-detail.active {
-            background: #b8860b;
-        }
-
-        /* ─── CONTAINER ─── */
-        .container {
-            max-width: 1600px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
-        /* ─── DATE FILTER ─── */
-        .date-filter {
-            background: #fff;
-            padding: 18px 20px;
-            border-radius: 16px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .filter-group label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #1f5e7e;
-        }
-
-        .filter-group input {
-            padding: 7px 12px;
-            border: 1.5px solid #e2eaf0;
-            border-radius: 12px;
-            font-size: 12px;
-            background: #fafcfe;
-        }
-
-        .filter-group input:focus {
-            border-color: #20b2aa;
-            outline: none;
-        }
-
-        .filter-btn {
-            background: #0f5c7a;
-            color: #fff;
             border: none;
-            padding: 7px 22px;
-            border-radius: 12px;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 30px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 12px;
-        }
-        .filter-btn:hover {
-            background: #0a455d;
-        }
-
-        /* ─── VIEW TOGGLE ─── */
-        .view-toggle {
-            display: flex;
-            gap: 6px;
-            background: #eef2f7;
-            padding: 4px;
-            border-radius: 30px;
-        }
-
-        .view-toggle .btn {
-            border-radius: 30px;
-            padding: 5px 16px;
-            font-size: 10px;
-        }
-
-        .view-toggle .btn.active {
-            background: #fff;
-            color: #0f5c7a;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-        }
-
-        .view-toggle .btn:not(.active) {
-            background: transparent;
-            color: #6c7a8a;
-        }
-
-        /* ─── REPORT CONTENT ─── */
-        #dailyReportContent .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            color: #8ba0b0;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        /* ─── DETAILED VIEW TABLES ─── */
-        .table-container {
-            background: #fff;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1200px;
+            font-weight: 500;
             font-size: 11px;
         }
 
-        th {
-            background: #f4f9fe;
-            padding: 10px 8px;
-            text-align: left;
-            font-weight: 700;
-            color: #1f5e7e;
-            border-bottom: 2px solid #e2eaf0;
-            font-size: 10px;
+        .back-btn:hover {
+            background: #2a5f89;
         }
 
-        td {
-            padding: 8px 8px;
-            border-bottom: 1px solid #eef3fa;
-            color: #1e2f3e;
-            vertical-align: top;
+        .memo-container {
+            max-width: 1200px;
+            margin: 12px auto;
+            padding: 0 12px;
         }
 
-        tr:hover {
-            background: #f8fbfe;
-        }
-
-        /* ─── STATS CARDS ─── */
-        .stats-footer {
-            background: #fff;
+        .top-card, .services-card, .billing-card {
+            background: white;
             border-radius: 16px;
-            padding: 16px 20px;
-            margin-top: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border: 1px solid #e2eaf0;
         }
 
-        .stats-footer-title {
-            font-size: 12px;
+        .section-title {
+            font-size: 0.9rem;
             font-weight: 600;
             color: #0a2f44;
             margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e2eaf0;
+            border-left: 3px solid #0f5c7a;
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .stats-grid-small {
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            position: relative;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            font-size: 10px;
+            color: #1f5e7e;
+            letter-spacing: 0.3px;
+        }
+
+        .input-group input, .input-group select {
+            padding: 6px 10px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 12px;
+            background: white;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+        }
+
+        .input-group input:disabled {
+            background: #f0f4f9;
+            color: #6c7a89;
+            cursor: not-allowed;
+        }
+
+        .patient-search-wrapper {
+            position: relative;
+        }
+
+        .patient-search-input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 2px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .patient-search-input:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+            outline: none;
+        }
+
+        .patient-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a9aa8;
+            font-size: 14px;
+        }
+
+        .patient-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #0f5c7a;
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            margin-top: -2px;
+        }
+
+        .patient-search-results.active {
+            display: block;
+        }
+
+        .patient-search-result-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f4f9;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .patient-search-result-item:hover {
+            background: #f0f8ff;
+        }
+
+        .patient-search-result-item .patient-name {
+            font-weight: 600;
+            color: #0a2f44;
+            font-size: 13px;
+        }
+
+        .patient-search-result-item .patient-id {
+            font-size: 11px;
+            color: #6c7a89;
+        }
+
+        .patient-search-result-item .patient-details {
+            font-size: 11px;
+            color: #6c7a89;
+        }
+
+        .patient-search-result-item .patient-badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .patient-search-result-item .patient-badge.citizen {
+            background: #146b3a;
+        }
+
+        .patient-search-empty {
+            padding: 20px;
+            text-align: center;
+            color: #8a9aa8;
+            font-size: 13px;
+        }
+
+        .patient-search-loading {
+            padding: 15px;
+            text-align: center;
+            color: #0f5c7a;
+            font-size: 13px;
+        }
+
+        .selected-card {
+            background: #e0f2fe;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 11px;
+            border-left: 3px solid #0f5c7a;
+        }
+
+        .selected-badge {
+            background: #0f5c7a;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 9px;
+        }
+
+        .selected-badge.full-cover {
+            background: #146b3a;
+        }
+
+        .insurance-toggle {
+            display: flex;
+            gap: 6px;
+            margin: 6px 0;
+        }
+
+        .insurance-toggle button {
+            flex: 1;
+            padding: 4px;
+            border: 1px solid #cbdde9;
+            background: white;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .insurance-toggle button.active {
+            background: #0f5c7a;
+            color: white;
+        }
+
+        .fixed-amount-field {
+            display: none;
+        }
+
+        .add-service-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .add-service-row .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .service-search-wrapper {
+            position: relative;
+        }
+
+        .service-search-input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 2px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .service-search-input:focus {
+            border-color: #0f5c7a;
+            box-shadow: 0 0 0 3px rgba(15, 92, 122, 0.1);
+            outline: none;
+        }
+
+        .service-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a9aa8;
+            font-size: 14px;
+        }
+
+        .service-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #0f5c7a;
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            margin-top: -2px;
+        }
+
+        .service-search-results.active {
+            display: block;
+        }
+
+        .service-search-result-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f4f9;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .service-search-result-item:hover {
+            background: #f0f8ff;
+        }
+
+        .service-search-result-item .service-name {
+            font-weight: 600;
+            color: #0a2f44;
+            font-size: 13px;
+        }
+
+        .service-search-result-item .service-code {
+            font-size: 11px;
+            color: #0f5c7a;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .service-search-result-item .service-price {
+            font-size: 11px;
+            color: #6c7a89;
+        }
+
+        .service-search-result-item .service-badge {
+            background: #d4edda;
+            color: #155724;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .service-search-result-item .service-badge.not-covered {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .service-search-empty {
+            padding: 20px;
+            text-align: center;
+            color: #8a9aa8;
+            font-size: 13px;
+        }
+
+        /* ====== MOST USED SERVICES STYLES ====== */
+        .most-used-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8fbfe;
+            border-radius: 12px;
+            border: 1px solid #e2eaf0;
+        }
+
+        .most-used-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #1f5e7e;
+            margin-right: 6px;
+        }
+
+        .most-used-btn {
+            background: white;
+            border: 1px solid #cbdde9;
+            padding: 3px 10px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            color: #0a2f44;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .most-used-btn:hover {
+            background: #e0f2fe;
+            border-color: #0f5c7a;
+            transform: translateY(-1px);
+        }
+
+        .most-used-btn .code-tag {
+            font-size: 8px;
+            color: #0f5c7a;
+            font-family: monospace;
+            background: #e8f0fe;
+            padding: 0px 4px;
+            border-radius: 4px;
+        }
+
+        .most-used-btn .price-tag {
+            font-size: 8px;
+            color: #6c7a89;
+        }
+
+        .most-used-empty {
+            font-size: 10px;
+            color: #8ba0b0;
+            font-style: italic;
+        }
+
+        /* ====== EXISTING SERVICES TABLE STYLES ====== */
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .services-table th, .services-table td {
+            padding: 6px 4px;
+            text-align: left;
+            border-bottom: 1px solid #e9edf2;
+        }
+
+        .services-table th {
+            background: #f4f9fe;
+            font-weight: 600;
+            color: #1f4d6e;
+        }
+
+        .qty-input {
+            width: 55px;
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid #cbdde9;
+            text-align: center;
+        }
+
+        .insurance-input {
+            width: 80px;
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid #cbdde9;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .insurance-input:focus {
+            outline: none;
+            border-color: #0f5c7a;
+        }
+
+        .insurance-input.disabled-input {
+            background: #f0f4f9;
+            color: #6c7a89;
+            cursor: not-allowed;
+        }
+
+        .auto-btn {
+            background: #0f5c7a;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 9px;
+            margin-left: 5px;
+        }
+
+        .auto-btn:hover {
+            background: #1a6f8f;
+        }
+
+        .remove-row {
+            background: #ffe3e3;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .remove-row:hover {
+            background: #ffc9c9;
+        }
+
+        .service-discount-toggle {
+            background: none;
+            border: 1px solid #cbdde9;
+            padding: 2px 6px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 9px;
+            color: #0f5c7a;
+            transition: 0.2s;
+        }
+
+        .service-discount-toggle:hover {
+            background: #e0f2fe;
+        }
+
+        .service-discount-toggle.active {
+            background: #f0ad4e;
+            color: white;
+            border-color: #f0ad4e;
+        }
+
+        .service-discount-toggle:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .service-discount-input {
+            width: 55px;
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid #cbdde9;
+            text-align: center;
+            font-size: 9px;
+            display: none;
+        }
+
+        .service-discount-input.show {
+            display: inline-block;
+        }
+
+        .service-discount-input:disabled {
+            background: #f0f4f9;
+            cursor: not-allowed;
+        }
+
+        .billing-highlight {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e8f4fd 100%);
+            border: 2px solid #0f5c7a;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        .totals-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
         }
 
-        .stat-card-small {
-            background: #f8fbfe;
-            padding: 10px 12px;
+        .total-item {
+            background: white;
+            padding: 10px 8px;
             border-radius: 12px;
             text-align: center;
-            border-left: 3px solid #0f5c7a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .stat-card-small h4 {
-            font-size: 10px;
-            color: #6c757d;
+        .total-item label {
+            font-size: 9px;
+            color: #5f7f9a;
+            display: block;
             margin-bottom: 4px;
-            font-weight: 500;
         }
 
-        .stat-value-small {
+        .total-item .value {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .payable-item {
+            background: #e0f2fe;
+            border: 2px solid #0f5c7a;
+        }
+
+        .payable-item .value {
+            color: #0f5c7a;
+            font-size: 20px;
+        }
+
+        .balance-item {
+            background: #fff8e7;
+        }
+
+        .paid-input {
             font-size: 16px;
             font-weight: 700;
-            color: #0a2f44;
-        }
-
-        .stat-label-small {
-            font-size: 9px;
-            color: #8ba0b0;
-            margin-top: 2px;
-        }
-
-        .insurance-breakdown-grid,
-        .paytype-breakdown-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .insurance-company-card,
-        .paytype-card {
-            background: #f8fbfe;
+            text-align: center;
+            border: 2px solid #0f5c7a;
             border-radius: 12px;
-            padding: 10px 12px;
-            border-left: 3px solid #0f5c7a;
-            text-align: center;
+            padding: 6px;
+            width: 100%;
         }
 
-        .insurance-company-name,
-        .paytype-name {
-            font-weight: 700;
-            font-size: 12px;
-            color: #1f5e7e;
-            margin-bottom: 4px;
-        }
-
-        .insurance-company-total,
-        .paytype-total {
+        .payment-method-select {
             font-size: 14px;
+            font-weight: 600;
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid #0f5c7a;
+            width: 100%;
+            background: white;
+            cursor: pointer;
+        }
+
+        .payment-method-select:focus {
+            outline: none;
+            border-color: #146b3a;
+        }
+
+        .cash-input-group {
+            display: none;
+            margin-top: 8px;
+        }
+
+        .cash-input-group label {
+            font-size: 10px;
+            color: #1f5e7e;
+            font-weight: 600;
+        }
+
+        .cash-input-group input {
+            padding: 8px;
+            border: 2px solid #0f5c7a;
+            border-radius: 12px;
+            font-size: 16px;
             font-weight: 700;
+            text-align: center;
+            width: 100%;
+        }
+
+        .warning-message {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #e65100;
+        }
+
+        .info-message {
+            background: #e0f2fe;
+            border-left: 4px solid #0f5c7a;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-size: 11px;
             color: #0a2f44;
         }
 
-        .insurance-company-count,
-        .paytype-count {
-            font-size: 9px;
-            color: #6c757d;
-            margin-top: 2px;
+        .discount-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+            background: #fff8e7;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #f0e6d3;
         }
 
-        /* ═══════════════════════════════════════════ */
-        /* ─── SUMMARY VIEW (A5‑OPTIMISED) ─── */
-        /* ═══════════════════════════════════════════ */
-        .summary-view {
-            background: #fff;
+        .discount-toggle {
+            display: flex;
+            gap: 6px;
+            margin: 4px 0;
+        }
+
+        .discount-toggle button {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid #cbdde9;
+            background: white;
             border-radius: 16px;
-            padding: 20px 22px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            max-width: 780px;
-            margin: 0 auto;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
-        .summary-header {
-            text-align: center;
-            padding-bottom: 14px;
-            border-bottom: 2px solid #e2eaf0;
-            margin-bottom: 16px;
+        .discount-toggle button.active {
+            background: #f0ad4e;
+            color: white;
+            border-color: #f0ad4e;
         }
 
-        .summary-header h2 {
-            font-size: 18px;
-            color: #004d4d;
-            letter-spacing: -0.3px;
+        .discount-toggle button:hover {
+            background: #f0ad4e;
+            color: white;
         }
 
-        .summary-header h2 i {
-            color: #20b2aa;
-            margin-right: 6px;
-        }
-
-        .summary-header .sub {
-            font-size: 11px;
-            color: #6c7a8a;
+        .discount-custom-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
             margin-top: 4px;
         }
 
-        .summary-header .period {
+        .discount-custom-input input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 14px;
             font-size: 12px;
+            background: white;
+        }
+
+        .discount-custom-input input:focus {
+            outline: none;
+            border-color: #f0ad4e;
+            box-shadow: 0 0 0 3px rgba(240, 173, 78, 0.2);
+        }
+
+        .discount-custom-input .currency-symbol {
             font-weight: 600;
             color: #0f5c7a;
-            background: #f0f7fb;
-            display: inline-block;
-            padding: 2px 18px;
-            border-radius: 30px;
-            margin-top: 6px;
+            font-size: 12px;
         }
 
-        /* summary metrics — 3 columns, 2 rows */
-        .summary-metrics {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+        .discount-preset-select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 14px;
+            font-size: 12px;
+            background: white;
+        }
+
+        .discount-preset-select:focus {
+            outline: none;
+            border-color: #f0ad4e;
+            box-shadow: 0 0 0 3px rgba(240, 173, 78, 0.2);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
             gap: 10px;
-            margin-bottom: 18px;
         }
 
-        .summary-metric {
-            background: #f8fbfe;
-            border-radius: 12px;
-            padding: 10px 6px;
-            text-align: center;
-            border-left: 3px solid #20b2aa;
-        }
-
-        .summary-metric .label {
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: #6c7a8a;
+        .save-btn {
+            background: #146b3a;
+            color: white;
+            padding: 8px 24px;
+            border: none;
+            border-radius: 30px;
             font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
         }
 
-        .summary-metric .label .hint {
-            font-weight: 400;
-            text-transform: none;
-            font-size: 8px;
-            color: #8ba0b0;
-            display: block;
-            margin-top: 1px;
+        .save-btn:hover {
+            background: #1a8045;
         }
 
-        .summary-metric .value {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0a2f44;
-            margin-top: 2px;
+        .save-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
         }
 
-        .summary-metric .value small {
+        .message {
+            margin-top: 10px;
+            padding: 6px;
+            border-radius: 16px;
+            text-align: center;
             font-size: 11px;
-            font-weight: 400;
-            color: #6c7a8a;
         }
 
-        /* summary breakdowns — two columns */
-        .summary-breakdowns {
+        .success { background: #e0f7ef; color: #146b3a; }
+        .error { background: #ffe9e9; color: #b91c1c; }
+        .info { background: #e0f2fe; color: #075985; }
+
+        .insurance-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            margin-left: 5px;
+        }
+
+        .primary-insurance {
+            background: #0f5c7a;
+            color: white;
+        }
+
+        .full-cover-badge {
+            background: #146b3a;
+            color: white;
+        }
+
+        .no-cover-badge {
+            background: #dc3545;
+            color: white;
+        }
+
+        .appointment-badge {
+            background: #ffc107;
+            color: #0a2f44;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .payment-summary-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 14px;
+            gap: 10px;
+            margin-top: 10px;
         }
 
-        .summary-breakdown {
-            background: #fafcfe;
-            border-radius: 12px;
-            padding: 12px 14px;
-            border: 1px solid #eef3fa;
-        }
-
-        .summary-breakdown h4 {
+        .coverage-info {
             font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            color: #1f5e7e;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #eef3fa;
-            padding-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            color: #0f5c7a;
+            margin-top: 4px;
+            padding: 4px 8px;
+            background: #f0f9ff;
+            border-radius: 8px;
         }
 
-        .summary-breakdown h4 i {
-            color: #20b2aa;
-            width: 16px;
+        .service-cover-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
         }
 
-        .summary-breakdown-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            font-size: 10.5px;
-            border-bottom: 1px dashed #f0f4f8;
+        .service-cover-badge.covered {
+            background: #d4edda;
+            color: #155724;
         }
 
-        .summary-breakdown-item:last-child {
-            border-bottom: none;
+        .service-cover-badge.not-covered {
+            background: #f8d7da;
+            color: #721c24;
         }
 
-        .summary-breakdown-item .name {
-            color: #1e2f3e;
-            font-weight: 500;
+        .service-cover-badge.free-badge {
+            background: #17a2b8;
+            color: white;
         }
 
-        .summary-breakdown-item .amt {
+        .service-code-badge {
+            background: #e8f0fe;
+            color: #0f5c7a;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-family: monospace;
             font-weight: 600;
-            color: #0a2f44;
+            display: inline-block;
+            margin-right: 4px;
         }
 
-        .summary-breakdown-item .count {
-            font-size: 8.5px;
-            color: #8ba0b0;
-            font-weight: 400;
-            margin-left: 6px;
+        .service-discount-badge {
+            background: #fff3cd;
+            color: #856404;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 8px;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 4px;
         }
 
-        .summary-footer {
-            text-align: center;
-            font-size: 8.5px;
-            color: #8ba0b0;
-            border-top: 1px solid #eef3fa;
-            padding-top: 12px;
-            margin-top: 14px;
-        }
-
-        /* ─── PRINT: A5 ─── */
-        @media print {
-            @page {
-                size: A5 portrait;
-                margin: 0.8cm 0.7cm;
-            }
-
-            body {
-                background: #fff;
-                margin: 0;
-                padding: 0;
-            }
-
-            .clinic-header,
-            .date-filter,
-            .btn,
-            .view-toggle,
-            .back-btn,
-            .print-btn,
-            .filter-btn {
-                display: none !important;
-            }
-
-            .container {
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: 100% !important;
-            }
-
-            #dailyReportContent .empty-state {
-                box-shadow: none !important;
-                border: 1px solid #ddd !important;
-            }
-
-            /* detailed view print */
-            .table-container {
-                box-shadow: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                overflow-x: visible !important;
-            }
-
-            table {
-                font-size: 7.5pt !important;
-                min-width: auto !important;
-                width: 100% !important;
-            }
-
-            th,
-            td {
-                border: 1px solid #aaa !important;
-                padding: 4px 5px !important;
-            }
-
-            th {
-                background: #e0e7ef !important;
-            }
-
-            .stats-footer {
-                box-shadow: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                background: none !important;
-                padding: 10px !important;
-            }
-
-            .stats-grid-small,
-            .insurance-breakdown-grid,
-            .paytype-breakdown-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-                gap: 6px;
-            }
-
-            .stat-card-small,
-            .insurance-company-card,
-            .paytype-card {
-                background: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                border-left: none !important;
-                padding: 5px !important;
-            }
-
-            /* ── summary view print ── */
-            .summary-view {
-                box-shadow: none !important;
-                border: none !important;
-                border-radius: 0 !important;
-                padding: 0 !important;
-                max-width: 100% !important;
-            }
-
-            .summary-metric {
-                background: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                border-left: 3px solid #20b2aa !important;
-                padding: 6px !important;
-            }
-
-            .summary-metric .label .hint {
-                display: none;
-            }
-
-            .summary-breakdown {
-                background: none !important;
-                border: 1px solid #ccc !important;
-                border-radius: 0 !important;
-                padding: 8px !important;
-            }
-
-            .summary-breakdown-item {
-                border-bottom: 1px dashed #ddd !important;
-            }
-
-            .summary-header {
-                border-bottom: 2px solid #aaa !important;
-            }
-
-            .summary-header .period {
-                background: #f0f7fb !important;
-            }
-
-            .summary-footer {
-                border-top: 1px solid #ccc !important;
-            }
-        }
-
-        /* ─── RESPONSIVE ─── */
-        @media (max-width: 600px) {
-            .summary-breakdowns {
+        @media (max-width: 640px) {
+            .form-grid {
                 grid-template-columns: 1fr;
+                gap: 8px;
             }
-            .summary-metrics {
+            .totals-grid {
                 grid-template-columns: 1fr 1fr;
             }
-            .clinic-header .logo-area h1 {
-                font-size: 0.95rem;
-            }
-            .date-filter {
+            .add-service-row {
                 flex-direction: column;
-                align-items: stretch;
             }
-            .date-filter .filter-group {
+            .services-table {
+                font-size: 9px;
+            }
+            .insurance-input {
+                width: 60px;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .action-buttons button {
                 width: 100%;
             }
-            .date-filter .filter-group input {
-                width: 100%;
+            .payment-summary-grid {
+                grid-template-columns: 1fr;
             }
-            .header-actions .user-badge {
-                display: none;
+            .patient-search-results {
+                max-height: 200px;
+            }
+            .discount-row {
+                grid-template-columns: 1fr;
+            }
+            .discount-custom-input {
+                flex-wrap: wrap;
+            }
+            .service-search-results {
+                max-height: 200px;
+            }
+            .most-used-services {
+                padding: 6px 10px;
+            }
+            .most-used-btn {
+                font-size: 9px;
+                padding: 2px 8px;
             }
         }
     </style>
 </head>
 <body>
+<div class="clinic-header">
+    <div class="logo">
+        <h2>🏥 Hope Dental · Create Clinical Memo</h2>
+    </div>
+    <div>
+        <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+        <button class="back-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
 
-    <!-- ═══ HEADER ═══ -->
-    <div class="clinic-header">
-        <div class="logo-area">
-            <img src="hope1.png" alt="Hope Dental Logo" />
-            <h1>Hope Dental Clinic</h1>
+<div class="memo-container">
+    <!-- Appointment Selection Card -->
+    <div class="top-card">
+        <div class="section-title">
+            📅 Select Appointment (Optional)
+            <span id="appointmentBadge" class="appointment-badge" style="display: none;">Linked to Appointment</span>
         </div>
-        <div class="header-actions">
-            <span class="user-badge" id="userBadge">👤 Staff</span>
-            <button class="btn btn-back" onclick="window.location.href='reports.html'">← Reports</button>
+        <div class="form-grid">
+            <div class="input-group">
+                <label>📋 Upcoming Scheduled Appointments</label>
+                <select id="appointmentSelect">
+                    <option value="">-- Load appointments --</option>
+                </select>
+                <small style="font-size: 9px; color: #6c757d;">Select an appointment to auto‑fill patient, doctor, and services. The appointment will be DELETED after saving the memo.</small>
+            </div>
         </div>
     </div>
 
-    <!-- ═══ MAIN ═══ -->
-    <div class="container">
+    <div class="top-card">
+        <div class="section-title">📋 Patient & Service Details</div>
+        <div class="form-grid">
+            <!-- Enhanced Patient Search -->
+            <div class="input-group">
+                <label>🔍 Search Patient (Name or ID/Passport)</label>
+                <div class="patient-search-wrapper">
+                    <i class="fas fa-search patient-search-icon"></i>
+                    <input type="text" id="patientSearchInput" class="patient-search-input" placeholder="Type to search patients..." autocomplete="off">
+                    <div id="patientSearchResults" class="patient-search-results">
+                        <div class="patient-search-empty">Start typing to search patients...</div>
+                    </div>
+                </div>
+                <div id="selectedPatientCard" class="selected-card" style="display: none;"></div>
+            </div>
+            
+            <!-- Hidden fields for patient data -->
+            <input type="hidden" id="patientId" value="">
+            <input type="hidden" id="patientName" value="">
+            <input type="hidden" id="contactNo" value="">
+            <input type="hidden" id="patientNationality" value="">
+            <input type="hidden" id="patientIsCitizen" value="">
+            <input type="hidden" id="patientDob" value="">
+            <input type="hidden" id="patientAddress" value="">
+            
+            <!-- Doctor Dropdown -->
+            <div class="input-group">
+                <label>👨‍⚕️ Select Doctor</label>
+                <select id="doctorSelect"><option value="">-- Loading doctors... --</option></select>
+                <div id="selectedDoctorCard" class="selected-card" style="display: none;"></div>
+            </div>
+            
+            <!-- Insurance -->
+            <div class="input-group">
+                <label>🏥 Primary Insurance (Optional)</label>
+                <select id="otherInsuranceSelect"><option value="">-- No Primary Insurance --</option></select>
+                <div class="insurance-toggle">
+                    <button id="insurancePercentBtn" class="active">% Percentage</button>
+                    <button id="insuranceFixedBtn">💰 Fixed Amount</button>
+                </div>
+                <input type="number" id="otherInsurancePercent" placeholder="Coverage %" step="1" min="0" max="100" value="0">
+                <input type="number" id="otherInsuranceFixed" placeholder="Fixed Amount MVR" step="10" min="0" value="0" class="fixed-amount-field" style="display:none;">
+                <div id="selectedInsuranceCard" class="selected-card" style="display: none;"></div>
+                <div id="insuranceCoverageInfo" class="coverage-info" style="display: none;"></div>
+                <small style="font-size: 9px; color: #6c757d; margin-top: 5px;">
+                    <strong>Note:</strong> Aasandha covers only services with Aasandha coverage amount > 0. 
+                    MNDF and POLICE insurance cover 100% of all services.
+                </small>
+            </div>
+        </div>
+    </div>
 
-        <!-- DATE FILTER -->
-        <div class="date-filter">
-            <div class="filter-group">
-                <label>From Date</label>
-                <input type="date" id="dailyStartDate" />
-            </div>
-            <div class="filter-group">
-                <label>To Date</label>
-                <input type="date" id="dailyEndDate" />
-            </div>
-            <div class="filter-group">
-                <label>&nbsp;</label>
-                <button class="filter-btn" onclick="loadDailyReport()">📊 Generate</button>
-            </div>
-            <div class="filter-group" style="flex:1; min-width:140px;">
-                <label>&nbsp;</label>
-                <div class="view-toggle" id="viewToggle">
-                    <button class="btn active" data-view="summary" onclick="setView('summary')">
-                        <i class="fas fa-file-alt"></i> Summary
-                    </button>
-                    <button class="btn" data-view="detail" onclick="setView('detail')">
-                        <i class="fas fa-table"></i> Detail
-                    </button>
+    <div class="services-card">
+        <div class="section-title">
+            📋 Services & Insurance Coverage 
+            <button id="applyAutoCalcBtn" class="auto-btn" style="padding: 4px 12px; font-size: 10px;">🔄 Apply Auto Calculate</button>
+        </div>
+        
+        <div class="add-service-row">
+            <div class="input-group">
+                <label>🔍 Search Service (Name or Code)</label>
+                <div class="service-search-wrapper">
+                    <i class="fas fa-search service-search-icon"></i>
+                    <input type="text" id="serviceSearchInput" class="service-search-input" placeholder="Type to search services by name or code..." autocomplete="off">
+                    <div id="serviceSearchResults" class="service-search-results">
+                        <div class="service-search-empty">Start typing to search services...</div>
+                    </div>
                 </div>
             </div>
-            <div class="filter-group">
-                <label>&nbsp;</label>
-                <button class="btn btn-print" onclick="printReport()">
-                    <i class="fas fa-print"></i> Print
-                </button>
-            </div>
         </div>
 
-        <!-- REPORT OUTPUT -->
-        <div id="dailyReportContent">
-            <div class="empty-state">Select a date range and click Generate Report</div>
+        <!-- ====== MOST USED SERVICES QUICK SELECT ====== -->
+        <div class="most-used-services" id="mostUsedServices">
+            <span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>
+            <span class="most-used-empty">Loading most used services...</span>
         </div>
 
+        <div style="overflow-x: auto;">
+            <table class="services-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Service</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                        <th>Aasandha Cover</th>
+                        <th>Primary Ins.<br><span style="font-weight:normal;">(MVR)</span></th>
+                        <th>Aasandha<br><span style="font-weight:normal;">(MVR)</span></th>
+                        <th>Discount</th>
+                        <th>Patient Pay</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="servicesTbody">
+                    <tr><td colspan="11" style="text-align:center; padding:20px;">Search and select a service to add</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <script>
-        // ═══════════════════════════════════════════════════════
-        //  AUTH & DEFAULTS
-        // ═══════════════════════════════════════════════════════
+    <div class="billing-card">
+        <div class="section-title">💰 Billing Summary</div>
+        
+        <!-- Updated Discount Section with Customizable Options -->
+        <div class="discount-row">
+            <div class="input-group">
+                <label>🎟️ Discount Type</label>
+                <div class="discount-toggle">
+                    <button id="discountPresetBtn" class="active">📋 Preset</button>
+                    <button id="discountCustomBtn">✏️ Custom</button>
+                </div>
+                <select id="discountPresetSelect" class="discount-preset-select">
+                    <option value="0">None</option>
+                </select>
+            </div>
+            <div class="input-group" id="customDiscountGroup" style="display: none;">
+                <label>Custom Discount</label>
+                <div class="discount-toggle" style="margin-bottom: 4px;">
+                    <button id="discountPercentBtn" class="active">% Percentage</button>
+                    <button id="discountAmountBtn">💰 Fixed Amount</button>
+                </div>
+                <div class="discount-custom-input">
+                    <input type="number" id="customDiscountValue" placeholder="Enter value" step="0.01" min="0" value="0">
+                    <span class="currency-symbol" id="customDiscountSymbol">%</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Discount Applied</label>
+                <div style="display: flex; align-items: center; gap: 8px; background: #f0f4f9; padding: 8px 12px; border-radius: 14px; min-height: 36px;">
+                    <span id="discountDisplayText" style="font-size: 13px; font-weight: 600; color: #0a2f44;">None</span>
+                    <span id="discountDisplayAmount" style="font-size: 13px; font-weight: 700; color: #d9534f; margin-left: auto;">MVR 0.00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="billing-highlight">
+            <div class="totals-grid">
+                <div class="total-item"><label>Subtotal</label><div class="value" id="subtotalAmount">0.00</div></div>
+                <div class="total-item"><label>After Discount</label><div class="value" id="totalAfterDiscount">0.00</div></div>
+                <div class="total-item"><label>Primary Insurance</label><div class="value" id="insurancePayment">0.00</div></div>
+                <div class="total-item"><label>Aasandha (Secondary)</label><div class="value" id="aasandhaPayment">0.00</div></div>
+                <div class="total-item payable-item"><label>💰 PATIENT PAYABLE</label><div class="value" id="patientPayAmount" style="color:#0f5c7a; font-size:22px;">0.00</div></div>
+            </div>
+            
+            <!-- Payment Method Section -->
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px dashed #cbdde9;">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>💳 Payment Method</label>
+                        <select id="paymentMethodSelect" class="payment-method-select">
+                            <option value="">-- Select Payment Method --</option>
+                        </select>
+                    </div>
+                    <div class="input-group cash-input-group" id="cashInputGroup">
+                        <label>💰 Cash Given Amount (MVR)</label>
+                        <input type="number" id="cashGivenAmount" placeholder="Enter cash given" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                
+                <!-- Payment Summary -->
+                <div class="payment-summary-grid">
+                    <div class="total-item">
+                        <label>💳 Payment Method</label>
+                        <div id="paymentMethodDisplay" style="font-size: 14px; font-weight: 600; color: #0a2f44;">Not Selected</div>
+                    </div>
+                    <div class="total-item">
+                        <label>💰 Amount Paid</label>
+                        <div id="amountPaidDisplay" style="font-size: 20px; font-weight: 800; color: #0f5c7a;">0.00</div>
+                    </div>
+                </div>
+                
+                <div class="total-item balance-item" style="margin-top: 10px;">
+                    <label id="balanceLabel">⚖️ BALANCE</label>
+                    <div class="value" id="balanceDue" style="font-size: 20px;">0.00</div>
+                </div>
+                <div id="balanceWarning" class="warning-message" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="save-btn" id="saveMemoBtn">💾 Save Memo</button>
+        </div>
+        <div id="messageBox" class="message"></div>
+    </div>
+</div>
 
-        const loggedInUser = localStorage.getItem('loggedInUser');
-        if (!loggedInUser) window.location.href = 'login.html';
+<script>
+    // ========== AUTH ==========
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (!loggedInUser) {
+        window.location.href = 'login.html';
+    }
+    let currentUser = null;
+    try {
+        currentUser = JSON.parse(loggedInUser);
+        const header = document.querySelector('.clinic-header');
+        const userSpan = document.createElement('div');
+        userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
+        userSpan.innerHTML = `👤 ${currentUser.name || currentUser.username} (${currentUser.level})`;
+        header.insertBefore(userSpan, header.children[1]);
+    } catch(e) {}
+    
+    // ========== GLOBAL VARIABLES ==========
+    let patientsList = [];
+    let doctorsList = [];
+    let servicesList = [];
+    let insuranceList = [];
+    let discountsList = [];
+    let appointmentsList = [];
+    let paymentMethodsList = [];
+    let selectedAppointmentId = null;
+    let selectedAppointmentData = null;
+    let selectedPatient = null;
+    let selectedDoctor = null;
+    let selectedPrimaryInsurance = null;
+    let selectedDiscountPercent = 0;
+    let selectedDiscountFixed = 0;
+    let discountType = "percent";
+    let discountMode = "preset";
+    let selectedInsurancePercent = 0;
+    let selectedInsuranceFixed = 0;
+    let insuranceType = "percent";
+    let selectedServices = [];
+    let currentPrimaryInsurancePayment = 0;
+    let currentAasandhaPayment = 0;
+    let selectedPaymentMethod = null;
+    let cashGivenAmount = 0;
+    let searchTimeout = null;
+    let serviceSearchTimeout = null;
+    let savedMemoData = null;
+    let mostUsedServices = [];
+    
+    // Insurance names that cover 100% of all services
+    const FULL_COVER_INSURANCES = ['MNDF', 'POLICE', 'MNDF Insurance', 'POLICE Insurance'];
+    
+    // ========== HELPER FUNCTIONS ==========
+    function showMessage(msg, type) {
+        const box = document.getElementById('messageBox');
+        box.innerText = msg;
+        box.className = `message ${type}`;
+        setTimeout(() => { box.innerText = ''; box.className = 'message'; }, 3000);
+    }
+    
+    function escapeHtml(str) { 
+        if(!str) return ''; 
+        return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); 
+    }
+    
+    function getPatientDisplayId(patient) {
+        return patient.idNumber || patient.passportNumber || patient.nationalId || patient.id || 'N/A';
+    }
+    
+    function isFullCoverInsurance(insuranceName) {
+        if (!insuranceName) return false;
+        return FULL_COVER_INSURANCES.some(name => 
+            insuranceName.toUpperCase().includes(name.toUpperCase())
+        );
+    }
+    
+    function isAasandhaCovered(service) {
+        return service && service.aasandhaCoverAmount > 0;
+    }
+    
+    // ========== MOST USED SERVICES ==========
+    async function loadMostUsedServices() {
+        if (!window.db) return;
         try {
-            const user = JSON.parse(loggedInUser);
-            document.getElementById('userBadge').textContent = `👤 ${user.name || user.username} (${user.level})`;
-        } catch (_) {}
-
-        // default dates: last 30 days
-        const d = new Date();
-        const endDef = d.toISOString().split('T')[0];
-        const startDef = new Date(d.setDate(d.getDate() - 30)).toISOString().split('T')[0];
-        document.getElementById('dailyStartDate').value = startDef;
-        document.getElementById('dailyEndDate').value = endDef;
-
-        let currentView = 'summary';
-        let currentMemos = [];
-        let currentStart = '';
-        let currentEnd = '';
-
-        // ═══════════════════════════════════════════════════════
-        //  VIEW TOGGLE
-        // ═══════════════════════════════════════════════════════
-
-        function setView(view) {
-            currentView = view;
-            document.querySelectorAll('#viewToggle .btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.view === view);
-            });
-            if (currentMemos.length) {
-                renderView(currentMemos, currentStart, currentEnd);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //  LOAD DATA
-        // ═══════════════════════════════════════════════════════
-
-        async function loadDailyReport() {
-            const s = document.getElementById('dailyStartDate').value;
-            const e = document.getElementById('dailyEndDate').value;
-            if (!s || !e) { alert('Please select both dates'); return; }
-            if (!window.db) { setTimeout(() => loadDailyReport(), 400); return; }
-
-            try {
-                const start = new Date(s);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(e);
-                end.setHours(23, 59, 59, 999);
-
-                const snap = await window.db.collection('memos')
-                    .where('createdAt', '>=', start.toISOString())
-                    .where('createdAt', '<=', end.toISOString())
-                    .get();
-
-                const memos = [];
-                snap.forEach(doc => memos.push({ id: doc.id, ...doc.data() }));
-
-                currentMemos = memos;
-                currentStart = s;
-                currentEnd = e;
-                renderView(memos, s, e);
-            } catch (err) {
-                console.error(err);
-                document.getElementById('dailyReportContent').innerHTML =
-                    `<div class="empty-state">Error: ${err.message}</div>`;
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //  RENDER: dispatches to summary or detail
-        // ═══════════════════════════════════════════════════════
-
-        function renderView(memos, startDate, endDate) {
-            if (currentView === 'summary') {
-                renderSummary(memos, startDate, endDate);
-            } else {
-                renderDetail(memos, startDate, endDate);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //  ─── SUMMARY VIEW (A5‑FRIENDLY) ───
-        // ═══════════════════════════════════════════════════════
-
-        function renderSummary(memos, startDate, endDate) {
-            // ——— aggregates ———
-            let totalRevenue = 0,
-                totalPatientPayable = 0,
-                totalCashCollected = 0,
-                totalDiscount = 0;
-            const insTotals = {}; // company -> { amount, count }
-            const payTotals = {}; // method -> { amount, count }
-            const patientSet = new Set(); // unique patient IDs
-            let transactionCount = 0; // memos with paid > 0
-
-            memos.forEach(m => {
-                const billing = m.billing || {};
-                const after = billing.afterDiscount || 0;
-                const patientPayable = billing.patientPayable || 0;
-                const paid = billing.paid || 0;
-                const change = billing.change || 0;
-                const disc = billing.discount?.amount || 0;
-                totalRevenue += after;
-                totalPatientPayable += patientPayable;
-                totalDiscount += disc;
-
-                // unique patients
-                const patient = m.patient || {};
-                const patientId = patient.id || patient.passport || patient.name;
-                if (patientId) patientSet.add(String(patientId));
-
-                // transactions: memos with any payment
-                if (paid > 0) transactionCount++;
-
-                // payment method and net collected
-                const paymentMethod = m.payment?.method || billing.paymentMethod || 'Unknown';
-                const netCollected = paid - change; // amount actually kept (cash net of change, or full paid for non-cash)
-                if (netCollected > 0) {
-                    if (!payTotals[paymentMethod]) payTotals[paymentMethod] = { amount: 0, count: 0 };
-                    payTotals[paymentMethod].amount += netCollected;
-                    payTotals[paymentMethod].count++;
-                }
-                if (paymentMethod.toLowerCase() === 'cash') {
-                    totalCashCollected += netCollected;
-                }
-
-                // insurances
-                const insArr = m.insurances || [];
-                if (insArr.length) {
-                    insArr.forEach(ins => {
-                        const name = ins.name || 'Unknown';
-                        const amt = ins.amount || 0;
-                        if (!insTotals[name]) insTotals[name] = { amount: 0, count: 0 };
-                        insTotals[name].amount += amt;
-                        insTotals[name].count++;
-                    });
-                } else {
-                    // legacy fallback
-                    const legPrim = billing.primaryInsurancePayment || billing.insurancePayment || 0;
-                    const legAas = billing.aasandhaPayment || 0;
-                    if (legPrim > 0) {
-                        const n = 'Primary Insurance';
-                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
-                        insTotals[n].amount += legPrim;
-                        insTotals[n].count++;
-                    }
-                    if (legAas > 0) {
-                        const n = 'Aasandha';
-                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
-                        insTotals[n].amount += legAas;
-                        insTotals[n].count++;
-                    }
-                }
-            });
-
-            // ——— build HTML ———
-            const sortedIns = Object.keys(insTotals).sort();
-            const sortedPay = Object.keys(payTotals).sort();
-
-            // show top 5 insurances by amount, rest as "Other"
-            let insDisplay = sortedIns;
-            if (insDisplay.length > 6) {
-                const top = insDisplay.slice(0, 5);
-                const rest = insDisplay.slice(5);
-                let restAmt = 0,
-                    restCnt = 0;
-                rest.forEach(k => { restAmt += insTotals[k].amount;
-                    restCnt += insTotals[k].count; });
-                insDisplay = top;
-                if (restAmt > 0) {
-                    insDisplay.push('__OTHER__');
-                    insTotals['__OTHER__'] = { amount: restAmt, count: restCnt };
-                }
-            }
-
-            const insHtml = insDisplay.map(key => {
-                if (key === '__OTHER__') {
-                    const d = insTotals[key];
-                    return `<div class="summary-breakdown-item">
-                                <span class="name">Other insurances</span>
-                                <span class="amt">MVR ${d.amount.toFixed(2)} <span class="count">(${d.count})</span></span>
-                            </div>`;
-                }
-                const d = insTotals[key];
-                return `<div class="summary-breakdown-item">
-                            <span class="name">${escHtml(key)}</span>
-                            <span class="amt">MVR ${d.amount.toFixed(2)} <span class="count">(${d.count})</span></span>
-                        </div>`;
-            }).join('');
-
-            const payHtml = sortedPay.map(key => {
-                const d = payTotals[key];
-                return `<div class="summary-breakdown-item">
-                            <span class="name">${escHtml(key)}</span>
-                            <span class="amt">MVR ${d.amount.toFixed(2)} <span class="count">(${d.count})</span></span>
-                        </div>`;
-            }).join('') || '<div style="font-size:10px;color:#8ba0b0;padding:6px 0;">No payment data</div>';
-
-            const uniquePatients = patientSet.size;
-            const totalVisits = memos.length;
-
-            const html = `
-                        <div class="summary-view">
-                            <!-- HEADER -->
-                            <div class="summary-header">
-                                <h2><i class="fas fa-tooth"></i> Hope Dental Clinic</h2>
-                                <div class="sub">Daily Report Summary</div>
-                                <div class="period">📅 ${startDate} – ${endDate}</div>
-                            </div>
-
-                            <!-- 3×2 METRICS GRID with clear labels -->
-                            <div class="summary-metrics">
-                                <div class="summary-metric">
-                                    <div class="label">💰 Revenue <span class="hint">patient + insurance</span></div>
-                                    <div class="value">MVR ${totalRevenue.toFixed(2)}</div>
-                                </div>
-                                <div class="summary-metric">
-                                    <div class="label">💵 Patient Payable <span class="hint">total patient owes</span></div>
-                                    <div class="value">MVR ${totalPatientPayable.toFixed(2)}</div>
-                                </div>
-                                <div class="summary-metric">
-                                    <div class="label">📋 Visits</div>
-                                    <div class="value">${totalVisits}</div>
-                                </div>
-                                <div class="summary-metric">
-                                    <div class="label">🎟️ Discounts</div>
-                                    <div class="value">MVR ${totalDiscount.toFixed(2)}</div>
-                                </div>
-                                <div class="summary-metric">
-                                    <div class="label">🧑‍⚕️ Patients <span class="hint">unique by ID/Passport</span></div>
-                                    <div class="value">${uniquePatients}</div>
-                                </div>
-                                <div class="summary-metric">
-                                    <div class="label">💰 Cash Collected <span class="hint">net cash in drawer</span></div>
-                                    <div class="value">MVR ${totalCashCollected.toFixed(2)}</div>
-                                </div>
-                            </div>
-
-                            <!-- BREAKDOWNS: 2 columns -->
-                            <div class="summary-breakdowns">
-                                <div class="summary-breakdown">
-                                    <h4><i class="fas fa-building"></i> Insurance by Company</h4>
-                                    ${insHtml || '<div style="font-size:10px;color:#8ba0b0;">No claims</div>'}
-                                </div>
-                                <div class="summary-breakdown">
-                                    <h4><i class="fas fa-credit-card"></i> Payment Methods – Net Collected</h4>
-                                    ${payHtml}
-                                </div>
-                            </div>
-
-                            <div class="summary-footer">
-                                Generated ${new Date().toLocaleString()} &nbsp;·&nbsp; Hope Dental Clinic
-                            </div>
-                        </div>
-                    `;
-
-            document.getElementById('dailyReportContent').innerHTML = html;
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //  ─── DETAILED VIEW ───
-        // ═══════════════════════════════════════════════════════
-
-        function renderDetail(memos, startDate, endDate) {
-            let totalRevenue = 0,
-                totalPatientPayable = 0,
-                totalCashCollected = 0,
-                totalDiscount = 0;
-            const insTotals = {};
-            const payTotals = {};
-            const tableRows = [];
-
-            memos.forEach(m => {
-                const billing = m.billing || {};
-                const after = billing.afterDiscount || 0;
-                const patientPayable = billing.patientPayable || 0;
-                const paid = billing.paid || 0;
-                const change = billing.change || 0;
-                const disc = billing.discount?.amount || 0;
-                totalRevenue += after;
-                totalPatientPayable += patientPayable;
-                totalDiscount += disc;
-
-                const paymentMethod = m.payment?.method || billing.paymentMethod || 'Unknown';
-                const netCollected = paid - change;
-                if (netCollected > 0) {
-                    if (!payTotals[paymentMethod]) payTotals[paymentMethod] = { amount: 0, count: 0 };
-                    payTotals[paymentMethod].amount += netCollected;
-                    payTotals[paymentMethod].count++;
-                }
-                if (paymentMethod.toLowerCase() === 'cash') {
-                    totalCashCollected += netCollected;
-                }
-
-                const insArr = m.insurances || [];
-                let primaryList = [],
-                    secondaryList = [],
-                    allInsList = [];
-                insArr.forEach(ins => {
-                    const name = ins.name || 'Unknown';
-                    const amt = ins.amount || 0;
-                    allInsList.push(`${name}: MVR ${amt.toFixed(2)}`);
-                    if (!insTotals[name]) insTotals[name] = { amount: 0, count: 0 };
-                    insTotals[name].amount += amt;
-                    insTotals[name].count++;
-                    if (name.toLowerCase() === 'aasandha') {
-                        secondaryList.push(`${name} MVR ${amt.toFixed(2)}`);
+            // Get all memos
+            const snapshot = await window.db.collection("memos").get();
+            const memos = snapshot.docs.map(doc => doc.data());
+            
+            // Count service usage
+            const serviceCount = {};
+            memos.forEach(memo => {
+                const services = memo.services || [];
+                services.forEach(s => {
+                    const key = s.name;
+                    if (serviceCount[key]) {
+                        serviceCount[key].count += 1;
                     } else {
-                        primaryList.push(`${name} MVR ${amt.toFixed(2)}`);
+                        serviceCount[key] = {
+                            name: s.name,
+                            code: s.code || '',
+                            price: s.price || 0,
+                            count: 1
+                        };
                     }
-                });
-                if (insArr.length === 0) {
-                    const lp = billing.primaryInsurancePayment || billing.insurancePayment || 0;
-                    const la = billing.aasandhaPayment || 0;
-                    if (lp > 0) {
-                        const n = 'Primary Insurance';
-                        primaryList.push(`${n}: MVR ${lp.toFixed(2)}`);
-                        allInsList.push(`${n}: MVR ${lp.toFixed(2)}`);
-                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
-                        insTotals[n].amount += lp;
-                        insTotals[n].count++;
-                    }
-                    if (la > 0) {
-                        const n = 'Aasandha';
-                        secondaryList.push(`${n}: MVR ${la.toFixed(2)}`);
-                        allInsList.push(`${n}: MVR ${la.toFixed(2)}`);
-                        if (!insTotals[n]) insTotals[n] = { amount: 0, count: 0 };
-                        insTotals[n].amount += la;
-                        insTotals[n].count++;
-                    }
-                }
-
-                const svc = (m.services || []).map(s => `${s.name || 'Service'} (${s.qty||1}) x ${s.price||0}`).join('; ') ||
-                    m.treatment || '—';
-
-                const memoNo = m.memoId || m.id.slice(-6).toUpperCase();
-                const visitDate = m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'N/A';
-                const doctor = m.doctor?.name || 'N/A';
-                let user = 'Staff';
-                if (m.createdBy?.name) user = m.createdBy.name;
-                else if (m.user?.name) user = m.user.name;
-                else if (m.staffName) user = m.staffName;
-                else if (m.createdBy) user = m.createdBy;
-                const patient = m.patient?.name || 'N/A';
-
-                tableRows.push({
-                    no: memoNo,
-                    date: visitDate,
-                    doctor,
-                    user,
-                    patient,
-                    services: svc,
-                    primaryIns: primaryList.join(', ') || 'None',
-                    secondaryIns: secondaryList.join(', ') || 'None',
-                    insuranceEach: allInsList.join(' | ') || 'None',
-                    paid: paid,
-                    change: change,
-                    netCollected: netCollected,
-                    payType: paymentMethod,
-                    discount: disc,
-                    after: after,
-                    patientPayable: patientPayable
                 });
             });
-
-            // insurance breakdown
-            const sortedIns = Object.keys(insTotals).sort();
-            const insBreakHtml = sortedIns.map(k => {
-                const d = insTotals[k];
-                return `<div class="insurance-company-card">
-                            <div class="insurance-company-name">${escHtml(k)}</div>
-                            <div class="insurance-company-total">MVR ${d.amount.toFixed(2)}</div>
-                            <div class="insurance-company-count">${d.count} claim(s)</div>
-                        </div>`;
-            }).join('');
-
-            const sortedPay = Object.keys(payTotals).sort();
-            const payBreakHtml = sortedPay.map(k => {
-                const d = payTotals[k];
-                return `<div class="paytype-card">
-                            <div class="paytype-name">${escHtml(k)}</div>
-                            <div class="paytype-total">MVR ${d.amount.toFixed(2)}</div>
-                            <div class="paytype-count">${d.count} transaction(s)</div>
-                        </div>`;
-            }).join('');
-
-            const tableHtml = `
-                        <div class="table-container">
-                            <table>
-                                <thead><tr>
-                                    <th>Memo No</th><th>Date</th><th>Doctor</th><th>User</th><th>Patient</th>
-                                    <th>Services</th><th>Primary Ins</th><th>Secondary Ins</th>
-                                    <th>Ins Breakdown</th><th>Patient Payable</th><th>Net Collected</th><th>Pay Type</th><th>Discount</th>
-                                </tr></thead>
-                                <tbody>
-                                    ${tableRows.map(r => `
-                                        <tr>
-                                            <td><strong>${escHtml(r.no)}</strong></td>
-                                            <td>${r.date}</td>
-                                            <td>${escHtml(r.doctor)}</td>
-                                            <td>${escHtml(r.user)}</td>
-                                            <td>${escHtml(r.patient)}</td>
-                                            <td style="max-width:200px;white-space:normal;">${escHtml(r.services.substring(0,100))}${r.services.length>100?'…':''}</td>
-                                            <td><small>${escHtml(r.primaryIns)}</small></td>
-                                            <td><small>${escHtml(r.secondaryIns)}</small></td>
-                                            <td><small>${escHtml(r.insuranceEach)}</small></td>
-                                            <td>MVR ${r.patientPayable.toFixed(2)}</td>
-                                            <td>MVR ${r.netCollected.toFixed(2)}</td>
-                                            <td>${escHtml(r.payType)}</td>
-                                            <td>MVR ${r.discount.toFixed(2)}</td>
-                                        </tr>
-                                    `).join('')}
-                                    ${tableRows.length === 0 ? `<tr><td colspan="13" class="empty-state">No records</td></tr>` : ''}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="stats-footer">
-                            <div class="stats-footer-title">📊 Financial Summary (${startDate} – ${endDate})</div>
-                            <div class="stats-grid-small">
-                                <div class="stat-card-small"><h4>💰 Revenue</h4><div class="stat-value-small">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-label-small">Patient + Insurance</div></div>
-                                <div class="stat-card-small"><h4>💵 Patient Payable</h4><div class="stat-value-small">MVR ${totalPatientPayable.toFixed(2)}</div><div class="stat-label-small">Total patient owes</div></div>
-                                <div class="stat-card-small"><h4>💰 Cash Collected</h4><div class="stat-value-small">MVR ${totalCashCollected.toFixed(2)}</div><div class="stat-label-small">Net cash in drawer</div></div>
-                                <div class="stat-card-small"><h4>🎟️ Discounts</h4><div class="stat-value-small">MVR ${totalDiscount.toFixed(2)}</div></div>
-                                <div class="stat-card-small"><h4>📋 Visits</h4><div class="stat-value-small">${memos.length}</div></div>
-                            </div>
-                        </div>
-                        <div class="stats-footer">
-                            <div class="stats-footer-title">🏥 Insurance by Company</div>
-                            <div class="insurance-breakdown-grid">${insBreakHtml || '<div class="empty-state">No claims</div>'}</div>
-                        </div>
-                        <div class="stats-footer">
-                            <div class="stats-footer-title">💳 Payment Methods – Net Collected</div>
-                            <div class="paytype-breakdown-grid">${payBreakHtml || '<div class="empty-state">No payments</div>'}</div>
-                        </div>
-                    `;
-
-            document.getElementById('dailyReportContent').innerHTML = tableHtml;
+            
+            // Sort by count descending and get top 5
+            const sorted = Object.values(serviceCount).sort((a, b) => b.count - a.count);
+            mostUsedServices = sorted.slice(0, 5);
+            
+            renderMostUsedServices();
+        } catch (error) {
+            console.error("Error loading most used services:", error);
+            document.getElementById('mostUsedServices').innerHTML = `
+                <span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>
+                <span class="most-used-empty">Unable to load most used services</span>
+            `;
         }
-
-        // ═══════════════════════════════════════════════════════
-        //  PRINT
-        // ═══════════════════════════════════════════════════════
-
-        function printReport() {
-            const content = document.getElementById('dailyReportContent').innerHTML;
-            const from = document.getElementById('dailyStartDate').value;
-            const to = document.getElementById('dailyEndDate').value;
-            const viewLabel = currentView === 'summary' ? 'Summary' : 'Detailed';
-
-            const win = window.open('', '_blank');
-            win.document.write(`
-                        <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hope Dental - ${viewLabel} Report</title>
-                        <style>
-                            body{font-family:Inter,Arial;margin:0;padding:0.7cm;font-size:9pt;background:#fff;}
-                            ${currentView === 'summary' ? `
-                                .summary-view{max-width:100%!important;padding:0!important;border:none!important;box-shadow:none!important;}
-                                .summary-metric{border:1px solid #ccc!important;background:none!important;border-left:3px solid #20b2aa!important;}
-                                .summary-breakdown{border:1px solid #ccc!important;background:none!important;}
-                            ` : `
-                                table{width:100%;border-collapse:collapse;font-size:7.5pt;}
-                                th,td{border:1px solid #aaa;padding:4px 5px;}
-                                th{background:#e0e7ef;}
-                                .stats-footer{border:1px solid #ccc!important;background:none!important;box-shadow:none!important;padding:8px!important;}
-                                .stat-card-small,.insurance-company-card,.paytype-card{background:none!important;border:1px solid #ccc!important;border-left:none!important;padding:4px!important;}
-                                .insurance-breakdown-grid,.paytype-breakdown-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
-                            `}
-                            .no-print{display:none!important;}
-                            .report-print-header{text-align:center;margin-bottom:12px;border-bottom:2px solid #aaa;padding-bottom:10px;}
-                            .report-print-header h2{font-size:16px;color:#004d4d;margin:0;}
-                            .report-print-header .sub{font-size:10px;color:#6c7a8a;}
-                            .report-print-header .period{font-size:11px;font-weight:600;color:#0f5c7a;background:#f0f7fb;display:inline-block;padding:1px 16px;border-radius:30px;margin-top:4px;}
-                            .footer-print{text-align:center;font-size:7.5pt;color:#8ba0b0;border-top:1px solid #ccc;padding-top:8px;margin-top:12px;}
-                        </style>
-                        </head><body>
-                        <div class="report-print-header">
-                            <h2>🏥 Hope Dental Clinic</h2>
-                            <div class="sub">${viewLabel} Report</div>
-                            <div class="period">📅 ${from} – ${to}</div>
-                        </div>
-                        ${content}
-                        <div class="footer-print">Generated ${new Date().toLocaleString()} · Hope Dental Clinic</div>
-                        <\/body><\/html>
-                    `);
-            win.document.close();
-            win.print();
+    }
+    
+    function renderMostUsedServices() {
+        const container = document.getElementById('mostUsedServices');
+        if (mostUsedServices.length === 0) {
+            container.innerHTML = `
+                <span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>
+                <span class="most-used-empty">No services used yet. Start adding services!</span>
+            `;
+            return;
         }
-
-        // ═══════════════════════════════════════════════════════
-        //  HELPERS
-        // ═══════════════════════════════════════════════════════
-
-        function escHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } [m] || m));
+        
+        let html = `<span class="most-used-label"><i class="fas fa-star" style="color:#f0ad4e;"></i> Quick Add:</span>`;
+        mostUsedServices.forEach(s => {
+            const codeDisplay = s.code ? `<span class="code-tag">${escapeHtml(s.code)}</span>` : '';
+            const priceDisplay = s.price === 0 ? '🎯 FREE' : `MVR ${s.price}`;
+            html += `
+                <button class="most-used-btn" data-service-name="${escapeHtml(s.name)}" data-service-price="${s.price}" data-service-code="${escapeHtml(s.code || '')}" onclick="addMostUsedService(this)">
+                    ${escapeHtml(s.name)} ${codeDisplay}
+                    <span class="price-tag">${priceDisplay}</span>
+                </button>
+            `;
+        });
+        container.innerHTML = html;
+    }
+    
+    function addMostUsedService(btn) {
+        const name = btn.getAttribute('data-service-name');
+        const price = parseFloat(btn.getAttribute('data-service-price'));
+        const code = btn.getAttribute('data-service-code') || '';
+        
+        // Find the full service in servicesList
+        const service = servicesList.find(s => s.name === name);
+        if (service) {
+            addService(service);
+        } else {
+            // If not found in servicesList, create a temporary service
+            const tempService = {
+                id: Date.now(),
+                code: code,
+                name: name,
+                price: price || 0,
+                aasandhaCoverAmount: 0,
+                aasandhaCovered: false
+            };
+            addService(tempService);
         }
-
-        function waitForFirebase() {
-            if (window.db) {
-                loadDailyReport();
+    }
+    
+    // ========== PATIENT SEARCH FUNCTIONALITY ==========
+    function searchPatients(query) {
+        if (!query || query.length < 1) {
+            document.getElementById('patientSearchResults').classList.remove('active');
+            return;
+        }
+        
+        const resultsContainer = document.getElementById('patientSearchResults');
+        const lowerQuery = query.toLowerCase().trim();
+        
+        const results = patientsList.filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const id = (p.idNumber || p.passportNumber || p.nationalId || p.id || '').toLowerCase();
+            const phone = (p.phone || p.contactNo || '').toLowerCase();
+            return name.includes(lowerQuery) || 
+                   id.includes(lowerQuery) || 
+                   phone.includes(lowerQuery);
+        });
+        
+        resultsContainer.innerHTML = '';
+        
+        if (results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="patient-search-empty">
+                    <i class="fas fa-user-plus" style="margin-right: 8px;"></i>
+                    No patients found. You can add new patient from the dashboard.
+                </div>
+            `;
+            resultsContainer.classList.add('active');
+            return;
+        }
+        
+        const displayResults = results.slice(0, 10);
+        displayResults.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'patient-search-result-item';
+            const displayId = getPatientDisplayId(p);
+            const badgeClass = p.isCitizen ? 'citizen' : '';
+            const badgeText = p.isCitizen ? '🇲🇻 Citizen' : '🌍 Non-Citizen';
+            
+            div.innerHTML = `
+                <div>
+                    <div class="patient-name">${escapeHtml(p.name)}</div>
+                    <div class="patient-details">
+                        <span class="patient-id">📋 ${escapeHtml(displayId)}</span>
+                        ${p.phone || p.contactNo ? ` · 📞 ${escapeHtml(p.phone || p.contactNo)}` : ''}
+                        ${p.nationality ? ` · 🌍 ${escapeHtml(p.nationality)}` : ''}
+                    </div>
+                </div>
+                <div>
+                    <span class="patient-badge ${badgeClass}">${badgeText}</span>
+                </div>
+            `;
+            
+            div.addEventListener('click', () => selectPatient(p));
+            div.addEventListener('mouseenter', () => {
+                div.style.background = '#e0f2fe';
+            });
+            div.addEventListener('mouseleave', () => {
+                div.style.background = 'transparent';
+            });
+            
+            resultsContainer.appendChild(div);
+        });
+        
+        if (results.length > 10) {
+            const moreDiv = document.createElement('div');
+            moreDiv.className = 'patient-search-empty';
+            moreDiv.style.padding = '8px';
+            moreDiv.style.fontSize = '11px';
+            moreDiv.style.color = '#8a9aa8';
+            moreDiv.textContent = `+ ${results.length - 10} more results...`;
+            resultsContainer.appendChild(moreDiv);
+        }
+        
+        resultsContainer.classList.add('active');
+    }
+    
+    function selectPatient(patient) {
+        selectedPatient = patient;
+        
+        const displayId = getPatientDisplayId(patient);
+        document.getElementById('patientId').value = patient.id || displayId;
+        document.getElementById('patientName').value = patient.name || '';
+        document.getElementById('contactNo').value = patient.phone || patient.contactNo || '';
+        document.getElementById('patientNationality').value = patient.nationality || '';
+        document.getElementById('patientIsCitizen').value = patient.isCitizen || false;
+        document.getElementById('patientDob').value = patient.dob || '';
+        document.getElementById('patientAddress').value = patient.address || '';
+        
+        document.getElementById('patientSearchInput').value = `${patient.name} (${displayId})`;
+        document.getElementById('patientSearchResults').classList.remove('active');
+        
+        const card = document.getElementById('selectedPatientCard');
+        card.style.display = 'flex';
+        const badgeClass = patient.isCitizen ? 'citizen' : '';
+        const badgeText = patient.isCitizen ? '🇲🇻 Aasandha Eligible' : '🌍 No Aasandha';
+        card.innerHTML = `
+            <div>
+                <strong>${escapeHtml(patient.name)}</strong><br>
+                ID/Passport: ${escapeHtml(displayId)}<br>
+                📞 ${escapeHtml(patient.phone || patient.contactNo || '')}
+                ${patient.nationality ? `<br>🌍 ${escapeHtml(patient.nationality)}` : ''}
+                ${patient.address ? `<br>📍 ${escapeHtml(patient.address)}` : ''}
+            </div>
+            <div>
+                <span class="selected-badge ${badgeClass}">${badgeText}</span>
+                ${patient.nationality ? `<span class="selected-badge" style="background:#6c757d;">${escapeHtml(patient.nationality)}</span>` : ''}
+            </div>
+        `;
+        
+        if (selectedServices.length > 0) {
+            applyAutoCalculation();
+        }
+        calculateBilling();
+        showMessage(`✅ Patient selected: ${patient.name}`, "success");
+    }
+    
+    // ========== SERVICE SEARCH FUNCTIONALITY ==========
+    function searchServices(query) {
+        if (!query || query.length < 1) {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+            return;
+        }
+        
+        const resultsContainer = document.getElementById('serviceSearchResults');
+        const lowerQuery = query.toLowerCase().trim();
+        
+        const results = servicesList.filter(s => {
+            const name = (s.name || '').toLowerCase();
+            const code = (s.code || '').toLowerCase();
+            return name.includes(lowerQuery) || code.includes(lowerQuery);
+        });
+        
+        resultsContainer.innerHTML = '';
+        
+        if (results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="service-search-empty">
+                    <i class="fas fa-plus-circle" style="margin-right: 8px;"></i>
+                    No services found. Please check the service name or code.
+                </div>
+            `;
+            resultsContainer.classList.add('active');
+            return;
+        }
+        
+        const displayResults = results.slice(0, 10);
+        displayResults.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'service-search-result-item';
+            const isCovered = s.aasandhaCoverAmount > 0;
+            const isFree = s.price === 0;
+            const badgeClass = isCovered ? '' : 'not-covered';
+            const badgeText = isCovered ? '✅ Aasandha' : '❌ No Cover';
+            const freeBadge = isFree ? '🎯 FREE' : '';
+            
+            div.innerHTML = `
+                <div>
+                    <div class="service-name">${escapeHtml(s.name)} ${freeBadge}</div>
+                    <div class="service-code">${escapeHtml(s.code || '—')}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="service-price">${isFree ? 'FREE' : `MVR ${s.price}`}</div>
+                    <span class="service-badge ${badgeClass}">${badgeText}</span>
+                </div>
+            `;
+            
+            div.addEventListener('click', () => {
+                addService(s);
+                document.getElementById('serviceSearchInput').value = '';
+                document.getElementById('serviceSearchResults').classList.remove('active');
+            });
+            
+            div.addEventListener('mouseenter', () => {
+                div.style.background = '#e0f2fe';
+            });
+            div.addEventListener('mouseleave', () => {
+                div.style.background = 'transparent';
+            });
+            
+            resultsContainer.appendChild(div);
+        });
+        
+        if (results.length > 10) {
+            const moreDiv = document.createElement('div');
+            moreDiv.className = 'service-search-empty';
+            moreDiv.style.padding = '8px';
+            moreDiv.style.fontSize = '11px';
+            moreDiv.style.color = '#8a9aa8';
+            moreDiv.textContent = `+ ${results.length - 10} more services...`;
+            resultsContainer.appendChild(moreDiv);
+        }
+        
+        resultsContainer.classList.add('active');
+    }
+    
+    function addService(service) {
+        // Allow services with price 0 (e.g., Follow up / Free Consultation)
+        const price = service.price || 0;
+        const aasandhaCoverAmt = service.aasandhaCoverAmount || 0;
+        const code = service.code || '';
+        const serviceTotal = price; // This will be 0 for free services
+        
+        // Calculate insurance (will be 0 for free services)
+        const svc = { name: service.name, aasandhaCoverAmount: aasandhaCoverAmt };
+        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, svc);
+        
+        selectedServices.push({
+            id: Date.now(),
+            code: code,
+            name: service.name,
+            qty: 1,
+            price: price,
+            aasandhaCoverAmount: aasandhaCoverAmt,
+            primaryInsuranceAmount: primaryAmount,
+            aasandhaAmount: aasandhaAmount,
+            discountPercent: 0,
+            discountAmount: 0,
+            showDiscount: false,
+            isFreeService: price === 0  // Mark free services
+        });
+        
+        renderServices();
+        calculateBilling();
+        showMessage(`Added ${service.name}${price === 0 ? ' (Free)' : ''}`, "success");
+    }
+    
+    // ========== SERVICE DISCOUNT FUNCTIONS ==========
+    function toggleServiceDiscount(idx) {
+        // Don't allow discount on free services
+        if (selectedServices[idx].isFreeService) {
+            showMessage("Discount cannot be applied to free services", "info");
+            return;
+        }
+        selectedServices[idx].showDiscount = !selectedServices[idx].showDiscount;
+        if (!selectedServices[idx].showDiscount) {
+            selectedServices[idx].discountPercent = 0;
+            selectedServices[idx].discountAmount = 0;
+        }
+        renderServices();
+        calculateBilling();
+    }
+    
+    function updateServiceDiscount(idx, value) {
+        // Don't allow discount on free services
+        if (selectedServices[idx].isFreeService) {
+            return;
+        }
+        const discount = parseFloat(value) || 0;
+        selectedServices[idx].discountPercent = discount;
+        const serviceTotal = selectedServices[idx].qty * selectedServices[idx].price;
+        selectedServices[idx].discountAmount = (serviceTotal * discount) / 100;
+        renderServices();
+        calculateBilling();
+    }
+    
+    // ========== SEQUENTIAL MEMO NUMBER GENERATOR ==========
+    async function getNextMemoNumber() {
+        if (!window.db) throw new Error("Firestore not ready");
+        const counterRef = window.db.collection("counters").doc("memoCounter");
+        
+        return await window.db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(counterRef);
+            let current = 1000;
+            if (doc.exists && doc.data().current) {
+                current = doc.data().current;
+            }
+            const next = current + 1;
+            transaction.set(counterRef, { current: next });
+            return next;
+        }).catch(async (error) => {
+            console.error("Transaction failed, retrying once...", error);
+            const doc = await counterRef.get();
+            let current = 1000;
+            if (doc.exists && doc.data().current) {
+                current = doc.data().current;
+            }
+            const next = current + 1;
+            await counterRef.set({ current: next }, { merge: true });
+            return next;
+        });
+    }
+    
+    // ========== LOAD PAYMENT METHODS ==========
+    async function loadPaymentMethods() {
+        if (!window.db) return;
+        try {
+            const snapshot = await window.db.collection("paymentMethods").get();
+            if (snapshot.empty) {
+                const defaultMethods = ['Visa', 'Mastercard', 'Amex', 'Cash', 'Bank Transfer'];
+                const batch = window.db.batch();
+                defaultMethods.forEach(name => {
+                    const ref = window.db.collection("paymentMethods").doc();
+                    batch.set(ref, { name: name, active: true, createdAt: new Date().toISOString() });
+                });
+                await batch.commit();
+                console.log("Default payment methods created");
+                const newSnapshot = await window.db.collection("paymentMethods").get();
+                paymentMethodsList = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             } else {
-                setTimeout(waitForFirebase, 500);
+                paymentMethodsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+            
+            const select = document.getElementById('paymentMethodSelect');
+            select.innerHTML = '<option value="">-- Select Payment Method --</option>';
+            paymentMethodsList.forEach(pm => {
+                const icon = getPaymentIcon(pm.name);
+                select.innerHTML += `<option value="${pm.id}" data-name="${pm.name}">${icon} ${pm.name}</option>`;
+            });
+        } catch (error) {
+            console.error("Error loading payment methods:", error);
+        }
+    }
+    
+    function getPaymentIcon(name) {
+        const icons = {
+            'Visa': '💳',
+            'Mastercard': '💳',
+            'Amex': '💳',
+            'Cash': '💰',
+            'Bank Transfer': '🏦',
+            'Transfer': '🏦'
+        };
+        return icons[name] || '💳';
+    }
+    
+    // ========== LOAD APPOINTMENTS ==========
+    async function loadAppointments() {
+        if (!window.db) return;
+        try {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            const snap = await window.db.collection("appointments")
+                .where("status", "==", "Scheduled")
+                .get();
+            
+            appointmentsList = snap.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(apt => {
+                    if (!apt.date) return false;
+                    return apt.date >= todayStr;
+                })
+                .sort((a, b) => {
+                    if (a.date < b.date) return -1;
+                    if (a.date > b.date) return 1;
+                    return 0;
+                });
+            
+            const select = document.getElementById('appointmentSelect');
+            if (appointmentsList.length === 0) {
+                select.innerHTML = '<option value="">-- No upcoming appointments --</option>';
+            } else {
+                let html = '<option value="">-- Select an appointment --</option>';
+                appointmentsList.forEach(apt => {
+                    const displayDate = apt.date || 'No date';
+                    const displayTime = apt.time || '';
+                    html += `<option value="${apt.id}" data-patient-id="${apt.patientId}" data-patient-name="${apt.patientName}" data-contact="${apt.contact || ''}" data-doctor-id="${apt.doctorId}" data-doctor-name="${apt.doctorName}" data-service-id="${apt.serviceId || ''}" data-service-name="${apt.serviceName || ''}">${displayDate} ${displayTime} - ${apt.patientName} with ${apt.doctorName}</option>`;
+                });
+                select.innerHTML = html;
+            }
+        } catch (error) {
+            console.error("Error loading appointments:", error);
+            showMessage("Error loading appointments: " + error.message, "error");
+        }
+    }
+    
+    // ========== FIND PATIENT ==========
+    function findPatientByIdPassport(idValue) {
+        if (!idValue) return null;
+        const lowerId = idValue.toLowerCase().trim();
+        
+        for (let i = 0; i < patientsList.length; i++) {
+            const p = patientsList[i];
+            if (p.id && p.id.toLowerCase() === lowerId) return p;
+            if (p.idNumber && p.idNumber.toLowerCase() === lowerId) return p;
+            if (p.passportNumber && p.passportNumber.toLowerCase() === lowerId) return p;
+            if (p.nationalId && p.nationalId.toLowerCase() === lowerId) return p;
+        }
+        return null;
+    }
+    
+    // ========== AUTO-FILL FROM APPOINTMENT ==========
+    async function fillFromAppointment(appointmentId) {
+        const apt = appointmentsList.find(a => a.id === appointmentId);
+        if (!apt) {
+            console.error("Appointment not found:", appointmentId);
+            return;
+        }
+        
+        selectedAppointmentData = apt;
+        console.log("Selected appointment:", apt);
+        
+        if (apt.patientId) {
+            try {
+                const searchId = apt.patientId;
+                let patient = findPatientByIdPassport(searchId);
+                
+                if (!patient) {
+                    let patientDoc = await window.db.collection("patients").doc(searchId).get();
+                    if (patientDoc.exists) {
+                        patient = { id: patientDoc.id, ...patientDoc.data() };
+                    }
+                    
+                    if (!patient) {
+                        const idNumberQuery = await window.db.collection("patients")
+                            .where("idNumber", "==", searchId)
+                            .get();
+                        if (!idNumberQuery.empty) {
+                            patient = { id: idNumberQuery.docs[0].id, ...idNumberQuery.docs[0].data() };
+                        }
+                    }
+                    
+                    if (!patient) {
+                        const passportQuery = await window.db.collection("patients")
+                            .where("passportNumber", "==", searchId)
+                            .get();
+                        if (!passportQuery.empty) {
+                            patient = { id: passportQuery.docs[0].id, ...passportQuery.docs[0].data() };
+                        }
+                    }
+                    
+                    if (!patient) {
+                        const nationalQuery = await window.db.collection("patients")
+                            .where("nationalId", "==", searchId)
+                            .get();
+                        if (!nationalQuery.empty) {
+                            patient = { id: nationalQuery.docs[0].id, ...nationalQuery.docs[0].data() };
+                        }
+                    }
+                    
+                    if (patient) {
+                        patientsList.push(patient);
+                    }
+                }
+                
+                if (patient) {
+                    selectPatient(patient);
+                } else {
+                    const fallbackPatient = {
+                        id: searchId,
+                        name: apt.patientName || 'Unknown Patient',
+                        phone: apt.contact || '',
+                        idNumber: searchId,
+                        isCitizen: false
+                    };
+                    patientsList.push(fallbackPatient);
+                    selectPatient(fallbackPatient);
+                    showMessage(`⚠️ Patient not found in system. Created temporary record for ${fallbackPatient.name}`, "info");
+                }
+            } catch (error) {
+                console.error("Error in patient handling:", error);
+                const fallbackPatient = {
+                    id: apt.patientId,
+                    name: apt.patientName || 'Unknown',
+                    phone: apt.contact || '',
+                    isCitizen: false
+                };
+                selectPatient(fallbackPatient);
             }
         }
-        waitForFirebase();
-
-        // auto-run on date change (optional)
-        document.getElementById('dailyStartDate').addEventListener('change', loadDailyReport);
-        document.getElementById('dailyEndDate').addEventListener('change', loadDailyReport);
-    </script>
-
+        
+        if (apt.doctorId) {
+            try {
+                let doctor = doctorsList.find(d => d.id === apt.doctorId);
+                if (!doctor) {
+                    const doctorDoc = await window.db.collection("doctors").doc(apt.doctorId).get();
+                    if (doctorDoc.exists) {
+                        doctor = { id: doctorDoc.id, ...doctorDoc.data() };
+                        doctorsList.push(doctor);
+                    }
+                }
+                if (doctor) {
+                    selectedDoctor = doctor;
+                    const doctorSelect = document.getElementById('doctorSelect');
+                    let found = false;
+                    for (let i = 0; i < doctorSelect.options.length; i++) {
+                        if (doctorSelect.options[i].value === apt.doctorId) {
+                            doctorSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        const option = document.createElement('option');
+                        option.value = doctor.id;
+                        option.text = `${doctor.name} (${doctor.speciality || 'General'})`;
+                        doctorSelect.add(option);
+                        doctorSelect.value = doctor.id;
+                    }
+                    
+                    const card = document.getElementById('selectedDoctorCard');
+                    card.style.display = 'flex';
+                    card.innerHTML = `
+                        <div><strong>${escapeHtml(doctor.name)}</strong></div>
+                        <div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error fetching doctor data:", error);
+            }
+        }
+        
+        if (apt.serviceId || apt.serviceName) {
+            const service = servicesList.find(s => s.id === apt.serviceId || s.name === apt.serviceName);
+            if (service) {
+                addService(service);
+            }
+        }
+        
+        document.getElementById('appointmentBadge').style.display = 'inline-block';
+        selectedAppointmentId = appointmentId;
+        console.log("Appointment fill complete");
+    }
+    
+    // ========== LOAD ALL MASTER DATA ==========
+    async function loadPatients() {
+        try {
+            const snapshot = await window.db.collection("patients").get();
+            patientsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log(`Loaded ${patientsList.length} patients`);
+        } catch (error) { 
+            console.error("Error loading patients:", error);
+        }
+    }
+    
+    async function loadDoctors() {
+        try {
+            const snapshot = await window.db.collection("doctors").get();
+            doctorsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const doctorSelect = document.getElementById('doctorSelect');
+            if (doctorsList.length === 0) doctorSelect.innerHTML = '<option value="">-- No Doctors Found --</option>';
+            else {
+                doctorSelect.innerHTML = '<option value="">-- Select Doctor --</option>';
+                doctorsList.forEach(d => {
+                    doctorSelect.innerHTML += `<option value="${d.id}" data-name="${d.name}" data-speciality="${d.speciality}">${d.name} (${d.speciality})</option>`;
+                });
+            }
+        } catch (error) { console.error(error); }
+    }
+    
+    async function loadServices() {
+        try {
+            const snapshot = await window.db.collection("services").get();
+            servicesList = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return { 
+                    id: doc.id, 
+                    code: data.code || '',
+                    name: data.name, 
+                    price: data.price || 0,  // Ensure 0 is preserved for free services
+                    aasandhaCovered: data.aasandhaCovered || false, 
+                    aasandhaCoverAmount: data.aasandhaCoverAmount || 0 
+                };
+            });
+            console.log(`Loaded ${servicesList.length} services (including free services)`);
+            // Re-render most used services with zero-priced services included
+            await loadMostUsedServices();
+        } catch (error) { 
+            console.error(error); 
+            showMessage("Error loading services: " + error.message, "error");
+        }
+    }
+    
+    async function loadInsurance() {
+        try {
+            const snapshot = await window.db.collection("insurance").get();
+            insuranceList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const insuranceSelect = document.getElementById('otherInsuranceSelect');
+            insuranceSelect.innerHTML = '<option value="">-- No Primary Insurance --</option>';
+            insuranceList.forEach(i => {
+                const isFullCover = isFullCoverInsurance(i.name);
+                const badge = isFullCover ? ' (100% Cover)' : '';
+                insuranceSelect.innerHTML += `<option value="${i.id}" data-name="${i.name}" data-default-coverage="${i.defaultCoverage || 0}" data-full-cover="${isFullCover}">${i.name}${badge}</option>`;
+            });
+        } catch (error) { console.error(error); }
+    }
+    
+    async function loadDiscounts() {
+        try {
+            const snapshot = await window.db.collection("discounts").get();
+            discountsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const discountSelect = document.getElementById('discountPresetSelect');
+            discountSelect.innerHTML = '<option value="0">None</option>';
+            discountsList.forEach(d => {
+                const typeLabel = d.type === 'fixed' ? '💰 Fixed' : '%';
+                discountSelect.innerHTML += `<option value="${d.percent}" data-type="${d.type || 'percent'}" data-name="${d.name}">${d.name} (${d.percent}${d.type === 'fixed' ? ' MVR' : '%'})</option>`;
+            });
+        } catch (error) { console.error(error); }
+    }
+    
+    async function loadAllData() {
+        if (!window.db) { setTimeout(loadAllData, 500); return; }
+        await Promise.all([loadPatients(), loadDoctors(), loadServices(), loadInsurance(), loadDiscounts(), loadAppointments(), loadPaymentMethods()]);
+        showMessage(`Loaded ${patientsList.length} patients, ${doctorsList.length} doctors, ${servicesList.length} services`, "success");
+    }
+    
+    // ========== INSURANCE CALCULATION ==========
+    function calculateServiceInsurance(serviceTotal, service) {
+        let primaryAmount = 0;
+        let aasandhaAmount = 0;
+        
+        const isCovered = service && service.aasandhaCoverAmount > 0;
+        const insuranceName = selectedPrimaryInsurance ? selectedPrimaryInsurance.name : '';
+        const isFullCover = isFullCoverInsurance(insuranceName);
+        
+        if (selectedPrimaryInsurance) {
+            if (isFullCover) {
+                primaryAmount = serviceTotal;
+            } else if (isCovered) {
+                if (insuranceType === "percent" && selectedInsurancePercent > 0) {
+                    primaryAmount = (serviceTotal * selectedInsurancePercent) / 100;
+                } else if (insuranceType === "fixed" && selectedInsuranceFixed > 0) {
+                    primaryAmount = Math.min(serviceTotal, selectedInsuranceFixed);
+                }
+            } else {
+                primaryAmount = 0;
+            }
+        }
+        
+        if (selectedPatient && selectedPatient.isCitizen && isCovered) {
+            const aasandhaLimit = service ? service.aasandhaCoverAmount : 0;
+            if (aasandhaLimit > 0) {
+                const remainingAfterPrimary = Math.max(0, serviceTotal - primaryAmount);
+                aasandhaAmount = Math.min(remainingAfterPrimary, aasandhaLimit);
+            }
+        }
+        
+        if (isFullCover) {
+            aasandhaAmount = 0;
+        }
+        
+        return { primaryAmount, aasandhaAmount };
+    }
+    
+    function applyAutoCalculation() {
+        if (!selectedServices.length) return;
+        let hasChanges = false;
+        selectedServices.forEach(service => {
+            const serviceTotal = service.qty * service.price;
+            const fullService = servicesList.find(s => s.name === service.name);
+            if (fullService) {
+                service.aasandhaCoverAmount = fullService.aasandhaCoverAmount || 0;
+                service.code = fullService.code || '';
+            }
+            const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
+            if (service.primaryInsuranceAmount !== primaryAmount) {
+                service.primaryInsuranceAmount = primaryAmount;
+                hasChanges = true;
+            }
+            if (service.aasandhaAmount !== aasandhaAmount) {
+                service.aasandhaAmount = aasandhaAmount;
+                hasChanges = true;
+            }
+        });
+        if (hasChanges) { renderServices(); calculateBilling(); showMessage("Insurance amounts auto-calculated", "success"); }
+        else showMessage("Already up to date", "info");
+    }
+    
+    // ========== DISCOUNT FUNCTIONS ==========
+    function getDiscountValue() {
+        if (discountMode === "preset") {
+            const select = document.getElementById('discountPresetSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const value = parseFloat(select.value) || 0;
+            const type = selectedOption?.dataset?.type || 'percent';
+            return { value, type };
+        } else {
+            const customValue = parseFloat(document.getElementById('customDiscountValue').value) || 0;
+            return { value: customValue, type: discountType };
+        }
+    }
+    
+    function updateDiscountDisplay() {
+        const { value, type } = getDiscountValue();
+        const displayText = document.getElementById('discountDisplayText');
+        const displayAmount = document.getElementById('discountDisplayAmount');
+        
+        if (value === 0) {
+            displayText.textContent = 'None';
+            displayAmount.textContent = 'MVR 0.00';
+            return;
+        }
+        
+        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        let discountAmount = 0;
+        let displayValue = '';
+        
+        if (type === 'percent') {
+            discountAmount = (subtotal * value) / 100;
+            displayValue = `${value}%`;
+        } else {
+            discountAmount = Math.min(value, subtotal);
+            displayValue = `MVR ${value.toFixed(2)}`;
+        }
+        
+        displayText.textContent = `${displayValue} discount`;
+        displayAmount.textContent = `- MVR ${discountAmount.toFixed(2)}`;
+        displayAmount.style.color = discountAmount > 0 ? '#d9534f' : '#0a2f44';
+        
+        selectedDiscountPercent = type === 'percent' ? value : 0;
+        selectedDiscountFixed = type === 'fixed' ? value : 0;
+    }
+    
+    function renderServices() {
+        const tbody = document.getElementById('servicesTbody');
+        if (!selectedServices.length) {
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:16px;">No services added. Search and select a service to add</td></tr>';
+            return;
+        }
+        
+        const insuranceName = selectedPrimaryInsurance ? selectedPrimaryInsurance.name : '';
+        const isFullCover = isFullCoverInsurance(insuranceName);
+        
+        tbody.innerHTML = selectedServices.map((s, idx) => {
+            const serviceTotal = s.qty * s.price;
+            const isFree = s.price === 0;
+            const aasandhaCoverAmt = s.aasandhaCoverAmount || 0;
+            const isCovered = aasandhaCoverAmt > 0;
+            const primaryInsAmount = s.primaryInsuranceAmount || 0;
+            const aasandhaAmount = s.aasandhaAmount || 0;
+            
+            const serviceDiscountPercent = s.discountPercent || 0;
+            const serviceDiscountAmount = (serviceTotal * serviceDiscountPercent) / 100;
+            const totalAfterServiceDiscount = serviceTotal - serviceDiscountAmount;
+            
+            const patientPay = Math.max(0, totalAfterServiceDiscount - primaryInsAmount - aasandhaAmount);
+            
+            const coverBadgeClass = isCovered ? 'covered' : 'not-covered';
+            const coverBadgeText = isCovered ? `✅ MVR ${aasandhaCoverAmt}` : '❌ Not Covered';
+            
+            let primaryInsDisplay = primaryInsAmount;
+            let primaryInsDisabled = false;
+            
+            if (isFullCover) {
+                primaryInsDisplay = primaryInsAmount;
+            } else if (!isCovered) {
+                primaryInsDisplay = 0;
+                primaryInsDisabled = true;
+            }
+            
+            // For free services, disable inputs and show appropriate labels
+            const isDisabled = isFree ? 'disabled' : '';
+            const disabledClass = isFree ? 'disabled-input' : '';
+            
+            const codeDisplay = s.code ? `<span class="service-code-badge">${escapeHtml(s.code)}</span>` : '';
+            const discountBadge = serviceDiscountPercent > 0 ? 
+                `<span class="service-discount-badge">-${serviceDiscountPercent}%</span>` : '';
+            const freeBadge = isFree ? `<span class="service-cover-badge free-badge">🎯 FREE</span>` : '';
+            
+            const discountInputClass = s.showDiscount ? 'show' : '';
+            const toggleBtnClass = s.showDiscount ? 'active' : '';
+            
+            return `
+                <tr>
+                    <td>${codeDisplay}</td>
+                    <td>
+                        <strong>${escapeHtml(s.name)}</strong>
+                        ${freeBadge}
+                        <span class="service-cover-badge ${coverBadgeClass}">${coverBadgeText}</span>
+                        ${discountBadge}
+                    </td>
+                    <td>
+                        <input type="number" value="${s.qty}" min="1" step="1" 
+                               onchange="updateServiceQty(${idx}, this.value)" 
+                               class="qty-input" ${isDisabled}>
+                    </td>
+                    <td>${isFree ? 'FREE' : `MVR ${s.price}`}</td>
+                    <td>${isFree ? 'FREE' : `MVR ${serviceTotal.toFixed(2)}`}</td>
+                    <td>${isFree ? 'N/A' : `MVR ${aasandhaCoverAmt.toFixed(2)}`}</td>
+                    <td>
+                        <input type="number" value="${primaryInsDisplay}" min="0" step="1" 
+                               onchange="updateServiceInsurance(${idx}, 'primary', this.value)" 
+                               class="insurance-input ${primaryInsDisabled || isFree ? 'disabled-input' : ''}"
+                               ${primaryInsDisabled || isFree ? 'disabled' : ''}
+                               placeholder="Primary Ins">
+                        ${isFullCover ? '<span style="font-size:8px;color:#146b3a;">100%</span>' : ''}
+                        ${!isCovered && !isFullCover && !isFree ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
+                        ${isFree ? '<span style="font-size:8px;color:#17a2b8;">Free</span>' : ''}
+                    </td>
+                    <td>
+                        <input type="number" value="${aasandhaAmount}" min="0" step="1" 
+                               onchange="updateServiceInsurance(${idx}, 'aasandha', this.value)" 
+                               class="insurance-input ${!isCovered || isFullCover || isFree ? 'disabled-input' : ''}"
+                               ${!isCovered || isFullCover || isFree ? 'disabled' : ''}
+                               placeholder="Aasandha">
+                        ${!isCovered && !isFree ? '<span style="font-size:8px;color:#dc3545;">No cover</span>' : ''}
+                        ${isFullCover && !isFree ? '<span style="font-size:8px;color:#146b3a;">N/A</span>' : ''}
+                        ${isFree ? '<span style="font-size:8px;color:#17a2b8;">Free</span>' : ''}
+                    </td>
+                    <td>
+                        <button class="service-discount-toggle ${toggleBtnClass}" 
+                                onclick="toggleServiceDiscount(${idx})" 
+                                title="Toggle service discount" ${isFree ? 'disabled' : ''}>
+                            <i class="fas fa-tag"></i>
+                        </button>
+                        <input type="number" value="${serviceDiscountPercent}" min="0" max="100" step="1" 
+                               onchange="updateServiceDiscount(${idx}, this.value)" 
+                               class="service-discount-input ${discountInputClass}" 
+                               placeholder="%" ${isFree ? 'disabled' : ''}>
+                    </td>
+                    <td>${isFree ? 'FREE' : `MVR ${patientPay.toFixed(2)}`}</td>
+                    <td><button class="remove-row" onclick="removeService(${idx})">Remove</button></td>
+                </tr>
+            `;
+        }).join('');
+        
+        updateInsuranceCoverageInfo();
+        updateDiscountDisplay();
+    }
+    
+    function updateInsuranceCoverageInfo() {
+        const insuranceName = selectedPrimaryInsurance ? selectedPrimaryInsurance.name : '';
+        const isFullCover = isFullCoverInsurance(insuranceName);
+        const infoDiv = document.getElementById('insuranceCoverageInfo');
+        
+        if (!selectedPrimaryInsurance) {
+            infoDiv.style.display = 'none';
+            return;
+        }
+        
+        const coveredServices = selectedServices.filter(s => s.aasandhaCoverAmount > 0);
+        const nonCoveredServices = selectedServices.filter(s => s.aasandhaCoverAmount === 0 && s.price > 0);
+        const freeServices = selectedServices.filter(s => s.price === 0);
+        
+        let infoHtml = `<strong>📋 Insurance: ${escapeHtml(insuranceName)}</strong><br>`;
+        
+        if (isFullCover) {
+            infoHtml += `✅ <strong>Full Coverage</strong> - Covers 100% of all services (${selectedServices.length} services)`;
+        } else {
+            infoHtml += `ℹ️ Covers only Aasandha-covered services (${coveredServices.length} of ${selectedServices.length} services)`;
+            if (nonCoveredServices.length > 0) {
+                infoHtml += `<br>⚠️ <span style="color:#dc3545;">${nonCoveredServices.length} service(s) not covered: ${nonCoveredServices.map(s => s.name).join(', ')}</span>`;
+            }
+            if (freeServices.length > 0) {
+                infoHtml += `<br>🎯 <span style="color:#17a2b8;">${freeServices.length} free service(s): ${freeServices.map(s => s.name).join(', ')}</span>`;
+            }
+        }
+        
+        infoDiv.innerHTML = infoHtml;
+        infoDiv.style.display = 'block';
+    }
+    
+    window.updateServiceQty = (idx, val) => { 
+        selectedServices[idx].qty = Math.max(1, parseInt(val) || 1); 
+        const serviceTotal = selectedServices[idx].qty * selectedServices[idx].price;
+        const service = selectedServices[idx];
+        const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
+        selectedServices[idx].primaryInsuranceAmount = primaryAmount;
+        selectedServices[idx].aasandhaAmount = aasandhaAmount;
+        const discountPercent = selectedServices[idx].discountPercent || 0;
+        selectedServices[idx].discountAmount = (serviceTotal * discountPercent) / 100;
+        renderServices(); calculateBilling(); 
+    };
+    
+    window.updateServiceInsurance = (idx, type, val) => {
+        const amount = Math.max(0, parseFloat(val) || 0);
+        if (type === 'primary') selectedServices[idx].primaryInsuranceAmount = amount;
+        else if (type === 'aasandha') selectedServices[idx].aasandhaAmount = amount;
+        calculateBilling(); renderServices();
+    };
+    
+    window.removeService = (idx) => { selectedServices.splice(idx,1); renderServices(); calculateBilling(); };
+    
+    function calculateBilling() {
+        // Filter paid services for subtotal calculation
+        const paidServices = selectedServices.filter(s => s.price > 0);
+        const freeServices = selectedServices.filter(s => s.price === 0);
+        
+        // Calculate subtotal only from paid services
+        const subtotal = paidServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        
+        let totalServiceDiscount = 0;
+        paidServices.forEach(s => {
+            const serviceTotal = s.qty * s.price;
+            const discountPercent = s.discountPercent || 0;
+            totalServiceDiscount += (serviceTotal * discountPercent) / 100;
+        });
+        
+        const { value, type } = getDiscountValue();
+        let globalDiscAmount = 0;
+        if (type === 'percent') {
+            globalDiscAmount = (subtotal * value) / 100;
+        } else {
+            globalDiscAmount = Math.min(value, subtotal);
+        }
+        
+        const totalDiscAmount = totalServiceDiscount + globalDiscAmount;
+        let afterDiscount = subtotal - totalDiscAmount;
+        
+        document.getElementById('subtotalAmount').innerHTML = subtotal.toFixed(2);
+        document.getElementById('totalAfterDiscount').innerHTML = afterDiscount.toFixed(2);
+        
+        let primaryInsuranceTotal = 0, aasandhaTotal = 0, patientTotal = 0;
+        
+        // Process paid services
+        for (let s of paidServices) {
+            const serviceTotal = s.qty * s.price;
+            const serviceDiscount = (serviceTotal * (s.discountPercent || 0)) / 100;
+            const weight = subtotal > 0 ? serviceTotal / subtotal : 0;
+            let remainingAfterDiscount = afterDiscount * weight;
+            let primaryPortion = s.primaryInsuranceAmount || 0;
+            let aasandhaPortion = s.aasandhaAmount || 0;
+            
+            if (totalDiscAmount > 0 && serviceTotal > 0 && subtotal > 0) {
+                const discountWeight = totalDiscAmount * (serviceTotal / subtotal);
+                if (primaryPortion > 0) primaryPortion = Math.max(0, primaryPortion - (primaryPortion / serviceTotal) * discountWeight);
+                if (aasandhaPortion > 0) aasandhaPortion = Math.max(0, aasandhaPortion - (aasandhaPortion / serviceTotal) * discountWeight);
+                remainingAfterDiscount = serviceTotal - discountWeight;
+            }
+            
+            primaryPortion = Math.min(primaryPortion, remainingAfterDiscount);
+            remainingAfterDiscount -= primaryPortion;
+            aasandhaPortion = Math.min(aasandhaPortion, remainingAfterDiscount);
+            remainingAfterDiscount -= aasandhaPortion;
+            
+            primaryInsuranceTotal += primaryPortion;
+            aasandhaTotal += aasandhaPortion;
+            patientTotal += Math.max(0, remainingAfterDiscount);
+        }
+        
+        // Free services don't add to any payment
+        // They just show as FREE in the display
+        
+        currentPrimaryInsurancePayment = primaryInsuranceTotal;
+        currentAasandhaPayment = aasandhaTotal;
+        document.getElementById('insurancePayment').innerHTML = primaryInsuranceTotal.toFixed(2);
+        document.getElementById('aasandhaPayment').innerHTML = aasandhaTotal.toFixed(2);
+        document.getElementById('patientPayAmount').innerHTML = patientTotal.toFixed(2);
+        
+        // Show free services info
+        if (freeServices.length > 0) {
+            const infoDiv = document.getElementById('insuranceCoverageInfo');
+            if (infoDiv && infoDiv.style.display !== 'none') {
+                const freeInfo = document.createElement('div');
+                freeInfo.style.marginTop = '8px';
+                freeInfo.style.fontSize = '10px';
+                freeInfo.style.color = '#17a2b8';
+                freeInfo.innerHTML = `🎯 ${freeServices.length} free service(s): ${freeServices.map(s => s.name).join(', ')}`;
+                infoDiv.appendChild(freeInfo);
+            }
+        }
+        
+        updatePaymentDisplay(patientTotal);
+        updateDiscountDisplay();
+    }
+    
+    function updatePaymentDisplay(patientPayable) {
+        const selectedPaymentOption = document.getElementById('paymentMethodSelect');
+        const selectedName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
+        
+        let paidAmount = 0;
+        let balance = 0;
+        let changeDue = 0;
+        
+        if (selectedName === 'Cash') {
+            cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
+            paidAmount = cashGivenAmount;
+            balance = patientPayable - paidAmount;
+        } else if (selectedName) {
+            paidAmount = patientPayable;
+            balance = 0;
+        } else {
+            paidAmount = 0;
+            balance = patientPayable;
+        }
+        
+        document.getElementById('amountPaidDisplay').innerHTML = paidAmount.toFixed(2);
+        document.getElementById('paymentMethodDisplay').innerHTML = selectedName ? `${getPaymentIcon(selectedName)} ${selectedName}` : 'Not Selected';
+        
+        const balanceDiv = document.getElementById('balanceDue');
+        const warningDiv = document.getElementById('balanceWarning');
+        
+        if (selectedName === 'Cash') {
+            if (balance > 0) {
+                balanceDiv.innerHTML = balance.toFixed(2);
+                balanceDiv.style.color = '#b91c1c';
+                document.getElementById('balanceLabel').innerHTML = '⚖️ BALANCE DUE';
+                warningDiv.style.display = 'block';
+                warningDiv.innerHTML = `⚠️ MVR ${balance.toFixed(2)} remaining. Please collect before discharge.`;
+            } else if (balance < 0) {
+                balanceDiv.innerHTML = Math.abs(balance).toFixed(2);
+                balanceDiv.style.color = '#146b3a';
+                document.getElementById('balanceLabel').innerHTML = '💰 CHANGE DUE';
+                warningDiv.style.display = 'block';
+                warningDiv.innerHTML = `✓ Paid MVR ${paidAmount.toFixed(2)} | Payable MVR ${patientPayable.toFixed(2)} | Return MVR ${Math.abs(balance).toFixed(2)} to patient.`;
+            } else {
+                balanceDiv.innerHTML = '0.00';
+                balanceDiv.style.color = '#146b3a';
+                document.getElementById('balanceLabel').innerHTML = '✅ PAID FULLY';
+                warningDiv.style.display = 'none';
+            }
+        } else if (selectedName) {
+            balanceDiv.innerHTML = '0.00';
+            balanceDiv.style.color = '#146b3a';
+            document.getElementById('balanceLabel').innerHTML = '✅ PAID (Non-Cash)';
+            warningDiv.style.display = 'none';
+        } else {
+            balanceDiv.innerHTML = patientPayable.toFixed(2);
+            balanceDiv.style.color = '#b91c1c';
+            document.getElementById('balanceLabel').innerHTML = '⚖️ SELECT PAYMENT';
+            warningDiv.style.display = 'block';
+            warningDiv.innerHTML = '⚠️ Please select a payment method to proceed.';
+        }
+    }
+    
+    // ========== DELETE APPOINTMENT ==========
+    async function deleteLinkedAppointment() {
+        if (selectedAppointmentId) {
+            try {
+                await window.db.collection("appointments").doc(selectedAppointmentId).delete();
+                return true;
+            } catch (error) {
+                console.error("Error deleting appointment:", error);
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // ========== SAVE MEMO ==========
+    async function saveToFirebase() {
+        const patientId = document.getElementById('patientId').value.trim();
+        const patientName = document.getElementById('patientName').value.trim();
+        const contactNo = document.getElementById('contactNo').value.trim();
+        const nationality = document.getElementById('patientNationality').value.trim();
+        const isCitizen = document.getElementById('patientIsCitizen').value === 'true';
+        const dob = document.getElementById('patientDob').value.trim();
+        const address = document.getElementById('patientAddress').value.trim();
+        
+        if (!selectedPatient && patientId && patientName) {
+            selectedPatient = {
+                id: patientId,
+                name: patientName,
+                phone: contactNo,
+                nationality: nationality,
+                isCitizen: isCitizen,
+                dob: dob,
+                address: address
+            };
+        }
+        
+        if (!selectedPatient) { 
+            showMessage("Please search and select a patient", "error"); 
+            return; 
+        }
+        if (!selectedDoctor) { 
+            showMessage("Please select a doctor", "error"); 
+            return; 
+        }
+        if (!selectedServices.length) { 
+            showMessage("Please add at least one service", "error"); 
+            return; 
+        }
+        
+        const selectedPaymentOption = document.getElementById('paymentMethodSelect');
+        const selectedPaymentId = selectedPaymentOption.value;
+        const selectedPaymentName = selectedPaymentOption.options[selectedPaymentOption.selectedIndex]?.dataset?.name || '';
+        
+        if (!selectedPaymentId) { showMessage("Please select a payment method", "error"); return; }
+        
+        const patientPayable = parseFloat(document.getElementById('patientPayAmount').innerHTML);
+        let paidAmount = 0;
+        let changeAmount = 0;
+        let paymentDetails = {};
+        
+        if (selectedPaymentName === 'Cash') {
+            cashGivenAmount = parseFloat(document.getElementById('cashGivenAmount').value) || 0;
+            paidAmount = cashGivenAmount;
+            changeAmount = Math.max(0, paidAmount - patientPayable);
+            if (paidAmount < patientPayable) {
+                showMessage(`Cash given (MVR ${paidAmount.toFixed(2)}) is less than patient payable (MVR ${patientPayable.toFixed(2)})`, "error");
+                return;
+            }
+            paymentDetails = {
+                method: 'Cash',
+                methodId: selectedPaymentId,
+                givenAmount: paidAmount,
+                changeAmount: changeAmount,
+                patientPayable: patientPayable
+            };
+        } else {
+            paidAmount = patientPayable;
+            changeAmount = 0;
+            paymentDetails = {
+                method: selectedPaymentName,
+                methodId: selectedPaymentId,
+                givenAmount: paidAmount,
+                changeAmount: 0,
+                patientPayable: patientPayable
+            };
+        }
+        
+        const insuranceArray = [];
+        if (selectedPrimaryInsurance && (selectedInsurancePercent > 0 || selectedInsuranceFixed > 0) && currentPrimaryInsurancePayment > 0) {
+            const isFullCover = isFullCoverInsurance(selectedPrimaryInsurance.name);
+            insuranceArray.push({
+                name: selectedPrimaryInsurance.name,
+                type: insuranceType,
+                value: insuranceType === "percent" ? selectedInsurancePercent : selectedInsuranceFixed,
+                amount: currentPrimaryInsurancePayment,
+                priority: "primary",
+                fullCover: isFullCover
+            });
+        }
+        if (selectedPatient.isCitizen && currentAasandhaPayment > 0) {
+            insuranceArray.push({ name: "Aasandha", type: "government", amount: currentAasandhaPayment, priority: "secondary" });
+        }
+        
+        const { value: discountValue, type: discountTypeValue } = getDiscountValue();
+        const subtotal = selectedServices.reduce((s, i) => s + (i.qty * i.price), 0);
+        let globalDiscountAmount = 0;
+        if (discountTypeValue === 'percent') {
+            globalDiscountAmount = (subtotal * discountValue) / 100;
+        } else {
+            globalDiscountAmount = Math.min(discountValue, subtotal);
+        }
+        
+        let serviceDiscountTotal = 0;
+        selectedServices.forEach(s => {
+            const serviceTotal = s.qty * s.price;
+            serviceDiscountTotal += (serviceTotal * (s.discountPercent || 0)) / 100;
+        });
+        
+        let memoNumber;
+        try {
+            memoNumber = await getNextMemoNumber();
+        } catch (err) {
+            showMessage("Failed to generate memo number: " + err.message, "error");
+            return;
+        }
+        const memoId = memoNumber.toString();
+        
+        const memoData = {
+            memoId: memoId,
+            date: new Date().toLocaleString(),
+            timestamp: new Date().toISOString(),
+            patient: {
+                id: selectedPatient.id || patientId || "",
+                name: selectedPatient.name || patientName || "",
+                phone: selectedPatient.phone || contactNo || "",
+                nationality: selectedPatient.nationality || nationality || "",
+                isCitizen: selectedPatient.isCitizen || isCitizen || false,
+                idNumber: selectedPatient.idNumber || patientId || "",
+                passportNumber: selectedPatient.passportNumber || "",
+                nationalId: selectedPatient.nationalId || "",
+                dob: selectedPatient.dob || dob || "",
+                address: selectedPatient.address || address || ""
+            },
+            doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
+            insurances: insuranceArray,
+            services: selectedServices.map(s => ({
+                code: s.code || '',
+                name: s.name, 
+                qty: s.qty, 
+                price: s.price,
+                total: s.qty * s.price,
+                isFreeService: s.price === 0,
+                aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
+                primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
+                aasandhaAmount: s.aasandhaAmount || 0,
+                discountPercent: s.discountPercent || 0,
+                discountAmount: (s.qty * s.price * (s.discountPercent || 0)) / 100,
+                patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0) - ((s.qty * s.price * (s.discountPercent || 0)) / 100))
+            })),
+            discount: {
+                type: discountTypeValue,
+                value: discountValue,
+                amount: globalDiscountAmount,
+                mode: discountMode,
+                reason: discountMode === 'preset' ? 
+                    (document.getElementById('discountPresetSelect').selectedOptions[0]?.text.split('(')[0].trim() || "None") : 
+                    "Custom Discount"
+            },
+            serviceDiscounts: {
+                total: serviceDiscountTotal,
+                services: selectedServices.map(s => ({
+                    name: s.name,
+                    percent: s.discountPercent || 0,
+                    amount: (s.qty * s.price * (s.discountPercent || 0)) / 100
+                }))
+            },
+            billing: {
+                subtotal: subtotal || 0,
+                afterDiscount: subtotal - globalDiscountAmount - serviceDiscountTotal || 0,
+                primaryInsurancePayment: currentPrimaryInsurancePayment,
+                aasandhaPayment: currentAasandhaPayment,
+                totalInsurancePayment: currentPrimaryInsurancePayment + currentAasandhaPayment,
+                patientPayable: patientPayable || 0,
+                paid: paidAmount || 0,
+                change: changeAmount || 0,
+                balance: (patientPayable - paidAmount) || 0
+            },
+            payment: paymentDetails,
+            linkedAppointmentId: selectedAppointmentId || null,
+            status: "completed",
+            createdBy: currentUser ? currentUser.username || "unknown" : "unknown",
+            createdAt: new Date().toISOString()
+        };
+        
+        try {
+            const saveBtn = document.getElementById('saveMemoBtn');
+            saveBtn.textContent = "⏳ Saving...";
+            saveBtn.disabled = true;
+            const docRef = await window.db.collection("memos").add(memoData);
+            memoData.firebaseId = docRef.id;
+            localStorage.setItem('printMemoData', JSON.stringify(memoData));
+            
+            if (selectedAppointmentId) {
+                const deleted = await deleteLinkedAppointment();
+                if (deleted) {
+                    showMessage("✅ Linked appointment deleted", "success");
+                    document.getElementById('appointmentBadge').style.display = 'none';
+                }
+            }
+            
+            savedMemoData = memoData;
+            showMessage(`✅ Memo #${memoId} saved to Firebase!`, "success");
+            
+            setTimeout(() => {
+                localStorage.setItem('autoPrintMemoId', memoId);
+                window.location.href = `print-memo.html?memoId=${memoId}`;
+            }, 1500);
+            
+        } catch (error) {
+            console.error(error);
+            showMessage("❌ Failed to save: " + error.message, "error");
+            const saveBtn = document.getElementById('saveMemoBtn');
+            saveBtn.textContent = "💾 Save Memo";
+            saveBtn.disabled = false;
+        }
+    }
+    
+    // ========== DISCOUNT EVENT LISTENERS ==========
+    document.getElementById('discountPresetBtn').addEventListener('click', function() {
+        discountMode = 'preset';
+        document.getElementById('discountPresetBtn').classList.add('active');
+        document.getElementById('discountCustomBtn').classList.remove('active');
+        document.getElementById('discountPresetSelect').style.display = 'block';
+        document.getElementById('customDiscountGroup').style.display = 'none';
+        calculateBilling();
+    });
+    
+    document.getElementById('discountCustomBtn').addEventListener('click', function() {
+        discountMode = 'custom';
+        document.getElementById('discountCustomBtn').classList.add('active');
+        document.getElementById('discountPresetBtn').classList.remove('active');
+        document.getElementById('discountPresetSelect').style.display = 'none';
+        document.getElementById('customDiscountGroup').style.display = 'block';
+        calculateBilling();
+    });
+    
+    document.getElementById('discountPercentBtn').addEventListener('click', function() {
+        discountType = 'percent';
+        document.getElementById('discountPercentBtn').classList.add('active');
+        document.getElementById('discountAmountBtn').classList.remove('active');
+        document.getElementById('customDiscountSymbol').textContent = '%';
+        document.getElementById('customDiscountValue').placeholder = 'Enter percentage';
+        calculateBilling();
+    });
+    
+    document.getElementById('discountAmountBtn').addEventListener('click', function() {
+        discountType = 'fixed';
+        document.getElementById('discountAmountBtn').classList.add('active');
+        document.getElementById('discountPercentBtn').classList.remove('active');
+        document.getElementById('customDiscountSymbol').textContent = 'MVR';
+        document.getElementById('customDiscountValue').placeholder = 'Enter amount';
+        calculateBilling();
+    });
+    
+    document.getElementById('discountPresetSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const type = selectedOption?.dataset?.type || 'percent';
+        if (type === 'fixed') {
+            discountType = 'fixed';
+        } else {
+            discountType = 'percent';
+        }
+        calculateBilling();
+    });
+    
+    document.getElementById('customDiscountValue').addEventListener('input', function() {
+        calculateBilling();
+    });
+    
+    // ========== SERVICE SEARCH EVENT LISTENERS ==========
+    document.getElementById('serviceSearchInput').addEventListener('input', function(e) {
+        clearTimeout(serviceSearchTimeout);
+        const query = this.value;
+        if (query.length < 1) {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+            return;
+        }
+        serviceSearchTimeout = setTimeout(() => {
+            searchServices(query);
+        }, 300);
+    });
+    
+    document.addEventListener('click', function(e) {
+        const wrapper = document.querySelector('.service-search-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+        }
+    });
+    
+    document.getElementById('serviceSearchInput').addEventListener('blur', function() {
+        setTimeout(() => {
+            document.getElementById('serviceSearchResults').classList.remove('active');
+        }, 200);
+    });
+    
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('patientSearchInput').addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const query = this.value;
+        if (query.length < 1) {
+            document.getElementById('patientSearchResults').classList.remove('active');
+            return;
+        }
+        searchTimeout = setTimeout(() => {
+            searchPatients(query);
+        }, 300);
+    });
+    
+    document.addEventListener('click', function(e) {
+        const wrapper = document.querySelector('.patient-search-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            document.getElementById('patientSearchResults').classList.remove('active');
+        }
+    });
+    
+    document.getElementById('patientSearchInput').addEventListener('blur', function() {
+        setTimeout(() => {
+            document.getElementById('patientSearchResults').classList.remove('active');
+        }, 200);
+    });
+    
+    document.getElementById('doctorSelect').addEventListener('change', (e) => {
+        const opt = e.target.selectedOptions[0];
+        const doctor = doctorsList.find(d => d.id === opt.value);
+        if (opt && opt.value && doctor) {
+            selectedDoctor = doctor;
+            const card = document.getElementById('selectedDoctorCard');
+            card.style.display = 'flex';
+            card.innerHTML = `
+                <div><strong>${escapeHtml(doctor.name)}</strong></div>
+                <div><span class="selected-badge">${escapeHtml(doctor.speciality || 'General')}</span></div>
+            `;
+        } else { selectedDoctor = null; document.getElementById('selectedDoctorCard').style.display = 'none'; }
+    });
+    
+    document.getElementById('otherInsuranceSelect').addEventListener('change', (e) => {
+        const opt = e.target.selectedOptions[0];
+        const insurance = insuranceList.find(i => i.id === opt.value);
+        if (opt && opt.value && insurance) {
+            selectedPrimaryInsurance = insurance;
+            const defaultCoverage = insurance.defaultCoverage || 0;
+            const isFullCover = isFullCoverInsurance(insurance.name);
+            
+            if (isFullCover) {
+                document.getElementById('otherInsurancePercent').value = 100;
+                selectedInsurancePercent = 100;
+                document.getElementById('otherInsurancePercent').disabled = true;
+                document.getElementById('otherInsuranceFixed').disabled = true;
+            } else {
+                document.getElementById('otherInsurancePercent').disabled = false;
+                document.getElementById('otherInsuranceFixed').disabled = false;
+                if (insuranceType === 'percent' && defaultCoverage > 0) {
+                    document.getElementById('otherInsurancePercent').value = defaultCoverage;
+                    selectedInsurancePercent = defaultCoverage;
+                }
+            }
+            
+            const card = document.getElementById('selectedInsuranceCard');
+            card.style.display = 'flex';
+            const fullCoverBadge = isFullCover ? ' <span class="selected-badge full-cover">100% Full Cover</span>' : '';
+            card.innerHTML = `<div><strong>${escapeHtml(insurance.name)} <span class="insurance-badge primary-insurance">Primary</span>${fullCoverBadge}</strong></div>`;
+            
+            if (selectedServices.length > 0) applyAutoCalculation();
+        } else { 
+            selectedPrimaryInsurance = null; 
+            document.getElementById('selectedInsuranceCard').style.display = 'none';
+            document.getElementById('otherInsurancePercent').disabled = false;
+            document.getElementById('otherInsuranceFixed').disabled = false;
+            if (selectedServices.length > 0) applyAutoCalculation();
+        }
+        calculateBilling();
+    });
+    
+    document.getElementById('otherInsurancePercent').addEventListener('input', (e) => { 
+        selectedInsurancePercent = parseFloat(e.target.value) || 0; 
+        if (selectedServices.length > 0) applyAutoCalculation(); 
+        calculateBilling(); 
+    });
+    
+    document.getElementById('otherInsuranceFixed').addEventListener('input', (e) => { 
+        selectedInsuranceFixed = parseFloat(e.target.value) || 0; 
+        if (selectedServices.length > 0) applyAutoCalculation(); 
+        calculateBilling(); 
+    });
+    
+    document.getElementById('saveMemoBtn').onclick = saveToFirebase;
+    document.getElementById('applyAutoCalcBtn').addEventListener('click', applyAutoCalculation);
+    
+    document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
+        const opt = e.target.selectedOptions[0];
+        const selectedName = opt?.dataset?.name || '';
+        const cashGroup = document.getElementById('cashInputGroup');
+        
+        if (selectedName === 'Cash') {
+            cashGroup.style.display = 'block';
+            document.getElementById('cashGivenAmount').value = parseFloat(document.getElementById('patientPayAmount').innerHTML) || 0;
+        } else {
+            cashGroup.style.display = 'none';
+            document.getElementById('cashGivenAmount').value = 0;
+        }
+        calculateBilling();
+    });
+    
+    document.getElementById('cashGivenAmount').addEventListener('input', () => {
+        calculateBilling();
+    });
+    
+    document.getElementById('insurancePercentBtn').onclick = () => {
+        insuranceType = "percent";
+        document.getElementById('insurancePercentBtn').classList.add('active');
+        document.getElementById('insuranceFixedBtn').classList.remove('active');
+        document.getElementById('otherInsurancePercent').style.display = 'flex';
+        document.getElementById('otherInsuranceFixed').style.display = 'none';
+        if (selectedServices.length > 0) applyAutoCalculation();
+        calculateBilling();
+    };
+    
+    document.getElementById('insuranceFixedBtn').onclick = () => {
+        insuranceType = "fixed";
+        document.getElementById('insuranceFixedBtn').classList.add('active');
+        document.getElementById('insurancePercentBtn').classList.remove('active');
+        document.getElementById('otherInsurancePercent').style.display = 'none';
+        document.getElementById('otherInsuranceFixed').style.display = 'flex';
+        if (selectedServices.length > 0) applyAutoCalculation();
+        calculateBilling();
+    };
+    
+    document.getElementById('appointmentSelect').addEventListener('change', (e) => {
+        if (e.target.value) {
+            fillFromAppointment(e.target.value);
+        } else {
+            selectedAppointmentId = null;
+            selectedAppointmentData = null;
+            document.getElementById('appointmentBadge').style.display = 'none';
+        }
+    });
+    
+    function logout() {
+        localStorage.removeItem('loggedInUser');
+        sessionStorage.removeItem('clinic_user_session');
+        window.location.href = 'login.html';
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === '/')) {
+            e.preventDefault();
+            document.getElementById('patientSearchInput').focus();
+        }
+        if (e.key === 'Escape') {
+            document.getElementById('patientSearchResults').classList.remove('active');
+            document.getElementById('patientSearchInput').blur();
+        }
+    });
+    
+    function waitForFirebase() {
+        if (window.db) { loadAllData(); }
+        else { setTimeout(waitForFirebase, 500); }
+    }
+    waitForFirebase();
+</script>
 </body>
 </html>

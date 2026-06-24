@@ -768,12 +768,17 @@
             document.getElementById('userBadge').textContent = `👤 ${user.name || user.username} (${user.level})`;
         } catch (_) {}
 
-        // default dates: last 30 days
-        const d = new Date();
-        const endDef = d.toISOString().split('T')[0];
-        const startDef = new Date(d.setDate(d.getDate() - 30)).toISOString().split('T')[0];
-        document.getElementById('dailyStartDate').value = startDef;
-        document.getElementById('dailyEndDate').value = endDef;
+        // Set default dates to today in GMT+5
+        function getTodayGMT5() {
+            const now = new Date();
+            // Get UTC time and add 5 hours
+            const gmt5 = new Date(now.getTime() + (5 * 60 * 60 * 1000));
+            return gmt5.toISOString().split('T')[0];
+        }
+
+        const today = getTodayGMT5();
+        document.getElementById('dailyStartDate').value = today;
+        document.getElementById('dailyEndDate').value = today;
 
         let currentView = 'summary';
         let currentMemos = [];
@@ -1201,7 +1206,7 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        //  PRINT
+        //  PRINT – shows ONLY the summary/detail content, no buttons
         // ═══════════════════════════════════════════════════════
 
         function printReport() {
@@ -1210,460 +1215,321 @@
             const to = document.getElementById('dailyEndDate').value;
             const viewLabel = currentView === 'summary' ? 'Summary' : 'Detailed';
 
-            // Get the current state of the page including header, date filter, etc.
-            const headerHTML = document.querySelector('.clinic-header').outerHTML;
-            const dateFilterHTML = document.querySelector('.date-filter').outerHTML;
-            const viewToggleHTML = document.querySelector('.view-toggle').outerHTML;
+            // Get just the report content (summary or detail) without the outer container
+            // We'll wrap it in a clean print layout with only the clinic name and period
 
             const win = window.open('', '_blank');
             win.document.write(`
-                        <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hope Dental - ${viewLabel} Report</title>
-                        <style>
-                            /* Copy all styles from main page */
-                            * {
-                                margin: 0;
-                                padding: 0;
-                                box-sizing: border-box;
-                                font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-                            }
-                            body {
-                                background: #eef2f7;
-                                min-height: 100vh;
-                                padding: 0;
-                            }
-                            .clinic-header {
-                                background: linear-gradient(90deg, #ffffff 0%, #20b2aa 100%);
-                                color: #004d4d;
-                                padding: 10px 20px;
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                flex-wrap: wrap;
-                                gap: 10px;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                            }
-                            .clinic-header .logo-area {
-                                display: flex;
-                                align-items: center;
-                                gap: 12px;
-                            }
-                            .clinic-header .logo-area img {
-                                height: 44px;
-                            }
-                            .clinic-header .logo-area h1 {
-                                font-size: 1.2rem;
-                                font-weight: 600;
-                                margin: 0;
-                                background: linear-gradient(135deg, #006666, #20b2aa);
-                                -webkit-background-clip: text;
-                                background-clip: text;
-                                color: transparent;
-                            }
-                            .header-actions {
-                                display: flex;
-                                align-items: center;
-                                gap: 8px;
-                                flex-wrap: wrap;
-                            }
-                            .header-actions .user-badge {
-                                background: rgba(255,255,255,0.2);
-                                padding: 4px 14px;
-                                border-radius: 30px;
-                                font-size: 11px;
-                                color: #004d4d;
-                                font-weight: 500;
-                            }
-                            .btn {
-                                border: none;
-                                padding: 6px 18px;
-                                border-radius: 30px;
-                                cursor: pointer;
-                                font-weight: 600;
-                                font-size: 11px;
-                                transition: 0.2s;
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 6px;
-                            }
-                            .btn-back {
-                                background: #1e4a6e;
-                                color: #fff;
-                            }
-                            .btn-print {
-                                background: #146b3a;
-                                color: #fff;
-                            }
-                            .date-filter {
-                                background: #fff;
-                                padding: 18px 20px;
-                                border-radius: 16px;
-                                margin-bottom: 20px;
-                                display: flex;
-                                gap: 15px;
-                                flex-wrap: wrap;
-                                align-items: flex-end;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                            }
-                            .filter-group {
-                                display: flex;
-                                flex-direction: column;
-                                gap: 4px;
-                            }
-                            .filter-group label {
-                                font-size: 11px;
-                                font-weight: 600;
-                                color: #1f5e7e;
-                            }
-                            .filter-group input {
-                                padding: 7px 12px;
-                                border: 1.5px solid #e2eaf0;
-                                border-radius: 12px;
-                                font-size: 12px;
-                                background: #fafcfe;
-                            }
-                            .filter-btn {
-                                background: #0f5c7a;
-                                color: #fff;
-                                border: none;
-                                padding: 7px 22px;
-                                border-radius: 12px;
-                                cursor: pointer;
-                                font-weight: 600;
-                                font-size: 12px;
-                            }
-                            .view-toggle {
-                                display: flex;
-                                gap: 6px;
-                                background: #eef2f7;
-                                padding: 4px;
-                                border-radius: 30px;
-                            }
-                            .view-toggle .btn {
-                                border-radius: 30px;
-                                padding: 5px 16px;
-                                font-size: 10px;
-                            }
-                            .view-toggle .btn.active {
-                                background: #fff;
-                                color: #0f5c7a;
-                                box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-                            }
-                            .view-toggle .btn:not(.active) {
-                                background: transparent;
-                                color: #6c7a8a;
-                            }
-                            .container {
-                                max-width: 1600px;
-                                margin: 20px auto;
-                                padding: 0 20px;
-                            }
-                            #dailyReportContent .empty-state {
-                                text-align: center;
-                                padding: 50px 20px;
-                                color: #8ba0b0;
-                                background: #fff;
-                                border-radius: 16px;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                            }
-                            .summary-view {
-                                background: #fff;
-                                border-radius: 16px;
-                                padding: 20px 22px;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                                max-width: 780px;
-                                margin: 0 auto;
-                            }
-                            .summary-header {
-                                text-align: center;
-                                padding-bottom: 14px;
-                                border-bottom: 2px solid #e2eaf0;
-                                margin-bottom: 16px;
-                            }
-                            .summary-header h2 {
-                                font-size: 18px;
-                                color: #004d4d;
-                                letter-spacing: -0.3px;
-                            }
-                            .summary-header h2 i {
-                                color: #20b2aa;
-                                margin-right: 6px;
-                            }
-                            .summary-header .sub {
-                                font-size: 11px;
-                                color: #6c7a8a;
-                                margin-top: 4px;
-                            }
-                            .summary-header .period {
-                                font-size: 12px;
-                                font-weight: 600;
-                                color: #0f5c7a;
-                                background: #f0f7fb;
-                                display: inline-block;
-                                padding: 2px 18px;
-                                border-radius: 30px;
-                                margin-top: 6px;
-                            }
-                            .summary-metrics {
-                                display: grid;
-                                grid-template-columns: repeat(3, 1fr);
-                                gap: 10px;
-                                margin-bottom: 18px;
-                            }
-                            .summary-metric {
-                                background: #f8fbfe;
-                                border-radius: 12px;
-                                padding: 10px 6px;
-                                text-align: center;
-                                border-left: 3px solid #20b2aa;
-                            }
-                            .summary-metric .label {
-                                font-size: 9px;
-                                text-transform: uppercase;
-                                letter-spacing: 0.4px;
-                                color: #6c7a8a;
-                                font-weight: 600;
-                            }
-                            .summary-metric .label .hint {
-                                font-weight: 400;
-                                text-transform: none;
-                                font-size: 8px;
-                                color: #8ba0b0;
-                                display: block;
-                                margin-top: 1px;
-                            }
-                            .summary-metric .value {
-                                font-size: 18px;
-                                font-weight: 700;
-                                color: #0a2f44;
-                                margin-top: 2px;
-                            }
-                            .summary-breakdowns {
-                                display: grid;
-                                grid-template-columns: 1fr 1fr;
-                                gap: 16px;
-                                margin-bottom: 14px;
-                            }
-                            .summary-breakdown {
-                                background: #fafcfe;
-                                border-radius: 12px;
-                                padding: 12px 14px;
-                                border: 1px solid #eef3fa;
-                            }
-                            .summary-breakdown h4 {
-                                font-size: 10px;
-                                text-transform: uppercase;
-                                letter-spacing: 0.3px;
-                                color: #1f5e7e;
-                                margin-bottom: 8px;
-                                border-bottom: 1px solid #eef3fa;
-                                padding-bottom: 6px;
-                                display: flex;
-                                align-items: center;
-                                gap: 6px;
-                            }
-                            .summary-breakdown h4 i {
-                                color: #20b2aa;
-                                width: 16px;
-                            }
-                            .summary-breakdown-item {
-                                display: flex;
-                                justify-content: space-between;
-                                padding: 3px 0;
-                                font-size: 10.5px;
-                                border-bottom: 1px dashed #f0f4f8;
-                            }
-                            .summary-breakdown-item:last-child {
-                                border-bottom: none;
-                            }
-                            .summary-breakdown-item .name {
-                                color: #1e2f3e;
-                                font-weight: 500;
-                            }
-                            .summary-breakdown-item .amt {
-                                font-weight: 600;
-                                color: #0a2f44;
-                            }
-                            .summary-breakdown-item .count {
-                                font-size: 8.5px;
-                                color: #8ba0b0;
-                                font-weight: 400;
-                                margin-left: 6px;
-                            }
-                            .summary-footer {
-                                text-align: center;
-                                font-size: 8.5px;
-                                color: #8ba0b0;
-                                border-top: 1px solid #eef3fa;
-                                padding-top: 12px;
-                                margin-top: 14px;
-                            }
-                            .table-container {
-                                background: #fff;
-                                border-radius: 16px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                                margin-bottom: 20px;
-                                overflow-x: auto;
-                            }
-                            table {
-                                width: 100%;
-                                border-collapse: collapse;
-                                min-width: 1200px;
-                                font-size: 11px;
-                            }
-                            th {
-                                background: #f4f9fe;
-                                padding: 10px 8px;
-                                text-align: left;
-                                font-weight: 700;
-                                color: #1f5e7e;
-                                border-bottom: 2px solid #e2eaf0;
-                                font-size: 10px;
-                            }
-                            td {
-                                padding: 8px 8px;
-                                border-bottom: 1px solid #eef3fa;
-                                color: #1e2f3e;
-                                vertical-align: top;
-                            }
-                            .stats-footer {
-                                background: #fff;
-                                border-radius: 16px;
-                                padding: 16px 20px;
-                                margin-top: 20px;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                            }
-                            .stats-footer-title {
-                                font-size: 12px;
-                                font-weight: 600;
-                                color: #0a2f44;
-                                margin-bottom: 12px;
-                                padding-bottom: 8px;
-                                border-bottom: 1px solid #e2eaf0;
-                            }
-                            .stats-grid-small {
-                                display: grid;
-                                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-                                gap: 12px;
-                            }
-                            .stat-card-small {
-                                background: #f8fbfe;
-                                padding: 10px 12px;
-                                border-radius: 12px;
-                                text-align: center;
-                                border-left: 3px solid #0f5c7a;
-                            }
-                            .stat-card-small h4 {
-                                font-size: 10px;
-                                color: #6c757d;
-                                margin-bottom: 4px;
-                                font-weight: 500;
-                            }
-                            .stat-value-small {
-                                font-size: 16px;
-                                font-weight: 700;
-                                color: #0a2f44;
-                            }
-                            .stat-label-small {
-                                font-size: 9px;
-                                color: #8ba0b0;
-                                margin-top: 2px;
-                            }
-                            .insurance-breakdown-grid, .paytype-breakdown-grid {
-                                display: grid;
-                                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                                gap: 12px;
-                                margin-top: 12px;
-                            }
-                            .insurance-company-card, .paytype-card {
-                                background: #f8fbfe;
-                                border-radius: 12px;
-                                padding: 10px 12px;
-                                border-left: 3px solid #0f5c7a;
-                                text-align: center;
-                            }
-                            .insurance-company-name, .paytype-name {
-                                font-weight: 700;
-                                font-size: 12px;
-                                color: #1f5e7e;
-                                margin-bottom: 4px;
-                            }
-                            .insurance-company-total, .paytype-total {
-                                font-size: 14px;
-                                font-weight: 700;
-                                color: #0a2f44;
-                            }
-                            .insurance-company-count, .paytype-count {
-                                font-size: 9px;
-                                color: #6c757d;
-                                margin-top: 2px;
-                            }
-
-                            @media print {
-                                @page {
-                                    size: A5 portrait;
-                                    margin: 0.8cm 0.7cm;
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8" />
+                            <title>Hope Dental - ${viewLabel} Report</title>
+                            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+                            <style>
+                                /* ─── BASE ─── */
+                                * {
+                                    margin: 0;
+                                    padding: 0;
+                                    box-sizing: border-box;
+                                    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
                                 }
                                 body {
                                     background: #fff;
-                                    margin: 0;
-                                    padding: 0;
+                                    min-height: 100vh;
+                                    padding: 20px;
                                 }
-                                /* Keep everything visible in print */
-                                .clinic-header, .date-filter, .btn, .view-toggle, .back-btn, .print-btn, .filter-btn {
-                                    display: flex !important;
+                                .print-container {
+                                    max-width: 780px;
+                                    margin: 0 auto;
                                 }
-                                .btn:not(.btn-print) {
-                                    display: none !important;
-                                }
-                                .btn-print {
-                                    display: inline-flex !important;
-                                }
-                                .container {
-                                    padding: 0 20px !important;
-                                    margin: 20px auto !important;
-                                    max-width: 100% !important;
-                                }
+                                /* ─── SUMMARY VIEW ─── */
                                 .summary-view {
-                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-                                    border: none !important;
-                                    border-radius: 16px !important;
-                                    padding: 20px 22px !important;
+                                    background: #fff;
+                                    border-radius: 16px;
+                                    padding: 20px 22px;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                                    max-width: 780px;
+                                    margin: 0 auto;
+                                }
+                                .summary-header {
+                                    text-align: center;
+                                    padding-bottom: 14px;
+                                    border-bottom: 2px solid #e2eaf0;
+                                    margin-bottom: 16px;
+                                }
+                                .summary-header h2 {
+                                    font-size: 18px;
+                                    color: #004d4d;
+                                    letter-spacing: -0.3px;
+                                }
+                                .summary-header h2 i {
+                                    color: #20b2aa;
+                                    margin-right: 6px;
+                                }
+                                .summary-header .sub {
+                                    font-size: 11px;
+                                    color: #6c7a8a;
+                                    margin-top: 4px;
+                                }
+                                .summary-header .period {
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                    color: #0f5c7a;
+                                    background: #f0f7fb;
+                                    display: inline-block;
+                                    padding: 2px 18px;
+                                    border-radius: 30px;
+                                    margin-top: 6px;
+                                }
+                                .summary-metrics {
+                                    display: grid;
+                                    grid-template-columns: repeat(3, 1fr);
+                                    gap: 10px;
+                                    margin-bottom: 18px;
                                 }
                                 .summary-metric {
-                                    background: #f8fbfe !important;
-                                    border: none !important;
-                                    border-left: 3px solid #20b2aa !important;
+                                    background: #f8fbfe;
+                                    border-radius: 12px;
+                                    padding: 10px 6px;
+                                    text-align: center;
+                                    border-left: 3px solid #20b2aa;
+                                }
+                                .summary-metric .label {
+                                    font-size: 9px;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.4px;
+                                    color: #6c7a8a;
+                                    font-weight: 600;
                                 }
                                 .summary-metric .label .hint {
-                                    display: block !important;
+                                    font-weight: 400;
+                                    text-transform: none;
+                                    font-size: 8px;
+                                    color: #8ba0b0;
+                                    display: block;
+                                    margin-top: 1px;
+                                }
+                                .summary-metric .value {
+                                    font-size: 18px;
+                                    font-weight: 700;
+                                    color: #0a2f44;
+                                    margin-top: 2px;
+                                }
+                                .summary-breakdowns {
+                                    display: grid;
+                                    grid-template-columns: 1fr 1fr;
+                                    gap: 16px;
+                                    margin-bottom: 14px;
                                 }
                                 .summary-breakdown {
-                                    background: #fafcfe !important;
-                                    border: 1px solid #eef3fa !important;
+                                    background: #fafcfe;
+                                    border-radius: 12px;
+                                    padding: 12px 14px;
+                                    border: 1px solid #eef3fa;
                                 }
+                                .summary-breakdown h4 {
+                                    font-size: 10px;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.3px;
+                                    color: #1f5e7e;
+                                    margin-bottom: 8px;
+                                    border-bottom: 1px solid #eef3fa;
+                                    padding-bottom: 6px;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                }
+                                .summary-breakdown h4 i {
+                                    color: #20b2aa;
+                                    width: 16px;
+                                }
+                                .summary-breakdown-item {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    padding: 3px 0;
+                                    font-size: 10.5px;
+                                    border-bottom: 1px dashed #f0f4f8;
+                                }
+                                .summary-breakdown-item:last-child {
+                                    border-bottom: none;
+                                }
+                                .summary-breakdown-item .name {
+                                    color: #1e2f3e;
+                                    font-weight: 500;
+                                }
+                                .summary-breakdown-item .amt {
+                                    font-weight: 600;
+                                    color: #0a2f44;
+                                }
+                                .summary-breakdown-item .count {
+                                    font-size: 8.5px;
+                                    color: #8ba0b0;
+                                    font-weight: 400;
+                                    margin-left: 6px;
+                                }
+                                .summary-footer {
+                                    text-align: center;
+                                    font-size: 8.5px;
+                                    color: #8ba0b0;
+                                    border-top: 1px solid #eef3fa;
+                                    padding-top: 12px;
+                                    margin-top: 14px;
+                                }
+                                /* ─── DETAILED VIEW ─── */
                                 .table-container {
-                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-                                    border: none !important;
+                                    background: #fff;
+                                    border-radius: 16px;
+                                    overflow: hidden;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                                    margin-bottom: 20px;
+                                    overflow-x: auto;
+                                }
+                                table {
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    min-width: 1200px;
+                                    font-size: 11px;
+                                }
+                                th {
+                                    background: #f4f9fe;
+                                    padding: 10px 8px;
+                                    text-align: left;
+                                    font-weight: 700;
+                                    color: #1f5e7e;
+                                    border-bottom: 2px solid #e2eaf0;
+                                    font-size: 10px;
+                                }
+                                td {
+                                    padding: 8px 8px;
+                                    border-bottom: 1px solid #eef3fa;
+                                    color: #1e2f3e;
+                                    vertical-align: top;
                                 }
                                 .stats-footer {
-                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-                                    border: none !important;
+                                    background: #fff;
+                                    border-radius: 16px;
+                                    padding: 16px 20px;
+                                    margin-top: 20px;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
                                 }
-                                .stat-card-small, .insurance-company-card, .paytype-card {
-                                    background: #f8fbfe !important;
-                                    border: none !important;
-                                    border-left: 3px solid #0f5c7a !important;
+                                .stats-footer-title {
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                    color: #0a2f44;
+                                    margin-bottom: 12px;
+                                    padding-bottom: 8px;
+                                    border-bottom: 1px solid #e2eaf0;
                                 }
-                            }
-                        </style>
-                        </head><body>
-                        ${headerHTML}
-                        <div class="container">
-                            ${dateFilterHTML}
-                            ${content}
-                        </div>
-                        <\/body><\/html>
+                                .stats-grid-small {
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                                    gap: 12px;
+                                }
+                                .stat-card-small {
+                                    background: #f8fbfe;
+                                    padding: 10px 12px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    border-left: 3px solid #0f5c7a;
+                                }
+                                .stat-card-small h4 {
+                                    font-size: 10px;
+                                    color: #6c757d;
+                                    margin-bottom: 4px;
+                                    font-weight: 500;
+                                }
+                                .stat-value-small {
+                                    font-size: 16px;
+                                    font-weight: 700;
+                                    color: #0a2f44;
+                                }
+                                .stat-label-small {
+                                    font-size: 9px;
+                                    color: #8ba0b0;
+                                    margin-top: 2px;
+                                }
+                                .insurance-breakdown-grid, .paytype-breakdown-grid {
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                                    gap: 12px;
+                                    margin-top: 12px;
+                                }
+                                .insurance-company-card, .paytype-card {
+                                    background: #f8fbfe;
+                                    border-radius: 12px;
+                                    padding: 10px 12px;
+                                    border-left: 3px solid #0f5c7a;
+                                    text-align: center;
+                                }
+                                .insurance-company-name, .paytype-name {
+                                    font-weight: 700;
+                                    font-size: 12px;
+                                    color: #1f5e7e;
+                                    margin-bottom: 4px;
+                                }
+                                .insurance-company-total, .paytype-total {
+                                    font-size: 14px;
+                                    font-weight: 700;
+                                    color: #0a2f44;
+                                }
+                                .insurance-company-count, .paytype-count {
+                                    font-size: 9px;
+                                    color: #6c757d;
+                                    margin-top: 2px;
+                                }
+
+                                @media print {
+                                    @page {
+                                        size: A5 portrait;
+                                        margin: 0.8cm 0.7cm;
+                                    }
+                                    body {
+                                        background: #fff;
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+                                    .print-container {
+                                        max-width: 100%;
+                                        padding: 0;
+                                    }
+                                    .summary-view {
+                                        box-shadow: none !important;
+                                        border: none !important;
+                                        padding: 0 !important;
+                                    }
+                                    .summary-metric {
+                                        background: #f8fbfe !important;
+                                        border-left: 3px solid #20b2aa !important;
+                                    }
+                                    .summary-breakdown {
+                                        background: #fafcfe !important;
+                                        border: 1px solid #eef3fa !important;
+                                    }
+                                    .table-container {
+                                        box-shadow: none !important;
+                                        border: 1px solid #ccc !important;
+                                        border-radius: 0 !important;
+                                    }
+                                    .stats-footer {
+                                        box-shadow: none !important;
+                                        border: 1px solid #ccc !important;
+                                        border-radius: 0 !important;
+                                    }
+                                    .stat-card-small, .insurance-company-card, .paytype-card {
+                                        background: #f8fbfe !important;
+                                        border: none !important;
+                                        border-left: 3px solid #0f5c7a !important;
+                                    }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="print-container">
+                                ${content}
+                            </div>
+                        </body>
+                        </html>
                     `);
             win.document.close();
             win.print();

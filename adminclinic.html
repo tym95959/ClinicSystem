@@ -52,7 +52,7 @@
         .tab-btn { background: none; border: none; padding: 10px 28px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 40px; transition: 0.2s; color: #5f7f9a; }
         .tab-btn.active { background: #0f5c7a; color: white; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; border-radius: 32px; padding: 28px 32px; max-width: 500px; width: 90%; box-shadow: 0 20px 35px rgba(0,0,0,0.2); }
+        .modal-content { background: white; border-radius: 32px; padding: 28px 32px; max-width: 520px; width: 90%; box-shadow: 0 20px 35px rgba(0,0,0,0.2); }
         .modal-content h3 { font-size: 1.3rem; color: #0a2f44; margin-bottom: 20px; }
         .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
         .message { margin-top: 16px; padding: 12px; border-radius: 28px; text-align: center; font-size: 12px; }
@@ -64,6 +64,9 @@
         .commission-badge { background: #f0ad4e; color: #fff; padding: 4px 12px; border-radius: 40px; display: inline-block; font-size: 11px; font-weight: 700; }
         .commission-badge.high { background: #d9534f; }
         .commission-badge.low { background: #5cb85c; }
+        .commission-group { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: #f8fafc; padding: 16px; border-radius: 16px; border: 1px solid #e2eaf0; margin-bottom: 8px; }
+        .commission-group .input-group { margin-bottom: 0; }
+        .commission-group .input-group label { font-size: 10px; }
         .restricted-note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 16px; border-radius: 12px; font-size: 12px; color: #856404; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .password-strength { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
         .strength-bar { flex: 1; height: 6px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
@@ -104,6 +107,10 @@
         .commission-input-wrapper input { flex: 1; }
         .commission-input-wrapper .percent-symbol { font-weight: 700; color: #0a2f44; font-size: 16px; padding-right: 10px; }
         .commission-range { font-size: 10px; color: #6c757d; margin-top: 4px; }
+        .commission-label-icon { margin-right: 4px; }
+        .consultation-icon { color: #0f5c7a; }
+        .service-icon { color: #146b3a; }
+        .commission-column { min-width: 100px; }
     </style>
 </head>
 <body>
@@ -146,7 +153,7 @@
             <strong>Restricted:</strong> Commission allocation is only available to <strong>Supervisor</strong> and <strong>Manager</strong> level staff.
         </div>
         
-        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Doctor Name</th><th>Speciality</th><th>Commission</th><th>Actions</th></tr></thead><tbody id="doctorsList"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Doctor Name</th><th>Speciality</th><th>Consultation Comm.</th><th>Service Comm.</th><th>Actions</th></tr></thead><tbody id="doctorsList"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div>
         <div id="doctorsMessage" class="message" style="display:none;"></div>
     </div>
 
@@ -227,15 +234,29 @@
 <div id="doctorModal" class="modal"><div class="modal-content"><h3 id="doctorModalTitle">Add Doctor</h3>
     <div class="input-group"><label>Doctor Name *</label><input type="text" id="doctorName" placeholder="Dr. Abdulla Irufan"></div>
     <div class="input-group"><label>Speciality *</label><input type="text" id="doctorSpeciality" placeholder="Cardiology"></div>
-    <div class="input-group">
-        <label>Commission <span class="badge-restricted">Restricted</span></label>
-        <div class="commission-input-wrapper">
-            <input type="number" id="doctorCommission" step="0.5" min="0" max="100" placeholder="15" style="flex:1;">
-            <span class="percent-symbol">%</span>
+    
+    <div class="commission-group">
+        <div class="input-group">
+            <label><i class="fas fa-stethoscope consultation-icon"></i> Consultation Commission <span class="badge-restricted">Restricted</span></label>
+            <div class="commission-input-wrapper">
+                <input type="number" id="doctorConsultationCommission" step="0.5" min="0" max="100" placeholder="15" style="flex:1;">
+                <span class="percent-symbol">%</span>
+            </div>
+            <div class="field-hint">Percentage of <strong>Consultation</strong> fee that goes to the doctor.</div>
         </div>
-        <div class="field-hint">Percentage of service/consultation fee that goes to the doctor. <strong>0%</strong> means no commission.</div>
-        <div class="commission-range">Range: 0% – 100% (only Supervisor/Manager can set this)</div>
+        <div class="input-group">
+            <label><i class="fas fa-tools service-icon"></i> Service Commission <span class="badge-restricted">Restricted</span></label>
+            <div class="commission-input-wrapper">
+                <input type="number" id="doctorServiceCommission" step="0.5" min="0" max="100" placeholder="10" style="flex:1;">
+                <span class="percent-symbol">%</span>
+            </div>
+            <div class="field-hint">Percentage of <strong>other services</strong> fee that goes to the doctor.</div>
+        </div>
     </div>
+    <div class="commission-range" style="font-size:10px; color:#6c757d; margin-top:-4px; margin-bottom:8px; padding:6px 12px; background:#f8fafc; border-radius:12px;">
+        <i class="fas fa-info-circle"></i> Range: 0% – 100% each (only Supervisor/Manager can set these)
+    </div>
+    
     <div class="modal-buttons"><button class="btn-primary" id="saveDoctorBtn">Save</button><button class="btn-danger" id="cancelDoctorBtn">Cancel</button></div>
 </div></div>
 
@@ -413,16 +434,21 @@
         function renderDoctors() {
             const tbody = document.getElementById('doctorsList');
             if (!tbody) return;
-            if (doctors.length === 0) { tbody.innerHTML = '<tr><td colspan="4">No doctors</td></tr>'; return; }
+            if (doctors.length === 0) { tbody.innerHTML = '<tr><td colspan="5">No doctors</td></tr>'; return; }
             tbody.innerHTML = doctors.map(d => {
-                const commission = d.baseCommission || 0;
-                let badgeClass = 'commission-badge';
-                if (commission >= 20) badgeClass += ' high';
-                else if (commission <= 5) badgeClass += ' low';
+                const consultComm = d.consultationCommission !== undefined ? d.consultationCommission : (d.baseCommission || 0);
+                const serviceComm = d.serviceCommission !== undefined ? d.serviceCommission : (d.baseCommission || 0);
+                let consultBadge = 'commission-badge';
+                let serviceBadge = 'commission-badge';
+                if (consultComm >= 20) consultBadge += ' high';
+                else if (consultComm <= 5) consultBadge += ' low';
+                if (serviceComm >= 20) serviceBadge += ' high';
+                else if (serviceComm <= 5) serviceBadge += ' low';
                 return `<tr>
                     <td><strong>${escapeHtml(d.name)}</strong></td>
                     <td>${escapeHtml(d.speciality)}</td>
-                    <td><span class="${badgeClass}">${commission}%</span></td>
+                    <td><span class="${consultBadge}">${consultComm}%</span></td>
+                    <td><span class="${serviceBadge}">${serviceComm}%</span></td>
                     <td><button class="btn-sm" onclick="window.editDoctor('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDoctor('${d.id}')">🗑️ Delete</button></td>
                 </tr>`;
             }).join('');
@@ -475,7 +501,8 @@
                 document.getElementById('doctorModalTitle').innerText = 'Edit Doctor'; 
                 document.getElementById('doctorName').value = d.name; 
                 document.getElementById('doctorSpeciality').value = d.speciality; 
-                document.getElementById('doctorCommission').value = d.baseCommission || 0; 
+                document.getElementById('doctorConsultationCommission').value = d.consultationCommission !== undefined ? d.consultationCommission : (d.baseCommission || 0);
+                document.getElementById('doctorServiceCommission').value = d.serviceCommission !== undefined ? d.serviceCommission : (d.baseCommission || 0);
                 document.getElementById('doctorModal').style.display = 'flex'; 
             } 
         };
@@ -541,14 +568,12 @@
             if (!name) { showMessage('servicesMessage', 'Service Name is required', 'error'); return; }
             if (isNaN(price) || price < 0) { showMessage('servicesMessage', 'Valid price required (0 or higher)', 'error'); return; }
             
-            // Check for duplicate code (excluding current edit)
             const duplicate = services.find(s => s.code === code && s.id !== currentEditId);
             if (duplicate) {
                 showMessage('servicesMessage', `Service code "${code}" already exists!`, 'error');
                 return;
             }
             
-            // Validate Aasandha amount
             if (aasandhaCovered && (isNaN(aasandhaCoverAmount) || aasandhaCoverAmount < 0)) {
                 showMessage('servicesMessage', 'Valid Aasandha cover amount required (0 or higher)', 'error');
                 return;
@@ -572,11 +597,16 @@
         async function saveDoctor() {
             const name = document.getElementById('doctorName').value.trim();
             const speciality = document.getElementById('doctorSpeciality').value.trim();
-            const baseCommission = parseFloat(document.getElementById('doctorCommission').value) || 0;
+            const consultationCommission = parseFloat(document.getElementById('doctorConsultationCommission').value) || 0;
+            const serviceCommission = parseFloat(document.getElementById('doctorServiceCommission').value) || 0;
             
-            // Validate commission range
-            if (baseCommission < 0 || baseCommission > 100) {
-                showMessage('doctorsMessage', 'Commission must be between 0 and 100', 'error');
+            // Validate commission ranges
+            if (consultationCommission < 0 || consultationCommission > 100) {
+                showMessage('doctorsMessage', 'Consultation commission must be between 0 and 100', 'error');
+                return;
+            }
+            if (serviceCommission < 0 || serviceCommission > 100) {
+                showMessage('doctorsMessage', 'Service commission must be between 0 and 100', 'error');
                 return;
             }
             
@@ -584,11 +614,19 @@
             
             if (currentEditId) {
                 const idx = doctors.findIndex(d => d.id === currentEditId);
-                if (idx !== -1) doctors[idx] = { ...doctors[idx], name, speciality, baseCommission };
+                if (idx !== -1) doctors[idx] = { ...doctors[idx], name, speciality, consultationCommission, serviceCommission };
                 await window.db.collection("doctors").doc(currentEditId).set(doctors[idx]);
             } else {
                 const newId = `D${Date.now()}`;
-                const newDoctor = { id: newId, name, speciality, baseCommission, status: 'active', createdAt: new Date().toISOString() };
+                const newDoctor = { 
+                    id: newId, 
+                    name, 
+                    speciality, 
+                    consultationCommission, 
+                    serviceCommission,
+                    status: 'active', 
+                    createdAt: new Date().toISOString() 
+                };
                 doctors.push(newDoctor);
                 await window.db.collection("doctors").doc(newId).set(newDoctor);
             }
@@ -715,7 +753,6 @@
             if (password !== confirm) { showUserMsg('Passwords do not match', 'error'); return; }
             if (password.length < 4) { showUserMsg('Password min 4 characters', 'error'); return; }
             
-            // ----- VALIDATE USERNAME: only letters and numbers -----
             if (!/^[A-Za-z0-9]+$/.test(username)) {
                 showUserMsg('Username must contain only letters and numbers (no dots, slashes, or special characters).', 'error');
                 return;
@@ -752,7 +789,8 @@
                             id: username,
                             name: fullName,
                             speciality: speciality,
-                            baseCommission: 0,
+                            consultationCommission: 0,
+                            serviceCommission: 0,
                             status: 'active',
                             createdAt: new Date().toISOString()
                         });
@@ -879,7 +917,8 @@
             document.getElementById('doctorModalTitle').innerText = 'Add Doctor'; 
             document.getElementById('doctorName').value = ''; 
             document.getElementById('doctorSpeciality').value = ''; 
-            document.getElementById('doctorCommission').value = ''; 
+            document.getElementById('doctorConsultationCommission').value = ''; 
+            document.getElementById('doctorServiceCommission').value = ''; 
             document.getElementById('doctorModal').style.display = 'flex'; 
         };
         

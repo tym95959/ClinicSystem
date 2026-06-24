@@ -778,7 +778,7 @@
                     timestamp: messageData.timestamp,
                     date: today,
                     read: messageData.read || false,
-                    realtimeId: messageData.id // Store the Realtime DB ID for reference
+                    realtimeId: messageData.id
                 });
             } catch(e) {
                 console.warn('Error saving to Firestore:', e);
@@ -790,23 +790,11 @@
             if (!firestoreDB) return;
             if (!currentUser.isSupervisor) {
                 alert('Only supervisors can delete messages.');
-                return;
+                return false;
             }
             try {
                 var today = getTodayDate();
-                // Try to delete from Firestore
                 await firestoreDB.collection('chatHistory').doc(today).collection('messages').doc(messageId).delete();
-                
-                // Also try to delete from Realtime DB if this message has a realtimeId
-                var doc = await firestoreDB.collection('chatHistory').doc(today).collection('messages').doc(messageId).get();
-                if (doc.exists && doc.data().realtimeId) {
-                    var realtimeId = doc.data().realtimeId;
-                    if (selectedStaff) {
-                        var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-                        var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
-                        await realtimeDB.ref('chats/' + chatId + '/messages/' + realtimeId).remove();
-                    }
-                }
                 return true;
             } catch(e) {
                 console.warn('Error deleting from Firestore:', e);
@@ -820,24 +808,38 @@
             try {
                 var today = getTodayDate();
                 var chatId = getChatId(currentUser.id, staffId);
-                var snapshot = await firestoreDB.collection('chatHistory')
-                    .doc(today)
-                    .collection('messages')
-                    .where('chatId', '==', chatId)
-                    .orderBy('timestamp', 'asc')
-                    .get();
+                
+                // Try to get messages without complex query first
+                // Just get all messages for this date and filter client-side
+                var docRef = firestoreDB.collection('chatHistory').doc(today);
+                var doc = await docRef.get();
+                
+                if (!doc.exists) {
+                    return [];
+                }
+                
+                var messagesRef = firestoreDB.collection('chatHistory').doc(today).collection('messages');
+                var snapshot = await messagesRef.get();
                 
                 var messages = [];
                 snapshot.forEach(function(doc) {
                     var data = doc.data();
-                    messages.push({ 
-                        id: doc.id, 
-                        ...data, 
-                        fromFirestore: true,
-                        // If the message has a realtimeId, use it for reference
-                        realtimeId: data.realtimeId || null
-                    });
+                    // Filter client-side for chatId
+                    if (data.chatId === chatId) {
+                        messages.push({ 
+                            id: doc.id, 
+                            ...data, 
+                            fromFirestore: true,
+                            realtimeId: data.realtimeId || null
+                        });
+                    }
                 });
+                
+                // Sort by timestamp
+                messages.sort(function(a, b) {
+                    return (a.timestamp || 0) - (b.timestamp || 0);
+                });
+                
                 return messages;
             } catch(e) {
                 console.warn('Error loading chat history from Firestore:', e);
@@ -1094,7 +1096,10 @@
                 });
             } catch(e) {}
             
-            if (onlineListenerRef) { onlineListenerRef.off(); onlineListenerRef = null; }
+            if (onlineListenerRef) { 
+                try { onlineListenerRef.off(); } catch(e) {}
+                onlineListenerRef = null; 
+            }
             
             onlineListenerRef = realtimeDB.ref('online_users');
             onlineListenerRef.on('value', function(snapshot) {
@@ -1306,7 +1311,7 @@
             });
         }
         
-        // ========== RENDER CHAT MESSAGES - FIXED WITH DELETE FOR ALL MESSAGES ==========
+        // ========== RENDER CHAT MESSAGES ==========
         function renderChatMessages(messages) {
             var container = document.getElementById('chatMessages');
             if (!container) return;
@@ -1345,10 +1350,10 @@
                     html += '<div class="date-divider">' + displayDate + '</div>';
                 }
                 
-                // SUPERVISOR CAN DELETE ANY MESSAGE - use msg.id which works for both Firestore and Realtime DB
+                // Supervisor can delete any message
                 var deleteBtn = '';
                 if (currentUser.isSupervisor && msg.id) {
-                    deleteBtn = '<span class="delete-msg" onclick="deleteChatMessage(\'' + msg.id + '\', \'' + (msg.fromFirestore ? 'firestore' : 'realtime') + '\')">🗑️</span>';
+                    deleteBtn = '<span class="delete-msg" onclick="deleteChatMessage(\'' + msg.id + '\')">🗑️</span>';
                 }
                 
                 html += '<div class="message ' + (isCurrentUser ? 'reception' : 'staff') + '" data-msg-id="' + msg.id + '">' +
@@ -1363,7 +1368,7 @@
         }
         
         // ========== DELETE CHAT MESSAGE - SUPERVISOR ONLY ==========
-        window.deleteChatMessage = async function(messageId, source) {
+        window.deleteChatMessage = async function(messageId) {
             if (!currentUser.isSupervisor) {
                 alert('Only supervisors can delete messages.');
                 return;
@@ -1373,21 +1378,19 @@
             try {
                 var today = getTodayDate();
                 
-                if (source === 'firestore') {
-                    // Delete from Firestore
-                    await firestoreDB.collection('chatHistory').doc(today).collection('messages').doc(messageId).delete();
-                } else {
-                    // Delete from Realtime DB - need to find the message in the chat
-                    if (selectedStaff) {
-                        var chatUsers = [currentUser.id, selectedStaff.userId].sort();
-                        var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
-                        await realtimeDB.ref('chats/' + chatId + '/messages/' + messageId).remove();
-                        
-                        // Also try to delete from Firestore if it exists with this ID
-                        var firestoreDoc = await firestoreDB.collection('chatHistory').doc(today).collection('messages').doc(messageId).get();
-                        if (firestoreDoc.exists) {
-                            await firestoreDB.collection('chatHistory').doc(today).collection('messages').doc(messageId).delete();
-                        }
+                // Try to delete from Firestore first
+                var firestoreDeleted = await deleteMessageFromFirestore(messageId);
+                
+                // Also try to delete from Realtime DB if it exists
+                if (selectedStaff) {
+                    var chatUsers = [currentUser.id, selectedStaff.userId].sort();
+                    var chatId = 'chat_' + chatUsers[0] + '_' + chatUsers[1];
+                    
+                    // Check if message exists in Realtime DB
+                    var realtimeRef = realtimeDB.ref('chats/' + chatId + '/messages/' + messageId);
+                    var snapshot = await realtimeRef.once('value');
+                    if (snapshot.exists()) {
+                        await realtimeRef.remove();
                     }
                 }
                 
@@ -1457,25 +1460,36 @@
             }, 1500);
         });
 
-        // ========== LOGOUT ==========
+        // ========== LOGOUT - FIXED ==========
         async function logout() {
             stopHeartbeat();
+            
+            // Safely remove online listener
             if (onlineListenerRef) { 
                 try { onlineListenerRef.off(); } catch(e) {}
                 onlineListenerRef = null; 
             }
+            
+            // Safely remove chat listener
             if (chatListener) {
-                if (typeof chatListener === 'function') chatListener();
-                else if (chatListener.off) chatListener.off();
+                try {
+                    if (typeof chatListener === 'function') chatListener();
+                    else if (chatListener.off) chatListener.off();
+                } catch(e) {}
                 chatListener = null;
             }
+            
+            // Safely remove all chat listeners
             for (var key in allChatListeners) {
                 if (allChatListeners.hasOwnProperty(key)) {
-                    if (allChatListeners[key] && typeof allChatListeners[key] === 'function') allChatListeners[key]();
-                    else if (allChatListeners[key] && allChatListeners[key].off) allChatListeners[key].off();
+                    try {
+                        if (allChatListeners[key] && typeof allChatListeners[key] === 'function') allChatListeners[key]();
+                        else if (allChatListeners[key] && allChatListeners[key].off) allChatListeners[key].off();
+                    } catch(e) {}
                     delete allChatListeners[key];
                 }
             }
+            
             await deleteUserFromOnline();
             localStorage.removeItem('loggedInUser');
             sessionStorage.removeItem('clinic_user_session');

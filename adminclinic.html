@@ -8,6 +8,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <style>
@@ -34,6 +36,7 @@
         .card-title { font-size: 1.3rem; font-weight: 600; color: #0a2f44; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; border-left: 5px solid #0f5c7a; padding-left: 18px; flex-wrap: wrap; justify-content: space-between; }
         .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
         .input-group label { font-weight: 600; font-size: 12px; color: #1f5e7e; }
+        .input-group label .badge-restricted { background: #dc3545; color: white; font-size: 9px; padding: 2px 8px; border-radius: 30px; margin-left: 8px; }
         .input-group input, .input-group select, .input-group textarea { padding: 10px 14px; border: 1.5px solid #e2eaf0; border-radius: 16px; font-size: 13px; transition: 0.2s; background: white; }
         .input-group .field-hint { font-size: 10px; color: #6c757d; margin-top: 4px; }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -58,6 +61,10 @@
         .info { background: #e0f2fe; color: #075985; }
         .sync-status { background: #e8f0fe; border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font-size: 13px; }
         .badge-active { background: #e0f7ef; color: #146b3a; padding: 4px 12px; border-radius: 40px; display: inline-block; font-size: 11px; }
+        .commission-badge { background: #f0ad4e; color: #fff; padding: 4px 12px; border-radius: 40px; display: inline-block; font-size: 11px; font-weight: 700; }
+        .commission-badge.high { background: #d9534f; }
+        .commission-badge.low { background: #5cb85c; }
+        .restricted-note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 16px; border-radius: 12px; font-size: 12px; color: #856404; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .password-strength { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
         .strength-bar { flex: 1; height: 6px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
         .strength-fill { width: 0%; height: 100%; transition: width 0.2s ease; border-radius: 6px; }
@@ -87,44 +94,16 @@
         .doctor-select-field.show { display: block; }
         .auto-fill-info { background: #e8f0fe; padding: 10px 14px; border-radius: 12px; font-size: 12px; color: #0f5c7a; margin-bottom: 12px; display: none; }
         .auto-fill-info.show { display: block; }
-        .code-badge { 
-            background: #e8f0fe; 
-            color: #0f5c7a; 
-            padding: 2px 10px; 
-            border-radius: 12px; 
-            font-size: 10px; 
-            font-weight: 600;
-            font-family: monospace;
-        }
-        .service-code-input {
-            font-family: monospace;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .code-hint {
-            font-size: 10px;
-            color: #6c757d;
-            margin-top: 4px;
-        }
-        .free-badge {
-            background: #17a2b8;
-            color: white;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: 600;
-            display: inline-block;
-            margin-left: 6px;
-        }
-        .price-hint {
-            font-size: 10px;
-            color: #6c757d;
-            margin-top: 4px;
-        }
-        .price-hint .free-note {
-            color: #17a2b8;
-            font-weight: 600;
-        }
+        .code-badge { background: #e8f0fe; color: #0f5c7a; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; font-family: monospace; }
+        .service-code-input { font-family: monospace; text-transform: uppercase; letter-spacing: 0.5px; }
+        .code-hint { font-size: 10px; color: #6c757d; margin-top: 4px; }
+        .free-badge { background: #17a2b8; color: white; padding: 2px 10px; border-radius: 12px; font-size: 9px; font-weight: 600; display: inline-block; margin-left: 6px; }
+        .price-hint { font-size: 10px; color: #6c757d; margin-top: 4px; }
+        .price-hint .free-note { color: #17a2b8; font-weight: 600; }
+        .commission-input-wrapper { display: flex; align-items: center; gap: 10px; }
+        .commission-input-wrapper input { flex: 1; }
+        .commission-input-wrapper .percent-symbol { font-weight: 700; color: #0a2f44; font-size: 16px; padding-right: 10px; }
+        .commission-range { font-size: 10px; color: #6c757d; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -160,7 +139,14 @@
     <!-- Doctors Tab -->
     <div id="doctorsTab" class="card" style="display:none;">
         <div class="card-title">👨‍⚕️ Doctors Management <button class="btn-primary" id="addDoctorBtn" style="padding:6px 18px;">+ Add Doctor</button></div>
-        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Doctor Name</th><th>Speciality</th><th>Base Commission</th><th>Actions</th></tr></thead><tbody id="doctorsList"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table></div>
+        
+        <!-- Restricted note -->
+        <div class="restricted-note">
+            <i class="fas fa-lock" style="color:#d9534f;"></i>
+            <strong>Restricted:</strong> Commission allocation is only available to <strong>Supervisor</strong> and <strong>Manager</strong> level staff.
+        </div>
+        
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Doctor Name</th><th>Speciality</th><th>Commission</th><th>Actions</th></tr></thead><tbody id="doctorsList"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table></div>
         <div id="doctorsMessage" class="message" style="display:none;"></div>
     </div>
 
@@ -241,7 +227,15 @@
 <div id="doctorModal" class="modal"><div class="modal-content"><h3 id="doctorModalTitle">Add Doctor</h3>
     <div class="input-group"><label>Doctor Name *</label><input type="text" id="doctorName" placeholder="Dr. Abdulla Irufan"></div>
     <div class="input-group"><label>Speciality *</label><input type="text" id="doctorSpeciality" placeholder="Cardiology"></div>
-    <div class="input-group"><label>Base Commission (%)</label><input type="number" id="doctorCommission" step="1" min="0" max="100" placeholder="15"></div>
+    <div class="input-group">
+        <label>Commission <span class="badge-restricted">Restricted</span></label>
+        <div class="commission-input-wrapper">
+            <input type="number" id="doctorCommission" step="0.5" min="0" max="100" placeholder="15" style="flex:1;">
+            <span class="percent-symbol">%</span>
+        </div>
+        <div class="field-hint">Percentage of service/consultation fee that goes to the doctor. <strong>0%</strong> means no commission.</div>
+        <div class="commission-range">Range: 0% – 100% (only Supervisor/Manager can set this)</div>
+    </div>
     <div class="modal-buttons"><button class="btn-primary" id="saveDoctorBtn">Save</button><button class="btn-danger" id="cancelDoctorBtn">Cancel</button></div>
 </div></div>
 
@@ -420,7 +414,18 @@
             const tbody = document.getElementById('doctorsList');
             if (!tbody) return;
             if (doctors.length === 0) { tbody.innerHTML = '<tr><td colspan="4">No doctors</td></tr>'; return; }
-            tbody.innerHTML = doctors.map(d => `<tr><td><strong>${escapeHtml(d.name)}</strong></td><td>${escapeHtml(d.speciality)}</td><td>${d.baseCommission || 0}%</td><td><button class="btn-sm" onclick="window.editDoctor('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDoctor('${d.id}')">🗑️ Delete</button></td></tr>`).join('');
+            tbody.innerHTML = doctors.map(d => {
+                const commission = d.baseCommission || 0;
+                let badgeClass = 'commission-badge';
+                if (commission >= 20) badgeClass += ' high';
+                else if (commission <= 5) badgeClass += ' low';
+                return `<tr>
+                    <td><strong>${escapeHtml(d.name)}</strong></td>
+                    <td>${escapeHtml(d.speciality)}</td>
+                    <td><span class="${badgeClass}">${commission}%</span></td>
+                    <td><button class="btn-sm" onclick="window.editDoctor('${d.id}')">✏️ Edit</button> <button class="btn-danger" onclick="window.deleteDoctor('${d.id}')">🗑️ Delete</button></td>
+                </tr>`;
+            }).join('');
         }
         
         function renderInsurance() {
@@ -568,7 +573,15 @@
             const name = document.getElementById('doctorName').value.trim();
             const speciality = document.getElementById('doctorSpeciality').value.trim();
             const baseCommission = parseFloat(document.getElementById('doctorCommission').value) || 0;
+            
+            // Validate commission range
+            if (baseCommission < 0 || baseCommission > 100) {
+                showMessage('doctorsMessage', 'Commission must be between 0 and 100', 'error');
+                return;
+            }
+            
             if (!name || !speciality) { showMessage('doctorsMessage', 'Doctor name and speciality required', 'error'); return; }
+            
             if (currentEditId) {
                 const idx = doctors.findIndex(d => d.id === currentEditId);
                 if (idx !== -1) doctors[idx] = { ...doctors[idx], name, speciality, baseCommission };

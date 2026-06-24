@@ -514,7 +514,7 @@
             return;
         }
 
-        let totalRevenue = 0, totalPaid = 0, totalDiscount = 0;
+        let totalRevenue = 0, totalPatientPayable = 0, totalDiscount = 0;
         const doctorTotals = {};
         const serviceTotals = {};
         const rows = [];
@@ -541,30 +541,31 @@
             }));
 
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
-            const paidAmount = billing.paid || 0;
+            // PATIENT PAYABLE - the amount that goes to the cashier
+            const patientPayable = billing.patientPayable || 0;
             const discount = billing.discount?.amount || 0;
             
             totalRevenue += totalBill;
-            totalPaid += paidAmount;
+            totalPatientPayable += patientPayable;
             totalDiscount += discount;
 
             // Doctor totals
             if (!doctorTotals[doctorName]) {
                 doctorTotals[doctorName] = { 
                     revenue: 0, 
-                    paid: 0, 
+                    patientPayable: 0, 
                     visits: 0,
                     services: {},
                     insuranceTotal: 0,
-                    patientPayable: 0,
+                    patientPayableTotal: 0,
                     discounts: 0
                 };
             }
             doctorTotals[doctorName].revenue += totalBill;
-            doctorTotals[doctorName].paid += paidAmount;
+            doctorTotals[doctorName].patientPayable += patientPayable;
             doctorTotals[doctorName].visits++;
             doctorTotals[doctorName].insuranceTotal += (billing.totalInsurancePayment || 0);
-            doctorTotals[doctorName].patientPayable += (billing.patientPayable || 0);
+            doctorTotals[doctorName].patientPayableTotal += patientPayable;
             doctorTotals[doctorName].discounts += discount;
 
             // Service totals per doctor
@@ -617,7 +618,7 @@
 
             // Get payment method
             let payType = memo.payment?.method || billing.paymentMethod || '—';
-            if (payType === '—' && paidAmount > 0) payType = 'Cash';
+            if (payType === '—' && patientPayable > 0) payType = 'Cash';
 
             // Service description
             let serviceDesc = '';
@@ -638,20 +639,20 @@
                 primaryAmt: primaryAmount,
                 secondaryName: secondaryName,
                 secondaryAmt: secondaryAmount,
-                paid: paidAmount,
+                patientPayable: patientPayable,
                 payType: payType,
                 discount: discount
             });
         });
 
-        const totalOutstanding = totalRevenue - totalPaid;
-        const collectionRate = totalRevenue > 0 ? ((totalPaid / totalRevenue) * 100).toFixed(1) : 0;
+        const totalOutstanding = totalRevenue - totalPatientPayable;
+        const collectionRate = totalRevenue > 0 ? ((totalPatientPayable / totalRevenue) * 100).toFixed(1) : 0;
 
         // Build doctor summary cards
         const sortedDoctors = Object.keys(doctorTotals).sort();
         const doctorCardsHtml = sortedDoctors.map(doc => {
             const data = doctorTotals[doc];
-            const docCollectionRate = data.revenue > 0 ? ((data.paid / data.revenue) * 100).toFixed(1) : 0;
+            const docCollectionRate = data.revenue > 0 ? ((data.patientPayable / data.revenue) * 100).toFixed(1) : 0;
             
             // Build service breakdown for this doctor
             const serviceItems = Object.keys(data.services).sort().map(svc => `
@@ -669,16 +670,12 @@
                         <span class="value">MVR ${data.revenue.toFixed(2)}</span>
                     </div>
                     <div class="row">
-                        <span class="label">Amount Collected</span>
-                        <span class="value">MVR ${data.paid.toFixed(2)} (${docCollectionRate}%)</span>
+                        <span class="label">Patient Payable</span>
+                        <span class="value">MVR ${data.patientPayable.toFixed(2)} (${docCollectionRate}%)</span>
                     </div>
                     <div class="row">
                         <span class="label">Insurance Paid</span>
                         <span class="value">MVR ${data.insuranceTotal.toFixed(2)}</span>
-                    </div>
-                    <div class="row">
-                        <span class="label">Patient Payable</span>
-                        <span class="value">MVR ${data.patientPayable.toFixed(2)}</span>
                     </div>
                     <div class="row">
                         <span class="label">Discounts Given</span>
@@ -718,7 +715,7 @@
                             <th>Pri. Amount</th>
                             <th>Secondary Insurance</th>
                             <th>Sec. Amount</th>
-                            <th>Paid (MVR)</th>
+                            <th>Patient Payable (MVR)</th>
                             <th>Pay Type</th>
                         </tr>
                     </thead>
@@ -736,7 +733,7 @@
                                 <td>MVR ${r.primaryAmt.toFixed(2)}</td>
                                 <td><span class="badge-sec">${escapeHtml(r.secondaryName)}</span></td>
                                 <td>MVR ${r.secondaryAmt.toFixed(2)}</td>
-                                <td><strong>MVR ${r.paid.toFixed(2)}</strong></td>
+                                <td><strong>MVR ${r.patientPayable.toFixed(2)}</strong></td>
                                 <td>${escapeHtml(r.payType)}</td>
                             </tr>
                         `).join('')}
@@ -756,10 +753,10 @@
                 <!-- Global Stats -->
                 <div class="stats-row">
                     <div class="stat-card"><h4><i class="fas fa-chart-line"></i> Total Revenue</h4><div class="stat-value">MVR ${totalRevenue.toFixed(2)}</div><div class="stat-sub">${memos.length} visits</div></div>
-                    <div class="stat-card"><h4><i class="fas fa-hand-holding-usd"></i> Amount Collected</h4><div class="stat-value">MVR ${totalPaid.toFixed(2)}</div><div class="stat-sub">Collection rate: ${collectionRate}%</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-hand-holding-usd"></i> Patient Payable</h4><div class="stat-value">MVR ${totalPatientPayable.toFixed(2)}</div><div class="stat-sub">Amount to cashier</div></div>
                     <div class="stat-card"><h4><i class="fas fa-tags"></i> Discounts Given</h4><div class="stat-value">MVR ${totalDiscount.toFixed(2)}</div><div class="stat-sub">Total discount</div></div>
                     <div class="stat-card"><h4><i class="fas fa-chart-pie"></i> Outstanding Balance</h4><div class="stat-value">MVR ${totalOutstanding.toFixed(2)}</div><div class="stat-sub">To be collected</div></div>
-                    <div class="stat-card"><h4><i class="fas fa-percent"></i> Collection Efficiency</h4><div class="stat-value">${collectionRate}%</div><div class="stat-sub">Paid / Revenue</div></div>
+                    <div class="stat-card"><h4><i class="fas fa-percent"></i> Collection Efficiency</h4><div class="stat-value">${collectionRate}%</div><div class="stat-sub">Payable / Revenue</div></div>
                 </div>
 
                 <!-- Top Services -->
@@ -783,7 +780,7 @@
         }
         const startRaw = document.getElementById('startDate').value;
         const endRaw = document.getElementById('endDate').value;
-        const csvRows = [["Date", "Memo No", "Patient", "Doctor", "Services", "Total Bill (MVR)", "Discount", "Primary Insurance", "Primary Amount", "Secondary Insurance", "Secondary Amount", "Paid Amount", "Pay Type"]];
+        const csvRows = [["Date", "Memo No", "Patient", "Doctor", "Services", "Total Bill (MVR)", "Discount", "Primary Insurance", "Primary Amount", "Secondary Insurance", "Secondary Amount", "Patient Payable (MVR)", "Pay Type"]];
         
         currentReportData.forEach(memo => {
             const billing = memo.billing || {};
@@ -796,10 +793,10 @@
             if (!serviceDesc && memo.treatment) serviceDesc = memo.treatment;
             if (!serviceDesc) serviceDesc = '—';
             const totalBill = billing.afterDiscount || billing.subtotal || 0;
-            const paidAmount = billing.paid || 0;
+            const patientPayable = billing.patientPayable || 0;
             const discount = billing.discount?.amount || 0;
             let payType = memo.payment?.method || billing.paymentMethod || '—';
-            if (payType === '—' && paidAmount > 0) payType = 'Cash';
+            if (payType === '—' && patientPayable > 0) payType = 'Cash';
             
             let primaryName = '—', primaryAmt = 0, secondaryName = '—', secondaryAmt = 0;
             const insurances = memo.insurances || [];
@@ -821,7 +818,7 @@
             }
             csvRows.push([
                 visitDate, memoId, patientName, doctor, serviceDesc.replace(/,/g, ';'), 
-                totalBill, discount, primaryName, primaryAmt, secondaryName, secondaryAmt, paidAmount, payType
+                totalBill, discount, primaryName, primaryAmt, secondaryName, secondaryAmt, patientPayable, payType
             ]);
         });
         

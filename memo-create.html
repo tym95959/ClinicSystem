@@ -2105,8 +2105,9 @@
                 serviceDiscountAmount = Math.min(serviceDiscountFixed, serviceTotal);
             }
             
-            const totalAfterServiceDiscount = serviceTotal - serviceDiscountAmount;
-            const patientPay = Math.max(0, totalAfterServiceDiscount - primaryInsAmount - aasandhaAmount);
+            // Patient pay = (Service Total - Insurance) - Discount
+            const afterInsurance = serviceTotal - primaryInsAmount - aasandhaAmount;
+            const patientPay = Math.max(0, afterInsurance - serviceDiscountAmount);
             
             const coverBadgeClass = isCovered ? 'covered' : 'not-covered';
             const coverBadgeText = isCovered ? `✅ MVR ${aasandhaCoverAmt}` : '❌ Not Covered';
@@ -2271,18 +2272,26 @@
         // Calculate subtotal only from paid services
         const subtotal = paidServices.reduce((s, i) => s + (i.qty * i.price), 0);
         
-        let totalServiceDiscount = 0;
+        // Calculate total insurance and service discounts
+        let primaryInsuranceTotal = 0, aasandhaTotal = 0;
+        let serviceDiscountTotal = 0;
+        
+        // First, calculate insurance for each service (insurance is applied before discount)
         paidServices.forEach(s => {
             const serviceTotal = s.qty * s.price;
+            // Insurance amounts are already calculated and stored
+            primaryInsuranceTotal += s.primaryInsuranceAmount || 0;
+            aasandhaTotal += s.aasandhaAmount || 0;
+            
+            // Calculate service discount (applied after insurance)
             if (s.discountType === 'percent') {
-                const discountPercent = s.discountPercent || 0;
-                totalServiceDiscount += (serviceTotal * discountPercent) / 100;
+                serviceDiscountTotal += (serviceTotal * (s.discountPercent || 0)) / 100;
             } else {
-                const discountFixed = s.discountFixed || 0;
-                totalServiceDiscount += Math.min(discountFixed, serviceTotal);
+                serviceDiscountTotal += Math.min(s.discountFixed || 0, serviceTotal);
             }
         });
         
+        // Global discount (applied after insurance and service discounts)
         const { value, type } = getDiscountValue();
         let globalDiscAmount = 0;
         if (type === 'percent') {
@@ -2291,47 +2300,17 @@
             globalDiscAmount = Math.min(value, subtotal);
         }
         
-        const totalDiscAmount = totalServiceDiscount + globalDiscAmount;
+        // Total discount = service discounts + global discount
+        const totalDiscAmount = serviceDiscountTotal + globalDiscAmount;
+        
+        // After discount subtotal
         let afterDiscount = subtotal - totalDiscAmount;
         
         document.getElementById('subtotalAmount').innerHTML = subtotal.toFixed(2);
         document.getElementById('totalAfterDiscount').innerHTML = afterDiscount.toFixed(2);
         
-        let primaryInsuranceTotal = 0, aasandhaTotal = 0, patientTotal = 0;
-        
-        // Process paid services
-        for (let s of paidServices) {
-            const serviceTotal = s.qty * s.price;
-            let serviceDiscountAmount = 0;
-            if (s.discountType === 'percent') {
-                serviceDiscountAmount = (serviceTotal * (s.discountPercent || 0)) / 100;
-            } else {
-                serviceDiscountAmount = Math.min(s.discountFixed || 0, serviceTotal);
-            }
-            const weight = subtotal > 0 ? serviceTotal / subtotal : 0;
-            let remainingAfterDiscount = afterDiscount * weight;
-            let primaryPortion = s.primaryInsuranceAmount || 0;
-            let aasandhaPortion = s.aasandhaAmount || 0;
-            
-            if (totalDiscAmount > 0 && serviceTotal > 0 && subtotal > 0) {
-                const discountWeight = totalDiscAmount * (serviceTotal / subtotal);
-                if (primaryPortion > 0) primaryPortion = Math.max(0, primaryPortion - (primaryPortion / serviceTotal) * discountWeight);
-                if (aasandhaPortion > 0) aasandhaPortion = Math.max(0, aasandhaPortion - (aasandhaPortion / serviceTotal) * discountWeight);
-                remainingAfterDiscount = serviceTotal - discountWeight;
-            }
-            
-            primaryPortion = Math.min(primaryPortion, remainingAfterDiscount);
-            remainingAfterDiscount -= primaryPortion;
-            aasandhaPortion = Math.min(aasandhaPortion, remainingAfterDiscount);
-            remainingAfterDiscount -= aasandhaPortion;
-            
-            primaryInsuranceTotal += primaryPortion;
-            aasandhaTotal += aasandhaPortion;
-            patientTotal += Math.max(0, remainingAfterDiscount);
-        }
-        
-        // Free services don't add to any payment
-        // They just show as FREE in the display
+        // Calculate patient payable: Subtotal - Insurance - Discounts
+        let patientTotal = Math.max(0, subtotal - primaryInsuranceTotal - aasandhaTotal - totalDiscAmount);
         
         currentPrimaryInsurancePayment = primaryInsuranceTotal;
         currentAasandhaPayment = aasandhaTotal;
@@ -2571,12 +2550,17 @@
                 } else {
                     discountAmount = Math.min(s.discountFixed || 0, s.qty * s.price);
                 }
+                // Patient pay = service total - insurance - discount
+                const serviceTotal = s.qty * s.price;
+                const afterInsurance = serviceTotal - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0);
+                const patientPay = Math.max(0, afterInsurance - discountAmount);
+                
                 return {
                     code: s.code || '',
                     name: s.name, 
                     qty: s.qty, 
                     price: s.price,
-                    total: s.qty * s.price,
+                    total: serviceTotal,
                     isFreeService: s.price === 0,
                     aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
                     primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
@@ -2585,7 +2569,7 @@
                     discountPercent: s.discountPercent || 0,
                     discountFixed: s.discountFixed || 0,
                     discountAmount: discountAmount,
-                    patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0) - discountAmount)
+                    patientPay: patientPay
                 };
             }),
             discount: {

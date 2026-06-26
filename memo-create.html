@@ -1562,6 +1562,8 @@
             discountPercent: 0,
             discountAmount: 0,
             showDiscount: false,
+            discountType: 'percent', // 'percent' or 'fixed'
+            discountFixed: 0,
             isFreeService: price === 0  // Mark free services
         });
         
@@ -1581,20 +1583,47 @@
         if (!selectedServices[idx].showDiscount) {
             selectedServices[idx].discountPercent = 0;
             selectedServices[idx].discountAmount = 0;
+            selectedServices[idx].discountFixed = 0;
+            selectedServices[idx].discountType = 'percent';
         }
         renderServices();
         calculateBilling();
     }
     
-    function updateServiceDiscount(idx, value) {
+    function updateServiceDiscount(idx, value, type) {
         // Don't allow discount on free services
         if (selectedServices[idx].isFreeService) {
             return;
         }
         const discount = parseFloat(value) || 0;
-        selectedServices[idx].discountPercent = discount;
+        selectedServices[idx].discountType = type || 'percent';
         const serviceTotal = selectedServices[idx].qty * selectedServices[idx].price;
-        selectedServices[idx].discountAmount = (serviceTotal * discount) / 100;
+        
+        if (type === 'percent') {
+            selectedServices[idx].discountPercent = discount;
+            selectedServices[idx].discountFixed = 0;
+            selectedServices[idx].discountAmount = (serviceTotal * discount) / 100;
+        } else { // fixed
+            selectedServices[idx].discountFixed = discount;
+            selectedServices[idx].discountPercent = 0;
+            selectedServices[idx].discountAmount = Math.min(discount, serviceTotal);
+        }
+        renderServices();
+        calculateBilling();
+    }
+    
+    function changeServiceDiscountType(idx) {
+        const s = selectedServices[idx];
+        if (s.isFreeService) return;
+        if (s.discountType === 'percent') {
+            s.discountType = 'fixed';
+            s.discountPercent = 0;
+            // If there was a percent value, convert to fixed? We'll just set to 0.
+            // User must enter a fixed value
+        } else {
+            s.discountType = 'percent';
+            s.discountFixed = 0;
+        }
         renderServices();
         calculateBilling();
     }
@@ -2065,10 +2094,18 @@
             const primaryInsAmount = s.primaryInsuranceAmount || 0;
             const aasandhaAmount = s.aasandhaAmount || 0;
             
-            const serviceDiscountPercent = s.discountPercent || 0;
-            const serviceDiscountAmount = (serviceTotal * serviceDiscountPercent) / 100;
-            const totalAfterServiceDiscount = serviceTotal - serviceDiscountAmount;
+            // Calculate discount based on type
+            let serviceDiscountPercent = s.discountPercent || 0;
+            let serviceDiscountFixed = s.discountFixed || 0;
+            let serviceDiscountAmount = 0;
             
+            if (s.discountType === 'percent') {
+                serviceDiscountAmount = (serviceTotal * serviceDiscountPercent) / 100;
+            } else {
+                serviceDiscountAmount = Math.min(serviceDiscountFixed, serviceTotal);
+            }
+            
+            const totalAfterServiceDiscount = serviceTotal - serviceDiscountAmount;
             const patientPay = Math.max(0, totalAfterServiceDiscount - primaryInsAmount - aasandhaAmount);
             
             const coverBadgeClass = isCovered ? 'covered' : 'not-covered';
@@ -2089,12 +2126,15 @@
             const disabledClass = isFree ? 'disabled-input' : '';
             
             const codeDisplay = s.code ? `<span class="service-code-badge">${escapeHtml(s.code)}</span>` : '';
-            const discountBadge = serviceDiscountPercent > 0 ? 
-                `<span class="service-discount-badge">-${serviceDiscountPercent}%</span>` : '';
+            const discountBadge = serviceDiscountAmount > 0 ? 
+                `<span class="service-discount-badge">-${s.discountType === 'percent' ? serviceDiscountPercent + '%' : 'MVR ' + serviceDiscountFixed.toFixed(2)}</span>` : '';
             const freeBadge = isFree ? `<span class="service-cover-badge free-badge">🎯 FREE</span>` : '';
             
             const discountInputClass = s.showDiscount ? 'show' : '';
             const toggleBtnClass = s.showDiscount ? 'active' : '';
+            
+            // Determine discount toggle button text
+            const toggleText = s.discountType === 'percent' ? '%' : 'MVR';
             
             return `
                 <tr>
@@ -2133,16 +2173,25 @@
                         ${isFullCover && !isFree ? '<span style="font-size:8px;color:#146b3a;">N/A</span>' : ''}
                         ${isFree ? '<span style="font-size:8px;color:#17a2b8;">Free</span>' : ''}
                     </td>
-                    <td>
+                    <td style="min-width: 120px;">
                         <button class="service-discount-toggle ${toggleBtnClass}" 
                                 onclick="toggleServiceDiscount(${idx})" 
                                 title="Toggle service discount" ${isFree ? 'disabled' : ''}>
                             <i class="fas fa-tag"></i>
                         </button>
-                        <input type="number" value="${serviceDiscountPercent}" min="0" max="100" step="1" 
-                               onchange="updateServiceDiscount(${idx}, this.value)" 
+                        <button class="service-discount-toggle" 
+                                onclick="changeServiceDiscountType(${idx})" 
+                                title="Switch between % and fixed amount" 
+                                ${!s.showDiscount || isFree ? 'style="display:none;"' : ''}
+                                style="font-size:8px; padding:2px 4px; margin-left:2px;">
+                            ${toggleText}
+                        </button>
+                        <input type="number" value="${s.discountType === 'percent' ? s.discountPercent : s.discountFixed}" 
+                               min="0" step="${s.discountType === 'percent' ? 1 : 0.01}" 
+                               onchange="updateServiceDiscount(${idx}, this.value, '${s.discountType}')" 
                                class="service-discount-input ${discountInputClass}" 
-                               placeholder="%" ${isFree ? 'disabled' : ''}>
+                               placeholder="${s.discountType === 'percent' ? '%' : 'MVR'}" 
+                               ${isFree ? 'disabled' : ''}>
                     </td>
                     <td>${isFree ? 'FREE' : `MVR ${patientPay.toFixed(2)}`}</td>
                     <td><button class="remove-row" onclick="removeService(${idx})">Remove</button></td>
@@ -2193,8 +2242,15 @@
         const { primaryAmount, aasandhaAmount } = calculateServiceInsurance(serviceTotal, service);
         selectedServices[idx].primaryInsuranceAmount = primaryAmount;
         selectedServices[idx].aasandhaAmount = aasandhaAmount;
-        const discountPercent = selectedServices[idx].discountPercent || 0;
-        selectedServices[idx].discountAmount = (serviceTotal * discountPercent) / 100;
+        // Recalculate discount
+        const discount = selectedServices[idx].discountType === 'percent' ? 
+            (selectedServices[idx].discountPercent || 0) : 
+            (selectedServices[idx].discountFixed || 0);
+        if (selectedServices[idx].discountType === 'percent') {
+            selectedServices[idx].discountAmount = (serviceTotal * discount) / 100;
+        } else {
+            selectedServices[idx].discountAmount = Math.min(discount, serviceTotal);
+        }
         renderServices(); calculateBilling(); 
     };
     
@@ -2218,8 +2274,13 @@
         let totalServiceDiscount = 0;
         paidServices.forEach(s => {
             const serviceTotal = s.qty * s.price;
-            const discountPercent = s.discountPercent || 0;
-            totalServiceDiscount += (serviceTotal * discountPercent) / 100;
+            if (s.discountType === 'percent') {
+                const discountPercent = s.discountPercent || 0;
+                totalServiceDiscount += (serviceTotal * discountPercent) / 100;
+            } else {
+                const discountFixed = s.discountFixed || 0;
+                totalServiceDiscount += Math.min(discountFixed, serviceTotal);
+            }
         });
         
         const { value, type } = getDiscountValue();
@@ -2241,7 +2302,12 @@
         // Process paid services
         for (let s of paidServices) {
             const serviceTotal = s.qty * s.price;
-            const serviceDiscount = (serviceTotal * (s.discountPercent || 0)) / 100;
+            let serviceDiscountAmount = 0;
+            if (s.discountType === 'percent') {
+                serviceDiscountAmount = (serviceTotal * (s.discountPercent || 0)) / 100;
+            } else {
+                serviceDiscountAmount = Math.min(s.discountFixed || 0, serviceTotal);
+            }
             const weight = subtotal > 0 ? serviceTotal / subtotal : 0;
             let remainingAfterDiscount = afterDiscount * weight;
             let primaryPortion = s.primaryInsuranceAmount || 0;
@@ -2464,7 +2530,11 @@
         let serviceDiscountTotal = 0;
         selectedServices.forEach(s => {
             const serviceTotal = s.qty * s.price;
-            serviceDiscountTotal += (serviceTotal * (s.discountPercent || 0)) / 100;
+            if (s.discountType === 'percent') {
+                serviceDiscountTotal += (serviceTotal * (s.discountPercent || 0)) / 100;
+            } else {
+                serviceDiscountTotal += Math.min(s.discountFixed || 0, serviceTotal);
+            }
         });
         
         let memoNumber;
@@ -2494,20 +2564,30 @@
             },
             doctor: { id: selectedDoctor.id || "", name: selectedDoctor.name || "", speciality: selectedDoctor.speciality || "" },
             insurances: insuranceArray,
-            services: selectedServices.map(s => ({
-                code: s.code || '',
-                name: s.name, 
-                qty: s.qty, 
-                price: s.price,
-                total: s.qty * s.price,
-                isFreeService: s.price === 0,
-                aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
-                primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
-                aasandhaAmount: s.aasandhaAmount || 0,
-                discountPercent: s.discountPercent || 0,
-                discountAmount: (s.qty * s.price * (s.discountPercent || 0)) / 100,
-                patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0) - ((s.qty * s.price * (s.discountPercent || 0)) / 100))
-            })),
+            services: selectedServices.map(s => {
+                let discountAmount = 0;
+                if (s.discountType === 'percent') {
+                    discountAmount = (s.qty * s.price * (s.discountPercent || 0)) / 100;
+                } else {
+                    discountAmount = Math.min(s.discountFixed || 0, s.qty * s.price);
+                }
+                return {
+                    code: s.code || '',
+                    name: s.name, 
+                    qty: s.qty, 
+                    price: s.price,
+                    total: s.qty * s.price,
+                    isFreeService: s.price === 0,
+                    aasandhaCoverAmount: s.aasandhaCoverAmount || 0,
+                    primaryInsuranceAmount: s.primaryInsuranceAmount || 0,
+                    aasandhaAmount: s.aasandhaAmount || 0,
+                    discountType: s.discountType || 'percent',
+                    discountPercent: s.discountPercent || 0,
+                    discountFixed: s.discountFixed || 0,
+                    discountAmount: discountAmount,
+                    patientPay: Math.max(0, (s.qty * s.price) - (s.primaryInsuranceAmount || 0) - (s.aasandhaAmount || 0) - discountAmount)
+                };
+            }),
             discount: {
                 type: discountTypeValue,
                 value: discountValue,
@@ -2521,8 +2601,12 @@
                 total: serviceDiscountTotal,
                 services: selectedServices.map(s => ({
                     name: s.name,
+                    type: s.discountType || 'percent',
                     percent: s.discountPercent || 0,
-                    amount: (s.qty * s.price * (s.discountPercent || 0)) / 100
+                    fixed: s.discountFixed || 0,
+                    amount: s.discountType === 'percent' ? 
+                        (s.qty * s.price * (s.discountPercent || 0)) / 100 : 
+                        Math.min(s.discountFixed || 0, s.qty * s.price)
                 }))
             },
             billing: {

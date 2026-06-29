@@ -104,6 +104,20 @@
         .btn-danger:hover {
             background: #8f1515;
         }
+        .success-box {
+            color: #146b3a;
+        }
+        .success-box i {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .memo-found-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
     </style>
     <script src="firebase-config.js"></script>
 </head>
@@ -723,17 +737,35 @@
         if (printWindow) {
             printWindow.document.write(printContent);
             printWindow.document.close();
-            // Close the original window after a short delay
-            setTimeout(() => {
-                window.close();
-            }, 1000);
+            // Show dashboard button on the original page after print window opens
+            document.getElementById('statusContent').innerHTML = `
+                <div class="success-box">
+                    <i class="fas fa-check-circle"></i>
+                    <div class="loading-text" style="font-size:16px; font-weight:600;">✅ Memo printed successfully!</div>
+                    <p style="color:#2c3e50; margin-top:8px;">You can now go back to the dashboard.</p>
+                    <div class="memo-found-actions">
+                        <button class="btn btn-success" onclick="window.location.href='dashboard.html'">
+                            <i class="fas fa-th-large"></i> Go to Dashboard
+                        </button>
+                        <button class="btn btn-primary" onclick="window.location.href='memo-create.html'">
+                            <i class="fas fa-file-invoice"></i> New Memo
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.close()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                </div>
+            `;
         } else {
-            // If popup blocked, show error
+            // If popup blocked, show error with dashboard button
             document.getElementById('statusContent').innerHTML = `
                 <div class="error">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Pop-up blocked! Please allow pop-ups for this site and try again.</p>
                     <div class="btn-group">
+                        <button class="btn btn-success" onclick="window.location.href='dashboard.html'">
+                            <i class="fas fa-th-large"></i> Go to Dashboard
+                        </button>
                         <button class="btn btn-primary" onclick="window.location.href='memo-create.html'">← Go Back</button>
                         <button class="btn btn-danger" onclick="window.close()">Close</button>
                     </div>
@@ -779,6 +811,9 @@
                     <p>No memo ID provided in the URL.</p>
                     <p style="margin-top: 10px;">Use: print-memo.html?memoId=1006</p>
                     <div class="btn-group">
+                        <button class="btn btn-success" onclick="window.location.href='dashboard.html'">
+                            <i class="fas fa-th-large"></i> Go to Dashboard
+                        </button>
                         <button class="btn btn-primary" onclick="window.location.href='memo-create.html'">← Go Back</button>
                         <button class="btn btn-danger" onclick="window.close()">Close</button>
                     </div>
@@ -813,6 +848,9 @@
                     <p>Memo not found with ID: <strong>${escapeHtml(memoId)}</strong></p>
                     <p style="margin-top: 10px;">Please check the memo ID and try again.</p>
                     <div class="btn-group">
+                        <button class="btn btn-success" onclick="window.location.href='dashboard.html'">
+                            <i class="fas fa-th-large"></i> Go to Dashboard
+                        </button>
                         <button class="btn btn-primary" onclick="window.location.href='memo-create.html'">← Go Back</button>
                         <button class="btn btn-danger" onclick="window.close()">Close</button>
                     </div>

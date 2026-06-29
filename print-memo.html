@@ -59,8 +59,14 @@
             border-radius: 12px;
             margin-top: 15px;
         }
-        .close-btn {
-            background: #1e4a6e;
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .btn {
             border: none;
             color: white;
             padding: 10px 24px;
@@ -68,11 +74,35 @@
             cursor: pointer;
             font-weight: 500;
             font-size: 14px;
-            margin-top: 20px;
             transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
         }
-        .close-btn:hover {
+        .btn-primary {
+            background: #1e4a6e;
+        }
+        .btn-primary:hover {
             background: #0f3b55;
+        }
+        .btn-secondary {
+            background: #6c7a89;
+        }
+        .btn-secondary:hover {
+            background: #4e5b67;
+        }
+        .btn-success {
+            background: #0f7b3a;
+        }
+        .btn-success:hover {
+            background: #0b5f2c;
+        }
+        .btn-danger {
+            background: #b91c1c;
+        }
+        .btn-danger:hover {
+            background: #8f1515;
         }
     </style>
     <script src="firebase-config.js"></script>
@@ -703,7 +733,10 @@
                 <div class="error">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Pop-up blocked! Please allow pop-ups for this site and try again.</p>
-                    <button class="close-btn" onclick="window.close()">Close</button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="window.location.href='memo-create.html'">← Go Back</button>
+                        <button class="btn btn-danger" onclick="window.close()">Close</button>
+                    </div>
                 </div>
             `;
         }
@@ -745,7 +778,10 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>No memo ID provided in the URL.</p>
                     <p style="margin-top: 10px;">Use: print-memo.html?memoId=1006</p>
-                    <button class="close-btn" onclick="window.close()">Close</button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="window.location.href='memo-create.html'">← Go Back</button>
+                        <button class="btn btn-danger" onclick="window.close()">Close</button>
+                    </div>
                 </div>
             `;
             return;
@@ -776,7 +812,10 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Memo not found with ID: <strong>${escapeHtml(memoId)}</strong></p>
                     <p style="margin-top: 10px;">Please check the memo ID and try again.</p>
-                    <button class="close-btn" onclick="window.close()">Close</button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="window.location.href='memo-create.html'">← Go Back</button>
+                        <button class="btn btn-danger" onclick="window.close()">Close</button>
+                    </div>
                 </div>
             `;
         }

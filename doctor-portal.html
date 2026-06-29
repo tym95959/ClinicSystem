@@ -139,6 +139,83 @@
         @keyframes pulseOnline { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
         @media (max-width: 700px) { .chat-panel { width: 320px; right: 16px; bottom: 16px; } .notification-toast { max-width: 300px; right: 10px; top: 10px; padding: 12px 16px; } .total-unread-badge { right: 16px; bottom: 80px; } }
         @media (max-width: 480px) { .chat-panel { width: 280px; right: 10px; bottom: 10px; } .notification-toast { max-width: 260px; right: 8px; top: 8px; padding: 10px 12px; } .total-unread-badge { right: 10px; bottom: 70px; font-size: 10px; padding: 4px 10px; } }
+
+        /* ===== NEW: Service search styles ===== */
+        .service-search-area { 
+            padding: 12px 16px; 
+            background: #f8fbfe; 
+            border-bottom: 1px solid #e2eaf0; 
+            display: flex; 
+            gap: 8px; 
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .service-search-input { 
+            flex: 1; 
+            min-width: 180px; 
+            padding: 8px 12px; 
+            border: 1.5px solid #e2eaf0; 
+            border-radius: 30px; 
+            font-size: 12px; 
+            outline: none; 
+        }
+        .service-search-input:focus { border-color: #0f5c7a; }
+        .service-search-btn { 
+            background: #0f5c7a; 
+            color: white; 
+            border: none; 
+            padding: 6px 16px; 
+            border-radius: 30px; 
+            font-size: 12px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .service-search-btn:hover { background: #1a6f8f; }
+        .service-results { 
+            max-height: 250px; 
+            overflow-y: auto; 
+            margin-top: 8px; 
+            background: white; 
+            border-radius: 12px; 
+            border: 1px solid #e2eaf0;
+        }
+        .service-result-item { 
+            padding: 8px 14px; 
+            border-bottom: 1px solid #eef2f7; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-size: 12px; 
+        }
+        .service-result-item:last-child { border-bottom: none; }
+        .service-result-item .code { font-weight: 700; color: #0f5c7a; font-size: 11px; background: #e0f2fe; padding: 2px 8px; border-radius: 12px; }
+        .service-result-item .name { flex: 1; margin: 0 10px; color: #0a2f44; }
+        .service-result-item .price { font-weight: 600; color: #0f5c7a; }
+        .service-result-empty { text-align: center; color: #8ba0b0; padding: 20px; font-size: 12px; }
+        .service-search-toggle { 
+            background: none; 
+            border: none; 
+            color: #0f5c7a; 
+            cursor: pointer; 
+            font-size: 13px; 
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .service-search-toggle:hover { background: #e0f2fe; }
+        .service-search-container { display: none; padding: 0 20px 12px 20px; }
+        .service-search-container.open { display: block; }
+        .service-search-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .service-search-header span { font-weight: 600; font-size: 13px; color: #0a2f44; }
+        .service-search-close { background: none; border: none; color: #8ba0b0; cursor: pointer; font-size: 14px; }
+        .service-search-close:hover { color: #c63d2f; }
     </style>
 </head>
 <body>
@@ -198,6 +275,26 @@
                     </button>
                     <div class="consulted-status" id="consultedStatus">
                         <i class="fas fa-check-circle"></i> Consultation completed
+                    </div>
+                </div>
+
+                <!-- ===== NEW: Service Search Section ===== -->
+                <div style="padding: 0 20px 12px 20px;">
+                    <button class="service-search-toggle" id="serviceSearchToggle">
+                        <i class="fas fa-search"></i> <span id="serviceToggleLabel">Search Services</span>
+                    </button>
+                    <div class="service-search-container" id="serviceSearchContainer">
+                        <div class="service-search-header">
+                            <span><i class="fas fa-tooth"></i> Find a Service</span>
+                            <button class="service-search-close" id="serviceSearchClose"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="service-search-area">
+                            <input type="text" id="serviceSearchInput" class="service-search-input" placeholder="Search by service name or code...">
+                            <button class="service-search-btn" id="serviceSearchBtn"><i class="fas fa-search"></i> Search</button>
+                        </div>
+                        <div id="serviceResults" class="service-results">
+                            <div class="service-result-empty">Enter a service name or code to search</div>
+                        </div>
                     </div>
                 </div>
 
@@ -346,22 +443,17 @@
             // ===== FIXED: CONVERT ANY DATE TO YYYY-MM-DD =====
             function toDateString(dateValue) {
                 if (!dateValue) return null;
-                // If it's a string, try to parse it as a date
                 if (typeof dateValue === 'string') {
-                    // Try to parse the string as a date
                     var d = new Date(dateValue);
                     if (!isNaN(d.getTime())) {
                         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                     }
-                    // If parsing fails, return the string as-is (fallback)
                     return dateValue;
                 }
-                // Firestore Timestamp
                 if (dateValue.toDate) {
                     var d = dateValue.toDate();
                     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                 }
-                // Object with seconds (e.g., from Firebase Realtime DB)
                 if (typeof dateValue === 'object' && dateValue.seconds) {
                     var d = new Date(dateValue.seconds * 1000);
                     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -371,7 +463,6 @@
 
             // ===== CHECK IF MEMO EXISTS FOR PATIENT & DATE (UPDATED) =====
             function memoExistsForPatientAndDate(patientId, dateStr) {
-                // Check allMemos (current doctor)
                 for (var i = 0; i < allMemos.length; i++) {
                     var memo = allMemos[i];
                     if (memo.patient && memo.patient.id === patientId) {
@@ -379,7 +470,6 @@
                         if (memoDateStr === dateStr) return true;
                     }
                 }
-                // Check patientMemos (all doctors)
                 for (var j = 0; j < patientMemos.length; j++) {
                     var memo = patientMemos[j];
                     if (memo.patient && memo.patient.id === patientId) {
@@ -402,7 +492,6 @@
                     return 'active';
                 }
 
-                // Check if there is any past memo (any date)
                 var hasPastMemo = false;
                 for (var i = 0; i < allMemos.length; i++) {
                     if (allMemos[i].patient && allMemos[i].patient.id === patientId) {
@@ -1540,6 +1629,131 @@
             }
             document.getElementById('nextPatientBtn').addEventListener('click', selectNextPatient);
             document.getElementById('consultBtn').addEventListener('click', handleConsult);
+
+            // ===== SERVICE SEARCH FUNCTIONALITY =====
+            var serviceSearchToggle = document.getElementById('serviceSearchToggle');
+            var serviceSearchContainer = document.getElementById('serviceSearchContainer');
+            var serviceSearchClose = document.getElementById('serviceSearchClose');
+            var serviceSearchInput = document.getElementById('serviceSearchInput');
+            var serviceSearchBtn = document.getElementById('serviceSearchBtn');
+            var serviceResults = document.getElementById('serviceResults');
+
+            // Toggle service search panel
+            serviceSearchToggle.addEventListener('click', function() {
+                serviceSearchContainer.classList.toggle('open');
+                var label = document.getElementById('serviceToggleLabel');
+                if (serviceSearchContainer.classList.contains('open')) {
+                    label.textContent = 'Hide Services';
+                    serviceSearchInput.focus();
+                } else {
+                    label.textContent = 'Search Services';
+                }
+            });
+
+            serviceSearchClose.addEventListener('click', function() {
+                serviceSearchContainer.classList.remove('open');
+                document.getElementById('serviceToggleLabel').textContent = 'Search Services';
+            });
+
+            // Search services function
+            async function searchServices(query) {
+                if (!firestoreDB) {
+                    serviceResults.innerHTML = '<div class="service-result-empty">Firebase not ready</div>';
+                    return;
+                }
+                if (!query.trim()) {
+                    serviceResults.innerHTML = '<div class="service-result-empty">Enter a service name or code to search</div>';
+                    return;
+                }
+
+                try {
+                    var q = query.trim().toLowerCase();
+                    var results = [];
+                    
+                    // Try to search by code first (exact match)
+                    var codeSnapshot = await firestoreDB.collection("services")
+                        .where("code", "==", q.toUpperCase())
+                        .limit(5)
+                        .get();
+                    
+                    codeSnapshot.forEach(function(doc) {
+                        results.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    // If no code match, search by name (using startAt/endAt for prefix match)
+                    if (results.length === 0) {
+                        // Search by name containing the query
+                        var nameSnapshot = await firestoreDB.collection("services")
+                            .orderBy("name")
+                            .startAt(q)
+                            .endAt(q + '\uf8ff')
+                            .limit(10)
+                            .get();
+                        
+                        nameSnapshot.forEach(function(doc) {
+                            results.push({ id: doc.id, ...doc.data() });
+                        });
+
+                        // If still no results, try a broader search using multiple terms
+                        if (results.length === 0) {
+                            var allServicesSnapshot = await firestoreDB.collection("services").limit(50).get();
+                            var allServices = [];
+                            allServicesSnapshot.forEach(function(doc) {
+                                allServices.push({ id: doc.id, ...doc.data() });
+                            });
+                            
+                            // Filter by name or code containing the query
+                            var terms = q.split(/\s+/);
+                            results = allServices.filter(function(service) {
+                                var nameLower = (service.name || '').toLowerCase();
+                                var codeLower = (service.code || '').toLowerCase();
+                                var found = false;
+                                for (var i = 0; i < terms.length; i++) {
+                                    if (nameLower.includes(terms[i]) || codeLower.includes(terms[i])) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                return found;
+                            }).slice(0, 10);
+                        }
+                    }
+
+                    // Render results
+                    if (results.length === 0) {
+                        serviceResults.innerHTML = '<div class="service-result-empty">No services found matching "' + escapeHtml(query) + '"</div>';
+                        return;
+                    }
+
+                    var html = '';
+                    for (var i = 0; i < results.length; i++) {
+                        var svc = results[i];
+                        var priceDisplay = svc.price ? 'MVR ' + svc.price.toFixed(2) : 'N/A';
+                        html += '<div class="service-result-item">' +
+                            '<span class="code">' + escapeHtml(svc.code || '—') + '</span>' +
+                            '<span class="name">' + escapeHtml(svc.name) + '</span>' +
+                            '<span class="price">' + priceDisplay + '</span>' +
+                            '</div>';
+                    }
+                    serviceResults.innerHTML = html;
+
+                } catch (error) {
+                    console.error('Service search error:', error);
+                    serviceResults.innerHTML = '<div class="service-result-empty">Error searching services: ' + error.message + '</div>';
+                }
+            }
+
+            // Search on button click
+            serviceSearchBtn.addEventListener('click', function() {
+                searchServices(serviceSearchInput.value);
+            });
+
+            // Search on Enter key
+            serviceSearchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchServices(serviceSearchInput.value);
+                }
+            });
 
             // ========== INIT ==========
             async function init() {

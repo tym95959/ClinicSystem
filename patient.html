@@ -160,6 +160,27 @@
             background: #cbdde9;
         }
 
+        .btn-danger {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-danger:hover {
+            background: #a93226;
+        }
+
+        .btn-danger:disabled {
+            background: #e6b0aa;
+            cursor: not-allowed;
+        }
+
         .btn-edit {
             background: #e0f2fe;
             color: #075985;
@@ -241,6 +262,18 @@
             font-size: 13px;
         }
 
+        .bulk-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .bulk-actions span {
+            font-size: 12px;
+            color: #5f7f9a;
+        }
+
         .patients-table {
             width: 100%;
             border-collapse: collapse;
@@ -260,12 +293,31 @@
             font-weight: 600;
             color: #1f4d6e;
             font-size: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .patients-table th:first-child {
+            width: 35px;
+        }
+
+        .patients-table td:first-child {
+            text-align: center;
         }
 
         .empty-row {
             text-align: center;
             padding: 40px;
             color: #8ba0b0;
+        }
+
+        .selected-count {
+            background: #e0f2fe;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         /* Datalist styling */
@@ -319,6 +371,10 @@
                 display: inline-block;
                 margin: 2px;
             }
+            .bulk-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
@@ -346,7 +402,6 @@
         </div>
 
         <form id="patientForm">
-            <!-- hidden firestore doc id for editing -->
             <input type="hidden" id="editFirestoreId" value="">
             
             <div class="form-group">
@@ -360,179 +415,9 @@
                     <div class="nationality-wrapper">
                         <input type="text" id="nationality" list="nationalityList" placeholder="Start typing or select nationality..." autocomplete="off">
                         <datalist id="nationalityList">
-                            <option value="Afghan">
-                            <option value="Albanian">
-                            <option value="Algerian">
-                            <option value="American">
-                            <option value="Andorran">
-                            <option value="Angolan">
-                            <option value="Argentine">
-                            <option value="Armenian">
-                            <option value="Australian">
-                            <option value="Austrian">
-                            <option value="Azerbaijani">
-                            <option value="Bahamian">
-                            <option value="Bahraini">
-                            <option value="Bangladeshi">
-                            <option value="Barbadian">
-                            <option value="Belarusian">
-                            <option value="Belgian">
-                            <option value="Belizean">
-                            <option value="Beninese">
-                            <option value="Bhutanese">
-                            <option value="Bolivian">
-                            <option value="Bosnian">
-                            <option value="Brazilian">
-                            <option value="British">
-                            <option value="Bruneian">
-                            <option value="Bulgarian">
-                            <option value="Burkinabe">
-                            <option value="Burmese">
-                            <option value="Burundian">
-                            <option value="Cambodian">
-                            <option value="Cameroonian">
-                            <option value="Canadian">
-                            <option value="Cape Verdean">
-                            <option value="Central African">
-                            <option value="Chadian">
-                            <option value="Chilean">
-                            <option value="Chinese">
-                            <option value="Colombian">
-                            <option value="Comorian">
-                            <option value="Congolese">
-                            <option value="Costa Rican">
-                            <option value="Croatian">
-                            <option value="Cuban">
-                            <option value="Cypriot">
-                            <option value="Czech">
-                            <option value="Danish">
-                            <option value="Djiboutian">
-                            <option value="Dominican">
-                            <option value="Dutch">
-                            <option value="Ecuadorian">
-                            <option value="Egyptian">
-                            <option value="Emirati">
-                            <option value="English">
-                            <option value="Equatorial Guinean">
-                            <option value="Eritrean">
-                            <option value="Estonian">
-                            <option value="Ethiopian">
-                            <option value="Fijian">
-                            <option value="Filipino">
-                            <option value="Finnish">
-                            <option value="French">
-                            <option value="Gabonese">
-                            <option value="Gambian">
-                            <option value="Georgian">
-                            <option value="German">
-                            <option value="Ghanaian">
-                            <option value="Greek">
-                            <option value="Grenadian">
-                            <option value="Guatemalan">
-                            <option value="Guinean">
-                            <option value="Guyanese">
-                            <option value="Haitian">
-                            <option value="Honduran">
-                            <option value="Hungarian">
-                            <option value="Icelandic">
-                            <option value="Indian">
-                            <option value="Indonesian">
-                            <option value="Iranian">
-                            <option value="Iraqi">
-                            <option value="Irish">
-                            <option value="Israeli">
-                            <option value="Italian">
-                            <option value="Ivorian">
-                            <option value="Jamaican">
-                            <option value="Japanese">
-                            <option value="Jordanian">
-                            <option value="Kazakh">
-                            <option value="Kenyan">
-                            <option value="Kuwaiti">
-                            <option value="Kyrgyz">
-                            <option value="Laotian">
-                            <option value="Latvian">
-                            <option value="Lebanese">
-                            <option value="Liberian">
-                            <option value="Libyan">
-                            <option value="Liechtensteiner">
-                            <option value="Lithuanian">
-                            <option value="Luxembourger">
-                            <option value="Macanese">
-                            <option value="Malagasy">
-                            <option value="Malawian">
-                            <option value="Malaysian">
-                            <option value="Maldivian">
-                            <option value="Malian">
-                            <option value="Maltese">
-                            <option value="Mauritian">
-                            <option value="Mexican">
-                            <option value="Moldovan">
-                            <option value="Monacan">
-                            <option value="Mongolian">
-                            <option value="Montenegrin">
-                            <option value="Moroccan">
-                            <option value="Mozambican">
-                            <option value="Namibian">
-                            <option value="Nepalese">
-                            <option value="New Zealander">
-                            <option value="Nicaraguan">
-                            <option value="Nigerian">
-                            <option value="North Korean">
-                            <option value="Norwegian">
-                            <option value="Omani">
-                            <option value="Pakistani">
-                            <option value="Palestinian">
-                            <option value="Panamanian">
-                            <option value="Papua New Guinean">
-                            <option value="Paraguayan">
-                            <option value="Peruvian">
-                            <option value="Polish">
-                            <option value="Portuguese">
-                            <option value="Qatari">
-                            <option value="Romanian">
-                            <option value="Russian">
-                            <option value="Rwandan">
-                            <option value="Saudi">
-                            <option value="Senegalese">
-                            <option value="Serbian">
-                            <option value="Seychellois">
-                            <option value="Sierra Leonean">
-                            <option value="Singaporean">
-                            <option value="Slovak">
-                            <option value="Slovenian">
-                            <option value="Somali">
-                            <option value="South African">
-                            <option value="South Korean">
-                            <option value="Spanish">
-                            <option value="Sri Lankan">
-                            <option value="Sudanese">
-                            <option value="Surinamese">
-                            <option value="Swazi">
-                            <option value="Swedish">
-                            <option value="Swiss">
-                            <option value="Syrian">
-                            <option value="Taiwanese">
-                            <option value="Tajik">
-                            <option value="Tanzanian">
-                            <option value="Thai">
-                            <option value="Togolese">
-                            <option value="Trinidadian">
-                            <option value="Tunisian">
-                            <option value="Turkish">
-                            <option value="Turkmen">
-                            <option value="Ugandan">
-                            <option value="Ukrainian">
-                            <option value="Uruguayan">
-                            <option value="Uzbek">
-                            <option value="Vatican">
-                            <option value="Venezuelan">
-                            <option value="Vietnamese">
-                            <option value="Yemeni">
-                            <option value="Zambian">
-                            <option value="Zimbabwean">
+                            <option value="Afghan"><option value="Albanian"><option value="Algerian"><option value="American"><option value="Andorran"><option value="Angolan"><option value="Argentine"><option value="Armenian"><option value="Australian"><option value="Austrian"><option value="Azerbaijani"><option value="Bahamian"><option value="Bahraini"><option value="Bangladeshi"><option value="Barbadian"><option value="Belarusian"><option value="Belgian"><option value="Belizean"><option value="Beninese"><option value="Bhutanese"><option value="Bolivian"><option value="Bosnian"><option value="Brazilian"><option value="British"><option value="Bruneian"><option value="Bulgarian"><option value="Burkinabe"><option value="Burmese"><option value="Burundian"><option value="Cambodian"><option value="Cameroonian"><option value="Canadian"><option value="Cape Verdean"><option value="Central African"><option value="Chadian"><option value="Chilean"><option value="Chinese"><option value="Colombian"><option value="Comorian"><option value="Congolese"><option value="Costa Rican"><option value="Croatian"><option value="Cuban"><option value="Cypriot"><option value="Czech"><option value="Danish"><option value="Djiboutian"><option value="Dominican"><option value="Dutch"><option value="Ecuadorian"><option value="Egyptian"><option value="Emirati"><option value="English"><option value="Equatorial Guinean"><option value="Eritrean"><option value="Estonian"><option value="Ethiopian"><option value="Fijian"><option value="Filipino"><option value="Finnish"><option value="French"><option value="Gabonese"><option value="Gambian"><option value="Georgian"><option value="German"><option value="Ghanaian"><option value="Greek"><option value="Grenadian"><option value="Guatemalan"><option value="Guinean"><option value="Guyanese"><option value="Haitian"><option value="Honduran"><option value="Hungarian"><option value="Icelandic"><option value="Indian"><option value="Indonesian"><option value="Iranian"><option value="Iraqi"><option value="Irish"><option value="Israeli"><option value="Italian"><option value="Ivorian"><option value="Jamaican"><option value="Japanese"><option value="Jordanian"><option value="Kazakh"><option value="Kenyan"><option value="Kuwaiti"><option value="Kyrgyz"><option value="Laotian"><option value="Latvian"><option value="Lebanese"><option value="Liberian"><option value="Libyan"><option value="Liechtensteiner"><option value="Lithuanian"><option value="Luxembourger"><option value="Macanese"><option value="Malagasy"><option value="Malawian"><option value="Malaysian"><option value="Maldivian"><option value="Malian"><option value="Maltese"><option value="Mauritian"><option value="Mexican"><option value="Moldovan"><option value="Monacan"><option value="Mongolian"><option value="Montenegrin"><option value="Moroccan"><option value="Mozambican"><option value="Namibian"><option value="Nepalese"><option value="New Zealander"><option value="Nicaraguan"><option value="Nigerian"><option value="North Korean"><option value="Norwegian"><option value="Omani"><option value="Pakistani"><option value="Palestinian"><option value="Panamanian"><option value="Papua New Guinean"><option value="Paraguayan"><option value="Peruvian"><option value="Polish"><option value="Portuguese"><option value="Qatari"><option value="Romanian"><option value="Russian"><option value="Rwandan"><option value="Saudi"><option value="Senegalese"><option value="Serbian"><option value="Seychellois"><option value="Sierra Leonean"><option value="Singaporean"><option value="Slovak"><option value="Slovenian"><option value="Somali"><option value="South African"><option value="South Korean"><option value="Spanish"><option value="Sri Lankan"><option value="Sudanese"><option value="Surinamese"><option value="Swazi"><option value="Swedish"><option value="Swiss"><option value="Syrian"><option value="Taiwanese"><option value="Tajik"><option value="Tanzanian"><option value="Thai"><option value="Togolese"><option value="Trinidadian"><option value="Tunisian"><option value="Turkish"><option value="Turkmen"><option value="Ugandan"><option value="Ukrainian"><option value="Uruguayan"><option value="Uzbek"><option value="Vatican"><option value="Venezuelan"><option value="Vietnamese"><option value="Yemeni"><option value="Zambian"><option value="Zimbabwean">
                         </datalist>
-                        <div class="nationality-hint">💡 Type to search or select from the list. You can also type any custom nationality.</div>
+                        <div class="nationality-hint">💡 Type to search or select from the list.</div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -572,17 +457,25 @@
     <div class="card">
         <div class="card-title">
             📋 Existing Patients
-            <button class="btn-secondary" id="refreshPatientsBtn">⟳ Refresh List</button>
+            <div>
+                <button class="btn-secondary" id="refreshPatientsBtn">⟳ Refresh List</button>
+            </div>
         </div>
 
         <div class="search-bar">
             <input type="text" id="searchPatientInput" placeholder="🔍 Search by name, ID, or contact...">
+            <div class="bulk-actions">
+                <span class="selected-count" id="selectedCount">0 selected</span>
+                <button class="btn-delete" id="deleteSelectedBtn" disabled>🗑️ Delete Selected</button>
+                <button class="btn-danger" id="deleteAllBtn">⚠️ Delete All Patients</button>
+            </div>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
             <table class="patients-table">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="selectAllCheckbox"></th>
                         <th>Patient ID</th>
                         <th>Full Name</th>
                         <th>ID/Passport</th>
@@ -592,7 +485,7 @@
                     </tr>
                 </thead>
                 <tbody id="patientsList">
-                    <tr class="empty-row"><td colspan="6">Loading patients...</td></tr>
+                    <tr class="empty-row"><td colspan="7">Loading patients...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -607,14 +500,26 @@
         window.location.href = 'login.html';
     }
     
+    let currentUserLevel = 'Staff';
     try {
         const user = JSON.parse(loggedInUser);
+        currentUserLevel = user.level || 'Staff';
         const header = document.querySelector('.clinic-header');
         const userSpan = document.createElement('div');
         userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
         userSpan.innerHTML = `👤 ${user.name || user.username} (${user.level})`;
         header.insertBefore(userSpan, header.children[1]);
     } catch(e) {}
+    
+    // ========== SUPERVISOR CHECK ==========
+    const isSupervisor = currentUserLevel === 'Supervisor';
+    if (!isSupervisor) {
+        // Hide delete all and delete selected buttons for non-supervisors
+        document.getElementById('deleteAllBtn').style.display = 'none';
+        document.getElementById('deleteSelectedBtn').style.display = 'none';
+        document.querySelector('.bulk-actions .selected-count').style.display = 'none';
+        document.getElementById('selectAllCheckbox').style.display = 'none';
+    }
     
     // ========== GLOBALS ==========
     let allPatients = [];
@@ -795,7 +700,6 @@
         saveBtn.textContent = '⏳ Saving...';
         
         try {
-            // Check if Maldivian (for Aasandha eligibility)
             const isCitizen = nationality.toLowerCase() === 'maldivian';
             const currentUser = JSON.parse(loggedInUser);
             const now = new Date().toISOString();
@@ -857,7 +761,7 @@
         if (!window.db) return;
         const tbody = document.getElementById('patientsList');
         if (!tbody) return;
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Loading patients...</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading patients...</td></tr>';
         
         try {
             const snapshot = await window.db.collection("patients").orderBy("createdAt", "desc").get();
@@ -865,7 +769,7 @@
             renderPatientsList(allPatients);
         } catch (error) {
             console.error("Error loading patients:", error);
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Error loading patients</td></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Error loading patients</td></tr>';
         }
     }
     
@@ -874,12 +778,13 @@
         if (!tbody) return;
         
         if (patients.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No patients found. Add your first patient above.</td></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No patients found. Add your first patient above.</td></tr>';
             return;
         }
         
         tbody.innerHTML = patients.map(p => `
             <tr>
+                <td>${isSupervisor ? `<input type="checkbox" class="patient-checkbox" data-firestore-id="${p.firestoreId}">` : ''}</td>
                 <td><strong>${escapeHtml(p.id || p.patientId || '—')}</strong></td>
                 <td>${escapeHtml(p.name)}</td>
                 <td>${escapeHtml(p.idNumber || '—')}</td>
@@ -892,6 +797,7 @@
             </tr>
         `).join('');
         
+        // Edit buttons
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const patientJson = btn.getAttribute('data-patient-json');
@@ -904,6 +810,7 @@
             });
         });
         
+        // Delete single button
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const firestoreId = btn.getAttribute('data-firestore-id');
@@ -913,6 +820,108 @@
                 }
             });
         });
+        
+        // Checkbox event listeners for bulk selection
+        document.querySelectorAll('.patient-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateBulkActions);
+        });
+        
+        updateBulkActions();
+    }
+    
+    // ========== BULK DELETE FUNCTIONS (Supervisor Only) ==========
+    function updateBulkActions() {
+        if (!isSupervisor) return;
+        const checkboxes = document.querySelectorAll('.patient-checkbox:checked');
+        const count = checkboxes.length;
+        document.getElementById('selectedCount').textContent = `${count} selected`;
+        document.getElementById('deleteSelectedBtn').disabled = count === 0;
+        
+        // Update select all checkbox state
+        const allCheckboxes = document.querySelectorAll('.patient-checkbox');
+        const selectAll = document.getElementById('selectAllCheckbox');
+        if (allCheckboxes.length > 0) {
+            const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+            selectAll.checked = allChecked;
+        }
+    }
+    
+    document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+        document.querySelectorAll('.patient-checkbox').forEach(cb => cb.checked = this.checked);
+        updateBulkActions();
+    });
+    
+    document.getElementById('deleteSelectedBtn').addEventListener('click', async function() {
+        if (!isSupervisor) return;
+        const selected = document.querySelectorAll('.patient-checkbox:checked');
+        if (selected.length === 0) return;
+        
+        const names = Array.from(selected).map(cb => {
+            const row = cb.closest('tr');
+            return row.querySelector('td:nth-child(3)').textContent.trim();
+        });
+        
+        if (!confirm(`Delete ${selected.length} selected patient(s):\n${names.join('\n')}\n\nThis cannot be undone!`)) return;
+        
+        const firestoreIds = Array.from(selected).map(cb => cb.getAttribute('data-firestore-id'));
+        await deleteMultiplePatients(firestoreIds);
+    });
+    
+    document.getElementById('deleteAllBtn').addEventListener('click', async function() {
+        if (!isSupervisor) return;
+        if (allPatients.length === 0) {
+            showMessage('No patients to delete.', 'info', 'listMessage');
+            return;
+        }
+        
+        if (!confirm(`⚠️ WARNING: This will delete ALL ${allPatients.length} patients permanently!\n\nType "DELETE ALL" to confirm.`)) return;
+        
+        const confirmText = prompt('Type "DELETE ALL" to confirm deletion of all patients:');
+        if (confirmText !== 'DELETE ALL') {
+            showMessage('Deletion cancelled.', 'info', 'listMessage');
+            return;
+        }
+        
+        const firestoreIds = allPatients.map(p => p.firestoreId);
+        await deleteMultiplePatients(firestoreIds);
+    });
+    
+    async function deleteMultiplePatients(firestoreIds) {
+        if (!window.db) return;
+        if (firestoreIds.length === 0) return;
+        
+        const deleteBtn = document.getElementById('deleteSelectedBtn');
+        const deleteAllBtn = document.getElementById('deleteAllBtn');
+        deleteBtn.disabled = true;
+        deleteAllBtn.disabled = true;
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const id of firestoreIds) {
+            try {
+                await window.db.collection("patients").doc(id).delete();
+                successCount++;
+            } catch (error) {
+                console.error(`Failed to delete ${id}:`, error);
+                failCount++;
+            }
+        }
+        
+        deleteBtn.disabled = false;
+        deleteAllBtn.disabled = false;
+        
+        if (successCount > 0) {
+            showMessage(`✅ Deleted ${successCount} patient(s). Failed: ${failCount}`, 'success', 'listMessage');
+            // If currently editing a deleted patient, reset form
+            if (editMode && firestoreIds.includes(currentEditFirestoreId)) {
+                resetFormToAddMode();
+                showMessage('Deleted patient was in edit mode. Form cleared.', 'info');
+            }
+            await loadAllPatients();
+        } else {
+            showMessage(`❌ Failed to delete patients. Check console.`, 'error', 'listMessage');
+        }
     }
     
     async function deletePatient(firestoreId, patientName) {
@@ -1000,7 +1009,7 @@
             console.log("Firebase ready, patients loaded.");
         } else {
             updateConnectionStatus(false);
-            document.getElementById('patientsList').innerHTML = '<tr class="empty-row"><td colspan="6">⚠️ Firebase not connected. Check config.</td></tr>';
+            document.getElementById('patientsList').innerHTML = '<tr class="empty-row"><td colspan="7">⚠️ Firebase not connected. Check config.</td></tr>';
         }
         
         const today = new Date().toISOString().split('T')[0];
@@ -1009,13 +1018,10 @@
         document.getElementById('searchPatientInput').addEventListener('input', searchPatients);
         document.getElementById('refreshPatientsBtn').addEventListener('click', loadAllPatients);
         
-        // Auto-detect nationality from input
         const nationalityInput = document.getElementById('nationality');
         nationalityInput.addEventListener('change', function() {
-            // When user selects or types, check if it's Maldivian
             const val = this.value.trim().toLowerCase();
-            const isCitizen = val === 'maldivian';
-            // You could add a visual indicator here if needed
+            // Optional: visual indicator for Maldivian
         });
     }
     

@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>Hope Dental | Admin Upload (Excel) - Services & Patients</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <!-- SheetJS for Excel parsing -->
+    <!-- SheetJS for Excel parsing & generation -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Firebase Config -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- Firebase Config (assumed to set window.db) -->
     <script src="firebase-config.js"></script>
     <style>
         * {
@@ -151,6 +151,20 @@
         .btn-secondary:hover {
             background: #cbdde9;
         }
+        .btn-download {
+            background: #20b2aa;
+            color: white;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        .btn-download:hover {
+            background: #178f87;
+        }
         .message {
             margin-top: 16px;
             padding: 12px;
@@ -218,6 +232,7 @@
             justify-content: flex-end;
             margin-top: 20px;
             flex-wrap: wrap;
+            align-items: center;
         }
         .stats-badge {
             background: #eef2ff;
@@ -225,6 +240,13 @@
             border-radius: 40px;
             font-size: 11px;
             font-weight: 500;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
         }
         @media (max-width: 700px) {
             .preview-table {
@@ -259,11 +281,15 @@
             Upload Services from Excel
             <span class="stats-badge" id="servicesCount">0 records in DB</span>
         </div>
+        <div class="flex-between" style="margin-bottom:12px;">
+            <button class="btn-download" id="downloadServicesFormatBtn"><i class="fas fa-download"></i> Download Format</button>
+            <span style="font-size:11px; color:#4d6a7e;">Columns: Service Name, Price (MVR), Aasandha Covered (Yes/No), Aasandha Cover Amount</span>
+        </div>
         <div class="upload-area" id="servicesUploadArea">
             <i class="fas fa-file-excel"></i>
             <div>Click or drag Excel file (.xlsx, .xls)</div>
             <div class="file-info">Expected columns: <strong>Service Name, Price (MVR), Aasandha Covered (Yes/No), Aasandha Cover Amount</strong></div>
-            <input type="file" id="servicesExcelInput" accept=".xlsx, .xls" style="display:none;">
+            <input type="file" id="servicesExcelInput" accept=".xlsx, .xls" style="display:none;" />
         </div>
         <div id="servicesPreviewContainer" style="display:none;">
             <div style="margin: 15px 0 8px;"><strong>📄 Preview (first 10 rows)</strong></div>
@@ -283,11 +309,15 @@
             Upload Patients from Excel
             <span class="stats-badge" id="patientsCount">0 records in DB</span>
         </div>
+        <div class="flex-between" style="margin-bottom:12px;">
+            <button class="btn-download" id="downloadPatientsFormatBtn"><i class="fas fa-download"></i> Download Format</button>
+            <span style="font-size:11px; color:#4d6a7e;">Columns: Patient ID, Full Name, Phone, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD)</span>
+        </div>
         <div class="upload-area" id="patientsUploadArea">
             <i class="fas fa-file-excel"></i>
             <div>Click or drag Excel file (.xlsx, .xls)</div>
             <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Phone, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD)</strong></div>
-            <input type="file" id="patientsExcelInput" accept=".xlsx, .xls" style="display:none;">
+            <input type="file" id="patientsExcelInput" accept=".xlsx, .xls" style="display:none;" />
         </div>
         <div id="patientsPreviewContainer" style="display:none;">
             <div style="margin: 15px 0 8px;"><strong>📄 Preview (first 10 rows)</strong></div>
@@ -334,7 +364,39 @@
         const patientsUploadArea = document.getElementById('patientsUploadArea');
         const patientsFileInput = document.getElementById('patientsExcelInput');
 
-        // Helper functions
+        // ========== DOWNLOAD FORMAT BUTTONS (using SheetJS) ==========
+        function downloadServicesFormat() {
+            const headers = ['Service Name', 'Price (MVR)', 'Aasandha Covered', 'Aasandha Cover Amount'];
+            const sample = [
+                ['Scaling & Polishing', 350, 'Yes', 200],
+                ['Root Canal', 1200, 'No', 0],
+                ['Tooth Extraction', 600, 'Yes', 400]
+            ];
+            const wsData = [headers, ...sample];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Services');
+            XLSX.writeFile(wb, 'HopeDental_Services_Template.xlsx');
+        }
+
+        function downloadPatientsFormat() {
+            const headers = ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth'];
+            const sample = [
+                ['P001', 'Ahmed Mohamed', '+960 7771234', 'Maldivian', 'Yes', 'A123456', '1990-05-15'],
+                ['P002', 'Fatima Ibrahim', '+960 9995678', 'Maldivian', 'Yes', 'B789012', '1985-11-02'],
+                ['P003', 'John Doe', '+960 7712345', 'British', 'No', 'GB987654', '2000-07-20']
+            ];
+            const wsData = [headers, ...sample];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Patients');
+            XLSX.writeFile(wb, 'HopeDental_Patients_Template.xlsx');
+        }
+
+        document.getElementById('downloadServicesFormatBtn').addEventListener('click', downloadServicesFormat);
+        document.getElementById('downloadPatientsFormatBtn').addEventListener('click', downloadPatientsFormat);
+
+        // ========== HELPER FUNCTIONS ==========
         function showMessage(containerId, msg, type) {
             const el = document.getElementById(containerId);
             if (el) {

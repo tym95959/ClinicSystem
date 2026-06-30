@@ -303,7 +303,7 @@
         <div id="servicesMessage" class="message" style="display:none;"></div>
     </div>
 
-    <!-- Patients Upload Card -->
+    <!-- Patients Upload Card (Address added) -->
     <div id="patientsTab" class="card" style="display:none;">
         <div class="card-title">
             Upload Patients from Excel
@@ -311,12 +311,12 @@
         </div>
         <div class="flex-between" style="margin-bottom:12px;">
             <button class="btn-download" id="downloadPatientsFormatBtn"><i class="fas fa-download"></i> Download Format</button>
-            <span style="font-size:11px; color:#4d6a7e;">Columns: Patient ID, Full Name, Phone, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD)</span>
+            <span style="font-size:11px; color:#4d6a7e;">Columns: Patient ID, Full Name, Phone, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</span>
         </div>
         <div class="upload-area" id="patientsUploadArea">
             <i class="fas fa-file-excel"></i>
             <div>Click or drag Excel file (.xlsx, .xls)</div>
-            <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Phone, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD)</strong></div>
+            <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Phone, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</strong></div>
             <input type="file" id="patientsExcelInput" accept=".xlsx, .xls" style="display:none;" />
         </div>
         <div id="patientsPreviewContainer" style="display:none;">
@@ -364,7 +364,7 @@
         const patientsUploadArea = document.getElementById('patientsUploadArea');
         const patientsFileInput = document.getElementById('patientsExcelInput');
 
-        // ========== DOWNLOAD FORMAT BUTTONS (using SheetJS) ==========
+        // ========== DOWNLOAD FORMAT BUTTONS (with Address for patients) ==========
         function downloadServicesFormat() {
             const headers = ['Service Name', 'Price (MVR)', 'Aasandha Covered', 'Aasandha Cover Amount'];
             const sample = [
@@ -380,11 +380,12 @@
         }
 
         function downloadPatientsFormat() {
-            const headers = ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth'];
+            // Address column added
+            const headers = ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth', 'Address'];
             const sample = [
-                ['P001', 'Ahmed Mohamed', '+960 7771234', 'Maldivian', 'Yes', 'A123456', '1990-05-15'],
-                ['P002', 'Fatima Ibrahim', '+960 9995678', 'Maldivian', 'Yes', 'B789012', '1985-11-02'],
-                ['P003', 'John Doe', '+960 7712345', 'British', 'No', 'GB987654', '2000-07-20']
+                ['P001', 'Ahmed Mohamed', '+960 7771234', 'Maldivian', 'Yes', 'A123456', '1990-05-15', 'Male\' City, Hithadhoo'],
+                ['P002', 'Fatima Ibrahim', '+960 9995678', 'Maldivian', 'Yes', 'B789012', '1985-11-02', 'Malé, Henveiru'],
+                ['P003', 'John Doe', '+960 7712345', 'British', 'No', 'GB987654', '2000-07-20', 'London, UK']
             ];
             const wsData = [headers, ...sample];
             const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -448,8 +449,10 @@
             let isCitizen = (isCitizenRaw === 'yes' || isCitizenRaw === 'true' || isCitizenRaw === '1' || isCitizenRaw === 'maldivian');
             let idNumber = (row['ID Card No'] || row['idNumber'] || row['nic'] || '').toString().trim();
             let dob = (row['Date of Birth'] || row['dob'] || '').toString().trim();
+            // Address field
+            let address = (row['Address'] || row['address'] || '').toString().trim();
             if (!id || !name) return null;
-            return { id, name, phone, nationality, isCitizen, idNumber, dob };
+            return { id, name, phone, nationality, isCitizen, idNumber, dob, address };
         }
 
         function renderPreviewTable(containerId, dataRows, headers) {
@@ -520,6 +523,7 @@
                         isCitizen: p.isCitizen || false,
                         idNumber: p.idNumber || '',
                         dob: p.dob || '',
+                        address: p.address || '',   // <-- Address field added
                         createdAt: new Date().toISOString()
                     });
                     success++;
@@ -584,7 +588,7 @@
             showMessage('servicesMessage', 'Cancelled', 'info');
         };
 
-        // ========== PATIENTS EVENT HANDLERS ==========
+        // ========== PATIENTS EVENT HANDLERS (Address included) ==========
         patientsUploadArea.addEventListener('click', () => patientsFileInput.click());
         patientsFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -592,7 +596,7 @@
             parseExcelToJson(file, (jsonData) => {
                 const mapped = jsonData.map(row => mapPatientsRow(row)).filter(r => r !== null);
                 if (mapped.length === 0) {
-                    showMessage('patientsMessage', 'No valid patient rows found. Check column names: Patient ID, Full Name, Phone, Nationality, Is Citizen, ID Card No, Date of Birth', 'error');
+                    showMessage('patientsMessage', 'No valid patient rows found. Check column names: Patient ID, Full Name, Phone, Nationality, Is Citizen, ID Card No, Date of Birth, Address', 'error');
                     return;
                 }
                 patientsData = mapped;
@@ -603,9 +607,10 @@
                     'Nationality': p.nationality,
                     'Is Citizen': p.isCitizen ? 'Yes' : 'No',
                     'ID Card No': p.idNumber,
-                    'Date of Birth': p.dob
+                    'Date of Birth': p.dob,
+                    'Address': p.address   // Address column
                 }));
-                renderPreviewTable('patientsPreviewTable', patientsPreviewRows, ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth']);
+                renderPreviewTable('patientsPreviewTable', patientsPreviewRows, ['Patient ID', 'Full Name', 'Phone', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth', 'Address']);
                 document.getElementById('patientsPreviewContainer').style.display = 'block';
                 showMessage('patientsMessage', `Loaded ${patientsData.length} patients. Click Upload to save.`, 'info');
             });

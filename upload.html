@@ -340,12 +340,12 @@
         </div>
         <div class="flex-between" style="margin-bottom:12px;">
             <button class="btn-download" id="downloadPatientsFormatBtn"><i class="fas fa-download"></i> Download Format</button>
-            <span style="font-size:11px; color:#4d6a7e;">Columns: Patient ID, Full Name, Contact (7 digits), Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</span>
+            <span style="font-size:11px; color:#4d6a7e;">Columns: Patient ID, Full Name, Contact (numerals only), Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</span>
         </div>
         <div class="upload-area" id="patientsUploadArea">
             <i class="fas fa-file-excel"></i>
             <div>Click or drag Excel file (.xlsx, .xls)</div>
-            <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Contact (7 digits), Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</strong></div>
+            <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Contact (numerals only), Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</strong></div>
             <input type="file" id="patientsExcelInput" accept=".xlsx, .xls" style="display:none;" />
         </div>
         <div id="patientsPreviewContainer" style="display:none;">
@@ -398,8 +398,9 @@
         // ========== CONTACT VALIDATION ==========
         function isValidContact(contact) {
             if (!contact) return false;
-            const digitsOnly = String(contact).replace(/\D/g, '');
-            return digitsOnly.length === 7;
+            const str = String(contact);
+            // Check if the string contains only digits
+            return /^\d+$/.test(str);
         }
 
         function formatContact(contact) {
@@ -425,9 +426,9 @@
         function downloadPatientsFormat() {
             const headers = ['Patient ID', 'Full Name', 'Contact', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth', 'Address'];
             const sample = [
-                ['P001', 'Ahmed Mohamed', '7654321', 'Maldivian', 'Yes', 'A123456', '1990-05-15', 'Male\' City, Hithadhoo'],
-                ['P002', 'Fatima Ibrahim', '7654322', 'Maldivian', 'Yes', 'B789012', '1985-11-02', 'Malé, Henveiru'],
-                ['P003', 'John Doe', '7654323', 'British', 'No', 'GB987654', '2000-07-20', 'London, UK']
+                ['P001', 'Ahmed Mohamed', '7771234', 'Maldivian', 'Yes', 'A123456', '1990-05-15', 'Male\' City, Hithadhoo'],
+                ['P002', 'Fatima Ibrahim', '9995678', 'Maldivian', 'Yes', 'B789012', '1985-11-02', 'Malé, Henveiru'],
+                ['P003', 'John Doe', '7712345', 'British', 'No', 'GB987654', '2000-07-20', 'London, UK']
             ];
             const wsData = [headers, ...sample];
             const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -493,7 +494,7 @@
             let dob = (row['Date of Birth'] || row['dob'] || '').toString().trim();
             let address = (row['Address'] || row['address'] || '').toString().trim();
             
-            // Validate contact - must be exactly 7 digits
+            // Validate contact - must contain only digits
             const formattedContact = formatContact(contact);
             const isValid = isValidContact(contact);
             
@@ -663,17 +664,17 @@
                     return;
                 }
                 
-                // Validate contacts
+                // Validate contacts - only check if they contain only digits
                 patientValidationErrors = [];
                 const errorIndices = [];
                 mapped.forEach((p, index) => {
                     if (!p.isValidContact) {
-                        patientValidationErrors.push(`Row ${index + 1}: "${p.originalContact}" is not a valid 7-digit contact number`);
+                        patientValidationErrors.push(`Row ${index + 1}: "${p.originalContact}" contains non-numeric characters`);
                         errorIndices.push(index);
                     }
                 });
                 
-                // Store valid patients only
+                // Store valid patients only (those with numeric contacts)
                 patientsData = mapped.filter(p => p.isValidContact);
                 
                 // Prepare preview data
@@ -691,7 +692,7 @@
                 // Show validation errors if any
                 const errorsDiv = document.getElementById('patientsValidationErrors');
                 if (patientValidationErrors.length > 0) {
-                    errorsDiv.innerHTML = `<strong>⚠️ ${patientValidationErrors.length} row(s) have invalid contact numbers (must be exactly 7 digits):</strong><ul>${patientValidationErrors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+                    errorsDiv.innerHTML = `<strong>⚠️ ${patientValidationErrors.length} row(s) have invalid contacts (must contain only digits):</strong><ul>${patientValidationErrors.map(e => `<li>${e}</li>`).join('')}</ul>`;
                     errorsDiv.className = 'validation-errors show';
                     document.getElementById('confirmPatientsUploadBtn').disabled = patientsData.length === 0;
                 } else {
@@ -704,7 +705,7 @@
                 document.getElementById('patientsPreviewContainer').style.display = 'block';
                 
                 if (patientsData.length === 0 && patientValidationErrors.length > 0) {
-                    showMessage('patientsMessage', '⚠️ No valid patients to upload. All rows have invalid contact numbers.', 'error');
+                    showMessage('patientsMessage', '⚠️ No valid patients to upload. All rows have invalid contacts (non-numeric characters).', 'error');
                 } else if (patientsData.length > 0) {
                     showMessage('patientsMessage', `Loaded ${patientsData.length} valid patients. ${patientValidationErrors.length} row(s) skipped due to invalid contact. Click Upload to save valid ones.`, 'info');
                 }

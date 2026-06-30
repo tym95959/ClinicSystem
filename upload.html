@@ -277,6 +277,23 @@
         .validation-errors li {
             margin: 4px 0;
         }
+        .debug-info {
+            background: #f0f4f8;
+            border: 1px solid #d0dae8;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 11px;
+            font-family: monospace;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .debug-info.show {
+            display: block;
+        }
         @media (max-width: 700px) {
             .preview-table {
                 font-size: 9px;
@@ -352,6 +369,7 @@
             <div style="margin: 15px 0 8px;"><strong>📄 Preview (first 10 rows)</strong></div>
             <div style="overflow-x:auto;"><table class="preview-table" id="patientsPreviewTable"></table></div>
             <div id="patientsValidationErrors" class="validation-errors"></div>
+            <div id="debugInfo" class="debug-info"></div>
             <div class="progress-bar" id="patientsProgressBar" style="display:none;"><div class="progress-fill" id="patientsProgressFill"></div></div>
             <div class="action-group">
                 <button class="btn-secondary" id="cancelPatientsBtn">Cancel</button>
@@ -394,6 +412,7 @@
         const servicesFileInput = document.getElementById('servicesExcelInput');
         const patientsUploadArea = document.getElementById('patientsUploadArea');
         const patientsFileInput = document.getElementById('patientsExcelInput');
+        const debugInfo = document.getElementById('debugInfo');
 
         // ========== CONTACT VALIDATION ==========
         function isValidContact(contact) {
@@ -407,6 +426,20 @@
         function formatContact(contact) {
             if (!contact) return '';
             return String(contact).replace(/\D/g, '');
+        }
+
+        function showDebug(msg) {
+            if (debugInfo) {
+                debugInfo.textContent += msg + '\n';
+                debugInfo.classList.add('show');
+            }
+        }
+
+        function clearDebug() {
+            if (debugInfo) {
+                debugInfo.textContent = '';
+                debugInfo.classList.remove('show');
+            }
         }
 
         // ========== DOWNLOAD FORMAT BUTTONS ==========
@@ -427,9 +460,9 @@
         function downloadPatientsFormat() {
             const headers = ['Patient ID', 'Full Name', 'Contact', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth', 'Address'];
             const sample = [
-                ['P001', 'Ahmed Mohamed', '7771234', 'Maldivian', 'Yes', 'A123456', '1990-05-15', 'Male\' City, Hithadhoo'],
+                ['P001', 'Ahmed Mohamed', '7744895', 'Maldivian', 'Yes', 'A123456', '1990-05-15', 'Male\' City, Hithadhoo'],
                 ['P002', 'Fatima Ibrahim', '9995678', 'Maldivian', 'Yes', 'B789012', '1985-11-02', 'Malé, Henveiru'],
-                ['P003', 'John Doe', '', 'British', 'No', 'GB987654', '2000-07-20', 'London, UK'] // Empty contact example
+                ['P003', 'John Doe', '', 'British', 'No', 'GB987654', '2000-07-20', 'London, UK']
             ];
             const wsData = [headers, ...sample];
             const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -484,10 +517,33 @@
             return { name: name.trim(), price, aasandhaCovered: covered, aasandhaCoverAmount: isNaN(coverAmount) ? 0 : coverAmount };
         }
 
-        function mapPatientsRow(row) {
+        function mapPatientsRow(row, rowIndex) {
+            // Get all possible column names for contact
+            let contact = '';
+            const possibleContactColumns = ['Contact', 'contact', 'Phone', 'phone', 'contactNo', 'Contact No', 'Contact Number', 'Mobile', 'mobile'];
+            
+            for (const col of possibleContactColumns) {
+                if (row[col] !== undefined && row[col] !== null && row[col] !== '') {
+                    contact = String(row[col]).trim();
+                    showDebug(`Row ${rowIndex + 1}: Found contact in column "${col}": "${contact}"`);
+                    break;
+                }
+            }
+            
+            // If still empty, check all columns for any value that looks like a phone number
+            if (!contact) {
+                for (const key in row) {
+                    const val = String(row[key]).trim();
+                    if (val && /^\d+$/.test(val) && val.length >= 5) {
+                        contact = val;
+                        showDebug(`Row ${rowIndex + 1}: Found contact in column "${key}": "${contact}" (auto-detected)`);
+                        break;
+                    }
+                }
+            }
+            
             let id = (row['Patient ID'] || row['patientId'] || row['id'] || '').toString().trim();
             let name = (row['Full Name'] || row['name'] || '').toString().trim();
-            let contact = (row['Contact'] || row['contactNo'] || row['phone'] || '').toString().trim();
             let nationality = (row['Nationality'] || row['nationality'] || '').toString().trim();
             let isCitizenRaw = (row['Is Citizen'] || row['isCitizen'] || row['citizen'] || '').toString().toLowerCase();
             let isCitizen = (isCitizenRaw === 'yes' || isCitizenRaw === 'true' || isCitizenRaw === '1' || isCitizenRaw === 'maldivian');
@@ -499,7 +555,12 @@
             const formattedContact = formatContact(contact);
             const isValid = isValidContact(contact);
             
-            if (!id || !name) return null;
+            showDebug(`Row ${rowIndex + 1}: ID="${id}", Name="${name}", Contact="${contact}", Formatted="${formattedContact}", Valid=${isValid}`);
+            
+            if (!id || !name) {
+                showDebug(`Row ${rowIndex + 1}: SKIPPED - Missing ID or Name`);
+                return null;
+            }
             
             return { 
                 id, 
@@ -658,8 +719,21 @@
         patientsFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            
+            clearDebug();
+            showDebug('=== FILE LOADED ===');
+            showDebug(`File name: ${file.name}`);
+            showDebug(`File size: ${file.size} bytes`);
+            
             parseExcelToJson(file, (jsonData) => {
-                const mapped = jsonData.map(row => mapPatientsRow(row)).filter(r => r !== null);
+                showDebug(`Total rows found: ${jsonData.length}`);
+                if (jsonData.length > 0) {
+                    showDebug('Column headers: ' + Object.keys(jsonData[0]).join(', '));
+                }
+                
+                const mapped = jsonData.map((row, index) => mapPatientsRow(row, index)).filter(r => r !== null);
+                showDebug(`Valid rows after filtering: ${mapped.length}`);
+                
                 if (mapped.length === 0) {
                     showMessage('patientsMessage', 'No valid patient rows found. Check column names: Patient ID, Full Name, Contact, Nationality, Is Citizen, ID Card No, Date of Birth, Address', 'error');
                     return;
@@ -683,6 +757,8 @@
                     // Otherwise, it must contain only digits
                     return p.isValidContact;
                 });
+                
+                showDebug(`Patients after validation: ${patientsData.length}`);
                 
                 // Prepare preview data
                 patientsPreviewRows = mapped.map(p => ({
@@ -717,6 +793,8 @@
                     const skippedCount = patientValidationErrors.length;
                     showMessage('patientsMessage', `Loaded ${patientsData.length} valid patients. ${skippedCount} row(s) skipped due to invalid contact. Click Upload to save valid ones.`, 'info');
                 }
+                
+                showDebug('=== DEBUG COMPLETE ===');
             });
         });
 
@@ -737,6 +815,7 @@
                 document.getElementById('patientsValidationErrors').className = 'validation-errors';
                 patientsFileInput.value = '';
                 updateCounters();
+                clearDebug();
             } else {
                 showMessage('patientsMessage', 'Upload failed. Check console.', 'error');
             }
@@ -750,6 +829,7 @@
             document.getElementById('patientsValidationErrors').className = 'validation-errors';
             patientsFileInput.value = '';
             showMessage('patientsMessage', 'Cancelled', 'info');
+            clearDebug();
         };
 
         // ========== TAB SWITCHING ==========

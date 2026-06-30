@@ -115,6 +115,28 @@
             box-shadow: 0 0 0 3px rgba(15, 107, 140, 0.1);
         }
 
+        .form-group input.error {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        }
+
+        .form-group .error-text {
+            color: #dc3545;
+            font-size: 11px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .form-group .error-text.show {
+            display: block;
+        }
+
+        .form-group .hint-text {
+            color: #6c757d;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -356,19 +378,6 @@
             margin-top: 4px;
         }
 
-        .debug-info {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 11px;
-            font-family: monospace;
-            max-height: 100px;
-            overflow-y: auto;
-            display: none;
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 0 16px;
@@ -449,9 +458,11 @@
                     <label>ID Card No / Passport No <span class="required">*</span></label>
                     <input type="text" id="idNumber" placeholder="e.g., A123456 or N1234567" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="contactGroup">
                     <label>Contact Number <span class="required">*</span></label>
-                    <input type="tel" id="contactNo" placeholder="e.g., +960 7XXXXXXX" required>
+                    <input type="tel" id="contactNo" placeholder="e.g., 7654321" required maxlength="7">
+                    <div class="error-text" id="contactError">Contact number must be exactly 7 digits (0-9).</div>
+                    <div class="hint-text">📱 Enter exactly 7 digits (e.g., 7654321)</div>
                 </div>
             </div>
 
@@ -551,6 +562,45 @@
         return window.db;
     }
     
+    // ========== CONTACT VALIDATION ==========
+    function validateContact(contact) {
+        // Remove any non-digit characters for validation
+        const digitsOnly = contact.replace(/\D/g, '');
+        return digitsOnly.length === 7 && /^\d{7}$/.test(digitsOnly);
+    }
+
+    function formatContactForDisplay(contact) {
+        // Remove non-digits for storage
+        return contact.replace(/\D/g, '');
+    }
+
+    // Real-time contact validation
+    document.getElementById('contactNo').addEventListener('input', function() {
+        const contact = this.value;
+        const errorEl = document.getElementById('contactError');
+        const group = document.getElementById('contactGroup');
+        
+        if (contact.length > 0 && !validateContact(contact)) {
+            this.classList.add('error');
+            errorEl.classList.add('show');
+            group.querySelector('.hint-text').style.color = '#dc3545';
+        } else {
+            this.classList.remove('error');
+            errorEl.classList.remove('show');
+            group.querySelector('.hint-text').style.color = '#6c757d';
+        }
+    });
+
+    document.getElementById('contactNo').addEventListener('blur', function() {
+        // Auto-format: remove non-digits
+        if (this.value) {
+            const digits = this.value.replace(/\D/g, '');
+            if (digits.length === 7) {
+                this.value = digits;
+            }
+        }
+    });
+
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type, containerId = 'messageBox') {
         const msgBox = document.getElementById(containerId);
@@ -618,7 +668,8 @@
     async function checkDuplicateContact(contactNo, excludeFirestoreId = null) {
         if (!contactNo) return false;
         const db = getDb();
-        let query = db.collection("patients").where("contactNo", "==", contactNo).limit(1);
+        const formattedContact = formatContactForDisplay(contactNo);
+        let query = db.collection("patients").where("contactNo", "==", formattedContact).limit(1);
         const snapshot = await query.get();
         if (snapshot.empty) return false;
         if (excludeFirestoreId) {
@@ -641,6 +692,12 @@
             showMessage('❌ Please enter contact number', 'error');
             return false;
         }
+        // Validate contact is exactly 7 digits
+        const digitsOnly = contactNo.replace(/\D/g, '');
+        if (digitsOnly.length !== 7) {
+            showMessage('❌ Contact number must be exactly 7 digits (e.g., 7654321)', 'error');
+            return false;
+        }
         if (!nationality || nationality.trim() === '') {
             showMessage('❌ Please enter or select nationality', 'error');
             return false;
@@ -657,6 +714,10 @@
         document.getElementById('email').value = '';
         document.getElementById('address').value = '';
         document.getElementById('editFirestoreId').value = '';
+        // Remove error state
+        document.getElementById('contactNo').classList.remove('error');
+        document.getElementById('contactError').classList.remove('show');
+        document.getElementById('contactGroup').querySelector('.hint-text').style.color = '#6c757d';
         editMode = false;
         currentEditFirestoreId = null;
         document.getElementById('formModeLabel').innerText = 'Register New Patient';
@@ -674,6 +735,10 @@
         document.getElementById('email').value = patient.email || '';
         document.getElementById('address').value = patient.address || '';
         document.getElementById('editFirestoreId').value = patient.firestoreId || '';
+        // Remove error state
+        document.getElementById('contactNo').classList.remove('error');
+        document.getElementById('contactError').classList.remove('show');
+        document.getElementById('contactGroup').querySelector('.hint-text').style.color = '#6c757d';
         editMode = true;
         currentEditFirestoreId = patient.firestoreId || '';
         document.getElementById('formModeLabel').innerText = '✏️ Edit Patient';
@@ -696,10 +761,13 @@
         const name = document.getElementById('patientName').value.trim();
         const nationality = document.getElementById('nationality').value.trim();
         const dob = document.getElementById('dob').value;
-        const idNumber = document.getElementById('idNumber').value.trim();
-        const contactNo = document.getElementById('contactNo').value.trim();
+        let idNumber = document.getElementById('idNumber').value.trim();
+        let contactNo = document.getElementById('contactNo').value.trim();
         const email = document.getElementById('email').value.trim();
         const address = document.getElementById('address').value.trim();
+        
+        // Format contact - remove non-digits
+        contactNo = formatContactForDisplay(contactNo);
         
         if (!validateForm(name, idNumber, contactNo, nationality)) return;
         

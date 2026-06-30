@@ -238,6 +238,12 @@
             display: block;
         }
 
+        .warning {
+            background: #fff3e0;
+            color: #e65100;
+            display: block;
+        }
+
         .status-badge {
             background: #fef7e0;
             padding: 8px 12px;
@@ -348,6 +354,19 @@
             font-size: 11px;
             color: #6c757d;
             margin-top: 4px;
+        }
+
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 11px;
+            font-family: monospace;
+            max-height: 100px;
+            overflow-y: auto;
+            display: none;
         }
 
         @media (max-width: 768px) {
@@ -500,9 +519,11 @@
     }
     
     let currentUserLevel = 'Staff';
+    let currentUsername = 'unknown';
     try {
         const user = JSON.parse(loggedInUser);
         currentUserLevel = user.level || 'Staff';
+        currentUsername = user.username || user.name || 'unknown';
         const header = document.querySelector('.clinic-header');
         const userSpan = document.createElement('div');
         userSpan.style.cssText = 'background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 11px;';
@@ -524,6 +545,7 @@
     let firebaseReady = false;
     let editMode = false;
     let currentEditFirestoreId = null;
+    let db = null;
     
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type, containerId = 'messageBox') {
@@ -557,7 +579,7 @@
     // ========== PATIENT ID GENERATION ==========
     async function generatePatientId() {
         try {
-            const patientsRef = window.db.collection("patients");
+            const patientsRef = db.collection("patients");
             const snapshot = await patientsRef.orderBy("createdAt", "desc").limit(1).get();
             let lastNumber = 0;
             if (!snapshot.empty) {
@@ -577,7 +599,7 @@
     // ========== DUPLICATE CHECKS ==========
     async function checkDuplicateIdNumber(idNumber, excludeFirestoreId = null) {
         if (!idNumber) return false;
-        let query = window.db.collection("patients").where("idNumber", "==", idNumber).limit(1);
+        let query = db.collection("patients").where("idNumber", "==", idNumber).limit(1);
         const snapshot = await query.get();
         if (snapshot.empty) return false;
         if (excludeFirestoreId) {
@@ -589,7 +611,7 @@
     
     async function checkDuplicateContact(contactNo, excludeFirestoreId = null) {
         if (!contactNo) return false;
-        let query = window.db.collection("patients").where("contactNo", "==", contactNo).limit(1);
+        let query = db.collection("patients").where("contactNo", "==", contactNo).limit(1);
         const snapshot = await query.get();
         if (snapshot.empty) return false;
         if (excludeFirestoreId) {
@@ -658,7 +680,7 @@
     document.getElementById('patientForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        if (!firebaseReady || !window.db) {
+        if (!firebaseReady || !db) {
             showMessage('❌ Firebase not ready. Please wait and try again.', 'error');
             return;
         }
@@ -699,7 +721,6 @@
         
         try {
             const isCitizen = nationality.toLowerCase() === 'maldivian';
-            const currentUser = JSON.parse(loggedInUser);
             const now = new Date().toISOString();
             
             if (editMode && currentEditFirestoreId) {
@@ -712,10 +733,10 @@
                     contactNo: contactNo,
                     email: email || '',
                     address: address || '',
-                    updatedBy: currentUser.username || 'unknown',
+                    updatedBy: currentUsername,
                     updatedAt: now
                 };
-                await window.db.collection("patients").doc(currentEditFirestoreId).update(updateData);
+                await db.collection("patients").doc(currentEditFirestoreId).update(updateData);
                 showMessage(`✅ Patient "${name}" updated successfully.`, 'success');
                 resetFormToAddMode();
                 loadAllPatients();
@@ -731,11 +752,11 @@
                     contactNo: contactNo,
                     email: email || '',
                     address: address || '',
-                    createdBy: currentUser.username || 'unknown',
+                    createdBy: currentUsername,
                     createdAt: now,
                     updatedAt: now
                 };
-                await window.db.collection("patients").add(patientData);
+                await db.collection("patients").add(patientData);
                 showMessage(`✅ Patient "${name}" registered! ID: ${patientId}`, 'success');
                 resetFormToAddMode();
                 loadAllPatients();
@@ -756,17 +777,21 @@
     
     // ========== LOAD & RENDER PATIENTS ==========
     async function loadAllPatients() {
-        if (!window.db) return;
+        if (!db) {
+            console.log('db not ready');
+            return;
+        }
         const tbody = document.getElementById('patientsList');
         if (!tbody) return;
         tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading patients...</td></tr>';
         
         try {
-            const snapshot = await window.db.collection("patients").orderBy("createdAt", "desc").get();
+            const snapshot = await db.collection("patients").orderBy("createdAt", "desc").get();
             allPatients = snapshot.docs.map(doc => ({ 
                 firestoreId: doc.id, 
                 ...doc.data() 
             }));
+            console.log('Loaded patients:', allPatients.length);
             renderPatientsList(allPatients);
         } catch (error) {
             console.error("Error loading patients:", error);
@@ -783,8 +808,10 @@
             return;
         }
         
-        tbody.innerHTML = patients.map(p => {
+        tbody.innerHTML = patients.map((p, index) => {
             const firestoreId = p.firestoreId || '';
+            // Log for debugging
+            console.log(`Patient ${index}: ${p.name}, firestoreId: ${firestoreId}`);
             return `
             <tr>
                 <td>${isSupervisor && firestoreId ? `<input type="checkbox" class="patient-checkbox" data-firestore-id="${firestoreId}">` : ''}</td>
@@ -794,7 +821,7 @@
                 <td>${escapeHtml(p.contactNo || '—')}</td>
                 <td>${escapeHtml(p.nationality || '—')}</td>
                 <td>
-                    ${firestoreId ? `<button class="btn-edit" data-firestore-id="${firestoreId}" data-patient-json='${escapeJson(JSON.stringify(p))}'>✏️ Edit</button>` : ''}
+                    ${firestoreId ? `<button class="btn-edit" data-firestore-id="${firestoreId}" data-patient-json='${escapeJson(JSON.stringify(p))}'>✏️ Edit</button>` : '<span style="color:#999;">No ID</span>'}
                     ${firestoreId ? `<button class="btn-delete" data-firestore-id="${firestoreId}" data-name="${escapeHtml(p.name)}">🗑️ Delete</button>` : ''}
                 </td>
             </tr>
@@ -818,6 +845,7 @@
             btn.addEventListener('click', async (e) => {
                 const firestoreId = btn.getAttribute('data-firestore-id');
                 const patientName = btn.getAttribute('data-name');
+                console.log('Delete clicked for:', firestoreId, patientName);
                 if (!firestoreId) {
                     showMessage('❌ Cannot delete: missing document ID', 'error', 'listMessage');
                     return;
@@ -891,7 +919,13 @@
             return;
         }
         
-        if (!confirm(`⚠️ WARNING: This will delete ALL ${allPatients.length} patients permanently!\n\nType "DELETE ALL" to confirm.`)) return;
+        const validPatients = allPatients.filter(p => p.firestoreId);
+        if (validPatients.length === 0) {
+            showMessage('No valid patient documents to delete.', 'warning', 'listMessage');
+            return;
+        }
+        
+        if (!confirm(`⚠️ WARNING: This will delete ALL ${validPatients.length} patients permanently!\n\nType "DELETE ALL" to confirm.`)) return;
         
         const confirmText = prompt('Type "DELETE ALL" to confirm deletion of all patients:');
         if (confirmText !== 'DELETE ALL') {
@@ -899,23 +933,21 @@
             return;
         }
         
-        const firestoreIds = allPatients.map(p => p.firestoreId).filter(id => id);
-        if (firestoreIds.length === 0) {
-            showMessage('No valid patient documents to delete.', 'warning', 'listMessage');
-            return;
-        }
-        
+        const firestoreIds = validPatients.map(p => p.firestoreId);
         await deleteMultiplePatients(firestoreIds);
     });
     
     async function deleteMultiplePatients(firestoreIds) {
-        if (!window.db) return;
-        if (firestoreIds.length === 0) return;
+        if (!db) return;
+        if (firestoreIds.length === 0) {
+            showMessage('No patients to delete.', 'warning', 'listMessage');
+            return;
+        }
         
         const deleteBtn = document.getElementById('deleteSelectedBtn');
         const deleteAllBtn = document.getElementById('deleteAllBtn');
-        deleteBtn.disabled = true;
-        deleteAllBtn.disabled = true;
+        if (deleteBtn) deleteBtn.disabled = true;
+        if (deleteAllBtn) deleteAllBtn.disabled = true;
         
         let successCount = 0;
         let failCount = 0;
@@ -926,16 +958,18 @@
                 continue;
             }
             try {
-                await window.db.collection("patients").doc(id).delete();
+                console.log('Deleting document:', id);
+                await db.collection("patients").doc(id).delete();
                 successCount++;
+                console.log('Successfully deleted:', id);
             } catch (error) {
                 console.error(`Failed to delete ${id}:`, error);
                 failCount++;
             }
         }
         
-        deleteBtn.disabled = false;
-        deleteAllBtn.disabled = false;
+        if (deleteBtn) deleteBtn.disabled = false;
+        if (deleteAllBtn) deleteAllBtn.disabled = false;
         
         if (successCount > 0) {
             showMessage(`✅ Deleted ${successCount} patient(s). Failed: ${failCount}`, 'success', 'listMessage');
@@ -945,19 +979,21 @@
             }
             await loadAllPatients();
         } else {
-            showMessage(`❌ Failed to delete patients. Check console.`, 'error', 'listMessage');
+            showMessage(`❌ Failed to delete patients. Check console for errors.`, 'error', 'listMessage');
         }
     }
     
     async function deletePatient(firestoreId, patientName) {
-        if (!window.db) return;
+        if (!db) return;
         if (!firestoreId) {
             showMessage('❌ Cannot delete: missing document ID', 'error', 'listMessage');
             return;
         }
         
         try {
-            await window.db.collection("patients").doc(firestoreId).delete();
+            console.log('Deleting patient:', firestoreId, patientName);
+            await db.collection("patients").doc(firestoreId).delete();
+            console.log('Delete successful');
             showMessage(`🗑️ Patient "${patientName}" deleted successfully.`, 'success', 'listMessage');
             if (editMode && currentEditFirestoreId === firestoreId) {
                 resetFormToAddMode();
@@ -1012,11 +1048,13 @@
     function waitForFirebase() {
         return new Promise((resolve) => {
             if (window.db) {
+                db = window.db;
                 firebaseReady = true;
                 resolve(true);
             } else {
                 const interval = setInterval(() => {
                     if (window.db) {
+                        db = window.db;
                         firebaseReady = true;
                         clearInterval(interval);
                         resolve(true);
@@ -1032,8 +1070,10 @@
     
     // ========== INIT ==========
     async function init() {
+        console.log('Initializing...');
         const ready = await waitForFirebase();
-        if (ready && window.db) {
+        console.log('Firebase ready:', ready);
+        if (ready && db) {
             updateConnectionStatus(true);
             await loadAllPatients();
             console.log("Firebase ready, patients loaded.");
@@ -1049,6 +1089,7 @@
         document.getElementById('refreshPatientsBtn').addEventListener('click', loadAllPatients);
     }
     
+    // Start the app
     init();
 </script>
 </body>

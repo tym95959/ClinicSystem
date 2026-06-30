@@ -545,7 +545,11 @@
     let firebaseReady = false;
     let editMode = false;
     let currentEditFirestoreId = null;
-    let db = null;
+    
+    // Use window.db from firebase-config.js
+    function getDb() {
+        return window.db;
+    }
     
     // ========== HELPER FUNCTIONS ==========
     function showMessage(msg, type, containerId = 'messageBox') {
@@ -579,6 +583,7 @@
     // ========== PATIENT ID GENERATION ==========
     async function generatePatientId() {
         try {
+            const db = getDb();
             const patientsRef = db.collection("patients");
             const snapshot = await patientsRef.orderBy("createdAt", "desc").limit(1).get();
             let lastNumber = 0;
@@ -599,6 +604,7 @@
     // ========== DUPLICATE CHECKS ==========
     async function checkDuplicateIdNumber(idNumber, excludeFirestoreId = null) {
         if (!idNumber) return false;
+        const db = getDb();
         let query = db.collection("patients").where("idNumber", "==", idNumber).limit(1);
         const snapshot = await query.get();
         if (snapshot.empty) return false;
@@ -611,6 +617,7 @@
     
     async function checkDuplicateContact(contactNo, excludeFirestoreId = null) {
         if (!contactNo) return false;
+        const db = getDb();
         let query = db.collection("patients").where("contactNo", "==", contactNo).limit(1);
         const snapshot = await query.get();
         if (snapshot.empty) return false;
@@ -680,6 +687,7 @@
     document.getElementById('patientForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const db = getDb();
         if (!firebaseReady || !db) {
             showMessage('❌ Firebase not ready. Please wait and try again.', 'error');
             return;
@@ -777,6 +785,7 @@
     
     // ========== LOAD & RENDER PATIENTS ==========
     async function loadAllPatients() {
+        const db = getDb();
         if (!db) {
             console.log('db not ready');
             return;
@@ -810,8 +819,6 @@
         
         tbody.innerHTML = patients.map((p, index) => {
             const firestoreId = p.firestoreId || '';
-            // Log for debugging
-            console.log(`Patient ${index}: ${p.name}, firestoreId: ${firestoreId}`);
             return `
             <tr>
                 <td>${isSupervisor && firestoreId ? `<input type="checkbox" class="patient-checkbox" data-firestore-id="${firestoreId}">` : ''}</td>
@@ -938,6 +945,7 @@
     });
     
     async function deleteMultiplePatients(firestoreIds) {
+        const db = getDb();
         if (!db) return;
         if (firestoreIds.length === 0) {
             showMessage('No patients to delete.', 'warning', 'listMessage');
@@ -984,6 +992,7 @@
     }
     
     async function deletePatient(firestoreId, patientName) {
+        const db = getDb();
         if (!db) return;
         if (!firestoreId) {
             showMessage('❌ Cannot delete: missing document ID', 'error', 'listMessage');
@@ -1048,13 +1057,11 @@
     function waitForFirebase() {
         return new Promise((resolve) => {
             if (window.db) {
-                db = window.db;
                 firebaseReady = true;
                 resolve(true);
             } else {
                 const interval = setInterval(() => {
                     if (window.db) {
-                        db = window.db;
                         firebaseReady = true;
                         clearInterval(interval);
                         resolve(true);
@@ -1073,7 +1080,7 @@
         console.log('Initializing...');
         const ready = await waitForFirebase();
         console.log('Firebase ready:', ready);
-        if (ready && db) {
+        if (ready && window.db) {
             updateConnectionStatus(true);
             await loadAllPatients();
             console.log("Firebase ready, patients loaded.");

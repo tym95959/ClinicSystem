@@ -123,6 +123,10 @@
             font-weight: 600;
             color: #1f4d6e;
         }
+        .preview-table td.error-cell {
+            background: #ffe9e9;
+            color: #b91c1c;
+        }
         .btn-primary {
             background: #0f5c7a;
             color: white;
@@ -137,6 +141,11 @@
         .btn-primary:hover {
             background: #08455c;
             transform: translateY(-1px);
+        }
+        .btn-primary:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
         }
         .btn-secondary {
             background: #e2eaf0;
@@ -248,6 +257,26 @@
             flex-wrap: wrap;
             gap: 12px;
         }
+        .validation-errors {
+            background: #fff3e0;
+            border: 1px solid #ffccbc;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 12px;
+            color: #e65100;
+            display: none;
+        }
+        .validation-errors.show {
+            display: block;
+        }
+        .validation-errors ul {
+            margin: 6px 0 0 20px;
+            padding: 0;
+        }
+        .validation-errors li {
+            margin: 4px 0;
+        }
         @media (max-width: 700px) {
             .preview-table {
                 font-size: 9px;
@@ -303,7 +332,7 @@
         <div id="servicesMessage" class="message" style="display:none;"></div>
     </div>
 
-    <!-- Patients Upload Card (Address added, Phone changed to Contact) -->
+    <!-- Patients Upload Card -->
     <div id="patientsTab" class="card" style="display:none;">
         <div class="card-title">
             Upload Patients from Excel
@@ -311,17 +340,18 @@
         </div>
         <div class="flex-between" style="margin-bottom:12px;">
             <button class="btn-download" id="downloadPatientsFormatBtn"><i class="fas fa-download"></i> Download Format</button>
-            <span style="font-size:11px; color:#4d6a7e;">Columns: Patient ID, Full Name, Contact, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</span>
+            <span style="font-size:11px; color:#4d6a7e;">Columns: Patient ID, Full Name, Contact (7 digits), Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</span>
         </div>
         <div class="upload-area" id="patientsUploadArea">
             <i class="fas fa-file-excel"></i>
             <div>Click or drag Excel file (.xlsx, .xls)</div>
-            <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Contact, Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</strong></div>
+            <div class="file-info">Expected columns: <strong>Patient ID, Full Name, Contact (7 digits), Nationality, Is Citizen (Yes/No), ID Card No, Date of Birth (YYYY-MM-DD), Address</strong></div>
             <input type="file" id="patientsExcelInput" accept=".xlsx, .xls" style="display:none;" />
         </div>
         <div id="patientsPreviewContainer" style="display:none;">
             <div style="margin: 15px 0 8px;"><strong>📄 Preview (first 10 rows)</strong></div>
             <div style="overflow-x:auto;"><table class="preview-table" id="patientsPreviewTable"></table></div>
+            <div id="patientsValidationErrors" class="validation-errors"></div>
             <div class="progress-bar" id="patientsProgressBar" style="display:none;"><div class="progress-fill" id="patientsProgressFill"></div></div>
             <div class="action-group">
                 <button class="btn-secondary" id="cancelPatientsBtn">Cancel</button>
@@ -358,11 +388,24 @@
         let db = null;
         let servicesData = [], patientsData = [];
         let servicesPreviewRows = [], patientsPreviewRows = [];
+        let patientValidationErrors = [];
 
         const servicesUploadArea = document.getElementById('servicesUploadArea');
         const servicesFileInput = document.getElementById('servicesExcelInput');
         const patientsUploadArea = document.getElementById('patientsUploadArea');
         const patientsFileInput = document.getElementById('patientsExcelInput');
+
+        // ========== CONTACT VALIDATION ==========
+        function isValidContact(contact) {
+            if (!contact) return false;
+            const digitsOnly = String(contact).replace(/\D/g, '');
+            return digitsOnly.length === 7;
+        }
+
+        function formatContact(contact) {
+            if (!contact) return '';
+            return String(contact).replace(/\D/g, '');
+        }
 
         // ========== DOWNLOAD FORMAT BUTTONS ==========
         function downloadServicesFormat() {
@@ -380,12 +423,11 @@
         }
 
         function downloadPatientsFormat() {
-            // Updated: Phone changed to Contact
             const headers = ['Patient ID', 'Full Name', 'Contact', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth', 'Address'];
             const sample = [
-                ['P001', 'Ahmed Mohamed', '+960 7771234', 'Maldivian', 'Yes', 'A123456', '1990-05-15', 'Male\' City, Hithadhoo'],
-                ['P002', 'Fatima Ibrahim', '+960 9995678', 'Maldivian', 'Yes', 'B789012', '1985-11-02', 'Malé, Henveiru'],
-                ['P003', 'John Doe', '+960 7712345', 'British', 'No', 'GB987654', '2000-07-20', 'London, UK']
+                ['P001', 'Ahmed Mohamed', '7654321', 'Maldivian', 'Yes', 'A123456', '1990-05-15', 'Male\' City, Hithadhoo'],
+                ['P002', 'Fatima Ibrahim', '7654322', 'Maldivian', 'Yes', 'B789012', '1985-11-02', 'Malé, Henveiru'],
+                ['P003', 'John Doe', '7654323', 'British', 'No', 'GB987654', '2000-07-20', 'London, UK']
             ];
             const wsData = [headers, ...sample];
             const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -404,7 +446,7 @@
                 el.innerText = msg;
                 el.className = `message ${type}`;
                 el.style.display = 'block';
-                setTimeout(() => el.style.display = 'none', 4000);
+                setTimeout(() => el.style.display = 'none', 5000);
             }
         }
 
@@ -443,7 +485,6 @@
         function mapPatientsRow(row) {
             let id = (row['Patient ID'] || row['patientId'] || row['id'] || '').toString().trim();
             let name = (row['Full Name'] || row['name'] || '').toString().trim();
-            // Changed from 'Phone' to 'Contact'
             let contact = (row['Contact'] || row['contactNo'] || row['phone'] || '').toString().trim();
             let nationality = (row['Nationality'] || row['nationality'] || '').toString().trim();
             let isCitizenRaw = (row['Is Citizen'] || row['isCitizen'] || row['citizen'] || '').toString().toLowerCase();
@@ -451,11 +492,28 @@
             let idNumber = (row['ID Card No'] || row['idNumber'] || row['nic'] || '').toString().trim();
             let dob = (row['Date of Birth'] || row['dob'] || '').toString().trim();
             let address = (row['Address'] || row['address'] || '').toString().trim();
+            
+            // Validate contact - must be exactly 7 digits
+            const formattedContact = formatContact(contact);
+            const isValid = isValidContact(contact);
+            
             if (!id || !name) return null;
-            return { id, name, contact, nationality, isCitizen, idNumber, dob, address };
+            
+            return { 
+                id, 
+                name, 
+                contact: formattedContact, 
+                originalContact: contact,
+                isValidContact: isValid,
+                nationality, 
+                isCitizen, 
+                idNumber, 
+                dob, 
+                address 
+            };
         }
 
-        function renderPreviewTable(containerId, dataRows, headers) {
+        function renderPreviewTable(containerId, dataRows, headers, errorRows = []) {
             const table = document.getElementById(containerId);
             if (!table) return;
             if (!dataRows.length) {
@@ -465,9 +523,14 @@
             let html = '<thead><tr>';
             headers.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
             html += '</tr></thead><tbody>';
-            dataRows.slice(0, 10).forEach(row => {
+            dataRows.slice(0, 10).forEach((row, index) => {
+                const isError = errorRows.includes(index);
                 html += '<tr>';
-                headers.forEach(h => html += `<td>${escapeHtml(row[h] !== undefined ? String(row[h]) : '—')}</td>`);
+                headers.forEach(h => {
+                    const cellValue = row[h] !== undefined ? String(row[h]) : '—';
+                    const errorClass = isError && h === 'Contact' ? ' class="error-cell"' : '';
+                    html += `<td${errorClass}>${escapeHtml(cellValue)}</td>`;
+                });
                 html += '</tr>';
             });
             if (dataRows.length > 10) html += '<tr><td colspan="'+headers.length+'" style="background:#fef9e3;">+ '+(dataRows.length-10)+' more rows not shown</td></tr>';
@@ -518,7 +581,7 @@
                     await docRef.set({
                         id: docId,
                         name: p.name,
-                        contact: p.contact || '',  // Changed from 'phone' to 'contact'
+                        contact: p.contact || '',
                         nationality: p.nationality || '',
                         isCitizen: p.isCitizen || false,
                         idNumber: p.idNumber || '',
@@ -599,25 +662,57 @@
                     showMessage('patientsMessage', 'No valid patient rows found. Check column names: Patient ID, Full Name, Contact, Nationality, Is Citizen, ID Card No, Date of Birth, Address', 'error');
                     return;
                 }
-                patientsData = mapped;
-                patientsPreviewRows = patientsData.map(p => ({
+                
+                // Validate contacts
+                patientValidationErrors = [];
+                const errorIndices = [];
+                mapped.forEach((p, index) => {
+                    if (!p.isValidContact) {
+                        patientValidationErrors.push(`Row ${index + 1}: "${p.originalContact}" is not a valid 7-digit contact number`);
+                        errorIndices.push(index);
+                    }
+                });
+                
+                // Store valid patients only
+                patientsData = mapped.filter(p => p.isValidContact);
+                
+                // Prepare preview data
+                patientsPreviewRows = mapped.map(p => ({
                     'Patient ID': p.id,
                     'Full Name': p.name,
-                    'Contact': p.contact,  // Changed from 'Phone' to 'Contact'
+                    'Contact': p.originalContact || p.contact,
                     'Nationality': p.nationality,
                     'Is Citizen': p.isCitizen ? 'Yes' : 'No',
                     'ID Card No': p.idNumber,
                     'Date of Birth': p.dob,
                     'Address': p.address
                 }));
-                renderPreviewTable('patientsPreviewTable', patientsPreviewRows, ['Patient ID', 'Full Name', 'Contact', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth', 'Address']);
+                
+                // Show validation errors if any
+                const errorsDiv = document.getElementById('patientsValidationErrors');
+                if (patientValidationErrors.length > 0) {
+                    errorsDiv.innerHTML = `<strong>⚠️ ${patientValidationErrors.length} row(s) have invalid contact numbers (must be exactly 7 digits):</strong><ul>${patientValidationErrors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+                    errorsDiv.className = 'validation-errors show';
+                    document.getElementById('confirmPatientsUploadBtn').disabled = patientsData.length === 0;
+                } else {
+                    errorsDiv.className = 'validation-errors';
+                    errorsDiv.innerHTML = '';
+                    document.getElementById('confirmPatientsUploadBtn').disabled = false;
+                }
+                
+                renderPreviewTable('patientsPreviewTable', patientsPreviewRows, ['Patient ID', 'Full Name', 'Contact', 'Nationality', 'Is Citizen', 'ID Card No', 'Date of Birth', 'Address'], errorIndices);
                 document.getElementById('patientsPreviewContainer').style.display = 'block';
-                showMessage('patientsMessage', `Loaded ${patientsData.length} patients. Click Upload to save.`, 'info');
+                
+                if (patientsData.length === 0 && patientValidationErrors.length > 0) {
+                    showMessage('patientsMessage', '⚠️ No valid patients to upload. All rows have invalid contact numbers.', 'error');
+                } else if (patientsData.length > 0) {
+                    showMessage('patientsMessage', `Loaded ${patientsData.length} valid patients. ${patientValidationErrors.length} row(s) skipped due to invalid contact. Click Upload to save valid ones.`, 'info');
+                }
             });
         });
 
         document.getElementById('confirmPatientsUploadBtn').onclick = async () => {
-            if (!patientsData.length) { showMessage('patientsMessage', 'No data to upload', 'warning'); return; }
+            if (!patientsData.length) { showMessage('patientsMessage', 'No valid data to upload', 'warning'); return; }
             const progressBar = document.getElementById('patientsProgressBar');
             const progressFill = document.getElementById('patientsProgressFill');
             progressBar.style.display = 'block';
@@ -625,10 +720,12 @@
             const result = await uploadPatientsToFirestore(patientsData, (percent) => { progressFill.style.width = `${percent}%`; });
             progressBar.style.display = 'none';
             if (result.success > 0) {
-                showMessage('patientsMessage', `✅ Uploaded ${result.success} patients. Failed: ${result.failed}`, 'success');
+                showMessage('patientsMessage', `✅ Uploaded ${result.success} patients. Failed: ${result.failed}. ${patientValidationErrors.length} row(s) skipped due to invalid contact.`, 'success');
                 patientsData = [];
                 patientsPreviewRows = [];
+                patientValidationErrors = [];
                 document.getElementById('patientsPreviewContainer').style.display = 'none';
+                document.getElementById('patientsValidationErrors').className = 'validation-errors';
                 patientsFileInput.value = '';
                 updateCounters();
             } else {
@@ -639,7 +736,9 @@
         document.getElementById('cancelPatientsBtn').onclick = () => {
             patientsData = [];
             patientsPreviewRows = [];
+            patientValidationErrors = [];
             document.getElementById('patientsPreviewContainer').style.display = 'none';
+            document.getElementById('patientsValidationErrors').className = 'validation-errors';
             patientsFileInput.value = '';
             showMessage('patientsMessage', 'Cancelled', 'info');
         };

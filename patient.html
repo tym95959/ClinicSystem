@@ -320,7 +320,6 @@
             font-weight: 500;
         }
 
-        /* Datalist styling */
         .nationality-wrapper {
             position: relative;
         }
@@ -514,7 +513,6 @@
     // ========== SUPERVISOR CHECK ==========
     const isSupervisor = currentUserLevel === 'Supervisor';
     if (!isSupervisor) {
-        // Hide delete all and delete selected buttons for non-supervisors
         document.getElementById('deleteAllBtn').style.display = 'none';
         document.getElementById('deleteSelectedBtn').style.display = 'none';
         document.querySelector('.bulk-actions .selected-count').style.display = 'none';
@@ -646,9 +644,9 @@
         document.getElementById('contactNo').value = patient.contactNo || '';
         document.getElementById('email').value = patient.email || '';
         document.getElementById('address').value = patient.address || '';
-        document.getElementById('editFirestoreId').value = patient.firestoreId;
+        document.getElementById('editFirestoreId').value = patient.firestoreId || '';
         editMode = true;
-        currentEditFirestoreId = patient.firestoreId;
+        currentEditFirestoreId = patient.firestoreId || '';
         document.getElementById('formModeLabel').innerText = '✏️ Edit Patient';
         document.getElementById('cancelEditBtn').style.display = 'inline-block';
         const saveBtn = document.getElementById('savePatientBtn');
@@ -704,7 +702,7 @@
             const currentUser = JSON.parse(loggedInUser);
             const now = new Date().toISOString();
             
-            if (editMode) {
+            if (editMode && currentEditFirestoreId) {
                 const updateData = {
                     name: name,
                     nationality: nationality,
@@ -765,7 +763,10 @@
         
         try {
             const snapshot = await window.db.collection("patients").orderBy("createdAt", "desc").get();
-            allPatients = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+            allPatients = snapshot.docs.map(doc => ({ 
+                firestoreId: doc.id, 
+                ...doc.data() 
+            }));
             renderPatientsList(allPatients);
         } catch (error) {
             console.error("Error loading patients:", error);
@@ -782,20 +783,22 @@
             return;
         }
         
-        tbody.innerHTML = patients.map(p => `
+        tbody.innerHTML = patients.map(p => {
+            const firestoreId = p.firestoreId || '';
+            return `
             <tr>
-                <td>${isSupervisor ? `<input type="checkbox" class="patient-checkbox" data-firestore-id="${p.firestoreId}">` : ''}</td>
+                <td>${isSupervisor && firestoreId ? `<input type="checkbox" class="patient-checkbox" data-firestore-id="${firestoreId}">` : ''}</td>
                 <td><strong>${escapeHtml(p.id || p.patientId || '—')}</strong></td>
                 <td>${escapeHtml(p.name)}</td>
                 <td>${escapeHtml(p.idNumber || '—')}</td>
                 <td>${escapeHtml(p.contactNo || '—')}</td>
                 <td>${escapeHtml(p.nationality || '—')}</td>
                 <td>
-                    <button class="btn-edit" data-firestore-id="${p.firestoreId}" data-patient-json='${escapeJson(JSON.stringify(p))}'>✏️ Edit</button>
-                    <button class="btn-delete" data-firestore-id="${p.firestoreId}" data-name="${escapeHtml(p.name)}">🗑️ Delete</button>
+                    ${firestoreId ? `<button class="btn-edit" data-firestore-id="${firestoreId}" data-patient-json='${escapeJson(JSON.stringify(p))}'>✏️ Edit</button>` : ''}
+                    ${firestoreId ? `<button class="btn-delete" data-firestore-id="${firestoreId}" data-name="${escapeHtml(p.name)}">🗑️ Delete</button>` : ''}
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
         
         // Edit buttons
         document.querySelectorAll('.btn-edit').forEach(btn => {
@@ -815,6 +818,10 @@
             btn.addEventListener('click', async (e) => {
                 const firestoreId = btn.getAttribute('data-firestore-id');
                 const patientName = btn.getAttribute('data-name');
+                if (!firestoreId) {
+                    showMessage('❌ Cannot delete: missing document ID', 'error', 'listMessage');
+                    return;
+                }
                 if (confirm(`Delete patient "${patientName}" permanently? This cannot be undone.`)) {
                     await deletePatient(firestoreId, patientName);
                 }
@@ -837,7 +844,6 @@
         document.getElementById('selectedCount').textContent = `${count} selected`;
         document.getElementById('deleteSelectedBtn').disabled = count === 0;
         
-        // Update select all checkbox state
         const allCheckboxes = document.querySelectorAll('.patient-checkbox');
         const selectAll = document.getElementById('selectAllCheckbox');
         if (allCheckboxes.length > 0) {
@@ -856,14 +862,25 @@
         const selected = document.querySelectorAll('.patient-checkbox:checked');
         if (selected.length === 0) return;
         
-        const names = Array.from(selected).map(cb => {
-            const row = cb.closest('tr');
-            return row.querySelector('td:nth-child(3)').textContent.trim();
+        const firestoreIds = [];
+        const names = [];
+        selected.forEach(cb => {
+            const id = cb.getAttribute('data-firestore-id');
+            if (id) {
+                firestoreIds.push(id);
+                const row = cb.closest('tr');
+                const nameCell = row?.querySelector('td:nth-child(3)');
+                if (nameCell) names.push(nameCell.textContent.trim());
+            }
         });
         
-        if (!confirm(`Delete ${selected.length} selected patient(s):\n${names.join('\n')}\n\nThis cannot be undone!`)) return;
+        if (firestoreIds.length === 0) {
+            showMessage('No valid patients selected for deletion.', 'warning', 'listMessage');
+            return;
+        }
         
-        const firestoreIds = Array.from(selected).map(cb => cb.getAttribute('data-firestore-id'));
+        if (!confirm(`Delete ${firestoreIds.length} selected patient(s):\n${names.join('\n')}\n\nThis cannot be undone!`)) return;
+        
         await deleteMultiplePatients(firestoreIds);
     });
     
@@ -882,7 +899,12 @@
             return;
         }
         
-        const firestoreIds = allPatients.map(p => p.firestoreId);
+        const firestoreIds = allPatients.map(p => p.firestoreId).filter(id => id);
+        if (firestoreIds.length === 0) {
+            showMessage('No valid patient documents to delete.', 'warning', 'listMessage');
+            return;
+        }
+        
         await deleteMultiplePatients(firestoreIds);
     });
     
@@ -899,6 +921,10 @@
         let failCount = 0;
         
         for (const id of firestoreIds) {
+            if (!id) {
+                failCount++;
+                continue;
+            }
             try {
                 await window.db.collection("patients").doc(id).delete();
                 successCount++;
@@ -913,7 +939,6 @@
         
         if (successCount > 0) {
             showMessage(`✅ Deleted ${successCount} patient(s). Failed: ${failCount}`, 'success', 'listMessage');
-            // If currently editing a deleted patient, reset form
             if (editMode && firestoreIds.includes(currentEditFirestoreId)) {
                 resetFormToAddMode();
                 showMessage('Deleted patient was in edit mode. Form cleared.', 'info');
@@ -926,6 +951,11 @@
     
     async function deletePatient(firestoreId, patientName) {
         if (!window.db) return;
+        if (!firestoreId) {
+            showMessage('❌ Cannot delete: missing document ID', 'error', 'listMessage');
+            return;
+        }
+        
         try {
             await window.db.collection("patients").doc(firestoreId).delete();
             showMessage(`🗑️ Patient "${patientName}" deleted successfully.`, 'success', 'listMessage');
@@ -933,7 +963,7 @@
                 resetFormToAddMode();
                 showMessage('Deleted patient was in edit mode. Form cleared.', 'info');
             }
-            loadAllPatients();
+            await loadAllPatients();
         } catch (error) {
             console.error("Delete error:", error);
             showMessage(`❌ Failed to delete: ${error.message}`, 'error', 'listMessage');
@@ -1017,12 +1047,6 @@
         
         document.getElementById('searchPatientInput').addEventListener('input', searchPatients);
         document.getElementById('refreshPatientsBtn').addEventListener('click', loadAllPatients);
-        
-        const nationalityInput = document.getElementById('nationality');
-        nationalityInput.addEventListener('change', function() {
-            const val = this.value.trim().toLowerCase();
-            // Optional: visual indicator for Maldivian
-        });
     }
     
     init();

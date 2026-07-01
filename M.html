@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Hope Dental · Memos (Edit & Delete)</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',system-ui,'Segoe UI',Roboto,sans-serif; }
+    body { background:#eef2f7; min-height:100vh; }
+    .clinic-header { background:linear-gradient(90deg,#ffffff 0%,#20b2aa 100%); color:#004d4d; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+    .logo h2 { font-size:1.1rem; display:flex; align-items:center; gap:6px; }
+    .back-btn { background:#1e4a6e; border:none; color:white; padding:5px 14px; border-radius:30px; cursor:pointer; font-weight:500; font-size:11px; transition:0.2s; }
+    .back-btn:hover { background:#0f3b55; }
+    .container { max-width:1400px; margin:20px auto; padding:0 20px; }
+    .card { background:white; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.05); padding:20px 24px; border:1px solid #e2eaf0; }
+    .card-title { font-size:1.2rem; font-weight:600; color:#0a2f44; margin-bottom:20px; border-left:4px solid #0f5c7a; padding-left:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+    .filter-bar { background:#f8fafd; border-radius:20px; padding:15px 18px; margin-bottom:25px; border:1px solid #e0e9f0; }
+    .filter-row { display:flex; flex-wrap:wrap; align-items:flex-end; gap:15px; margin-bottom:15px; }
+    .filter-group { display:flex; flex-direction:column; gap:5px; flex:1; min-width:140px; }
+    .filter-group label { font-size:11px; font-weight:600; color:#1f4d6e; letter-spacing:0.3px; }
+    .filter-group input,.filter-group .flatpickr-input { padding:8px 12px; border:1.5px solid #dce5ec; border-radius:30px; font-size:13px; background:white; }
+    .search-group { flex:2; min-width:200px; }
+    .action-buttons { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .primary-filter-btn { background:#0f5c7a; color:white; border:none; padding:8px 24px; border-radius:30px; cursor:pointer; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:8px; }
+    .secondary-btn { background:#eef2f7; border:1px solid #cbdde9; color:#1f4d6e; padding:8px 18px; border-radius:30px; cursor:pointer; font-size:12px; }
+    .quick-presets { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:5px; }
+    .quick-btn { background:white; border:1px solid #cbdde9; padding:5px 12px; border-radius:30px; font-size:11px; cursor:pointer; }
+    .quick-btn:hover { background:#e0f2fe; }
+    .memos-table { width:100%; border-collapse:collapse; margin-top:10px; }
+    .memos-table th,.memos-table td { padding:12px 8px; text-align:left; border-bottom:1px solid #e9edf2; font-size:13px; vertical-align:middle; }
+    .memos-table th { background:#f4f9fe; font-weight:600; color:#1f4d6e; }
+    .print-btn { background:#e0f2fe; color:#0f5c7a; border:none; padding:5px 12px; border-radius:20px; cursor:pointer; font-size:11px; }
+    .print-btn:hover { background:#cbdde9; }
+    .edit-btn { background:#fef3c7; color:#92400e; border:none; padding:5px 12px; border-radius:20px; cursor:pointer; font-size:11px; margin-right:4px; }
+    .edit-btn:hover { background:#fde68a; }
+    .delete-btn { background:#fee2e2; color:#991b1b; border:none; padding:5px 12px; border-radius:20px; cursor:pointer; font-size:11px; }
+    .delete-btn:hover { background:#fecaca; }
+    .empty-row { text-align:center; padding:40px; color:#8ba0b0; }
+    .message { margin-top:15px; padding:10px; border-radius:16px; text-align:center; font-size:12px; }
+    .success { background:#e0f7ef; color:#146b3a; }
+    .error { background:#ffe9e9; color:#b91c1c; }
+    .info { background:#e0f2fe; color:#075985; }
+    .stats-badge { background:#e0f2fe; padding:4px 12px; border-radius:30px; font-size:12px; font-weight:500; }
+    .inline-edit-input { border:1px solid #0f5c7a; border-radius:12px; padding:2px 6px; font-size:12px; width:100px; background:#fafffe; }
+    @media (max-width:768px) { .memos-table { font-size:11px; } .memos-table th,.memos-table td { padding:8px 4px; } .filter-row { flex-direction:column; align-items:stretch; } }
+  </style>
+</head>
+<body>
+<div class="clinic-header">
+  <div class="logo"><h2>📄 Hope Dental · Memos (Edit/Delete)</h2></div>
+  <div>
+    <button class="back-btn" onclick="window.location.href='clinicdash.html'">← Dashboard</button>
+    <button class="back-btn" onclick="logout()">🚪 Logout</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title">
+      📋 Clinical Memos
+      <button class="back-btn" id="refreshDataBtn" style="background:#1e4a6e;">⟳ Reload Data</button>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group"><label><i class="far fa-calendar-alt"></i> From Date</label><input type="text" id="startDate" placeholder="Select start date" autocomplete="off"></div>
+        <div class="filter-group"><label><i class="far fa-calendar-check"></i> To Date</label><input type="text" id="endDate" placeholder="Select end date" autocomplete="off"></div>
+        <div class="filter-group search-group"><label><i class="fas fa-search"></i> Search (Memo ID / Patient)</label><input type="text" id="searchInput" placeholder="e.g., #MEMO123 or John..."></div>
+        <div class="action-buttons">
+          <button id="applyFilterBtn" class="primary-filter-btn"><i class="fas fa-filter"></i> Apply Filters</button>
+          <button id="clearFiltersBtn" class="secondary-btn"><i class="fas fa-eraser"></i> Clear</button>
+        </div>
+      </div>
+      <div class="quick-presets">
+        <span style="font-size:11px; color:#5f7f9a;">Quick date presets:</span>
+        <button id="todayBtn" class="quick-btn">Today</button>
+        <button id="weekBtn" class="quick-btn">This Week</button>
+        <button id="monthBtn" class="quick-btn">This Month</button>
+        <button id="allTimeBtn" class="quick-btn">All Time</button>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+      <div class="stats-badge" id="resultStats">No filters applied → press "Apply"</div>
+      <div style="font-size:11px; color:#6c8eae;"><i class="fas fa-info-circle"></i> Click memo ID to edit, 🗑️ to delete</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="memos-table">
+        <thead><tr><th>Memo ID</th><th>Date</th><th>Patient Name</th><th>ID/Passport</th><th>Doctor</th><th>Total (MVR)</th><th>Paid</th><th>Balance</th><th>Actions</th></tr></thead>
+        <tbody id="memosTbody"><tr class="empty-row"><td colspan="9">💡 Set filters and click "Apply Filters"</td></tr></tbody>
+      </table>
+    </div>
+    <div id="messageBox" class="message" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+  // Auth check
+  const loggedInUser = localStorage.getItem('loggedInUser');
+  if (!loggedInUser) window.location.href = 'login.html';
+  try {
+    const user = JSON.parse(loggedInUser);
+    const header = document.querySelector('.clinic-header');
+    const userSpan = document.createElement('div');
+    userSpan.style.cssText = 'background:rgba(255,255,255,0.15); padding:5px 12px; border-radius:20px; font-size:11px;';
+    userSpan.innerHTML = `👤 ${user.name || user.username} (${user.level})`;
+    header.insertBefore(userSpan, header.children[1]);
+  } catch(e) {}
+
+  // Globals
+  let allMemos = [];
+  let currentDisplayMemos = [];
+  let pendingStartDate = null, pendingEndDate = null, pendingSearchQuery = '';
+  let startPicker, endPicker;
+
+  function showMessage(msg, type) {
+    const box = document.getElementById('messageBox');
+    box.innerText = msg;
+    box.className = `message ${type}`;
+    box.style.display = 'block';
+    setTimeout(() => { box.style.display = 'none'; box.innerText = ''; }, 4000);
+  }
+
+  function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+
+  function parseMemoDate(memo) {
+    if (memo.date) { let p = new Date(memo.date); if (!isNaN(p)) return p; }
+    if (memo.timestamp) {
+      if (typeof memo.timestamp === 'object' && memo.timestamp.toDate) return memo.timestamp.toDate();
+      if (typeof memo.timestamp === 'number') return new Date(memo.timestamp);
+      if (typeof memo.timestamp === 'string') return new Date(memo.timestamp);
+    }
+    if (memo.createdAt) { let p = new Date(memo.createdAt); if (!isNaN(p)) return p; }
+    return null;
+  }
+
+  function getActiveInsurances(memo) {
+    const insurances = memo.insurances || [];
+    const billing = memo.billing || {};
+    const results = [];
+    insurances.forEach(ins => {
+      let amount = ins.amount || 0;
+      if (amount === 0 && ins.priority === 'primary') amount = billing.primaryInsurancePayment || 0;
+      if (amount === 0 && ins.priority === 'secondary') amount = billing.aasandhaPayment || 0;
+      if (amount > 0) results.push({ name: ins.name || 'Insurance', amount, priority: ins.priority || 'primary' });
+    });
+    if (results.length === 0) {
+      if (billing.primaryInsurancePayment > 0) results.push({ name: 'Primary Insurance', amount: billing.primaryInsurancePayment, priority: 'primary' });
+      if (billing.aasandhaPayment > 0) results.push({ name: 'Aasandha', amount: billing.aasandhaPayment, priority: 'secondary' });
+    }
+    return results;
+  }
+
+  function getMemoHeading(memo) {
+    const services = memo.services || [];
+    if (services.length === 0) return 'Service Memo';
+    const firstService = services[0];
+    const serviceName = firstService.name || '';
+    if (serviceName.toLowerCase().includes('consultation')) return 'Consultation Memo';
+    return 'Service Memo';
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try { const d = new Date(dateStr); if (isNaN(d)) return dateStr; return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }); } catch(e) { return dateStr; }
+  }
+
+  // ---------- FILTER ----------
+  function computeFilteredMemos() {
+    if (!allMemos.length) return [];
+    let filtered = [...allMemos];
+    if (pendingStartDate || pendingEndDate) {
+      filtered = filtered.filter(memo => {
+        const d = parseMemoDate(memo);
+        if (!d) return false;
+        const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        if (pendingStartDate && pendingStartDate > day) return false;
+        if (pendingEndDate) {
+          const endDay = new Date(pendingEndDate.getFullYear(), pendingEndDate.getMonth(), pendingEndDate.getDate());
+          if (day > endDay) return false;
+        }
+        return true;
+      });
+    }
+    const query = pendingSearchQuery.trim().toLowerCase();
+    if (query) {
+      filtered = filtered.filter(memo => {
+        const mid = (memo.memoId || '').toLowerCase();
+        const pname = (memo.patient?.name || '').toLowerCase();
+        const pid = (memo.patient?.id || memo.patient?.idNumber || memo.patient?.passportNumber || memo.patient?.nationalId || '').toLowerCase();
+        return mid.includes(query) || pname.includes(query) || pid.includes(query);
+      });
+    }
+    return filtered;
+  }
+
+  // ---------- RENDER (with edit/delete) ----------
+  function renderMemosTable() {
+    const tbody = document.getElementById('memosTbody');
+    const statsSpan = document.getElementById('resultStats');
+    if (!currentDisplayMemos.length) {
+      if (allMemos.length === 0 && pendingStartDate === null && pendingEndDate === null && !pendingSearchQuery) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">📂 No memo data loaded. Click "Reload Data".</td></tr>';
+        statsSpan.innerHTML = 'No data loaded yet';
+      } else if (allMemos.length > 0 && currentDisplayMemos.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔍 No memos match current filters.</td></tr>';
+        statsSpan.innerHTML = `0 memos match (total ${allMemos.length})`;
+      } else {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">✨ Apply filters to see results</td></tr>';
+        statsSpan.innerHTML = 'Filters ready → click "Apply Filters"';
+      }
+      return;
+    }
+    tbody.innerHTML = currentDisplayMemos.map((memo, idx) => {
+      const memoId = memo.memoId || memo.id;
+      const dateObj = parseMemoDate(memo);
+      const dateStr = dateObj ? formatDate(dateObj) : 'N/A';
+      const patientName = memo.patient?.name || 'Unknown';
+      const patientId = memo.patient?.id || memo.patient?.idNumber || memo.patient?.passportNumber || memo.patient?.nationalId || '-';
+      const doctorName = memo.doctor?.name || '-';
+      const subtotal = memo.billing?.subtotal || 0;
+      const paid = memo.billing?.paid || 0;
+      const balance = memo.billing?.balance || 0;
+
+      return `<tr data-idx="${idx}" data-memoid="${escapeHtml(memoId)}">
+        <td><span class="memo-id-display" style="font-weight:600;">${escapeHtml(memoId)}</span>
+          <button class="edit-btn" data-edit-idx="${idx}" style="margin-left:4px;"><i class="fas fa-pen"></i></button>
+        </td>
+        <td>${escapeHtml(dateStr)}</td>
+        <td>${escapeHtml(patientName)}</td>
+        <td>${escapeHtml(patientId)}</td>
+        <td>${escapeHtml(doctorName)}</td>
+        <td>MVR ${subtotal.toFixed(2)}</td>
+        <td>MVR ${paid.toFixed(2)}</td>
+        <td>MVR ${balance.toFixed(2)}</td>
+        <td>
+          <button class="print-btn" data-print-idx="${idx}">🖨️ Print</button>
+          <button class="delete-btn" data-delete-idx="${idx}"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+    statsSpan.innerHTML = `📋 Showing ${currentDisplayMemos.length} memo${currentDisplayMemos.length !== 1 ? 's' : ''} ${allMemos.length ? `(out of ${allMemos.length} total)` : ''}`;
+
+    // Attach print
+    document.querySelectorAll('.print-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(btn.getAttribute('data-print-idx'));
+        if (!isNaN(idx) && currentDisplayMemos[idx]) printMemo(currentDisplayMemos[idx]);
+      });
+    });
+
+    // Attach delete
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const idx = parseInt(btn.getAttribute('data-delete-idx'));
+        if (isNaN(idx) || !currentDisplayMemos[idx]) return;
+        const memo = currentDisplayMemos[idx];
+        const memoId = memo.memoId || memo.id;
+        if (!confirm(`⚠️ Delete memo #${memoId} permanently?`)) return;
+        try {
+          await window.db.collection('memos').doc(memo.id).delete();
+          showMessage(`✅ Memo #${memoId} deleted.`, 'success');
+          // remove from local arrays and re-render
+          allMemos = allMemos.filter(m => (m.memoId || m.id) !== memoId);
+          currentDisplayMemos = currentDisplayMemos.filter(m => (m.memoId || m.id) !== memoId);
+          renderMemosTable();
+        } catch(err) {
+          showMessage(`❌ Delete failed: ${err.message}`, 'error');
+        }
+      });
+    });
+
+    // Attach edit (inline)
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(btn.getAttribute('data-edit-idx'));
+        if (isNaN(idx) || !currentDisplayMemos[idx]) return;
+        const memo = currentDisplayMemos[idx];
+        const tr = btn.closest('tr');
+        const idDisplay = tr.querySelector('.memo-id-display');
+        const currentId = idDisplay.innerText.trim();
+        // Replace with input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'inline-edit-input';
+        input.value = currentId;
+        input.setAttribute('data-edit-idx', idx);
+        idDisplay.replaceWith(input);
+        btn.innerText = '💾';
+        btn.className = 'edit-btn save-edit-btn';
+        btn.style.background = '#d1fae5';
+        // focus
+        input.focus();
+        input.select();
+
+        const saveEdit = async () => {
+          const newId = input.value.trim();
+          if (!newId) { showMessage('Memo ID cannot be empty', 'error'); return; }
+          if (newId === currentId) { showMessage('No change', 'info'); resetEdit(btn, currentId, idx); return; }
+          // Check duplicate
+          const exists = allMemos.some(m => (m.memoId || m.id) === newId && (m.memoId || m.id) !== currentId);
+          if (exists) { showMessage(`❌ Memo ID "${newId}" already exists.`, 'error'); return; }
+          try {
+            // Update Firestore
+            await window.db.collection('memos').doc(memo.id).update({ memoId: newId });
+            // Update local data
+            memo.memoId = newId;
+            allMemos = allMemos.map(m => (m.id === memo.id) ? { ...m, memoId: newId } : m);
+            currentDisplayMemos = currentDisplayMemos.map(m => (m.id === memo.id) ? { ...m, memoId: newId } : m);
+            showMessage(`✅ Memo ID updated to "${newId}"`, 'success');
+            resetEdit(btn, newId, idx);
+            renderMemosTable(); // re-render to keep consistency
+          } catch(err) {
+            showMessage(`❌ Update failed: ${err.message}`, 'error');
+          }
+        };
+
+        const resetEdit = (btnEl, value, idx) => {
+          const parentTd = btnEl.closest('td');
+          const existingInput = parentTd.querySelector('.inline-edit-input');
+          if (existingInput) {
+            const span = document.createElement('span');
+            span.className = 'memo-id-display';
+            span.style.fontWeight = '600';
+            span.innerText = value || '—';
+            existingInput.replaceWith(span);
+            btnEl.innerText = '✏️';
+            btnEl.className = 'edit-btn';
+            btnEl.style.background = '';
+            // re-attach edit
+            btnEl.addEventListener('click', (e) => {
+              // re-trigger edit
+              const newIdx = parseInt(btnEl.getAttribute('data-edit-idx'));
+              if (!isNaN(newIdx) && currentDisplayMemos[newIdx]) {
+                // simulate click on new edit button – we re-run the logic by re-rendering? simpler: re-render table
+                // but we can just re-run the inline edit manually
+                const trEl = btnEl.closest('tr');
+                const idSpan = trEl.querySelector('.memo-id-display');
+                if (!idSpan) return;
+                const currentId = idSpan.innerText.trim();
+                const input2 = document.createElement('input');
+                input2.type = 'text';
+                input2.className = 'inline-edit-input';
+                input2.value = currentId;
+                input2.setAttribute('data-edit-idx', newIdx);
+                idSpan.replaceWith(input2);
+                btnEl.innerText = '💾';
+                btnEl.className = 'edit-btn save-edit-btn';
+                btnEl.style.background = '#d1fae5';
+                input2.focus();
+                input2.select();
+                // rebind save
+                const saveFn = async () => {
+                  const newId2 = input2.value.trim();
+                  if (!newId2) { showMessage('Memo ID cannot be empty', 'error'); return; }
+                  if (newId2 === currentId) { showMessage('No change', 'info'); resetEdit(btnEl, currentId, newIdx); return; }
+                  const exists2 = allMemos.some(m => (m.memoId || m.id) === newId2 && (m.memoId || m.id) !== currentId);
+                  if (exists2) { showMessage(`❌ Memo ID "${newId2}" already exists.`, 'error'); return; }
+                  try {
+                    const memoObj = currentDisplayMemos[newIdx];
+                    await window.db.collection('memos').doc(memoObj.id).update({ memoId: newId2 });
+                    memoObj.memoId = newId2;
+                    allMemos = allMemos.map(m => (m.id === memoObj.id) ? { ...m, memoId: newId2 } : m);
+                    currentDisplayMemos = currentDisplayMemos.map(m => (m.id === memoObj.id) ? { ...m, memoId: newId2 } : m);
+                    showMessage(`✅ Memo ID updated to "${newId2}"`, 'success');
+                    resetEdit(btnEl, newId2, newIdx);
+                    renderMemosTable();
+                  } catch(err) { showMessage(`❌ Update failed: ${err.message}`, 'error'); }
+                };
+                // remove previous listener, add new
+                const newSaveBtn = parentTd.querySelector('.save-edit-btn');
+                if (newSaveBtn) {
+                  newSaveBtn.onclick = saveFn;
+                }
+                // Enter key
+                input2.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); saveFn(); } });
+              }
+            });
+          }
+        };
+
+        // Save on click save button
+        const saveBtn = btn;
+        saveBtn.onclick = saveEdit;
+        // Enter key
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') { ev.preventDefault(); saveEdit(); }
+        });
+      });
+    });
+  }
+
+  // ---------- PRINT (unchanged but included) ----------
+  function printMemo(memo) {
+    const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+    if (!printWindow) { alert("Please allow pop-ups to print."); return; }
+    const memoId = memo.memoId || memo.id;
+    const dateObj = parseMemoDate(memo);
+    const dateStr = dateObj ? formatDate(dateObj) : 'N/A';
+    const patient = memo.patient || {};
+    const doctor = memo.doctor || {};
+    const services = memo.services || [];
+    const discount = memo.discount || {};
+    const billing = memo.billing || {};
+    const activeInsurances = getActiveInsurances(memo);
+    const insuranceCount = activeInsurances.length;
+    const paymentMethod = memo.payment?.method || 'N/A';
+    const createdBy = memo.createdBy || 'Unknown';
+    const serviceDiscounts = memo.serviceDiscounts || {};
+    const fullAddress = patient.address ? escapeHtml(patient.address) : '';
+    const patientContact = patient.phone || patient.contactNo || '';
+    const patientNationality = patient.nationality || '';
+    const memoHeading = getMemoHeading(memo);
+
+    let insuranceHtml = '';
+    if (insuranceCount > 0) {
+      insuranceHtml = activeInsurances.map(ins => `<div class="insurance-item"><span class="ins-name">${escapeHtml(ins.name)}</span><span class="ins-amount">MVR ${(ins.amount || 0).toFixed(2)}</span></div>`).join('');
+      insuranceHtml = `<div class="insurance-box"><span class="ins-title">🏥 Insurance Coverage</span>${insuranceHtml}</div>`;
+    }
+    let servicesHtml = '';
+    if (services.length > 0) {
+      let headerHtml = '', rowHtml = '';
+      if (insuranceCount === 0) {
+        headerHtml = `<tr><th style="text-align:center;width:10%;">Code</th><th style="text-align:left;width:32%;">Service</th><th style="text-align:center;width:8%;">Qty</th><th style="text-align:right;width:15%;">Price</th><th style="text-align:right;width:15%;">Discount</th><th style="text-align:right;width:20%;">Total</th></tr>`;
+        services.forEach(s => {
+          const discountAmt = s.discountAmount || 0; const discountPercent = s.discountPercent || 0; const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
+          rowHtml += `<tr><td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td><td style="text-align:left;">${escapeHtml(s.name)}</td><td style="text-align:center;">${s.qty}</td><td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td><td style="text-align:right;">${discountDisplay}</td><td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td></tr>`;
+        });
+      } else if (insuranceCount === 1) {
+        const insName = activeInsurances[0].name || 'Insurance';
+        headerHtml = `<tr><th style="text-align:center;width:10%;">Code</th><th style="text-align:left;width:26%;">Service</th><th style="text-align:center;width:7%;">Qty</th><th style="text-align:right;width:13%;">Price</th><th style="text-align:right;width:13%;">${escapeHtml(insName)}</th><th style="text-align:right;width:13%;">Discount</th><th style="text-align:right;width:18%;">Total</th></tr>`;
+        services.forEach(s => {
+          const insAmount = s.primaryInsuranceAmount || s.aasandhaAmount || 0; const discountAmt = s.discountAmount || 0; const discountPercent = s.discountPercent || 0; const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
+          rowHtml += `<tr><td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td><td style="text-align:left;">${escapeHtml(s.name)}</td><td style="text-align:center;">${s.qty}</td><td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td><td style="text-align:right;">MVR ${insAmount.toFixed(2)}</td><td style="text-align:right;">${discountDisplay}</td><td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td></tr>`;
+        });
+      } else {
+        const ins1Name = activeInsurances[0]?.name || 'Insurance'; const ins2Name = activeInsurances[1]?.name || 'Aasandha';
+        headerHtml = `<tr><th style="text-align:center;width:9%;">Code</th><th style="text-align:left;width:22%;">Service</th><th style="text-align:center;width:6%;">Qty</th><th style="text-align:right;width:11%;">Price</th><th style="text-align:right;width:12%;">${escapeHtml(ins1Name)}</th><th style="text-align:right;width:12%;">${escapeHtml(ins2Name)}</th><th style="text-align:right;width:12%;">Discount</th><th style="text-align:right;width:16%;">Total</th></tr>`;
+        services.forEach(s => {
+          const ins1Amount = s.primaryInsuranceAmount || 0; const ins2Amount = s.aasandhaAmount || 0; const discountAmt = s.discountAmount || 0; const discountPercent = s.discountPercent || 0; const discountDisplay = discountPercent > 0 ? `${discountPercent}% (-MVR ${discountAmt.toFixed(2)})` : '—';
+          rowHtml += `<tr><td style="text-align:center;"><span class="code-badge">${escapeHtml(s.code || '—')}</span></td><td style="text-align:left;">${escapeHtml(s.name)}</td><td style="text-align:center;">${s.qty}</td><td style="text-align:right;">MVR ${(s.price || 0).toFixed(2)}</td><td style="text-align:right;">MVR ${ins1Amount.toFixed(2)}</td><td style="text-align:right;">MVR ${ins2Amount.toFixed(2)}</td><td style="text-align:right;">${discountDisplay}</td><td style="text-align:right;">MVR ${(s.total || 0).toFixed(2)}</td></tr>`;
+        });
+      }
+      servicesHtml = `<table class="services-table"><thead>${headerHtml}</thead><tbody>${rowHtml}</tbody></table>`;
+    } else { servicesHtml = '<div class="no-services">No services recorded.</div>'; }
+
+    const printContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hope Dental - ${memoHeading} ${memoId}</title>
+    <style>@page{size:A5;margin:6mm;}body{font-family:'Inter','Segoe UI',sans-serif;margin:0;padding:0;background:white;color:#1e2a36;font-size:10px;line-height:1.4;}.receipt{max-width:100%;margin:0 auto;background:white;padding:0;}.header{text-align:center;border-bottom:2px solid #0a2f44;padding-bottom:4px;margin-bottom:8px;}.header h1{color:#0a2f44;margin:0;font-size:16px;}.header p{margin:2px 0;font-size:8px;color:#5f7f9a;}.logo-container{text-align:center;margin-bottom:4px;}.logo-container img{max-height:60px;width:auto;}.memo-title{text-align:center;background:#e0f2fe;padding:3px;border-radius:20px;margin:6px 0;font-weight:bold;font-size:11px;}.code-badge{background:#e8f0fe;color:#0f5c7a;padding:1px 6px;border-radius:8px;font-size:7px;font-family:monospace;font-weight:600;}.info-grid{display:flex;gap:10px;margin:8px 0;}.info-left{flex:1;background:#f8fafd;padding:6px 10px;border-radius:8px;}.info-right{flex:1;background:#f8fafd;padding:6px 10px;border-radius:8px;}.info-row{display:flex;justify-content:space-between;padding:2px 0;font-size:9px;border-bottom:1px dotted #e9edf2;}.info-row:last-child{border-bottom:none;}.info-label{font-weight:600;color:#0a2f44;}.info-value{color:#1e2a36;}.insurance-box{background:#fff8e7;padding:5px 8px;border-radius:8px;margin:8px 0;border:1px solid #f0c674;}.insurance-box .ins-title{font-weight:600;font-size:9px;color:#0a2f44;display:block;margin-bottom:3px;}.insurance-item{display:flex;justify-content:space-between;padding:2px 4px;font-size:9px;background:white;margin:2px 0;border-radius:4px;}.insurance-item .ins-name{font-weight:500;}.insurance-item .ins-amount{font-weight:600;color:#0f5c7a;}.services-table{width:100%;border-collapse:collapse;margin:6px 0;font-size:8px;}.services-table th{background:#f4f9fe;padding:4px 4px;border-bottom:2px solid #d0dfe8;font-size:7px;font-weight:700;color:#0a2f44;}.services-table td{padding:4px 4px;border-bottom:1px solid #e9edf2;font-size:8px;}.services-table tr:last-child td{border-bottom:none;}.totals-grid{display:flex;gap:10px;margin:8px 0;}.totals-left{flex:1;background:#f0f9ff;padding:6px 10px;border-radius:8px;border:1px solid #0f5c7a;}.totals-right{flex:1;background:#f0f9ff;padding:6px 10px;border-radius:8px;border:1px solid #0f5c7a;}.totals-row{display:flex;justify-content:space-between;padding:2px 0;font-size:9px;border-bottom:1px dotted #d0dfe8;}.totals-row:last-child{border-bottom:none;}.totals-row.total{font-weight:800;font-size:11px;border-top:2px solid #0f5c7a;margin-top:3px;padding-top:3px;}.totals-row.total .label{color:#0a2f44;}.totals-row.total .value{color:#0f5c7a;}.created-by{text-align:center;font-size:7px;color:#8ba0b0;margin-top:4px;}.footer{text-align:center;font-size:7px;color:#8ba0b0;border-top:1px solid #ddd;padding-top:6px;margin-top:8px;}.non-refundable{text-align:center;font-size:9px;font-weight:700;color:#b91c1c;margin-top:4px;padding:4px;border:1px dashed #b91c1c;border-radius:6px;background:#fff5f5;letter-spacing:0.5px;}.no-services{background:#f9f9f9;padding:15px;text-align:center;border-radius:6px;font-style:italic;font-size:9px;}.payment-method-box{background:#e8f0fe;padding:4px 8px;border-radius:6px;margin:4px 0;font-size:8px;display:flex;justify-content:space-between;}@media print{body{margin:0;padding:0;}.no-print{display:none;}}
+    </style></head><body>
+    <div class="receipt">
+      <div class="header"><div class="logo-container"><img src="hope1.png" alt="Hope Dental Logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block';"><div style="display:none;font-size:24px;font-weight:bold;color:#0a2f44;">Hope Dental Care</div></div><h1>Hope Dental Care</h1><p>📍 H. Fairy Palace, Abadhah Ufaa Hingun, Male, Maldives</p><p>☎️ +960 300-1516 &nbsp;|&nbsp; 💬 +960 795-1515</p></div>
+      <div class="memo-title">📄 ${escapeHtml(memoHeading)} — #${escapeHtml(memoId)}</div>
+      <div class="info-grid"><div class="info-left"><div class="info-row"><span class="info-label">Patient Name:</span><span class="info-value">${escapeHtml(patient.name || '')}</span></div><div class="info-row"><span class="info-label">ID/Passport:</span><span class="info-value">${escapeHtml(patient.idNumber || patient.passportNumber || patient.nationalId || '')}</span></div><div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${escapeHtml(patientContact)}</span></div><div class="info-row"><span class="info-label">Nationality:</span><span class="info-value">${escapeHtml(patientNationality)}</span></div><div class="info-row"><span class="info-label">Address:</span><span class="info-value">${escapeHtml(fullAddress || 'N/A')}</span></div><div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${escapeHtml(patient.dob || '')}</span></div></div><div class="info-right"><div class="info-row"><span class="info-label">Date:</span><span class="info-value">${escapeHtml(dateStr)}</span></div><div class="info-row"><span class="info-label">Memo No:</span><span class="info-value">${escapeHtml(memoId)}</span></div><div class="info-row"><span class="info-label">Doctor:</span><span class="info-value">${escapeHtml(doctor.name || '')} ${doctor.speciality ? `(${escapeHtml(doctor.speciality)})` : ''}</span></div><div class="info-row"><span class="info-label">Insurance:</span><span class="info-value" style="font-size:8px;">${activeInsurances.map(i => escapeHtml(i.name)).join(' + ')}</span></div></div></div>
+      ${servicesHtml}
+      ${insuranceHtml}
+      <div class="totals-grid"><div class="totals-left"><div class="totals-row"><span class="label">Subtotal:</span><span>MVR ${(billing.subtotal || 0).toFixed(2)}</span></div><div class="totals-row"><span class="label">Global Discount (${discount.percent || 0}%):</span><span>- MVR ${(discount.amount || 0).toFixed(2)}</span></div><div class="totals-row"><span class="label">Service Discounts:</span><span>- MVR ${(serviceDiscounts.total || 0).toFixed(2)}</span></div><div class="totals-row"><span class="label">After Discount:</span><span>MVR ${(billing.afterDiscount || 0).toFixed(2)}</span></div><div class="totals-row"><span class="label">Total Patient Payable:</span><span>MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div></div><div class="totals-right"><div class="totals-row"><span class="label">Total Insurance Paid:</span><span>MVR ${(billing.totalInsurancePayment || 0).toFixed(2)}</span></div><div class="totals-row"><span class="label">Amount Paid:</span><span>MVR ${(billing.paid || 0).toFixed(2)}</span></div><div class="totals-row total"><span class="label">💰 PATIENT PAYABLE:</span><span class="value">MVR ${(billing.patientPayable || 0).toFixed(2)}</span></div></div></div>
+      <div class="payment-method-box"><span>💳 Payment Method: <strong>${escapeHtml(paymentMethod)}</strong></span><span>👤 Created by: <strong>${escapeHtml(createdBy)}</strong></span></div>
+      <div style="text-align:center;font-size:9px;padding:4px;background:#f4f9fe;border-radius:6px;margin:4px 0;">${(billing.balance || 0) > 0 ? `⚖️ BALANCE DUE: MVR ${(billing.balance || 0).toFixed(2)}` : (billing.balance || 0) < 0 ? `💰 CHANGE DUE: MVR ${Math.abs(billing.balance || 0).toFixed(2)}` : '✅ PAID IN FULL'}</div>
+      <div class="non-refundable">⚠️ THIS MEMO IS NOT REFUNDABLE ⚠️</div>
+      <div class="footer">Thank you for choosing Hope Dental Care.<br>This is a computer-generated receipt. Valid without signature.</div>
+      <div class="no-print" style="text-align:center;margin-top:10px;"><button onclick="window.print();" style="padding:5px 14px;background:#0a2f44;color:white;border:none;border-radius:30px;font-size:10px;cursor:pointer;">🖨️ Print</button> <button onclick="window.close();" style="padding:5px 14px;background:#c63d2f;color:white;border:none;border-radius:30px;font-size:10px;cursor:pointer;">✖ Close</button></div>
+    </div></body></html>`;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  }
+
+  // ---------- APPLY / CLEAR ----------
+  function applyFiltersAndShow() {
+    const startRaw = document.getElementById('startDate').value;
+    const endRaw = document.getElementById('endDate').value;
+    const searchRaw = document.getElementById('searchInput').value;
+    pendingSearchQuery = searchRaw;
+    if (startRaw) { let s = new Date(startRaw); if (!isNaN(s)) pendingStartDate = new Date(s.getFullYear(), s.getMonth(), s.getDate()); else pendingStartDate = null; } else pendingStartDate = null;
+    if (endRaw) { let e = new Date(endRaw); if (!isNaN(e)) pendingEndDate = new Date(e.getFullYear(), e.getMonth(), e.getDate()); else pendingEndDate = null; } else pendingEndDate = null;
+    const filtered = computeFilteredMemos();
+    currentDisplayMemos = filtered;
+    renderMemosTable();
+    let msg = [];
+    if (pendingStartDate || pendingEndDate) msg.push(`📅 Date range`);
+    if (pendingSearchQuery) msg.push(`🔍 "${pendingSearchQuery}"`);
+    if (msg.length) showMessage(`Applied ${msg.join(' & ')} → ${currentDisplayMemos.length} results`, 'success');
+    else showMessage(`No active filters → showing all ${currentDisplayMemos.length} memos`, 'info');
+  }
+
+  function clearAllFilters() {
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    document.getElementById('searchInput').value = '';
+    pendingStartDate = null; pendingEndDate = null; pendingSearchQuery = '';
+    currentDisplayMemos = [];
+    renderMemosTable();
+    showMessage("Filters cleared. Click 'Apply Filters' to view all memos.", 'info');
+  }
+
+  function setDatePreset(preset) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    let start = null, end = null;
+    if (preset === 'today') { start = new Date(today); end = new Date(today); }
+    else if (preset === 'week') { const day = today.getDay(); const diff = (day === 0 ? 6 : day - 1); start = new Date(today); start.setDate(today.getDate() - diff); end = new Date(today); }
+    else if (preset === 'month') { start = new Date(today.getFullYear(), today.getMonth(), 1); end = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
+    else if (preset === 'all') { start = null; end = null; }
+    if (start && startPicker) { document.getElementById('startDate').value = start.toISOString().slice(0,10); }
+    if (end && endPicker) { document.getElementById('endDate').value = end.toISOString().slice(0,10); }
+    if (preset === 'all') { document.getElementById('startDate').value = ''; document.getElementById('endDate').value = ''; }
+    showMessage(`Preset "${preset}" applied. Click "Apply Filters"`, 'info');
+  }
+
+  async function loadMemosDataOnly() {
+    if (!window.db) { setTimeout(loadMemosDataOnly, 500); return; }
+    const tbody = document.getElementById('memosTbody');
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">🔄 Loading memo data...</td></tr>';
+    try {
+      const snapshot = await window.db.collection('memos').orderBy('createdAt', 'desc').get();
+      allMemos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      currentDisplayMemos = [];
+      renderMemosTable();
+      showMessage(`✅ Loaded ${allMemos.length} memos. Use filters + Apply to view.`, 'success');
+    } catch (error) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="9">❌ Error loading memos.</td></tr>';
+      showMessage('Error: ' + error.message, 'error');
+    }
+  }
+
+  function logout() { localStorage.removeItem('loggedInUser'); sessionStorage.removeItem('clinic_user_session'); window.location.href = 'login.html'; }
+
+  function init() {
+    startPicker = flatpickr('#startDate', { dateFormat: 'Y-m-d', allowInput: true });
+    endPicker = flatpickr('#endDate', { dateFormat: 'Y-m-d', allowInput: true });
+    document.getElementById('applyFilterBtn').addEventListener('click', applyFiltersAndShow);
+    document.getElementById('clearFiltersBtn').addEventListener('click', clearAllFilters);
+    document.getElementById('refreshDataBtn').addEventListener('click', loadMemosDataOnly);
+    document.getElementById('todayBtn').addEventListener('click', () => setDatePreset('today'));
+    document.getElementById('weekBtn').addEventListener('click', () => setDatePreset('week'));
+    document.getElementById('monthBtn').addEventListener('click', () => setDatePreset('month'));
+    document.getElementById('allTimeBtn').addEventListener('click', () => setDatePreset('all'));
+    loadMemosDataOnly();
+  }
+  function waitForFirebase() { if (window.db) init(); else setTimeout(waitForFirebase, 500); }
+  waitForFirebase();
+</script>
+</body>
+</html>
